@@ -29,7 +29,7 @@ C> @file step.f time stepping and mesh spacing routines
       real strof
       data strof /1.0e-8/
 
-      NTOT   = NX1*NY1*NZ1*NELV
+      NTOT   = lx1*ly1*lz1*NELV
       do i=1,ntot
          utmp(i,1,1,1) = abs(vx(i,1,1,1))+csound(i,1,1,1)
          vtmp(i,1,1,1) = abs(vy(i,1,1,1))+csound(i,1,1,1)
@@ -106,8 +106,8 @@ c
       else
         diffno=0.0
         do e=1,nelt
-          do iy=2,ny1-1
-          do ix=2,nx1-1
+          do iy=2,ly1-1
+          do ix=2,lx1-1
             dtmp=1.0e5
             x0 = xm1(ix  ,iy  ,1,e)
             x1 = xm1(ix  ,iy-1,1,e)
@@ -161,10 +161,10 @@ c
       include 'INPUT'
       include 'GEOM'
       real a(3), b(3), c(3), d(3)
-      real h(nx1,ny1,nz1,nelt) ! intent(out)
-      real x(nx1,ny1,nz1,nelt) ! intent(in)
-      real y(nx1,ny1,nz1,nelt) ! intent(in)
-      real z(nx1,ny1,nz1,nelt) ! intent(in)
+      real h(lx1,ly1,lz1,nelt) ! intent(out)
+      real x(lx1,ly1,lz1,nelt) ! intent(in)
+      real y(lx1,ly1,lz1,nelt) ! intent(in)
+      real z(lx1,ly1,lz1,nelt) ! intent(in)
       integer e
       integer icalld
       data icalld /0/
@@ -177,32 +177,32 @@ c
       endif
 
       do e=1,nelt
-         do iz=1,nz1
+         do iz=1,lz1
             if (if3d) then
                km1=iz-1
                kp1=iz+1
                izm=km1
                if (km1 .lt. 1) izm=iz
                izp=kp1
-               if (kp1 .gt. nz1) izp=iz
+               if (kp1 .gt. lz1) izp=iz
             else
                izm=iz
                izp=iz
             endif
-            do iy=1,ny1
+            do iy=1,ly1
                jm1=iy-1
                jp1=iy+1
                iym=jm1
                if (jm1 .lt. 1) iym=iy
                iyp=jp1
-               if (jp1 .gt. ny1) iyp=iy
-               do ix=1,nx1
+               if (jp1 .gt. ly1) iyp=iy
+               do ix=1,lx1
                   im1=ix-1
                   ip1=ix+1
                   ixm=im1
                   if (im1 .lt. 1) ixm=ix
                   ixp=ip1
-                  if (ip1 .gt. nx1) ixp=ix
+                  if (ip1 .gt. lx1) ixp=ix
                   x1 = x(ixm,iy ,iz ,e)
                   x2 = x(ixp,iy ,iz ,e)
                   x3 = x(ix ,iym,iz ,e)
@@ -288,9 +288,9 @@ c
       include 'SIZE'
       include 'INPUT'
       real h(nelt)             ! intent(out)
-      real x(nx1,ny1,nz1,nelt) ! intent(in)
-      real y(nx1,ny1,nz1,nelt) ! intent(in)
-      real z(nx1,ny1,nz1,nelt) ! intent(in)
+      real x(lx1,ly1,lz1,nelt) ! intent(in)
+      real y(lx1,ly1,lz1,nelt) ! intent(in)
+      real z(lx1,ly1,lz1,nelt) ! intent(in)
       real xcrn(8),ycrn(8),zcrn(8)
       integer e
       integer icalld
@@ -303,17 +303,17 @@ c
          icalld=1
       endif
 
-      ncrn=2**ndim
-      rp=1.0/((nx1-1))
+      ncrn=2**ldim
+      rp=1.0/((lx1-1))
 
       do e=1,nelt
          call rzero(zcrn,8)
          k1=1
-         k2=nz1
+         k2=lz1
          j1=1
-         j2=ny1
+         j2=ly1
          i1=1
-         i2=nx1
+         i2=lx1
          xcrn(1) = x(i1,j1,k1,e)
          xcrn(2) = x(i2,j1,k1,e)
          xcrn(3) = x(i1,j2,k1,e)

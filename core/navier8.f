@@ -3,7 +3,7 @@ c
       subroutine set_vert(glo_num,ngv,nx,nel,vertex,ifcenter)
 c
 c     Given global array, vertex, pointing to hex vertices, set up
-c     a new array of global pointers for an nx^ndim set of elements.
+c     a new array of global pointers for an nx^ldim set of elements.
 c
       include 'SIZE'
       include 'INPUT'
@@ -129,7 +129,7 @@ c     if (nxc.lt.2) nxc=2
 
       if(nio.eq.0) write(6,*) 'setup h1 coarse grid, nx_crs=', nx_crs
 
-      ncr     = nxc**ndim
+      ncr     = nxc**ldim
       nxyz_c  = ncr
 c
 c     Set SEM_to_GLOB
@@ -144,7 +144,7 @@ c     Set mask
       if (if3d) nzc=nxc
       call rone(mask,ntot)
       call rone(cmlt,ntot)
-      nfaces=2*ndim
+      nfaces=2*ldim
 c     ifield=1			!c? avo: set in set_overlap through 'TSTEP'?
 
       if (ifield.eq.1) then
@@ -180,13 +180,13 @@ c     Set global index of dirichlet nodes to zero; xxt will ignore them
 c     Setup local SEM-based Neumann operators (for now, just full...)
 
 c      if (param(51).eq.1) then     ! old coarse grid
-c         nxyz1=nx1*ny1*nz1
+c         nxyz1=lx1*ly1*lz1
 c         lda = 27*nxyz1*lelt
 c         ldw =  7*nxyz1*lelt
 c         call get_local_crs(a,lda,nxc,h1,h2,w,ldw)
 c      else
 c        NOTE: a(),h1,...,w2() must all be large enough
-         n = nx1*ny1*nz1*nelv
+         n = lx1*ly1*lz1*nelv
          call rone (h1,n)
          call rzero(h2,n)
          call get_local_crs_galerkin(a,ncr,nxc,h1,h2,w1,w2)
@@ -203,12 +203,8 @@ c      endif
       nz=ncr*ncr*nelv
       imode = param(40) 
 
-      if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
-     $ 'Problem size requires AMG solver$',1)
-
       call fgslib_crs_setup(xxth(ifield),imode,nekcomm,mp,ntot,
      $                      se_to_gcrs,nz,ia,ja,a, null_space)
-c      call fgslib_crs_stats(xxth(ifield))
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then
@@ -494,7 +490,7 @@ c-----------------------------------------------------------------------
 c
       subroutine get_local_crs(a,lda,nxc,h1,h2,w,ldw)
 c
-c     This routine generates Nelv submatrices of order nxc^ndim.
+c     This routine generates Nelv submatrices of order nxc^ldim.
 c
       include 'SIZE'
       include 'GEOM'
@@ -512,7 +508,7 @@ c
       common /ctmp1/ x(lcrd),y(lcrd),z(lcrd)
 c
 c
-      ncrs_loc = nxc**ndim
+      ncrs_loc = nxc**ldim
       n2       = ncrs_loc*ncrs_loc
 c
 c     Required storage for a:
@@ -526,11 +522,11 @@ c
       l = 1
       do ie=1,nelv
 c
-         call map_m_to_n(x,nxc,xm1(1,1,1,ie),nx1,if3d,w,ldw)
-         call map_m_to_n(y,nxc,ym1(1,1,1,ie),nx1,if3d,w,ldw)
-         if (if3d) call map_m_to_n(z,nxc,zm1(1,1,1,ie),nx1,if3d,w,ldw)
-c.later. call map_m_to_n(hl1,nxc,h1(1,1,1,ie),nx1,if3d,w,ldw)
-c.later. call map_m_to_n(hl2,nxc,h2(1,1,1,ie),nx1,if3d,w,ldw)
+         call map_m_to_n(x,nxc,xm1(1,1,1,ie),lx1,if3d,w,ldw)
+         call map_m_to_n(y,nxc,ym1(1,1,1,ie),lx1,if3d,w,ldw)
+         if (if3d) call map_m_to_n(z,nxc,zm1(1,1,1,ie),lx1,if3d,w,ldw)
+c.later. call map_m_to_n(hl1,nxc,h1(1,1,1,ie),lx1,if3d,w,ldw)
+c.later. call map_m_to_n(hl2,nxc,h2(1,1,1,ie),lx1,if3d,w,ldw)
 c
          call a_crs_enriched(a(l),h1,h2,x,y,z,nxc,if3d,ie)
          l=l+n2
@@ -547,7 +543,7 @@ c
 c     This sets up a matrix for a single array of tensor-product
 c     gridpoints (e.g., an array defined by SEM-GLL vertices)
 c
-c         For example, suppose ndim=3.
+c         For example, suppose ldim=3.
 c
 c         Then, there would be ncrs_loc := nxc^3 dofs for this matrix,
 c
@@ -565,7 +561,7 @@ c
       real a_loc(ldm2,ldm2)
       real x(8),y(8),z(8)
 c
-      ncrs_loc = nxc**ndim
+      ncrs_loc = nxc**ldim
       n2       = ncrs_loc*ncrs_loc
       call rzero(a,n2)
 c
@@ -1077,7 +1073,7 @@ c
       nx_crs = 2   ! bilinear only
 
       do ie=1,nelv
-         call maph1_to_l2(uf(1,ie),nx2,uc(1,ie),nx_crs,if3d,w,ltot22)
+         call maph1_to_l2(uf(1,ie),lx2,uc(1,ie),nx_crs,if3d,w,ltot22)
       enddo
 c
       return
@@ -1101,7 +1097,7 @@ c                                 (linear --> spectral GLL mesh)
       nx_crs = 2   ! bilinear only
 
       do ie=1,nelv
-         call maph1_to_l2t(uc(1,ie),nx_crs,uf(1,ie),nx2,if3d,w,ltot22)
+         call maph1_to_l2t(uc(1,ie),nx_crs,uf(1,ie),lx2,if3d,w,ltot22)
       enddo
 c
       return
@@ -1353,7 +1349,7 @@ c
       endif
       ncrsl  = ncrsl  + 1
 
-      ntot = nelv*nx1*ny1*nz1
+      ntot = nelv*lx1*ly1*lz1
       call col3(uf,vf,vmult,ntot)
 
       call map_f_to_c_h1_bilin(vc,uf)   ! additive Schwarz
@@ -1378,9 +1374,9 @@ c
       include 'DOMAIN'
       include 'WZ'
 c
-      do ix=1,nx1
+      do ix=1,lx1
          h1_basis(ix) = 0.5*(1.0-zgm1(ix,1))
-         h1_basis(ix+nx1) = 0.5*(1.0+zgm1(ix,1))
+         h1_basis(ix+lx1) = 0.5*(1.0+zgm1(ix,1))
       enddo
       call transpose(h1_basist,2,h1_basis,lx1)
 c
@@ -1415,22 +1411,22 @@ c
       if (if3d) then
 c
          n31 = n2*n2*nelv
-         n13 = nx1*nx1
+         n13 = lx1*lx1
 c
-         call mxm(h1_basis,nx1,uc,n2,v,n31)
+         call mxm(h1_basis,lx1,uc,n2,v,n31)
          do ie=1,nelv
             do iz=1,n2
-               call mxm(v(1,1,iz,ie),nx1,h1_basist,n2,w(1,1,iz),nx1)
+               call mxm(v(1,1,iz,ie),lx1,h1_basist,n2,w(1,1,iz),lx1)
             enddo
-            call mxm(w,n13,h1_basist,n2,uf(1,ie),nx1)
+            call mxm(w,n13,h1_basist,n2,uf(1,ie),lx1)
          enddo
 c
       else
 c
          n31 = 2*nelv
-         call mxm(h1_basis,nx1,uc,n2,v,n31)
+         call mxm(h1_basis,lx1,uc,n2,v,n31)
          do ie=1,nelv
-            call mxm(v(1,1,1,ie),nx1,h1_basist,n2,uf(1,ie),nx1)
+            call mxm(v(1,1,1,ie),lx1,h1_basist,n2,uf(1,ie),lx1)
          enddo
       endif
       return
@@ -1461,20 +1457,20 @@ c
 c
       n2 = 2
       if (if3d) then
-         n31 = ny1*nz1*nelv
+         n31 = ly1*lz1*nelv
          n13 = n2*n2
-         call mxm(h1_basist,n2,uf,nx1,v,n31)
+         call mxm(h1_basist,n2,uf,lx1,v,n31)
          do ie=1,nelv
-            do iz=1,nz1
-               call mxm(v(1,1,iz,ie),n2,h1_basis,nx1,w(1,1,iz),n2)
+            do iz=1,lz1
+               call mxm(v(1,1,iz,ie),n2,h1_basis,lx1,w(1,1,iz),n2)
             enddo
-            call mxm(w,n13,h1_basis,nx1,uc(1,ie),n2)
+            call mxm(w,n13,h1_basis,lx1,uc(1,ie),n2)
          enddo
       else
-         n31 = ny1*nelv
-         call mxm(h1_basist,n2,uf,nx1,v,n31)
+         n31 = ly1*nelv
+         call mxm(h1_basist,n2,uf,lx1,v,n31)
          do ie=1,nelv
-               call mxm(v(1,1,1,ie),n2,h1_basis,nx1,uc(1,ie),n2)
+               call mxm(v(1,1,1,ie),n2,h1_basis,lx1,uc(1,ie),n2)
          enddo
       endif
  
@@ -1489,7 +1485,7 @@ c     Galerkin projection
       include 'SIZE'
 
       real    a(ncl,ncl,1),h1(1),h2(1)
-      real    w1(nx1*ny1*nz1,nelv),w2(nx1*ny1*nz1,nelv)
+      real    w1(lx1*ly1*lz1,nelv),w2(lx1*ly1*lz1,nelv)
 
       parameter (lcrd=lx1**ldim)
       common /ctmp1z/ b(lcrd,8)
@@ -1503,7 +1499,7 @@ c     Galerkin projection
       isd  = 1
       imsh = 1
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       do j = 1,ncl
          do e = 1,nelv
             call copy(w1(1,e),b(1,j),nxyz)
@@ -1525,39 +1521,39 @@ c-----------------------------------------------------------------------
       subroutine gen_crs_basis(b,j) ! bi- tri-linear
 
       include 'SIZE'
-      real b(nx1,ny1,nz1)
+      real b(lx1,ly1,lz1)
 
       real z0(lx1),z1(lx1)
       real zr(lx1),zs(lx1),zt(lx1)
 
       integer p,q,r
 
-      call zwgll(zr,zs,nx1)
+      call zwgll(zr,zs,lx1)
 
-      do i=1,nx1
+      do i=1,lx1
          z0(i) = .5*(1-zr(i))  ! 1-->0
          z1(i) = .5*(1+zr(i))  ! 0-->1
       enddo
 
-      call copy(zr,z0,nx1)
-      call copy(zs,z0,nx1)
-      call copy(zt,z0,nx1)
+      call copy(zr,z0,lx1)
+      call copy(zs,z0,lx1)
+      call copy(zt,z0,lx1)
 
-      if (mod(j,2).eq.0)                        call copy(zr,z1,nx1)
-      if (j.eq.3.or.j.eq.4.or.j.eq.7.or.j.eq.8) call copy(zs,z1,nx1)
-      if (j.gt.4)                               call copy(zt,z1,nx1)
+      if (mod(j,2).eq.0)                        call copy(zr,z1,lx1)
+      if (j.eq.3.or.j.eq.4.or.j.eq.7.or.j.eq.8) call copy(zs,z1,lx1)
+      if (j.gt.4)                               call copy(zt,z1,lx1)
 
-      if (ndim.eq.3) then
-         do r=1,nx1
-         do q=1,nx1
-         do p=1,nx1
+      if (ldim.eq.3) then
+         do r=1,lx1
+         do q=1,lx1
+         do p=1,lx1
             b(p,q,r) = zr(p)*zs(q)*zt(r)
          enddo
          enddo
          enddo
       else
-         do q=1,nx1
-         do p=1,nx1
+         do q=1,lx1
+         do p=1,lx1
             b(p,q,1) = zr(p)*zs(q)
          enddo
          enddo
@@ -1569,40 +1565,40 @@ c-----------------------------------------------------------------------
       subroutine gen_crs_basis2(b,j) ! bi- tri-quadratic
 
       include 'SIZE'
-      real b(nx1,ny1,nz1)
+      real b(lx1,ly1,lz1)
 
       real z0(lx1),z1(lx1),z2(lx1)
       real zr(lx1),zs(lx1),zt(lx1)
 
       integer p,q,r
 
-      call zwgll(zr,zs,nx1)
+      call zwgll(zr,zs,lx1)
 
-      do i=1,nx1
+      do i=1,lx1
          z0(i) = .5*(zr(i)-1)*zr(i)  ! 1-->0   ! Lagrangian, ordered
          z1(i) = 4.*(1+zr(i))*(1-zr(i))        ! lexicographically
          z2(i) = .5*(zr(i)+1)*zr(i)  ! 0-->1   !
       enddo
 
-      call copy(zr,z0,nx1)
-      call copy(zs,z0,nx1)
-      call copy(zt,z0,nx1)
+      call copy(zr,z0,lx1)
+      call copy(zs,z0,lx1)
+      call copy(zt,z0,lx1)
 
-      if (mod(j,2).eq.0)                        call copy(zr,z1,nx1)
-      if (j.eq.3.or.j.eq.4.or.j.eq.7.or.j.eq.8) call copy(zs,z1,nx1)
-      if (j.gt.4)                               call copy(zt,z1,nx1)
+      if (mod(j,2).eq.0)                        call copy(zr,z1,lx1)
+      if (j.eq.3.or.j.eq.4.or.j.eq.7.or.j.eq.8) call copy(zs,z1,lx1)
+      if (j.gt.4)                               call copy(zt,z1,lx1)
 
-      if (ndim.eq.3) then
-         do r=1,nx1
-         do q=1,nx1
-         do p=1,nx1
+      if (ldim.eq.3) then
+         do r=1,lx1
+         do q=1,lx1
+         do p=1,lx1
             b(p,q,r) = zr(p)*zs(q)*zt(r)
          enddo
          enddo
          enddo
       else
-         do q=1,nx1
-         do p=1,nx1
+         do q=1,lx1
+         do p=1,lx1
             b(p,q,1) = zr(p)*zs(q)
          enddo
          enddo
@@ -1627,7 +1623,7 @@ c-----------------------------------------------------------------------
       icalld = 1
 
       if (ifgtp) then
-         call gen_gtp_vertex    (vertex, ncrnr)
+         call gen_gtp_vertex(vertex, ncrnr)
       else
          call get_vert
       endif
@@ -1785,7 +1781,7 @@ c     Assign hypercube ordering of vertices
 c     -------------------------------------
 c
 c     Count number of unique vertices
-      nlv  = 2**ndim
+      nlv  = 2**ldim
       ngvv = iglmax(vertex,nlv*nel)
 c
       do e=1,nel
@@ -1925,8 +1921,8 @@ c                      |     |/     /
 c                     5+-----+6    Z
 c                         3
 c
-      nfaces=ndim*2
-      ncrnr =2**(ndim-1)
+      nfaces=ldim*2
+      ncrnr =2**(ldim-1)
       do e=1,nel
          do ifac=1,nfaces
             do icrn=1,ncrnr
@@ -2138,7 +2134,7 @@ c
       key(3)=3
 c
 c     Count number of unique vertices
-      nlv  = 2**ndim
+      nlv  = 2**ldim
       ngvv = iglmax(vertex,nlv*nel)
       ngv  = ngvv
 c
@@ -2325,7 +2321,7 @@ c-----------------------------------------------------------------------
       ifld = 2
       if (ifflow) ifld = 1
 
-      nface=2*ndim
+      nface=2*ldim
       do e=1,nelt
       do f=1,nface,2
          fo  = f+1

@@ -375,7 +375,7 @@ C     Convert the input value
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DELTMP
-      INCLUDE  'basics.inc'
+#     include "basics.inc"
       character*80 command
 C     Remove all tmp.* files
 C

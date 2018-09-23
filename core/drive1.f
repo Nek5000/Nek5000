@@ -1,7 +1,6 @@
 c-----------------------------------------------------------------------
-      subroutine nek_init(intracomm)
+      subroutine nek_init(comm_out)
 c
-
       include 'SIZE'
       include 'TOTAL'
       include 'DOMAIN'
@@ -25,19 +24,44 @@ c      COMMON /SCRMG/ DUMMY6(LX1,LY1,LZ1,LELT,4)
 c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
+
+      integer comm_out
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
   
       common /rdump/ ntdump
 
       real kwave2
-      real*8 t0, tpp
+      logical ifemati
 
-      logical ifemati,ifsync_
+      real rtest
+      integer itest
+      integer*8 itest8
+      character ctest
+      logical ltest 
 
-      call get_session_info(intracomm)
+      common /c_is1/ glo_num(lx1 * ly1 * lz1, lelt)
+      common /ivrtx/ vertex((2 ** ldim) * lelt)
+      integer*8 glo_num, ngv
+      integer vertex
+
+      ! set word size for REAL
+      wdsize = sizeof(rtest)
+      ! set word size for INTEGER
+      isize = sizeof(itest)
+      ! set word size for INTEGER*8
+      isize8 = sizeof(itest8) 
+      ! set word size for LOGICAL
+      lsize = sizeof(ltest) 
+      ! set word size for CHARACTER
+      csize = sizeof(ctest)
+
+      call setupcomm()
+      nekcomm  = intracomm
+      comm_out = nekcomm
+      call iniproc()
 
       etimes = dnekclock()
       istep  = 0
-      tpp    = 0.0
 
       call opcount(1)
 
@@ -47,15 +71,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       etime = dnekclock()
       call readat          ! Read .rea +map file
+
       etims0 = dnekclock_sync()
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
          write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
  12      format(1X,A,4I12,/,/)
       endif 
-
-      ifsync_ = ifsync
-      ifsync = .true.
 
       call setvar          ! Initialize most variables
 
@@ -78,6 +100,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
+      call fix_geom
+      
+      if (ifneknekc) call multimesh_create 
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -94,14 +119,28 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call dg_setup    !     Setup DG, if dg flag is set.
 
       if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
+         if(nio.eq.0) write(6,*) 'initialize pressure solver'
          call estrat                                       ! initialization.
-         if (iftran.and.solver_type.eq.'itr') then         ! Uses SOLN space 
-            call set_overlap                               ! as scratch!
+         if (iftran.and.solver_type.eq.'itr') then
+            isolver = param(40)
+            if (isolver.eq.0) then      ! semg_xxt
+                if (nelgt.gt.350000) call exitti(
+     $      'problem size too large for xxt - use different preco!$',0)
+                call set_overlap
+            else if (isolver.eq.1) then ! semg_amg
+                call set_overlap
+            else if (isolver.eq.3) then ! fem_amg_hypre 
+                call fem_amg_setup(nx1,ny1,nz1,
+     $                             nelv,ndim,
+     $                             xm1,ym1,zm1,
+     $                             pmask,binvm1,
+     $                             gsh_fld(1),fem_amg_param)
+            endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
             ifemati = .true.
             kwave2  = 0.0
             if (ifsplit) ifemati = .false.
-            call gfdm_init(nx2,ny2,nz2,ifemati,kwave2)
+            call gfdm_init(lx2,ly2,lz2,ifemati,kwave2)
          elseif (solver_type.eq.'25D') then
             call g25d_init
          endif
@@ -118,17 +157,20 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
-      call setics      !     Set initial conditions 
-      call setprop     !     Compute field properties
+      call setics
+      call setprop
 
-      if (instep.ne.0) then !USRCHK
-        if(nio.eq.0) write(6,*) 'call userchk'
-         if (ifneknek) call userchk_set_xfer
+      if (instep.ne.0) then
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
+
+         if (nio.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
+
+      call setprop
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
@@ -155,8 +197,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
      &              ' Initialization successfully completed ',
      &              tinit, ' sec'
       endif
-
-      ifsync = ifsync_ ! restore initial value
 
       return
       end
@@ -195,11 +235,15 @@ c-----------------------------------------------------------------------
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
+         if(kstep.ge.nsteps) lastep = 1
          call check_ioinfo  
          call set_outfld
+         etime1 = dnekclock()
          call userchk
+         tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
+         if (mod(kstep,100).eq.0 ..and. lastep.eq.0) call runstat
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1
@@ -235,7 +279,7 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
 
       call nekgsync
 
@@ -257,7 +301,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (igeom.gt.2) call userchk_set_xfer
+         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -290,7 +334,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (igeom.gt.2) call userchk_set_xfer
+            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -332,15 +376,19 @@ c-----------------------------------------------------------------------
       subroutine nek_end
 
       include 'SIZE'
-      include 'TSTEP'
-      include 'PARALLEL'
-      include 'OPCTR'
+      include 'TOTAL'
 
-      if(instep.ne.0)  call runstat
-      if(xxth(1).gt.0) call fgslib_crs_stats(xxth(1))
+      if(instep.ne.0) call runstat
 
-   
+c      if (ifstrs) then
+c         call fgslib_crs_free(xxth_strs) 
+c      else
+c         call fgslib_crs_free(xxth(1))
+c      endif
+
       call in_situ_end()
+      call exitt0()
+
       return
       end
 c-----------------------------------------------------------------------
@@ -353,10 +401,9 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call userchk_set_xfer
+         if (ifneknek) call xfer_bcs_neknek
          if (ifneknek) call bcopy
          if (ifneknek) call chk_outflow
-
       enddo
 
       return

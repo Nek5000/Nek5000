@@ -24,7 +24,7 @@ C
 
       REAL TMP(LY1,LY1),TMPT(LY1,LY1)
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
 C
 C***  Two-dimensional case  **********************
 C
@@ -32,105 +32,105 @@ C
 C     Gauss-Lobatto Legendre mesh (suffix M1)
 C     Generate collocation points and weights
 C
-      CALL ZWGLL (ZGM1(1,1),WXM1,NX1)
-      CALL ZWGLL (ZGM1(1,2),WYM1,NY1)
-      ZGM1(NZ1,3) = 0.
-      WZM1(NZ1)   = 1.
-      DO 100 IY=1,NY1
-      DO 100 IX=1,NX1
+      CALL ZWGLL (ZGM1(1,1),WXM1,lx1)
+      CALL ZWGLL (ZGM1(1,2),WYM1,ly1)
+      ZGM1(lz1,3) = 0.
+      WZM1(lz1)   = 1.
+      DO 100 IY=1,ly1
+      DO 100 IX=1,lx1
       W3M1(IX,IY,1)=WXM1(IX)*WYM1(IY)
   100 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL DGLL (DXM1,DXTM1,ZGM1(1,1),NX1,NX1)
-      CALL DGLL (DYM1,DYTM1,ZGM1(1,2),NY1,NY1)
-      CALL RZERO (DZM1 ,NZ1*NZ1)
-      CALL RZERO (DZTM1,NZ1*NZ1)
+      CALL DGLL (DXM1,DXTM1,ZGM1(1,1),lx1,lx1)
+      CALL DGLL (DYM1,DYTM1,ZGM1(1,2),ly1,ly1)
+      CALL RZERO (DZM1 ,lz1*lz1)
+      CALL RZERO (DZTM1,lz1*lz1)
 C
 C     Gauss Legendre mesh (suffix M2)
 C     Generate collocation points and weights
 C
       IF(IFSPLIT)THEN
-         CALL ZWGLL (ZGM2(1,1),WXM2,NX2)
-         CALL ZWGLL (ZGM2(1,2),WYM2,NY2)
+         CALL ZWGLL (ZGM2(1,1),WXM2,lx2)
+         CALL ZWGLL (ZGM2(1,2),WYM2,ly2)
       ELSE
-         CALL ZWGL  (ZGM2(1,1),WXM2,NX2)
-         CALL ZWGL  (ZGM2(1,2),WYM2,NY2)
+         CALL ZWGL  (ZGM2(1,1),WXM2,lx2)
+         CALL ZWGL  (ZGM2(1,2),WYM2,ly2)
       ENDIF
-      ZGM2(NZ2,3) = 0.
-      WZM2(NZ2)   = 1.
-      DO 200 IY=1,NY2
-      DO 200 IX=1,NX2
+      ZGM2(lz2,3) = 0.
+      WZM2(lz2)   = 1.
+      DO 200 IY=1,ly2
+      DO 200 IX=1,lx2
       W3M2(IX,IY,1)=WXM2(IX)*WYM2(IY)
   200 CONTINUE
 C
 C     Gauss-Lobatto Legendre mesh (suffix M3).
 C     Generate collocation points and weights.
 C
-      CALL ZWGLL (ZGM3(1,1),WXM3,NX3)
-      CALL ZWGLL (ZGM3(1,2),WYM3,NY3)
-      ZGM3(NZ3,3) = 0.
-      WZM3(NZ3)   = 1.
-      DO 300 IY=1,NY3
-      DO 300 IX=1,NX3
+      CALL ZWGLL (ZGM3(1,1),WXM3,lx3)
+      CALL ZWGLL (ZGM3(1,2),WYM3,ly3)
+      ZGM3(lz3,3) = 0.
+      WZM3(lz3)   = 1.
+      DO 300 IY=1,ly3
+      DO 300 IX=1,lx3
       W3M3(IX,IY,1)=WXM3(IX)*WYM3(IY)
   300 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL DGLL (DXM3,DXTM3,ZGM3(1,1),NX3,NX3)
-      CALL DGLL (DYM3,DYTM3,ZGM3(1,2),NY3,NY3)
-      CALL RZERO (DZM3 ,NZ3*NZ3)
-      CALL RZERO (DZTM3,NZ3*NZ3)
+      CALL DGLL (DXM3,DXTM3,ZGM3(1,1),lx3,lx3)
+      CALL DGLL (DYM3,DYTM3,ZGM3(1,2),ly3,ly3)
+      CALL RZERO (DZM3 ,lz3*lz3)
+      CALL RZERO (DZTM3,lz3*lz3)
 C
 C     Generate interpolation operators for the staggered mesh
 C
-      CALL IGLLM (IXM12,IXTM12,ZGM1(1,1),ZGM2(1,1),NX1,NX2,NX1,NX2)
-      CALL IGLLM (IYM12,IYTM12,ZGM1(1,2),ZGM2(1,2),NY1,NY2,NY1,NY2)
-      IZM12 (NZ2,NZ1) = 1.
-      IZTM12(NZ1,NZ2) = 1.
+      CALL IGLLM (IXM12,IXTM12,ZGM1(1,1),ZGM2(1,1),lx1,lx2,lx1,lx2)
+      CALL IGLLM (IYM12,IYTM12,ZGM1(1,2),ZGM2(1,2),ly1,ly2,ly1,ly2)
+      IZM12 (lz2,lz1) = 1.
+      IZTM12(lz1,lz2) = 1.
 C
 C     NOTE: The splitting scheme has only one mesh!!!!!
 C
       IF (IFSPLIT) THEN
-         CALL IGLLM (IXM21,IXTM21,ZGM1(1,1),ZGM2(1,1),NX1,NX2,NX1,NX2)
-         CALL IGLLM (IYM21,IYTM21,ZGM1(1,2),ZGM2(1,2),NY1,NY2,NY1,NY2)
+         CALL IGLLM (IXM21,IXTM21,ZGM1(1,1),ZGM2(1,1),lx1,lx2,lx1,lx2)
+         CALL IGLLM (IYM21,IYTM21,ZGM1(1,2),ZGM2(1,2),ly1,ly2,ly1,ly2)
       ELSE
-         CALL IGLM  (IXM21,IXTM21,ZGM2(1,1),ZGM1(1,1),NX2,NX1,NX2,NX1)
-         CALL IGLM  (IYM21,IYTM21,ZGM2(1,2),ZGM1(1,2),NY2,NY1,NY2,NY1)
+         CALL IGLM  (IXM21,IXTM21,ZGM2(1,1),ZGM1(1,1),lx2,lx1,lx2,lx1)
+         CALL IGLM  (IYM21,IYTM21,ZGM2(1,2),ZGM1(1,2),ly2,ly1,ly2,ly1)
       ENDIF
-      IZM21 (NZ1,NZ2) = 1.
-      IZTM21(NZ2,NZ1) = 1.
+      IZM21 (lz1,lz2) = 1.
+      IZTM21(lz2,lz1) = 1.
 C
 C     Compute derivative operators for the staggered mesh
 C
       IF(IFSPLIT)THEN
-         CALL COPY (DXM12, DXM1, NX1*NX2)
-         CALL COPY (DXTM12,DXTM1,NX1*NX2)
-         CALL COPY (DYM12, DYM1, NY1*NY2)
-         CALL COPY (DYTM12,DYTM1,NY1*NY2)
-         CALL COPY (DZM12, DZM1, NZ1*NZ2)
-         CALL COPY (DZTM12,DZTM1,NZ1*NZ2)
+         CALL COPY (DXM12, DXM1, lx1*lx2)
+         CALL COPY (DXTM12,DXTM1,lx1*lx2)
+         CALL COPY (DYM12, DYM1, ly1*ly2)
+         CALL COPY (DYTM12,DYTM1,ly1*ly2)
+         CALL COPY (DZM12, DZM1, lz1*lz2)
+         CALL COPY (DZTM12,DZTM1,lz1*lz2)
       ELSE
          CALL DGLLGL (DXM12,DXTM12,ZGM1(1,1),ZGM2(1,1),IXM12,
-     $                                       NX1,NX2,NX1,NX2)
+     $                                       lx1,lx2,lx1,lx2)
          CALL DGLLGL (DYM12,DYTM12,ZGM1(1,2),ZGM2(1,2),IYM12,
-     $                                       NY1,NY2,NY1,NY2)
-         DZM12 (NZ2,NZ1) = 0.
-         DZTM12(NZ2,NZ1) = 0.
+     $                                       ly1,ly2,ly1,ly2)
+         DZM12 (lz2,lz1) = 0.
+         DZTM12(lz2,lz1) = 0.
       ENDIF
 C
 C     Compute interpolation operators for the geometry mesh M3.
 C
-      CALL IGLLM (IXM13,IXTM13,ZGM1(1,1),ZGM3(1,1),NX1,NX3,NX1,NX3)
-      CALL IGLLM (IYM13,IYTM13,ZGM1(1,2),ZGM3(1,2),NY1,NY3,NY1,NY3)
-      CALL IGLLM (IXM31,IXTM31,ZGM3(1,1),ZGM1(1,1),NX3,NX1,NX3,NX1)
-      CALL IGLLM (IYM31,IYTM31,ZGM3(1,2),ZGM1(1,2),NY3,NY1,NY3,NY1)
-      IZM13 (NZ3,NZ1) = 1.
-      IZTM13(NZ1,NZ3) = 1.
-      IZM31 (NZ1,NZ3) = 1.
-      IZTM31(NZ3,NZ1) = 1.
+      CALL IGLLM (IXM13,IXTM13,ZGM1(1,1),ZGM3(1,1),lx1,lx3,lx1,lx3)
+      CALL IGLLM (IYM13,IYTM13,ZGM1(1,2),ZGM3(1,2),ly1,ly3,ly1,ly3)
+      CALL IGLLM (IXM31,IXTM31,ZGM3(1,1),ZGM1(1,1),lx3,lx1,lx3,lx1)
+      CALL IGLLM (IYM31,IYTM31,ZGM3(1,2),ZGM1(1,2),ly3,ly1,ly3,ly1)
+      IZM13 (lz3,lz1) = 1.
+      IZTM13(lz1,lz3) = 1.
+      IZM31 (lz1,lz3) = 1.
+      IZTM31(lz3,lz1) = 1.
 C
 C
       IF (IFAXIS) THEN
@@ -145,29 +145,29 @@ C     Generate collocation points and weights (alpha=0, beta=1).
 C
       ALPHA = 0.
       BETA  = 1.
-      CALL ZWGLJ (ZAM1,WAM1,NY1,ALPHA,BETA)
-      DO 400 IY=1,NY1
-      DO 400 IX=1,NX1
+      CALL ZWGLJ (ZAM1,WAM1,ly1,ALPHA,BETA)
+      DO 400 IY=1,ly1
+      DO 400 IX=1,lx1
          W2AM1(IX,IY)=WXM1(IX)*WAM1(IY)
          W2CM1(IX,IY)=WXM1(IX)*WYM1(IY)
   400 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL COPY (DCM1,DYM1,NY1*NY1)
-      CALL COPY (DCTM1,DYTM1,NY1*NY1)
-      CALL DGLJ (DAM1,DATM1,ZAM1,NY1,NY1,ALPHA,BETA)
+      CALL COPY (DCM1,DYM1,ly1*ly1)
+      CALL COPY (DCTM1,DYTM1,ly1*ly1)
+      CALL DGLJ (DAM1,DATM1,ZAM1,ly1,ly1,ALPHA,BETA)
 C
 C     Gauss Jacobi mesh (suffix M2)
 C     Generate collocation points and weights
 C
       IF(IFSPLIT)THEN
-         CALL ZWGLJ (ZAM2,WAM2,NY2,ALPHA,BETA)
+         CALL ZWGLJ (ZAM2,WAM2,ly2,ALPHA,BETA)
       ELSE
-         CALL ZWGJ  (ZAM2,WAM2,NY2,ALPHA,BETA)
+         CALL ZWGJ  (ZAM2,WAM2,ly2,ALPHA,BETA)
       ENDIF
-      DO 500 IY=1,NY2
-      DO 500 IX=1,NX2
+      DO 500 IY=1,ly2
+      DO 500 IX=1,lx2
          W2CM2(IX,IY)=WXM2(IX)*WYM2(IY)
          W2AM2(IX,IY)=WXM2(IX)*WAM2(IY)
   500 CONTINUE
@@ -175,67 +175,67 @@ C
 C     Gauss-Lobatto Jacobi mesh (suffix M3).
 C     Generate collocation points and weights.
 C
-      CALL ZWGLJ (ZAM3,WAM3,NY3,ALPHA,BETA)
-      DO 600 IY=1,NY3
-      DO 600 IX=1,NX3
+      CALL ZWGLJ (ZAM3,WAM3,ly3,ALPHA,BETA)
+      DO 600 IY=1,ly3
+      DO 600 IX=1,lx3
          W2CM3(IX,IY)=WXM3(IX)*WYM3(IY)
          W2AM3(IX,IY)=WXM3(IX)*WAM3(IY)
   600 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL COPY (DCM3,DYM3,NY3*NY3)
-      CALL COPY (DCTM3,DYTM3,NY3*NY3)
-      CALL DGLJ (DAM3,DATM3,ZAM3,NY3,NY3,ALPHA,BETA)
+      CALL COPY (DCM3,DYM3,ly3*ly3)
+      CALL COPY (DCTM3,DYTM3,ly3*ly3)
+      CALL DGLJ (DAM3,DATM3,ZAM3,ly3,ly3,ALPHA,BETA)
 C
 C     Generate interpolation operators for the staggered mesh
 C
-      CALL COPY  (ICM12,IYM12,NY2*NY1)
-      CALL COPY  (ICTM12,IYTM12,NY1*NY2)
-      CALL IGLJM (IAM12,IATM12,ZAM1,ZAM2,NY1,NY2,NY1,NY2,ALPHA,BETA)
-      CALL COPY  (ICM21,IYM21,NY1*NY2)
-      CALL COPY  (ICTM21,IYTM21,NY2*NY1)
+      CALL COPY  (ICM12,IYM12,ly2*ly1)
+      CALL COPY  (ICTM12,IYTM12,ly1*ly2)
+      CALL IGLJM (IAM12,IATM12,ZAM1,ZAM2,ly1,ly2,ly1,ly2,ALPHA,BETA)
+      CALL COPY  (ICM21,IYM21,ly1*ly2)
+      CALL COPY  (ICTM21,IYTM21,ly2*ly1)
       IF (IFSPLIT) THEN
-      CALL IGLJM (IAM21,IATM21,ZAM2,ZAM1,NY1,NY2,NY1,NY2,ALPHA,BETA)
+      CALL IGLJM (IAM21,IATM21,ZAM2,ZAM1,ly1,ly2,ly1,ly2,ALPHA,BETA)
       ELSE
-      CALL IGJM  (IAM21,IATM21,ZAM2,ZAM1,NY2,NY1,NY2,NY1,ALPHA,BETA)
+      CALL IGJM  (IAM21,IATM21,ZAM2,ZAM1,ly2,ly1,ly2,ly1,ALPHA,BETA)
       ENDIF
 C
 C     Compute derivative operators for the staggered mesh
 C
-      CALL COPY  (DCM12,DYM12,NY2*NY1)
-      CALL COPY  (DCTM12,DYTM12,NY1*NY2)
+      CALL COPY  (DCM12,DYM12,ly2*ly1)
+      CALL COPY  (DCTM12,DYTM12,ly1*ly2)
       IF(IFSPLIT)THEN
-         CALL COPY (DAM12, DAM1, NY1*NY2)
-         CALL COPY (DATM12,DATM1,NY1*NY2)
+         CALL COPY (DAM12, DAM1, ly1*ly2)
+         CALL COPY (DATM12,DATM1,ly1*ly2)
       ELSE
          CALL DGLJGJ (DAM12,DATM12,ZAM1,ZAM2,IAM12,
-     $                             NY1,NY2,NY1,NY2,ALPHA,BETA)
+     $                             ly1,ly2,ly1,ly2,ALPHA,BETA)
       ENDIF
 C
 C     Compute interpolation operators for the geometry mesh M3.
 C
-      CALL COPY  (ICM13,IYM13,NY3*NY1)
-      CALL COPY  (ICTM13,IYTM13,NY1*NY3)
-      CALL IGLJM (IAM13,IATM13,ZAM1,ZAM3,NY1,NY3,NY1,NY3,ALPHA,BETA)
-      CALL COPY  (ICM31,IYM31,NY1*NY3)
-      CALL COPY  (ICTM31,IYTM31,NY3*NY1)
-      CALL IGLJM (IAM31,IATM31,ZAM3,ZAM1,NY3,NY1,NY3,NY1,ALPHA,BETA)
+      CALL COPY  (ICM13,IYM13,ly3*ly1)
+      CALL COPY  (ICTM13,IYTM13,ly1*ly3)
+      CALL IGLJM (IAM13,IATM13,ZAM1,ZAM3,ly1,ly3,ly1,ly3,ALPHA,BETA)
+      CALL COPY  (ICM31,IYM31,ly1*ly3)
+      CALL COPY  (ICTM31,IYTM31,ly3*ly1)
+      CALL IGLJM (IAM31,IATM31,ZAM3,ZAM1,ly3,ly1,ly3,ly1,ALPHA,BETA)
 C
 C     Compute interpolation operators between Gauss-Lobatto Jacobi
 C     and Gauss-Lobatto Legendre (to be used in PREPOST).
 C
-      CALL IGLJM(IAJL1,IATJL1,ZAM1,ZGM1(1,2),NY1,NY1,NY1,NY1,ALPHA,BETA)
+      CALL IGLJM(IAJL1,IATJL1,ZAM1,ZGM1(1,2),ly1,ly1,ly1,ly1,ALPHA,BETA)
       IF (IFSPLIT) THEN
-      CALL IGLJM(IAJL2,IATJL2,ZAM2,ZGM2(1,2),NY2,NY2,NY2,NY2,ALPHA,BETA)
+      CALL IGLJM(IAJL2,IATJL2,ZAM2,ZGM2(1,2),ly2,ly2,ly2,ly2,ALPHA,BETA)
       ELSE
-      CALL IGJM (IAJL2,IATJL2,ZAM2,ZGM2(1,2),NY2,NY2,NY2,NY2,ALPHA,BETA)
+      CALL IGJM (IAJL2,IATJL2,ZAM2,ZGM2(1,2),ly2,ly2,ly2,ly2,ALPHA,BETA)
       ENDIF
 
-      CALL INVMT(IAJL1 ,IALJ1 ,TMP ,NY1)
-      CALL INVMT(IATJL1,IATLJ1,TMPT,NY1)
-      CALL MXM (IATJL1,NY1,IATLJ1,NY1,TMPT,NY1)
-      CALL MXM (IAJL1 ,NY1,IALJ1 ,NY1,TMP ,NY1)
+      CALL INVMT(IAJL1 ,IALJ1 ,TMP ,ly1)
+      CALL INVMT(IATJL1,IATLJ1,TMPT,ly1)
+      CALL MXM (IATJL1,ly1,IATLJ1,ly1,TMPT,ly1)
+      CALL MXM (IAJL1 ,ly1,IALJ1 ,ly1,TMP ,ly1)
 
 C
 C     Compute interpolation operators between Gauss-Lobatto Legendre
@@ -243,8 +243,8 @@ C     and Gauss-Lobatto Jacobi (to be used in subr. genxyz IN postpre).
 C
 c
 c     This call is not right, and these arrays are not used. 3/27/02. pff
-c     CALL IGLLM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,NY3,NY3,NY3,NY3,ALPHA,BETA)
-      CALL IGLJM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,NY3,NY3,NY3,NY3,ALPHA,BETA)
+c     CALL IGLLM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,ly3,ly3,ly3,ly3,ALPHA,BETA)
+      CALL IGLJM(IALJ3,IATLJ3,ZGM3(1,2),ZAM3,ly3,ly3,ly3,ly3,ALPHA,BETA)
 C
       ENDIF
 C
@@ -257,101 +257,101 @@ C
 C     Gauss-Lobatto Legendre mesh (suffix M1)
 C     Generate collocation points and weights
 C
-      CALL ZWGLL (ZGM1(1,1),WXM1,NX1)
-      CALL ZWGLL (ZGM1(1,2),WYM1,NY1)
-      CALL ZWGLL (ZGM1(1,3),WZM1,NZ1)
-      DO 700 IZ=1,NZ1
-      DO 700 IY=1,NY1
-      DO 700 IX=1,NX1
+      CALL ZWGLL (ZGM1(1,1),WXM1,lx1)
+      CALL ZWGLL (ZGM1(1,2),WYM1,ly1)
+      CALL ZWGLL (ZGM1(1,3),WZM1,lz1)
+      DO 700 IZ=1,lz1
+      DO 700 IY=1,ly1
+      DO 700 IX=1,lx1
       W3M1(IX,IY,IZ)=WXM1(IX)*WYM1(IY)*WZM1(IZ)
   700 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL DGLL (DXM1,DXTM1,ZGM1(1,1),NX1,NX1)
-      CALL DGLL (DYM1,DYTM1,ZGM1(1,2),NY1,NY1)
-      CALL DGLL (DZM1,DZTM1,ZGM1(1,3),NZ1,NZ1)
+      CALL DGLL (DXM1,DXTM1,ZGM1(1,1),lx1,lx1)
+      CALL DGLL (DYM1,DYTM1,ZGM1(1,2),ly1,ly1)
+      CALL DGLL (DZM1,DZTM1,ZGM1(1,3),lz1,lz1)
 C
 C     Gauss Legendre mesh (suffix M2)
 C     Generate collocation points and weights
 C
       IF(IFSPLIT)THEN
-         CALL ZWGLL (ZGM2(1,1),WXM2,NX2)
-         CALL ZWGLL (ZGM2(1,2),WYM2,NY2)
-         CALL ZWGLL (ZGM2(1,3),WZM2,NZ2)
+         CALL ZWGLL (ZGM2(1,1),WXM2,lx2)
+         CALL ZWGLL (ZGM2(1,2),WYM2,ly2)
+         CALL ZWGLL (ZGM2(1,3),WZM2,lz2)
       ELSE
-         CALL ZWGL  (ZGM2(1,1),WXM2,NX2)
-         CALL ZWGL  (ZGM2(1,2),WYM2,NY2)
-         CALL ZWGL  (ZGM2(1,3),WZM2,NZ2)
+         CALL ZWGL  (ZGM2(1,1),WXM2,lx2)
+         CALL ZWGL  (ZGM2(1,2),WYM2,ly2)
+         CALL ZWGL  (ZGM2(1,3),WZM2,lz2)
       ENDIF
-      DO 800 IZ=1,NZ2
-      DO 800 IY=1,NY2
-      DO 800 IX=1,NX2
+      DO 800 IZ=1,lz2
+      DO 800 IY=1,ly2
+      DO 800 IX=1,lx2
       W3M2(IX,IY,IZ)=WXM2(IX)*WYM2(IY)*WZM2(IZ)
   800 CONTINUE
 C
 C     Gauss-Loabtto Legendre mesh (suffix M3).
 C     Generate collocation points and weights.
 C
-      CALL ZWGLL (ZGM3(1,1),WXM3,NX3)
-      CALL ZWGLL (ZGM3(1,2),WYM3,NY3)
-      CALL ZWGLL (ZGM3(1,3),WZM3,NZ3)
-      DO 900 IZ=1,NZ3
-      DO 900 IY=1,NY3
-      DO 900 IX=1,NX3
+      CALL ZWGLL (ZGM3(1,1),WXM3,lx3)
+      CALL ZWGLL (ZGM3(1,2),WYM3,ly3)
+      CALL ZWGLL (ZGM3(1,3),WZM3,lz3)
+      DO 900 IZ=1,lz3
+      DO 900 IY=1,ly3
+      DO 900 IX=1,lx3
       W3M3(IX,IY,IZ)=WXM3(IX)*WYM3(IY)*WZM3(IZ)
   900 CONTINUE
 C
 C     Compute derivative matrices
 C
-      CALL DGLL (DXM3,DXTM3,ZGM3(1,1),NX3,NX3)
-      CALL DGLL (DYM3,DYTM3,ZGM3(1,2),NY3,NY3)
-      CALL DGLL (DZM3,DZTM3,ZGM3(1,3),NZ3,NZ3)
+      CALL DGLL (DXM3,DXTM3,ZGM3(1,1),lx3,lx3)
+      CALL DGLL (DYM3,DYTM3,ZGM3(1,2),ly3,ly3)
+      CALL DGLL (DZM3,DZTM3,ZGM3(1,3),lz3,lz3)
 C
 C     Generate interpolation operators for the staggered mesh
 C
-      CALL IGLLM (IXM12,IXTM12,ZGM1(1,1),ZGM2(1,1),NX1,NX2,NX1,NX2)
-      CALL IGLLM (IYM12,IYTM12,ZGM1(1,2),ZGM2(1,2),NY1,NY2,NY1,NY2)
-      CALL IGLLM (IZM12,IZTM12,ZGM1(1,3),ZGM2(1,3),NZ1,NZ2,NZ1,NZ2)
+      CALL IGLLM (IXM12,IXTM12,ZGM1(1,1),ZGM2(1,1),lx1,lx2,lx1,lx2)
+      CALL IGLLM (IYM12,IYTM12,ZGM1(1,2),ZGM2(1,2),ly1,ly2,ly1,ly2)
+      CALL IGLLM (IZM12,IZTM12,ZGM1(1,3),ZGM2(1,3),lz1,lz2,lz1,lz2)
 C
 C     NOTE: The splitting scheme has only one mesh!!!!!
 C
       IF (IFSPLIT) THEN
-         CALL IGLLM (IXM21,IXTM21,ZGM1(1,1),ZGM2(1,1),NX1,NX2,NX1,NX2)
-         CALL IGLLM (IYM21,IYTM21,ZGM1(1,2),ZGM2(1,2),NY1,NY2,NY1,NY2)
-         CALL IGLLM (IZM21,IZTM21,ZGM1(1,3),ZGM2(1,3),NZ1,NZ2,NZ1,NZ2)
+         CALL IGLLM (IXM21,IXTM21,ZGM1(1,1),ZGM2(1,1),lx1,lx2,lx1,lx2)
+         CALL IGLLM (IYM21,IYTM21,ZGM1(1,2),ZGM2(1,2),ly1,ly2,ly1,ly2)
+         CALL IGLLM (IZM21,IZTM21,ZGM1(1,3),ZGM2(1,3),lz1,lz2,lz1,lz2)
       ELSE
-         CALL IGLM  (IXM21,IXTM21,ZGM2(1,1),ZGM1(1,1),NX2,NX1,NX2,NX1)
-         CALL IGLM  (IYM21,IYTM21,ZGM2(1,2),ZGM1(1,2),NY2,NY1,NY2,NY1)
-         CALL IGLM  (IZM21,IZTM21,ZGM2(1,3),ZGM1(1,3),NZ2,NZ1,NZ2,NZ1)
+         CALL IGLM  (IXM21,IXTM21,ZGM2(1,1),ZGM1(1,1),lx2,lx1,lx2,lx1)
+         CALL IGLM  (IYM21,IYTM21,ZGM2(1,2),ZGM1(1,2),ly2,ly1,ly2,ly1)
+         CALL IGLM  (IZM21,IZTM21,ZGM2(1,3),ZGM1(1,3),lz2,lz1,lz2,lz1)
       ENDIF
 C
 C     Compute derivative operators for the staggered mesh
 C
       IF(IFSPLIT)THEN
-         CALL COPY (DXM12, DXM1, NX1*NX2)
-         CALL COPY (DXTM12,DXTM1,NX1*NX2)
-         CALL COPY (DYM12, DYM1, NY1*NY2)
-         CALL COPY (DYTM12,DYTM1,NY1*NY2)
-         CALL COPY (DZM12, DZM1, NZ1*NZ2)
-         CALL COPY (DZTM12,DZTM1,NZ1*NZ2)
+         CALL COPY (DXM12, DXM1, lx1*lx2)
+         CALL COPY (DXTM12,DXTM1,lx1*lx2)
+         CALL COPY (DYM12, DYM1, ly1*ly2)
+         CALL COPY (DYTM12,DYTM1,ly1*ly2)
+         CALL COPY (DZM12, DZM1, lz1*lz2)
+         CALL COPY (DZTM12,DZTM1,lz1*lz2)
       ELSE
          CALL DGLLGL (DXM12,DXTM12,ZGM1(1,1),ZGM2(1,1),IXM12,
-     $                                       NX1,NX2,NX1,NX2)
+     $                                       lx1,lx2,lx1,lx2)
          CALL DGLLGL (DYM12,DYTM12,ZGM1(1,2),ZGM2(1,2),IYM12,
-     $                                       NY1,NY2,NY1,NY2)
+     $                                       ly1,ly2,ly1,ly2)
          CALL DGLLGL (DZM12,DZTM12,ZGM1(1,3),ZGM2(1,3),IZM12,
-     $                                       NZ1,NZ2,NZ1,NZ2)
+     $                                       lz1,lz2,lz1,lz2)
       ENDIF
 C
 C     Compute interpolation operators for the geometry mesh M3.
 C
-      CALL IGLLM (IXM13,IXTM13,ZGM1(1,1),ZGM3(1,1),NX1,NX3,NX1,NX3)
-      CALL IGLLM (IYM13,IYTM13,ZGM1(1,2),ZGM3(1,2),NY1,NY3,NY1,NY3)
-      CALL IGLLM (IZM13,IZTM13,ZGM1(1,3),ZGM3(1,3),NZ1,NZ3,NZ1,NZ3)
-      CALL IGLLM (IXM31,IXTM31,ZGM3(1,1),ZGM1(1,1),NX3,NX1,NX3,NX1)
-      CALL IGLLM (IYM31,IYTM31,ZGM3(1,2),ZGM1(1,2),NY3,NY1,NY3,NY1)
-      CALL IGLLM (IZM31,IZTM31,ZGM3(1,3),ZGM1(1,3),NZ3,NZ1,NZ3,NZ1)
+      CALL IGLLM (IXM13,IXTM13,ZGM1(1,1),ZGM3(1,1),lx1,lx3,lx1,lx3)
+      CALL IGLLM (IYM13,IYTM13,ZGM1(1,2),ZGM3(1,2),ly1,ly3,ly1,ly3)
+      CALL IGLLM (IZM13,IZTM13,ZGM1(1,3),ZGM3(1,3),lz1,lz3,lz1,lz3)
+      CALL IGLLM (IXM31,IXTM31,ZGM3(1,1),ZGM1(1,1),lx3,lx1,lx3,lx1)
+      CALL IGLLM (IYM31,IYTM31,ZGM3(1,2),ZGM1(1,2),ly3,ly1,ly3,ly1)
+      CALL IGLLM (IZM31,IZTM31,ZGM3(1,3),ZGM1(1,3),lz3,lz1,lz3,lz1)
 C
       ENDIF
 C
@@ -433,18 +433,18 @@ C
      $        , ZM3(LX3,LY3,LZ3,1)
 C
 C
-      NXY3  = NX3*NY3
-      NYZ3  = NY3*NZ3
-      NXYZ3 = NX3*NY3*NZ3
+      NXY3  = lx3*ly3
+      NYZ3  = ly3*lz3
+      NXYZ3 = lx3*ly3*lz3
       NTOT3 = NXYZ3*NELT
-      NXYZ1 = NX1*NY1*NZ1
+      NXYZ1 = lx1*ly1*lz1
       NTOT1 = NXYZ1*NELT
 C
 C
 C     Compute isoparametric partials.
 C
 
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
 C
 C     Two-dimensional case
 C
@@ -454,18 +454,18 @@ C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
 C
       IF (IFAXIS) THEN
-         NY33   = NY3*NY3
+         ly33   = ly3*ly3
          IF (IFRZER(IEL)) THEN
-            CALL COPY (DYTM3,DATM3,NY33)
+            CALL COPY (DYTM3,DATM3,ly33)
          ELSE
-            CALL COPY (DYTM3,DCTM3,NY33)
+            CALL COPY (DYTM3,DCTM3,ly33)
          ENDIF
       ENDIF
 C
-      CALL MXM(DXM3,NX3,XM3(1,1,1,IEL),NX3,XRM3(1,1,1,IEL),NY3)
-      CALL MXM(DXM3,NX3,YM3(1,1,1,IEL),NX3,YRM3(1,1,1,IEL),NY3)
-      CALL MXM(XM3(1,1,1,IEL),NX3,DYTM3,NY3,XSM3(1,1,1,IEL),NY3)
-      CALL MXM(YM3(1,1,1,IEL),NX3,DYTM3,NY3,YSM3(1,1,1,IEL),NY3)
+      CALL MXM(DXM3,lx3,XM3(1,1,1,IEL),lx3,XRM3(1,1,1,IEL),ly3)
+      CALL MXM(DXM3,lx3,YM3(1,1,1,IEL),lx3,YRM3(1,1,1,IEL),ly3)
+      CALL MXM(XM3(1,1,1,IEL),lx3,DYTM3,ly3,XSM3(1,1,1,IEL),ly3)
+      CALL MXM(YM3(1,1,1,IEL),lx3,DYTM3,ly3,YSM3(1,1,1,IEL),ly3)
 C
  200  CONTINUE
 C
@@ -486,19 +486,19 @@ C     Three-dimensional case
 C
       DO 300 IEL=1,NELT
 C
-      CALL MXM(DXM3,NX3,XM3(1,1,1,IEL),NX3,XRM3(1,1,1,IEL),NYZ3)
-      CALL MXM(DXM3,NX3,YM3(1,1,1,IEL),NX3,YRM3(1,1,1,IEL),NYZ3)
-      CALL MXM(DXM3,NX3,ZM3(1,1,1,IEL),NX3,ZRM3(1,1,1,IEL),NYZ3)
+      CALL MXM(DXM3,lx3,XM3(1,1,1,IEL),lx3,XRM3(1,1,1,IEL),NYZ3)
+      CALL MXM(DXM3,lx3,YM3(1,1,1,IEL),lx3,YRM3(1,1,1,IEL),NYZ3)
+      CALL MXM(DXM3,lx3,ZM3(1,1,1,IEL),lx3,ZRM3(1,1,1,IEL),NYZ3)
 C
-      DO 310 IZ=1,NZ3
-      CALL MXM(XM3(1,1,IZ,IEL),NX3,DYTM3,NY3,XSM3(1,1,IZ,IEL),NY3)
-      CALL MXM(YM3(1,1,IZ,IEL),NX3,DYTM3,NY3,YSM3(1,1,IZ,IEL),NY3)
-      CALL MXM(ZM3(1,1,IZ,IEL),NX3,DYTM3,NY3,ZSM3(1,1,IZ,IEL),NY3)
+      DO 310 IZ=1,lz3
+      CALL MXM(XM3(1,1,IZ,IEL),lx3,DYTM3,ly3,XSM3(1,1,IZ,IEL),ly3)
+      CALL MXM(YM3(1,1,IZ,IEL),lx3,DYTM3,ly3,YSM3(1,1,IZ,IEL),ly3)
+      CALL MXM(ZM3(1,1,IZ,IEL),lx3,DYTM3,ly3,ZSM3(1,1,IZ,IEL),ly3)
  310  CONTINUE
 C
-      CALL MXM(XM3(1,1,1,IEL),NXY3,DZTM3,NZ3,XTM3(1,1,1,IEL),NZ3)
-      CALL MXM(YM3(1,1,1,IEL),NXY3,DZTM3,NZ3,YTM3(1,1,1,IEL),NZ3)
-      CALL MXM(ZM3(1,1,1,IEL),NXY3,DZTM3,NZ3,ZTM3(1,1,1,IEL),NZ3)
+      CALL MXM(XM3(1,1,1,IEL),NXY3,DZTM3,lz3,XTM3(1,1,1,IEL),lz3)
+      CALL MXM(YM3(1,1,1,IEL),NXY3,DZTM3,lz3,YTM3(1,1,1,IEL),lz3)
+      CALL MXM(ZM3(1,1,1,IEL),NXY3,DZTM3,lz3,ZTM3(1,1,1,IEL),lz3)
 C
  300  CONTINUE
 C
@@ -524,7 +524,7 @@ C
 C
 C     Mapping from space P(n-2) to space P(n) (mesh M3 to mesh M1).
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL RZERO (RZM1,NTOT1)
          CALL RZERO (SZM1,NTOT1)
          CALL RONE  (TZM1,NTOT1)
@@ -537,13 +537,13 @@ c        write(6,*) 'chkj1'
 c        call outxm3j(xm3,ym3,jacm3)
 
          CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
-     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ndim,ierr)
+     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ierr)
          if (ierr.eq.1) kerr = kerr+1
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
          CALL MAP31 (SXM1(1,1,1,ie),SXM3(1,1,1,ie),ie)
          CALL MAP31 (SYM1(1,1,1,ie),SYM3(1,1,1,ie),ie)
-         IF (NDIM.EQ.3) THEN
+         IF (ldim.EQ.3) THEN
             CALL MAP31 (RZM1(1,1,1,ie),RZM3(1,1,1,ie),ie)
             CALL MAP31 (SZM1(1,1,1,ie),SZM3(1,1,1,ie),ie)
             CALL MAP31 (TXM1(1,1,1,ie),TXM3(1,1,1,ie),ie)
@@ -604,15 +604,15 @@ C
       COMMON /CTMP1/ ZSM1(LX1,LY1,LZ1,LELT)
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
 C
-      NXY1  = NX1*NY1
-      NYZ1  = NY1*NZ1
-      NXYZ1 = NX1*NY1*NZ1
+      NXY1  = lx1*ly1
+      NYZ1  = ly1*lz1
+      NXYZ1 = lx1*ly1*lz1
       NTOT1 = NXYZ1*NELT
 C
       CALL XYZRST (XRM1,YRM1,ZRM1,XSM1,YSM1,ZSM1,XTM1,YTM1,ZTM1,
      $             IFAXIS)
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL RZERO   (JACM1,NTOT1)
          CALL ADDCOL3 (JACM1,XRM1,YSM1,NTOT1)
          CALL SUBCOL3 (JACM1,XSM1,YRM1,NTOT1)
@@ -647,7 +647,7 @@ C
       kerr = 0
       DO 500 ie=1,NELT
          CALL CHKJAC(JACM1(1,1,1,ie),NXYZ1,ie,xm1(1,1,1,ie),
-     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ndim,ierr)
+     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ierr)
          if (ierr.ne.0) kerr = kerr+1
   500 CONTINUE
       kerr = iglsum(kerr,1)
@@ -694,7 +694,7 @@ C
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
      $ ,             WJ   (LX1,LY1,LZ1,LELT)
 C
-      NXYZ1 = NX1*NY1*NZ1
+      NXYZ1 = lx1*ly1*lz1
       NTOT1 = NXYZ1*NELT
 C
       IF (IFGMSH3 .AND. ISTEP.EQ.0)
@@ -706,8 +706,8 @@ C
       ELSE
          DO 500 IEL=1,NELT
            IF (IFRZER(IEL)) THEN
-              DO 510 J=1,NY1
-              DO 510 I=1,NX1
+              DO 510 J=1,ly1
+              DO 510 I=1,lx1
                 IF (J.GT.1) THEN
                    WJ(I,J,1,IEL) = YM1(I,J,1,IEL)/
      $                            (JACM1(I,J,1,IEL)*(1.+ZAM1(J)))
@@ -724,7 +724,7 @@ C
 C
 C     Compute geometric factors for integrated del-squared operator.
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL VDOT2 (G1M1,RXM1,RYM1,RXM1,RYM1,NTOT1)
          CALL VDOT2 (G2M1,SXM1,SYM1,SXM1,SYM1,NTOT1)
          CALL VDOT2 (G4M1,RXM1,RYM1,SXM1,SYM1,NTOT1)
@@ -757,7 +757,7 @@ C
             CALL COL2 (G1M1(1,1,1,IEL),W3M1,NXYZ1)
             CALL COL2 (G2M1(1,1,1,IEL),W3M1,NXYZ1)
             CALL COL2 (G4M1(1,1,1,IEL),W3M1,NXYZ1)
-         IF (NDIM.EQ.3) THEN
+         IF (ldim.EQ.3) THEN
             CALL COL2 (G3M1(1,1,1,IEL),W3M1,NXYZ1)
             CALL COL2 (G5M1(1,1,1,IEL),W3M1,NXYZ1)
             CALL COL2 (G6M1(1,1,1,IEL),W3M1,NXYZ1)
@@ -772,15 +772,15 @@ C
          IF (IFAXIS) THEN 
              CALL COL3(BAXM1(1,1,1,IEL),JACM1(1,1,1,IEL),W3M1,NXYZ1)
           IF (IFRZER(IEL)) THEN
-            DO 600 J=1,NY1
+            DO 600 J=1,ly1
             IF (J.GT.1) THEN
-               DO 610 I=1,NX1
+               DO 610 I=1,lx1
                   BM1(I,J,1,IEL) = BM1(I,J,1,IEL)*YM1(I,J,1,IEL)
      $                                           /(1.+ZAM1(J))
                   BAXM1(I,J,1,IEL)=BAXM1(I,J,1,IEL)/(1.+ZAM1(J))
  610           CONTINUE
             ELSE
-               DO 620 I=1,NX1
+               DO 620 I=1,lx1
                   BM1(I,J,1,IEL) = BM1(I,J,1,IEL)*YSM1(I,J,1,IEL)
                   BAXM1(I,J,1,IEL)=BAXM1(I,J,1,IEL)
  620           CONTINUE
@@ -796,8 +796,8 @@ C
       IF(IFAXIS) THEN
         DO IEL=1,NELT
           IF(IFRZER(IEL)) THEN
-            DO J=1,NY1
-            DO I=1,NX1
+            DO J=1,ly1
+            DO I=1,lx1
               IF(J.EQ.1) THEN
                  YINVM1(I,J,1,IEL)=1.0D0/YSM1(I,J,1,IEL)
               ELSE
@@ -835,7 +835,7 @@ C------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 C
-      NXYZ2 = NX2*NY2*NZ2
+      NXYZ2 = lx2*ly2*lz2
       NTOT2 = NXYZ2*NELV
 C
       IF (IFSPLIT) THEN
@@ -862,7 +862,7 @@ C
 C
 C     Consistent approximation spaces (UZAWA)
 C
-         IF (NDIM.EQ.2) THEN
+         IF (ldim.EQ.2) THEN
             CALL RZERO (RZM2,NTOT2)
             CALL RZERO (SZM2,NTOT2)
             CALL RONE  (TZM2,NTOT2)
@@ -876,7 +876,7 @@ C
          CALL MAP12 (RYM2(1,1,1,IEL),RYM1(1,1,1,IEL),IEL)
          CALL MAP12 (SXM2(1,1,1,IEL),SXM1(1,1,1,IEL),IEL)
          CALL MAP12 (SYM2(1,1,1,IEL),SYM1(1,1,1,IEL),IEL)
-         IF (NDIM.EQ.3) THEN
+         IF (ldim.EQ.3) THEN
             CALL MAP12 (RZM2(1,1,1,IEL),RZM1(1,1,1,IEL),IEL)
             CALL MAP12 (SZM2(1,1,1,IEL),SZM1(1,1,1,IEL),IEL)
             CALL MAP12 (TXM2(1,1,1,IEL),TXM1(1,1,1,IEL),IEL)
@@ -895,8 +895,8 @@ C
          CALL COL3 (BM2(1,1,1,IEL),W3M2,JACM2(1,1,1,IEL),NXYZ2)
 C
          IF (IFAXIS.AND.IFRZER(IEL)) THEN
-            DO 300 J=1,NY2
-            DO 300 I=1,NX2
+            DO 300 J=1,ly2
+            DO 300 I=1,lx2
                BM2(I,J,1,IEL) = BM2(I,J,1,IEL)*YM2(I,J,1,IEL)
      $                                        /(1.+ZAM2(J))
  300        CONTINUE
@@ -930,27 +930,27 @@ C
      $        , ZTM1(LX1,LY1,LZ1,1)
       LOGICAL IFAXIS
 C
-      NXY1=NX1*NY1
-      NYZ1=NY1*NZ1
+      NXY1=lx1*ly1
+      NYZ1=ly1*lz1
 C
       DO 100 IEL=1,NELT
 C
       IF (IFAXIS) CALL SETAXDY ( IFRZER(IEL) )
 C
-      CALL MXM (DXM1,NX1,XM1(1,1,1,IEL),NX1,XRM1(1,1,1,IEL),NYZ1)
-      CALL MXM (DXM1,NX1,YM1(1,1,1,IEL),NX1,YRM1(1,1,1,IEL),NYZ1)
-      CALL MXM (DXM1,NX1,ZM1(1,1,1,IEL),NX1,ZRM1(1,1,1,IEL),NYZ1)
+      CALL MXM (DXM1,lx1,XM1(1,1,1,IEL),lx1,XRM1(1,1,1,IEL),NYZ1)
+      CALL MXM (DXM1,lx1,YM1(1,1,1,IEL),lx1,YRM1(1,1,1,IEL),NYZ1)
+      CALL MXM (DXM1,lx1,ZM1(1,1,1,IEL),lx1,ZRM1(1,1,1,IEL),NYZ1)
 C
-      DO 10 IZ=1,NZ1
-      CALL MXM (XM1(1,1,IZ,IEL),NX1,DYTM1,NY1,XSM1(1,1,IZ,IEL),NY1)
-      CALL MXM (YM1(1,1,IZ,IEL),NX1,DYTM1,NY1,YSM1(1,1,IZ,IEL),NY1)
-      CALL MXM (ZM1(1,1,IZ,IEL),NX1,DYTM1,NY1,ZSM1(1,1,IZ,IEL),NY1)
+      DO 10 IZ=1,lz1
+      CALL MXM (XM1(1,1,IZ,IEL),lx1,DYTM1,ly1,XSM1(1,1,IZ,IEL),ly1)
+      CALL MXM (YM1(1,1,IZ,IEL),lx1,DYTM1,ly1,YSM1(1,1,IZ,IEL),ly1)
+      CALL MXM (ZM1(1,1,IZ,IEL),lx1,DYTM1,ly1,ZSM1(1,1,IZ,IEL),ly1)
    10 CONTINUE
 C
-      IF (NDIM.EQ.3) THEN
-         CALL MXM (XM1(1,1,1,IEL),NXY1,DZTM1,NZ1,XTM1(1,1,1,IEL),NZ1)
-         CALL MXM (YM1(1,1,1,IEL),NXY1,DZTM1,NZ1,YTM1(1,1,1,IEL),NZ1)
-         CALL MXM (ZM1(1,1,1,IEL),NXY1,DZTM1,NZ1,ZTM1(1,1,1,IEL),NZ1)
+      IF (ldim.EQ.3) THEN
+         CALL MXM (XM1(1,1,1,IEL),NXY1,DZTM1,lz1,XTM1(1,1,1,IEL),lz1)
+         CALL MXM (YM1(1,1,1,IEL),NXY1,DZTM1,lz1,YTM1(1,1,1,IEL),lz1)
+         CALL MXM (ZM1(1,1,1,IEL),NXY1,DZTM1,lz1,ZTM1(1,1,1,IEL),lz1)
       ELSE
          CALL RZERO (XTM1(1,1,1,IEL),NXY1)
          CALL RZERO (YTM1(1,1,1,IEL),NXY1)
@@ -977,7 +977,7 @@ c
             ieg = lglel(iel)
             WRITE(6,101) nid,I,ieg
             write(6,*) jac(i-1),jac(i)
-            if (ndim.eq.3) then
+            if (ldim.eq.3) then
                write(6,7) nid,x(i-1),y(i-1),z(i-1)
                write(6,7) nid,x(i),y(i),z(i)
             else
@@ -1011,10 +1011,10 @@ C
       include 'TSTEP'
       integer e
 C
-      volvm1=glsum(bm1,nx1*ny1*nz1*nelv)
-      volvm2=glsum(bm2,nx2*ny2*nz2*nelv)
-      voltm1=glsum(bm1,nx1*ny1*nz1*nelt)
-      voltm2=glsum(bm2,nx2*ny2*nz2*nelt)
+      volvm1=glsum(bm1,lx1*ly1*lz1*nelv)
+      volvm2=glsum(bm2,lx2*ly2*lz2*nelv)
+      voltm1=glsum(bm1,lx1*ly1*lz1*nelt)
+      voltm2=glsum(bm2,lx2*ly2*lz2*nelt)
       mfield=1
       if (ifmvbd) mfield=0
       nfldt = nfield
@@ -1031,7 +1031,7 @@ C
 c      if (nio.eq.0) write(6,*) 'vol_t,vol_v:',voltm1,volvm1
 
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       do e=1,nelt
          volel(e) = vlsum(bm1(1,1,1,e),nxyz)
       enddo
@@ -1047,14 +1047,14 @@ C
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
 C
-      NSRF  = 6*NX1*NZ1*NELT
+      NSRF  = 6*lx1*lz1*NELT
 C
       CALL RZERO  (AREA,NSRF)
       CALL RZERO3 (UNX,UNY,UNZ,NSRF)
       CALL RZERO3 (T1X,T1Y,T1Z,NSRF)      
       CALL RZERO3 (T2X,T2Y,T2Z,NSRF)      
 C
-      IF (NDIM.EQ.2) THEN
+      IF (ldim.EQ.2) THEN
          CALL AREA2
       ELSE
          CALL AREA3
@@ -1088,9 +1088,9 @@ C
 C     "R"
 C
       DO 100 IEL=1,NELT
-      DO 100 IY=1,NY1
-         XS2  = XSM1(NX1,IY,1,IEL)
-         YS2  = YSM1(NX1,IY,1,IEL)
+      DO 100 IY=1,ly1
+         XS2  = XSM1(lx1,IY,1,IEL)
+         YS2  = YSM1(lx1,IY,1,IEL)
          XS4  = XSM1(  1,IY,1,IEL)
          YS4  = YSM1(  1,IY,1,IEL)
          SS2  = SQRT( XS2**2 + YS2**2 )
@@ -1110,11 +1110,11 @@ C
 C     "S"
 C
       DO 200 IEL=1,NELT
-      DO 200 IX=1,NX1
+      DO 200 IX=1,lx1
          XR1  = XRM1(IX,  1,1,IEL)
          YR1  = YRM1(IX,  1,1,IEL)
-         XR3  = XRM1(IX,NY1,1,IEL)
-         YR3  = YRM1(IX,NY1,1,IEL)
+         XR3  = XRM1(IX,ly1,1,IEL)
+         YR3  = YRM1(IX,ly1,1,IEL)
          RR1  = SQRT( XR1**2 + YR1**2 )
          RR3  = SQRT( XR3**2 + YR3**2 )
          T1X (IX,1,1,IEL) =  XR1 / RR1
@@ -1153,32 +1153,32 @@ C
 C
       IF (IFAXIS) THEN
          DO 100 IEL=1,NELT
-            DO 120 IX=1,NX1
+            DO 120 IX=1,lx1
                WGTR1(IX,IEL) = YM1(IX,  1,1,IEL) * WXM1(IX)
-               WGTR3(IX,IEL) = YM1(IX,NY1,1,IEL) * WXM1(IX)
+               WGTR3(IX,IEL) = YM1(IX,ly1,1,IEL) * WXM1(IX)
   120       CONTINUE
             IF ( IFRZER(IEL) ) THEN
                IY = 1
-               WGTR2(IY,IEL) = YSM1(NX1,IY,1,IEL) * WAM1(IY)
+               WGTR2(IY,IEL) = YSM1(lx1,IY,1,IEL) * WAM1(IY)
                WGTR4(IY,IEL) = YSM1(  1,IY,1,IEL) * WAM1(IY)
-               DO 160 IY=2,NY1
+               DO 160 IY=2,ly1
                   DNR = 1. + ZAM1(IY)
-                  WGTR2(IY,IEL) = YM1(NX1,IY,1,IEL) * WAM1(IY) / DNR
+                  WGTR2(IY,IEL) = YM1(lx1,IY,1,IEL) * WAM1(IY) / DNR
                   WGTR4(IY,IEL) = YM1(  1,IY,1,IEL) * WAM1(IY) / DNR
   160          CONTINUE
             ELSE
-               DO 180 IY=1,NY1
-                  WGTR2(IY,IEL) = YM1(NX1,IY,1,IEL) * WYM1(IY)
+               DO 180 IY=1,ly1
+                  WGTR2(IY,IEL) = YM1(lx1,IY,1,IEL) * WYM1(IY)
                   WGTR4(IY,IEL) = YM1(  1,IY,1,IEL) * WYM1(IY)
   180          CONTINUE
             ENDIF
   100    CONTINUE
       ELSE
          DO 200 IEL=1,NELT
-            CALL COPY (WGTR1(1,IEL),WXM1,NX1)
-            CALL COPY (WGTR2(1,IEL),WYM1,NY1)
-            CALL COPY (WGTR3(1,IEL),WXM1,NX1)
-            CALL COPY (WGTR4(1,IEL),WYM1,NY1)
+            CALL COPY (WGTR1(1,IEL),WXM1,lx1)
+            CALL COPY (WGTR2(1,IEL),WYM1,ly1)
+            CALL COPY (WGTR3(1,IEL),WXM1,lx1)
+            CALL COPY (WGTR4(1,IEL),WYM1,ly1)
   200    CONTINUE
       ENDIF
 C
@@ -1211,10 +1211,10 @@ C
       COMMON /CTMP0/ C  (LX1,LY1,LZ1,LELT)
      $ ,             DOT(LX1,LY1,LZ1,LELT)
 C
-      NXY1  = NX1*NY1
-      NFACE = 2*NDIM
-      NTOT  = NX1*NY1*NZ1*NELT
-      NSRF  = 6*NX1*NY1*NELT
+      NXY1  = lx1*ly1
+      NFACE = 2*ldim
+      NTOT  = lx1*ly1*lz1*NELT
+      NSRF  = 6*lx1*ly1*NELT
 C
 C        "R"
 C
@@ -1222,17 +1222,17 @@ C
       CALL VDOT3 (DOT,A,B,C,A,B,C,NTOT)
 C
       DO 100 IEL=1,NELT
-      DO 100 IZ=1,NZ1
-      DO 100 IY=1,NY1
+      DO 100 IZ=1,lz1
+      DO 100 IY=1,ly1
          WEIGHT = WYM1(IY)*WZM1(IZ)
-         AREA(IY,IZ,2,IEL) = SQRT(DOT(NX1,IY,IZ,IEL))*WEIGHT
+         AREA(IY,IZ,2,IEL) = SQRT(DOT(lx1,IY,IZ,IEL))*WEIGHT
          AREA(IY,IZ,4,IEL) = SQRT(DOT(  1,IY,IZ,IEL))*WEIGHT
          UNX (IY,IZ,4,IEL) = -A(  1,IY,IZ,IEL)
-         UNX (IY,IZ,2,IEL) =  A(NX1,IY,IZ,IEL)
+         UNX (IY,IZ,2,IEL) =  A(lx1,IY,IZ,IEL)
          UNY (IY,IZ,4,IEL) = -B(  1,IY,IZ,IEL)
-         UNY (IY,IZ,2,IEL) =  B(NX1,IY,IZ,IEL)
+         UNY (IY,IZ,2,IEL) =  B(lx1,IY,IZ,IEL)
          UNZ (IY,IZ,4,IEL) = -C(  1,IY,IZ,IEL)
-         UNZ (IY,IZ,2,IEL) =  C(NX1,IY,IZ,IEL)
+         UNZ (IY,IZ,2,IEL) =  C(lx1,IY,IZ,IEL)
   100 CONTINUE
 C
 C        "S"
@@ -1240,17 +1240,17 @@ C
       CALL VCROSS(A,B,C,XRM1,YRM1,ZRM1,XTM1,YTM1,ZTM1,NTOT)
       CALL VDOT3 (DOT,A,B,C,A,B,C,NTOT)
       DO 200 IEL=1,NELT
-      DO 200 IZ=1,NZ1
-      DO 200 IX=1,NX1
+      DO 200 IZ=1,lz1
+      DO 200 IX=1,lx1
          WEIGHT=WXM1(IX)*WZM1(IZ)
          AREA(IX,IZ,1,IEL) = SQRT(DOT(IX,  1,IZ,IEL))*WEIGHT
-         AREA(IX,IZ,3,IEL) = SQRT(DOT(IX,NY1,IZ,IEL))*WEIGHT
+         AREA(IX,IZ,3,IEL) = SQRT(DOT(IX,ly1,IZ,IEL))*WEIGHT
          UNX (IX,IZ,1,IEL) =  A(IX,  1,IZ,IEL)
-         UNX (IX,IZ,3,IEL) = -A(IX,NY1,IZ,IEL)
+         UNX (IX,IZ,3,IEL) = -A(IX,ly1,IZ,IEL)
          UNY (IX,IZ,1,IEL) =  B(IX,  1,IZ,IEL)
-         UNY (IX,IZ,3,IEL) = -B(IX,NY1,IZ,IEL)
+         UNY (IX,IZ,3,IEL) = -B(IX,ly1,IZ,IEL)
          UNZ (IX,IZ,1,IEL) =  C(IX,  1,IZ,IEL)
-         UNZ (IX,IZ,3,IEL) = -C(IX,NY1,IZ,IEL)
+         UNZ (IX,IZ,3,IEL) = -C(IX,ly1,IZ,IEL)
   200 CONTINUE
 C
 C        "T"
@@ -1258,17 +1258,17 @@ C
       CALL VCROSS(A,B,C,XRM1,YRM1,ZRM1,XSM1,YSM1,ZSM1,NTOT)
       CALL VDOT3 (DOT,A,B,C,A,B,C,NTOT)
       DO 300 IEL=1,NELT
-      DO 300 IX=1,NX1
-      DO 300 IY=1,NY1
+      DO 300 IX=1,lx1
+      DO 300 IY=1,ly1
          WEIGHT=WXM1(IX)*WYM1(IY)
          AREA(IX,IY,5,IEL) = SQRT(DOT(IX,IY,  1,IEL))*WEIGHT
-         AREA(IX,IY,6,IEL) = SQRT(DOT(IX,IY,NZ1,IEL))*WEIGHT
+         AREA(IX,IY,6,IEL) = SQRT(DOT(IX,IY,lz1,IEL))*WEIGHT
          UNX (IX,IY,5,IEL) = -A(IX,IY,  1,IEL)
-         UNX (IX,IY,6,IEL) =  A(IX,IY,NZ1,IEL)
+         UNX (IX,IY,6,IEL) =  A(IX,IY,lz1,IEL)
          UNY (IX,IY,5,IEL) = -B(IX,IY,  1,IEL)
-         UNY (IX,IY,6,IEL) =  B(IX,IY,NZ1,IEL)
+         UNY (IX,IY,6,IEL) =  B(IX,IY,lz1,IEL)
          UNZ (IX,IY,5,IEL) = -C(IX,IY,  1,IEL)
-         UNZ (IX,IY,6,IEL) =  C(IX,IY,NZ1,IEL)
+         UNZ (IX,IY,6,IEL) =  C(IX,IY,lz1,IEL)
   300 CONTINUE
 C
       CALL UNITVEC (UNX,UNY,UNZ,NSRF)
@@ -1321,7 +1321,7 @@ C--------------------------------------------------------------------
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
 C
-      NTOT1 = NX1*NY1*NZ1*NELT
+      NTOT1 = lx1*ly1*lz1*NELT
       DO 100 ILAG=NBDINP-1,2,-1
          CALL COPY (BM1LAG(1,1,1,1,ILAG),BM1LAG(1,1,1,1,ILAG-1),NTOT1)
  100  CONTINUE
@@ -1349,24 +1349,24 @@ C--------------------------------------------------------------------
       INCLUDE 'TSTEP'
       INCLUDE 'WZ'
 
-      nxyz1  = nx1*ny1*nz1
+      nxyz1  = lx1*ly1*lz1
 
       ifld = ifield
 
-      IF (IFFLOW) THEN ! Velocity mass matrix
+csk      IF (IFFLOW) THEN ! Velocity mass matrix
          IFIELD = 1
          NTOT   = NXYZ1*NELV
          CALL COPY    (BINVM1,BM1,NTOT)
-         CALL DSSUM   (BINVM1,NX1,NY1,NZ1)
+         CALL DSSUM   (BINVM1,lx1,ly1,lz1)
          CALL INVCOL1 (BINVM1,NTOT)
-      ENDIF
+csk      ENDIF
 
 
       IF (IFHEAT) THEN ! Temperature mass matrix
          IFIELD = 2
          NTOT   = NXYZ1*NELT
          CALL COPY    (BINTM1,BM1,NTOT)
-         CALL DSSUM   (BINTM1,NX1,NY1,NZ1)
+         CALL DSSUM   (BINTM1,lx1,ly1,lz1)
          CALL INVCOL1 (BINTM1,NTOT)
       ENDIF
 
@@ -1380,7 +1380,7 @@ c-----------------------------------------------------------------------
       subroutine maprs(y,x,xa,nrest,iel)
 C
 C     Map the elemental array X from Restart mesh to Y on mesh M1
-C     Conforming elements, i.e. NX1=NY1=NZ1.
+C     Conforming elements, i.e. lx1=ly1=lz1.
 C
 C---------------------------------------------------------------
 C
@@ -1393,7 +1393,7 @@ C
       REAL X(NREST,NREST,NREST)
       REAL Y(LX1,LY1,LZ1)
 C
-      REAL XA(NX1,NREST,NREST)
+      REAL XA(lx1,NREST,NREST)
       COMMON /CTMP0/ XB(LX1,LY1,LZ1)
 C
       REAL IXRES(LX1,LX1),IXTRES(LX1,LX1)
@@ -1403,17 +1403,17 @@ C
       REAL ZARES(20),WARES(20)
 C
       NZREST = NREST
-      IF(NZ1.EQ.1) NZREST=1
+      IF(lz1.EQ.1) NZREST=1
       NYZRES = NREST*NZREST
-      NXY1   = NX1 *NY1
+      NXY1   = lx1 *ly1
 C
       CALL ZWGLL   (ZCRES,WCRES,NREST)
-      CALL IGLLM   (IXRES,IXTRES,ZCRES,ZGM1,NREST,NX1,NREST,NX1)
+      CALL IGLLM   (IXRES,IXTRES,ZCRES,ZGM1,NREST,lx1,NREST,lx1)
       IF (.NOT.IFAXIS) THEN
-         CALL COPY (IYRES,IXRES,NX1*NREST)
-         CALL COPY (IYTRES,IXTRES,NX1*NREST)
-         CALL COPY (IZRES,IXRES,NX1*NREST)
-         CALL COPY (IZTRES,IXTRES,NX1*NREST)
+         CALL COPY (IYRES,IXRES,lx1*NREST)
+         CALL COPY (IYTRES,IXTRES,lx1*NREST)
+         CALL COPY (IZRES,IXRES,lx1*NREST)
+         CALL COPY (IZTRES,IXTRES,lx1*NREST)
       ELSE
 C
 C     Use the appropriate derivative- and interpolation operator in
@@ -1423,24 +1423,24 @@ C
            ALPHA = 0.
            BETA  = 1.
            CALL ZWGLJ   (ZARES,WARES,NREST,ALPHA,BETA)
-           CALL IGLJM   (IYRES,IYTRES,ZARES,ZGM1,NREST,NY1,NREST,NY1,
+           CALL IGLJM   (IYRES,IYTRES,ZARES,ZGM1,NREST,ly1,NREST,ly1,
      $                                                    ALPHA,BETA)
-           NY1R   = NY1*NREST
+           ly1R   = ly1*NREST
          ELSE
-           CALL COPY (IYRES,IXRES,NX1*NREST)
-           CALL COPY (IYTRES,IXTRES,NX1*NREST)
+           CALL COPY (IYRES,IXRES,lx1*NREST)
+           CALL COPY (IYTRES,IXTRES,lx1*NREST)
          ENDIF
       ENDIF
 C
-      IF (NDIM.EQ.2) THEN
-         CALL MXM (IXRES,NX1,X,NREST,XA,NREST)
-         CALL MXM (XA,NX1,IYTRES,NREST,Y,NY1)
+      IF (ldim.EQ.2) THEN
+         CALL MXM (IXRES,lx1,X,NREST,XA,NREST)
+         CALL MXM (XA,lx1,IYTRES,NREST,Y,ly1)
       ELSE
-         CALL MXM (IXRES,NX1,X,NREST,XA,NYZRES)
+         CALL MXM (IXRES,lx1,X,NREST,XA,NYZRES)
          DO 100 IZ=1,NZREST
-            CALL MXM (XA(1,1,IZ),NX1,IYTRES,NREST,XB(1,1,IZ),NY1)
+            CALL MXM (XA(1,1,IZ),lx1,IYTRES,NREST,XB(1,1,IZ),ly1)
  100     CONTINUE
-         CALL MXM (XB,NXY1,IZTRES,NZREST,Y,NZ1)
+         CALL MXM (XB,NXY1,IZTRES,NZREST,Y,lz1)
       ENDIF
 C
       RETURN
@@ -1463,27 +1463,27 @@ C
 C
       COMMON /CTMP0/ XA(LX1,LY3,LZ3), XB(LX1,LY1,LZ3)
 C
-      NYZ3 = NY3*NZ3
-      NXY1 = NX1*NY1
+      NYZ3 = ly3*lz3
+      NXY1 = lx1*ly1
 C
 C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
 C
       IF (IFAXIS) THEN
-         NY31   = NY1*NY3
-         IF (IFRZER(IEL))      CALL COPY (IYTM31,IATM31,NY31)
-         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM31,ICTM31,NY31)
+         ly31   = ly1*ly3
+         IF (IFRZER(IEL))      CALL COPY (IYTM31,IATM31,ly31)
+         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM31,ICTM31,ly31)
       ENDIF
 C
       IF (IF3D) THEN
-         CALL MXM (IXM31,NX1,X,NX3,XA,NYZ3)
-         DO 100 IZ=1,NZ3
-            CALL MXM (XA(1,1,IZ),NX1,IYTM31,NY3,XB(1,1,IZ),NY1)
+         CALL MXM (IXM31,lx1,X,lx3,XA,NYZ3)
+         DO 100 IZ=1,lz3
+            CALL MXM (XA(1,1,IZ),lx1,IYTM31,ly3,XB(1,1,IZ),ly1)
  100     CONTINUE
-         CALL MXM (XB,NXY1,IZTM31,NZ3,Y,NZ1)
+         CALL MXM (XB,NXY1,IZTM31,lz3,Y,lz1)
       ELSE
-         CALL MXM (IXM31,NX1,X,NX3,XA,NYZ3)
-         CALL MXM (XA,NX1,IYTM31,NY3,Y,NY1)
+         CALL MXM (IXM31,lx1,X,lx3,XA,NYZ3)
+         CALL MXM (XA,lx1,IYTM31,ly3,Y,ly1)
       ENDIF
 C
       RETURN
@@ -1506,23 +1506,23 @@ C
 C
       COMMON /CTMP0/ XA(LX3,LY1,LZ1),  XB(LX3,LY3,LZ1)
 C
-      NYZ1 = NY1*NZ1
-      NXY3 = NX3*NY3
+      NYZ1 = ly1*lz1
+      NXY3 = lx3*ly3
 C
 C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
 C
       IF (IFAXIS) THEN
-         NY13   = NY1*NY3
-         IF (IFRZER(IEL))      CALL COPY (IYTM13,IATM13,NY13)
-         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM13,ICTM13,NY13)
+         ly13   = ly1*ly3
+         IF (IFRZER(IEL))      CALL COPY (IYTM13,IATM13,ly13)
+         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM13,ICTM13,ly13)
       ENDIF
 C
-      CALL MXM (IXM13,NX3,X,NX1,XA,NYZ1)
-      DO 100 IZ=1,NZ1
-         CALL MXM (XA(1,1,IZ),NX3,IYTM13,NY1,XB(1,1,IZ),NY3)
+      CALL MXM (IXM13,lx3,X,lx1,XA,NYZ1)
+      DO 100 IZ=1,lz1
+         CALL MXM (XA(1,1,IZ),lx3,IYTM13,ly1,XB(1,1,IZ),ly3)
  100  CONTINUE
-      CALL MXM (XB,NXY3,IZTM13,NZ1,Y,NZ3)
+      CALL MXM (XB,NXY3,IZTM13,lz1,Y,lz3)
 C
       RETURN
       END
@@ -1541,25 +1541,25 @@ C
       REAL X(LX1,LY1,LZ1)
       REAL Y(LX2,LY2,LZ2)
 C
-      COMMON /CTMP0/ XA(LX2,LY1,LZ1), XB(LX2,LY2,LZ1)
+      COMMON /CTMP00/ XA(LX2,LY1,LZ1), XB(LX2,LY2,LZ1)
 C
-      NYZ1 = NY1*NZ1
-      NXY2 = NX2*NY2
+      NYZ1 = ly1*lz1
+      NXY2 = lx2*ly2
 C
 C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
 C
       IF (IFAXIS) THEN
-         NY12   = NY1*NY2
-         IF (IFRZER(IEL))      CALL COPY (IYTM12,IATM12,NY12)
-         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM12,ICTM12,NY12)
+         ly12   = ly1*ly2
+         IF (IFRZER(IEL))      CALL COPY (IYTM12,IATM12,ly12)
+         IF (.NOT.IFRZER(IEL)) CALL COPY (IYTM12,ICTM12,ly12)
       ENDIF
 C
-      CALL MXM (IXM12,NX2,X,NX1,XA,NYZ1)
-      DO 100 IZ=1,NZ1
-         CALL MXM (XA(1,1,IZ),NX2,IYTM12,NY1,XB(1,1,IZ),NY2)
+      CALL MXM (IXM12,lx2,X,lx1,XA,NYZ1)
+      DO 100 IZ=1,lz1
+         CALL MXM (XA(1,1,IZ),lx2,IYTM12,ly1,XB(1,1,IZ),ly2)
  100  CONTINUE
-      CALL MXM (XB,NXY2,IZTM12,NZ1,Y,NZ2)
+      CALL MXM (XB,NXY2,IZTM12,lz1,Y,lz2)
 C
       RETURN
       END
@@ -1581,9 +1581,9 @@ C
 C
       COMMON /CTMP0/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
 C
-      NYZ2 = NY2*NZ2
-      NXY1 = NX1*NY1
-      NXYZ = NX1*NY1*NZ1
+      NYZ2 = ly2*lz2
+      NXY1 = lx1*ly1
+      NXYZ = lx1*ly1*lz1
 C
 C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
@@ -1594,14 +1594,14 @@ C
       ENDIF
 C
       IF (IF3D) THEN
-         CALL MXM (IXM21,NX1,X,NX2,XA,NYZ2)
-         DO 100 IZ=1,NZ2
-            CALL MXM (XA(1,1,IZ),NX1,IYTM21,NY2,XB(1,1,IZ),NY1)
+         CALL MXM (IXM21,lx1,X,lx2,XA,NYZ2)
+         DO 100 IZ=1,lz2
+            CALL MXM (XA(1,1,IZ),lx1,IYTM21,ly2,XB(1,1,IZ),ly1)
  100     CONTINUE
-         CALL MXM (XB,NXY1,IZTM21,NZ2,Y,NZ1)
+         CALL MXM (XB,NXY1,IZTM21,lz2,Y,lz1)
       ELSE
-         CALL MXM (IXM21,NX1,X,NX2,XA,NYZ2)
-         CALL MXM (XA,NX1,IYTM21,NY2,Y,NY1)
+         CALL MXM (IXM21,lx1,X,lx2,XA,NYZ2)
+         CALL MXM (XA,lx1,IYTM21,ly2,Y,ly1)
       ENDIF
       RETURN
       END
@@ -1622,23 +1622,23 @@ C
 C
       COMMON /CTMP0/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
 C
-      NYZ2 = NY2*NZ2
-      NXY1 = NX1*NY1
+      NYZ2 = ly2*lz2
+      NXY1 = lx1*ly1
 C
 C     Use the appropriate derivative- and interpolation operator in
 C     the y-direction (= radial direction if axisymmetric).
 C
       IF (IFAXIS) THEN
-         NY21   = NY1*NY2
-         IF (IFRZER(IEL))      CALL COPY (IYM12,IAM12,NY21)
-         IF (.NOT.IFRZER(IEL)) CALL COPY (IYM12,ICM12,NY21)
+         ly21   = ly1*ly2
+         IF (IFRZER(IEL))      CALL COPY (IYM12,IAM12,ly21)
+         IF (.NOT.IFRZER(IEL)) CALL COPY (IYM12,ICM12,ly21)
       ENDIF
 C
-      CALL MXM (IXTM12,NX1,X,NX2,XA,NYZ2)
-      DO 100 IZ=1,NZ2
-         CALL MXM (XA(1,1,IZ),NX1,IYM12,NY2,XB(1,1,IZ),NY1)
+      CALL MXM (IXTM12,lx1,X,lx2,XA,NYZ2)
+      DO 100 IZ=1,lz2
+         CALL MXM (XA(1,1,IZ),lx1,IYM12,ly2,XB(1,1,IZ),ly1)
  100  CONTINUE
-      CALL MXM (XB,NXY1,IZM12,NZ2,Y,NZ1)
+      CALL MXM (XB,NXY1,IZM12,lz2,Y,lz1)
 C
       RETURN
       END
@@ -1662,9 +1662,9 @@ c-----------------------------------------------------------------------
       character*2 c2
 c
       write(6,1) c2,e
-      nx8 = min(nx1,8)
-      do k=1,nz1
-      do j=1,ny1
+      nx8 = min(lx1,8)
+      do k=1,lz1
+      do j=1,ly1
          write(6,1) c2,e,(x(i,j,k,e),i=1,nx8)
       enddo
       enddo
@@ -1684,9 +1684,9 @@ c-----------------------------------------------------------------------
 
       do e=1,nelt
          write(6,*) e,nelfld(e),iftmsh(e),' iftmsh'
-         call outmat(xm3(1,1,1,e),nx3,ny3,' xm3  ',e)
-         call outmat(ym3(1,1,1,e),nx3,ny3,' ym3  ',e)
-         call outmat(jm3(1,1,1,e),nx3,ny3,' jm3  ',e)
+         call outmat(xm3(1,1,1,e),lx3,ly3,' xm3  ',e)
+         call outmat(ym3(1,1,1,e),lx3,ly3,' ym3  ',e)
+         call outmat(jm3(1,1,1,e),lx3,ly3,' jm3  ',e)
       enddo
 
       return
@@ -1815,8 +1815,8 @@ c-----------------------------------------------------------------------
 
       integer e,f,pf
 
-      nface = 2*ndim
-      call dsset(nx1,ny1,nz1)
+      nface = 2*ldim
+      call dsset(lx1,ly1,lz1)
 
       do e=1,nelt
       do f=1,nface

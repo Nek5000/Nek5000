@@ -18,7 +18,7 @@ C
 C
 C      Draw ISOMETRIC view of general 3D object.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 CB1
       INTEGER IFIRST,NCSOLD,NCSEG1,NCSGM1
@@ -196,7 +196,7 @@ c           ENDIF
       END
 c-----------------------------------------------------------------------
       SUBROUTINE EVLINE(UV,UVP,HIK,N1,N1D,NPT,NSKIP)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
 C     Evaluate vector uv <== uvp, @ k=1,npts
 C
@@ -228,7 +228,7 @@ c-----------------------------------------------------------------------
 C
 C      Draw ISOMETRIC view of general 3D element number IE.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 CB1
       INTEGER IFIRST,NCSOLD,NCSEG1,NCSGM1
@@ -387,7 +387,7 @@ c-----------------------------------------------------------------------
 C
 C      Draw ISOMETRIC view of general 3D element number IE.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 CB1
       INTEGER IFIRST,NCSOLD,NCSEG1,NCSGM1

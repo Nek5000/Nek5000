@@ -16,19 +16,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'vsq   '
-      endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I = 1, N
  100     A(I) = A(I)**2
       RETURN
@@ -38,19 +25,6 @@ c-----------------------------------------------------------------------
       DIMENSION  A(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'vsqrt '
-      endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I = 1, N
  100     A(I) = SQRT(A(I))
@@ -62,19 +36,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'inver2'
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=1./B(I)
  100  CONTINUE
@@ -85,19 +46,6 @@ c-----------------------------------------------------------------------
       REAL A(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'invcl1'
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=1./A(I)
@@ -111,7 +59,7 @@ C
       include 'CTIMER'
       include 'OPCTR'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
          tinvc=0.0
          icalld=icalld+1
@@ -123,7 +71,7 @@ C
          A(I)=A(I)/B(I)
  100  CONTINUE
 
-#ifdef TIMER
+#ifdef TIMER2
       tinvc=tinvc+(dnekclock()-etime1)
 #endif
 
@@ -136,29 +84,17 @@ C
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) tinv3=0.0
       icalld=icalld+1
       ninv3=icalld
       etime1=dnekclock()
-C
-C
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'invcl3'
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
 #endif
 C
       DO 100 I=1,N
          A(I)=B(I)/C(I)
  100  CONTINUE
-#ifdef TIMER
+#ifdef TIMER2
       tinv3=tinv3+(dnekclock()-etime1)
 #endif
       return
@@ -168,19 +104,6 @@ c-----------------------------------------------------------------------
       REAL A(1),B(1),C(1),D(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'col4  '
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=B(I)*C(I)*D(I)
@@ -193,19 +116,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'addcl3'
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=A(I)+B(I)*C(I)
   100 CONTINUE
@@ -216,19 +126,6 @@ c-----------------------------------------------------------------------
       REAL A(1),B(1),C(1),D(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'addcl4'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=A(I)+B(I)*C(I)*D(I)
@@ -241,19 +138,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'ascol5'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I) = B(I)*C(I)-D(I)*E(I)
  100  CONTINUE
@@ -264,19 +148,6 @@ c-----------------------------------------------------------------------
       REAL A(1),B(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'sub2  '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=A(I)-B(I)
@@ -289,19 +160,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'sub3  '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=B(I)-C(I)
  100  CONTINUE
@@ -313,19 +171,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'subcl3'
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=A(I)-B(I)*C(I)
   100 CONTINUE
@@ -336,19 +181,6 @@ c-----------------------------------------------------------------------
       REAL A(1),B(1),C(1),D(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'subcl4'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=A(I)-B(I)*C(I)*D(I)
@@ -372,16 +204,23 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ione(a,n)
-      INTEGER   A(1)
+      INTEGER  A(1)
       DO 100 I = 1, N
  100     A(I ) = 1
       return
       END
 c-----------------------------------------------------------------------
       subroutine rone(a,n)
-      DIMENSION  A(1)
+      DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I ) = 1.0
+      return
+      END
+c-----------------------------------------------------------------------
+      subroutine ltrue(a,n)
+      LOGICAL A(1)
+      DO 100 I = 1, N
+ 100     A(I ) = .TRUE.
       return
       END
 c-----------------------------------------------------------------------
@@ -461,19 +300,6 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'cmult '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=A(I)*CONST
  100  CONTINUE
@@ -484,19 +310,6 @@ c-----------------------------------------------------------------------
       REAL A(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'cadd  '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=A(I)+CONST
@@ -517,19 +330,6 @@ c-----------------------------------------------------------------------
       REAL A(1),B(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'cadd2 '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
          A(I)=B(I)+CONST
@@ -600,19 +400,6 @@ c-----------------------------------------------------------------------
       real function vlsum(vec,n)
       REAL VEC(1)
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'vlsum '
-      endif
-      isbcnt = n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       SUM = 0.
 C
@@ -762,7 +549,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
           icalld=1
           tcol2=0
@@ -774,7 +561,7 @@ c-----------------------------------------------------------------------
          a(i)=a(i)*b(i)
       enddo
 
-#ifdef TIMER
+#ifdef TIMER2
       tcol2=tcol2+(dnekclock()-etime1)
 #endif
 
@@ -796,7 +583,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
           icalld=1
           tcol3=0
@@ -808,7 +595,7 @@ c-----------------------------------------------------------------------
          a(i)=b(i)*c(i)
       enddo
 
-#ifdef TIMER
+#ifdef TIMER2
       tcol3=tcol3+(dnekclock()-etime1)
 #endif
 
@@ -820,7 +607,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
           icalld=1
           tadd2=0
@@ -831,7 +618,7 @@ c-----------------------------------------------------------------------
          a(i)=a(i)+b(i)
       enddo
 
-#ifdef TIMER
+#ifdef TIMER2
       tadd2=tadd2+(dnekclock()-etime1)
 #endif
       return
@@ -840,19 +627,6 @@ c-----------------------------------------------------------------------
       subroutine add3(a,b,c,n)
       real a(1),b(1),c(1)
       include 'OPCTR'
-
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'ADD3  '
-      endif
-      isbcnt = N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 
       do i=1,n
          a(i)=b(i)+c(i)
@@ -865,7 +639,7 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'CTIMER'
 
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
           icalld=1
           tadc3=0
@@ -877,7 +651,7 @@ c-----------------------------------------------------------------------
          a(i)=a(i)+b(i)*c(i)
       enddo
 
-#ifdef TIMER
+#ifdef TIMER2
       tadc3=tadc3+(dnekclock()-etime1)
 #endif
 
@@ -888,19 +662,6 @@ c-----------------------------------------------------------------------
       real a(1),b(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'add2s1'
-      endif
-      isbcnt = 2*N
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
         A(I)=C1*A(I)+B(I)
@@ -915,7 +676,7 @@ C
       include 'OPCTR'
       include 'CTIMER'
 C
-#ifdef TIMER
+#ifdef TIMER2
       if (icalld.eq.0) then
           icalld=1
           ta2s2=0
@@ -927,7 +688,7 @@ C
         A(I)=A(I)+C1*B(I)
   100 CONTINUE
 
-#ifdef TIMER
+#ifdef TIMER2
       ta2s2=ta2s2+(dnekclock()-etime1)
 #endif
 
@@ -939,19 +700,6 @@ c-----------------------------------------------------------------------
       real a(1),b(1),c(1)
 C
       include 'OPCTR'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'add3s2'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       DO 100 I=1,N
         A(I)=C1*B(I)+C2*C(I)
@@ -965,42 +713,17 @@ c-----------------------------------------------------------------------
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'add4  '
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       DO 100 I=1,N
          A(I)=B(I)+C(I)+D(I)
  100  CONTINUE
       return
       END
+c-----------------------------------------------------------------------
       real function vlsc2(x,y,n)
       REAL X(1),Y(1)
       include 'SIZE'
       include 'OPCTR'
       include 'PARALLEL'
-C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'VLSC2 '
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
 C
       s = 0.
       do i=1,n
@@ -1016,19 +739,6 @@ c-----------------------------------------------------------------------
       include 'OPCTR'
       include 'PARALLEL'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'VLSC21'
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       s = 0.
       do i=1,n
          s = s + x(i)*x(i)*y(i)
@@ -1036,7 +746,6 @@ C
       vlsc21=s
       return
       end
-
 
 C----------------------------------------------------------------------------
 C
@@ -1056,19 +765,6 @@ C
 C
       include 'OPCTR'
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'glsc3 '
-      endif
-      isbcnt = 3*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-C
       TMP = 0.0
       DO 10 I=1,N
          TMP = TMP + A(I)*B(I)*MULT(I)
@@ -1087,19 +783,6 @@ c
       real x(1), y(1)
       real tmp,work(1)
 C
-#ifdef TIMER
-      if (isclld.eq.0) then
-          isclld=1
-          nrout=nrout+1
-          myrout=nrout
-          rname(myrout) = 'glsc2 '
-      endif
-      isbcnt = 2*n
-      dct(myrout) = dct(myrout) + (isbcnt)
-      ncall(myrout) = ncall(myrout) + 1
-      dcount      =      dcount + (isbcnt)
-#endif
-
       tmp=0.0
       do 10 i=1,n
          tmp = tmp+ x(i)*y(i)
@@ -1138,6 +821,22 @@ c-----------------------------------------------------------------------
       call col3 (w1,a,a,n)
       call col2 (w1,bm1,n)
       gl2norm = sqrt(glsum (w1,n)/volvm1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      real function gl2norm2(a,n)
+
+      include 'SIZE'
+      include 'MASS'
+
+      real a(n)
+
+      common /scrsf/ w1 (lx2*ly2*lz2*lelt)
+
+      call col3 (w1,a,a,n)
+      call col2 (w1,bm2,n)
+      gl2norm2 = sqrt(glsum (w1,n)/volvm2)
 
       return
       end
@@ -1896,6 +1595,141 @@ c
          a(j,i) = ta
       enddo
       enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      real function difmax(a,b,n)
+      real a(1),b(1)
+
+      d=0
+      do i=1,n
+         diff = abs(a(i)-b(i))
+         d    = max(d,diff)
+      enddo
+      difmax = glamax(d,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+ccc Nek-Nek routines
+c-----------------------------------------------------------------------
+      function glmin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glmin_ms = glmin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glamin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glamin_ms = glamin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glmax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glmax_ms = glmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function glamax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glamax_ms = glamax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function glsum_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glsum_ms = glsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglsum_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1),n
+
+      call setnekcomm(iglobalcomm)
+      iglsum_ms = iglsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc3_ms(a,b,c,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1),c(1)
+
+      call setnekcomm(iglobalcomm)
+      glsc3_ms = glsc3(a,b,c,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc2_ms(a,b,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1)
+
+      call setnekcomm(iglobalcomm)
+      glsc2_ms = glsc2(a,b,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglmax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call setnekcomm(iglobalcomm)
+      iglmax_ms = iglmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglmin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call setnekcomm(iglobalcomm)
+      iglmin_ms = iglmin(a,n)
+      call setnekcomm(intracomm)
+
       return
       end
 c-----------------------------------------------------------------------

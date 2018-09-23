@@ -37,7 +37,7 @@ c
       if(.not.iflag) then
          iflag=.true.
          call uzawa_gmres_split0(ml_gmres,mu_gmres,bm2,bm2inv,
-     $                           nx2*ny2*nz2*nelv)
+     $                           lx2*ly2*lz2*nelv)
          norm_fac = 1./sqrt(volvm2)
       endif
 c
@@ -54,7 +54,7 @@ c     if (param(21).lt.0) tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
       tolpss = tolps
 c
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot2  = lx2*ly2*lz2*nelv
 c
       iconv = 0
       call rzero(x_gmres,ntot2)
@@ -200,7 +200,7 @@ c            call outmat(h,m,j,' h    ',j)
                        ! x = x + c  z
                        !          i  i
          enddo
-c        if(iconv.eq.1) call dbg_write(x,nx2,ny2,nz2,nelv,'esol',3)
+c        if(iconv.eq.1) call dbg_write(x,lx2,ly2,lz2,nelv,'esol',3)
       enddo
  9000 continue
 c
@@ -295,7 +295,7 @@ c
       imsh = 1
       isd  = 1
       call axhelm (w,x,h1,h2,imsh,isd)
-      call dssum  (w,nx1,ny1,nz1)
+      call dssum  (w,lx1,ly1,lz1)
       call col2   (w,pmask,n)
 
       return
@@ -336,7 +336,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       real*8 etime1,dnekclock
 
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 
       etime1 = dnekclock()
       etime_p = 0.
@@ -347,7 +347,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       if(.not.iflag) then
          iflag=.true.
          call uzawa_gmres_split(ml_gmres,mu_gmres,bm1,binvm1,
-     $                          nx1*ny1*nz1*nelv)
+     $                          lx1*ly1*lz1*nelv)
          norm_fac = 1./sqrt(volvm1)
       endif
 
@@ -403,9 +403,13 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
-               call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
+               if (param(40).eq.0 .or. param(40).eq.1) then
+                  call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
+               else if (param(40).eq.3) then
+                  call fem_amg_solve(z_gmres(1,j),w_gmres)
+               endif
             else                                            !  j
-               kfldfdm = ndim+1
+               kfldfdm = ldim+1
                if (param(100).eq.2) then
                    call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
                else
@@ -517,7 +521,7 @@ c           enddo
          do i=1,j
             call add2s2(x_gmres,z_gmres(1,i),c_gmres(i),n) ! x = x + c  z
          enddo                                             !          i  i
-c        if(iconv.eq.1) call dbg_write(x,nx1,ny1,nz1,nelv,'esol',3)
+c        if(iconv.eq.1) call dbg_write(x,lx1,ly1,lz1,nelv,'esol',3)
       enddo
  9000 continue
 
@@ -550,10 +554,10 @@ c
       common /handle/ gsh_dd
       integer vertex,gsh_dd
 
-      mz = ndim-2
-      nx = nx1+2
-      ny = ny1+2
-      nz = nz1+2*mz
+      mz = ldim-2
+      nx = lx1+2
+      ny = ly1+2
+      nz = lz1+2*mz
       call setupds_no_crn(gsh_dd,nx,ny,nz,nelv,nelgv,vertex,glo_num)
       call swap_lengths ! Set up Matrices for FDM
       call gen_fast_g
@@ -576,23 +580,23 @@ c
       real u(lx1,lx1,lz1,1),v(1),mask(1)
       integer e
 
-      n = nx1*ny1*nz1*nelfld(ifield)
+      n = lx1*ly1*lz1*nelfld(ifield)
 
       call dd_swap_vals(v1,v,gsh_dd)
 
       iz1 = 0
       if (if3d) iz1=1
       do ie=1,nelfld(ifield)
-         do iz=1,nz1
-         do iy=1,ny1
-         do ix=1,nx1
+         do iz=1,lz1
+         do iy=1,ly1
+         do ix=1,lx1
             u(ix,iy,iz,ie) = v1(ix+1,iy+1,iz+iz1,ie)
          enddo
          enddo
          enddo
       enddo
 
-      call dssum (u,nx1,ny1,nz1)
+      call dssum (u,lx1,ly1,lz1)
       call col2  (u,mask,n)
 
 
@@ -613,18 +617,18 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      mz = ndim-2
+      mz = ldim-2
 
-      nx = nx1+2
-      ny = ny1+2
-      nz = nz1+2*mz
+      nx = lx1+2
+      ny = ly1+2
+      nz = lz1+2*mz
 
-      n  = nx1*ny1*nz1*nelv
-      m  = (nx1+2)*(ny1+2)*(nz1+2*mz)*nelv
+      n  = lx1*ly1*lz1*nelv
+      m  = (lx1+2)*(ly1+2)*(lz1+2*mz)*nelv
 
       do e=1,nelv
          call rzero_g        (v1,e,nx,ny,nz)
-         call fill_interior_g(v1,v0,e,nx1,nz1,mz,nelv)    ! v0      --> v1(int)
+         call fill_interior_g(v1,v0,e,lx1,lz1,mz,nelv)    ! v0      --> v1(int)
          call dface_ext_g    (v1,2,e,nx,nz)               ! v1(int) --> v1(face)
       enddo
 c
@@ -758,7 +762,7 @@ c-----------------------------------------------------------------------
       integer bb0,bb1,eb0,eb1,n,n1
       logical l,r
 
-      n=nx1-1
+      n=lx1-1
       !bcs on E are from normal vel component
       if(lbc.eq.2 .or. lbc.eq.3) then !wall,sym  - Neumann
          eb0=0
@@ -828,7 +832,7 @@ c
       real bl,bm,br
       integer n
 
-      n =nx1-1
+      n =lx1-1
 
 c
 c     compute the weight of A hat
@@ -910,7 +914,7 @@ c
       real bl,bm,br
       integer n
 
-      n =nx1-1
+      n =lx1-1
 c
 c     compute the weight of B hat
 c
@@ -956,7 +960,7 @@ c
 c-----------------------------------------------------------------------
       subroutine fill_interior_g(v1,v,e,nx,nz,iz1,nel)
 
-      real v1(nx+2,nx+2,nz+2*iz1,nel) ! iz1=ndim-2
+      real v1(nx+2,nx+2,nz+2*iz1,nel) ! iz1=ldim-2
       real v (nx  ,nx  ,nz      ,nel)
       integer e
 
@@ -1082,7 +1086,7 @@ c
 
       real r(1),w1(1),w2(1)
 
-      nx = nx1+2
+      nx = lx1+2
 c
 c      T
 c     S  r

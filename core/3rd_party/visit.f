@@ -569,7 +569,7 @@ c     // Also need to get local domain index
           err = visitvardataalloc(y)
           if(IF3D) err = visitvardataalloc(z)
 
-          dl = NX1 * NY1 * NZ1
+          dl = lx1 * ly1 * lz1
           err = visitvardatasetd(x, VISIT_OWNER_SIM, 1, dl, 
      .                           XM1(1,1,1,domain))
           err = visitvardatasetd(y, VISIT_OWNER_SIM, 1, dl,
@@ -579,9 +579,9 @@ c     // Also need to get local domain index
      .                             ZM1(1,1,1,domain))
           endif
 
-          dmdims(1) = NX1
-          dmdims(2) = NY1
-          dmdims(3) = NZ1
+          dmdims(1) = lx1
+          dmdims(2) = ly1
+          dmdims(3) = lz1
           if(IF3D) then
             err = visitcurvmeshsetcoordsxyz(vh, dmdims, x, y, z)
           else
@@ -602,7 +602,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     domain, lname
       include "visitfortransimV2interface.inc"
-      visitgetmaterial = VISIT_ERROR
+      visitgetmaterial = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -619,7 +619,7 @@ c     implicit none
 c     // local vars
       integer h, nvals, err, domain, k
 
-      nvals = NX1 * NY1 * NZ1
+      nvals = lx1 * ly1 * lz1
 
       h = VISIT_INVALID_HANDLE
 
@@ -655,8 +655,8 @@ c     // Also need to get local domain index
           elseif(visitstrcmp("s", 1, name, 1).eq.0) then
 c             // Handle the user define variables.
               read( name(2:lname), '(i10)' ) k
-              k = k + 1
               if(IFPSCO(k)) then
+                  k = k + 1
                   err = visitvardatasetd(h, VISIT_OWNER_SIM, 1, nvals,
      .                                   T(1,1,1,domain,k))
               endif
@@ -675,7 +675,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     handle, lname
       include "visitfortransimV2interface.inc"
-      visitgetcurve = VISIT_ERROR
+      visitgetcurve = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -734,3 +734,15 @@ c---------------------------------------------------------------------
       visitgetdomainnesting = VISIT_INVALID_HANDLE
       end
 
+c---------------------------------------------------------------------
+c     visitgetmixedvariable
+c     This is needed to run with newer version of Visit (2.12.0 tested).
+c     TODO: The comment should be changed
+c---------------------------------------------------------------------
+      integer function visitgetmixedvariable(domain, name, lname)
+      implicit none
+      character*8 name
+      integer     domain, lname
+      include "visitfortransimV2interface.inc"
+      visitgetmixedvariable = VISIT_INVALID_HANDLE
+      end

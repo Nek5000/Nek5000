@@ -81,7 +81,7 @@ c     Set up array of element pointers
       call gfdm_set_bc    (cb0,cbn,mfld)        !  Find tp-box bdry conds.
       call gfdm_set_geom  (bw,nelx,nely,nelz)   !  Get 1D elem't lengths
 
-      if (ifemat) call gfdm_set_genwz (nx1,nx2) !  Compute weights in WFZ
+      if (ifemat) call gfdm_set_genwz (lx1,lx2) !  Compute weights in WFZ
 
 
 c     Generate eigenvector and eigenvalue arrays for 1D E-operators
@@ -89,7 +89,7 @@ c     Generate eigenvector and eigenvalue arrays for 1D E-operators
       l = 1             !   X-direction
       m = 1
       if (mfld.eq.2) then
-         do k=1,ndim
+         do k=1,ldim
             l = l+ngfdm_p(k)
             m = m+ngfdm_p(k)**2
          enddo
@@ -99,10 +99,10 @@ c     Generate eigenvector and eigenvalue arrays for 1D E-operators
       mlp(1,mfld) = l
 
       if (ifemat) then
-         call set_1d_e_mat(sp(m),eigp(l),mx,lx,nelx,nx1,nx2
+         call set_1d_e_mat(sp(m),eigp(l),mx,lx,nelx,lx1,lx2
      $                    ,cb0(1),cbn(1),dglgt,wglgt,wgl,bw,lbw)
       else
-         call set_1d_a_mat(sp(m),eigp(l),xmlt,mx,lx,nelx,nx1
+         call set_1d_a_mat(sp(m),eigp(l),xmlt,mx,lx,nelx,lx1
      $                    ,cb0(1),cbn(1),bw,lbw)
       endif
       call transpose(spt(m),mx,sp(m),mx)
@@ -114,10 +114,10 @@ c     Generate eigenvector and eigenvalue arrays for 1D E-operators
       msp(2,mfld) = m
       mlp(2,mfld) = l
       if (ifemat) then
-         call set_1d_e_mat(sp(m),eigp(l),my,ly,nely,nx1,nx2
+         call set_1d_e_mat(sp(m),eigp(l),my,ly,nely,lx1,lx2
      $                    ,cb0(2),cbn(2),dglgt,wglgt,wgl,bw,lbw)
       else
-         call set_1d_a_mat(sp(m),eigp(l),ymlt,my,ly,nely,nx1
+         call set_1d_a_mat(sp(m),eigp(l),ymlt,my,ly,nely,lx1
      $                    ,cb0(2),cbn(2),bw,lbw)
       endif
       call transpose(spt(m),my,sp(m),my)
@@ -128,10 +128,10 @@ c     Generate eigenvector and eigenvalue arrays for 1D E-operators
          msp(3,mfld) = m
          mlp(3,mfld) = l
          if (ifemat) then
-            call set_1d_e_mat(sp(m),eigp(l),mz,lz,nelz,nx1,nx2
+            call set_1d_e_mat(sp(m),eigp(l),mz,lz,nelz,lx1,lx2
      $                       ,cb0(3),cbn(3),dglgt,wglgt,wgl,bw,lbw)
          else
-            call set_1d_a_mat(sp(m),eigp(l),zmlt,mz,lz,nelz,nx1
+            call set_1d_a_mat(sp(m),eigp(l),zmlt,mz,lz,nelz,lx1
      $                    ,cb0(3),cbn(3),bw,lbw)
          endif
          call transpose(spt(m),mz,sp(m),mz)
@@ -357,9 +357,9 @@ c
       do e=1,nelv
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-         lx(ex) = lx(ex) + xm1(nx1,1,1,e) - xm1(1,1,1,e)
-         ly(ey) = ly(ey) + ym1(1,ny1,1,e) - ym1(1,1,1,e)
-         lz(ez) = lz(ez) + zm1(1,1,nz1,e) - zm1(1,1,1,e)
+         lx(ex) = lx(ex) + xm1(lx1,1,1,e) - xm1(1,1,1,e)
+         ly(ey) = ly(ey) + ym1(1,ly1,1,e) - ym1(1,1,1,e)
+         lz(ez) = lz(ez) + zm1(1,1,lz1,e) - zm1(1,1,1,e)
       enddo
 
       call gop(lx,work,'+  ',nelx)
@@ -376,7 +376,7 @@ c
 
 c     Store xgtp,ygtp, and zgtp (gtp = global tensor product)
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       xgtp(0) = glmin(xm1,n)
       do ex=1,nelx
          xgtp(ex) = xgtp(ex-1) + lx(ex)
@@ -462,7 +462,7 @@ c
       if (ifheat) ifld=2
       if (ifflow) ifld=1
       if (mfld.eq.2) ifld=ifldmhd
-      nface = 2*ndim
+      nface = 2*ldim
 c
       call izero(icb,6)
 c
@@ -470,7 +470,7 @@ c
       jnid = gllnid(ieg)
       if (jnid.eq.nid) then
          ie = gllel(ieg)
-         do jf=1,ndim
+         do jf=1,ldim
             iface = eface(2*jf-1)        ! faces 1,3,5 (pf notation)
             c   = cbc(iface,ie,ifld)
             icb(jf,1) = 1                !cb = 'N'
@@ -486,7 +486,7 @@ c
       jnid = gllnid(ieg)
       if (jnid.eq.nid) then
          ie = gllel(ieg)
-         do jf=1,ndim
+         do jf=1,ldim
             iface = eface(2*jf)          ! faces 2,4,6 (pf notation)
             c   = cbc(iface,ie,ifld)
             icb(jf,2) = 1                !cb = 'N'
@@ -503,7 +503,7 @@ c
 c
 c     Convert back to character strings
 c
-      do i=1,ndim
+      do i=1,ldim
          cb0(i) = cbi(icb(i,1))
          cbn(i) = cbi(icb(i,2))
       enddo
@@ -554,8 +554,8 @@ c-----------------------------------------------------------------------
 
       real r2(lx2,ly2),r1(lx1,ly1),rt(lx2,lx1)
 
-      call mxm(ixm12 ,nx2,r1,nx1,rt,nx1)
-      call mxm(rt,nx2,ixm12t,nx1,r2,nx2)
+      call mxm(ixm12 ,lx2,r1,lx1,rt,lx1)
+      call mxm(rt,lx2,ixm12t,lx1,r2,lx2)
 
       return
       end
@@ -822,7 +822,7 @@ c     Construct and diagonalize 1D A-matrix (H1 operator)
       if (n4.gt.lbw) then
          write(6,*) 
      $   'ABORT. Insufficient space in set_1d_a_mat(bw).',n4,lbw
-         nz1 = 1/(n2-2*n1)
+         lz1 = 1/(n2-2*n1)
          call exitt
       endif
 

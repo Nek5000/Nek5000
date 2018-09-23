@@ -18,7 +18,7 @@ C     Beginning of PLOT subroutines, common to preprocessor and postprocessor
 c-----------------------------------------------------------------------
       SUBROUTINE DATA
 C     This subroutine replaces data statements
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       COMMON /TTSCAL/ TX(16)
 C
       OPEN(UNIT=13,STATUS='SCRATCH')
@@ -278,25 +278,25 @@ C
 C     These 4 functions transform coordinates from screen to world and back
 c-----------------------------------------------------------------------
       FUNCTION XSCR(XPHYS)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       XSCR = (XPHYS-XZERO) /XFAC
       RETURN
       END
 c-----------------------------------------------------------------------
       FUNCTION YSCR(YPHYS)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       YSCR = (YPHYS-YZERO) /YFAC
       RETURN
       END
 c-----------------------------------------------------------------------
       FUNCTION XPHY(XSCREN  )
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       XPHY = XZERO + XSCREN  * XFAC
       RETURN
       END
 c-----------------------------------------------------------------------
       FUNCTION YPHY(YSCREN  )
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       YPHY = YZERO + YSCREN  * YFAC
       RETURN
       END
@@ -324,7 +324,7 @@ c     draw a box
       END
 c-----------------------------------------------------------------------
       SUBROUTINE XDOT(XX,YY)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws cross around x,y
       CALL MOVEC(XX-.005*XFAC,YY-.005*YFAC)
       CALL DRAWC(XX+.005*XFAC,YY+.005*YFAC)
@@ -339,7 +339,7 @@ C     Used to help evade a compiler bug in the Titan
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DASHSC(X1,Y1,X2,Y2,N)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws a dashed line from pt 1 to pt2, N dashes.
       IF (N.LE.0) RETURN
       DELTX=(X2-X1)/(2*N-1)
@@ -416,7 +416,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       FUNCTION XISO(X3,Y3,Z3)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C     Deals in PHYSICAL (World) Coordinates.
       REAL X3D(3)
       IF (IROT.EQ.0) THEN
@@ -433,7 +433,7 @@ C     Deals in PHYSICAL (World) Coordinates.
       END
 c-----------------------------------------------------------------------
       FUNCTION YISO(X3,Y3,Z3)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       REAL X3D(3)
       IF (IROT.EQ.0) THEN
          X3D(1)=X3
@@ -449,7 +449,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       FUNCTION ZISO(X3,Y3,Z3)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       REAL X3D(3)
       IF (IROT.EQ.0) THEN
          X3D(1)=X3
@@ -465,7 +465,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       SUBROUTINE UNISO(X3D,Y3D,Z3D,XI,YI,ZI)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C     Given XI and YI (as mouse inputs, and knowing Z3D (from the current plane)
 C     Calculate X3D and Y3D (and incidentally, ZISO)
       RATIO=-YHOBS(1)/XHOBS(1)
@@ -477,7 +477,7 @@ C     Calculate X3D and Y3D (and incidentally, ZISO)
       END
 c-----------------------------------------------------------------------
       SUBROUTINE UNISO2(X3D,Y3D,Z3D,XI,YI,ZI)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C     Given XI and YI (as mouse inputs, and knowing y3D (from the current plane)
 C     Calculate X3D and Z3D (and incidentally, ZISO)
       RATIO=-YHOBS(1)/XHOBS(1)
@@ -489,7 +489,7 @@ C     Calculate X3D and Z3D (and incidentally, ZISO)
       END
 c-----------------------------------------------------------------------
       SUBROUTINE UNISO3(X3D,Y3D,Z3D,XI,YI,ZI)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C     Given XI and YI (as mouse inputs, and knowing X3D (from the current plane)
 C     Calculate Y3D and Z3D (and incidentally, ZISO)
       RATIO=-YHOBS(2)/XHOBS(2)
@@ -518,7 +518,7 @@ c-----------------------------------------------------------------------
       SUBROUTINE DRELEV(IDRAW,IFADE,FLAG)
 C     Color-coded floors (with matching sides of isometric drawing??!!
 C     # of elements on floor next to elevator (like the red sox??!!)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*5 FLAG
 
       IF(.NOT. IF3D) RETURN
@@ -558,7 +558,7 @@ C           But Skip this part for blinkers on sides 1-4
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SORTZ
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       COMMON /CTMPS/  Wk(NELM,6) , IND(NELM,6)
 C     Fcorns has the corners, in ccw order, corresponding to each of 6 faces.
@@ -603,7 +603,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETVUE
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       CALL PRS('Enter viewing direction from which $')
       CALL PRS('the observer''s eye sees the data$')
@@ -654,7 +654,7 @@ C     Beginning of TEKPLOT preprocessor and postprocessor subroutines *******
 c-----------------------------------------------------------------------
       SUBROUTINE MENU(XMOUSE,YMOUSE,BUTTON,MTITLE)
 C       Segments:  ; Cover:13;  Menu: 14; Color bar:15
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER IT,CH,MTITLE*(*)
       CHARACTER*26 OLDITM(20)
       LOGICAL NEWMNU
@@ -789,7 +789,7 @@ c           call pris (ibox,item(ibox)//'$')
        end
 c-----------------------------------------------------------------------
        SUBROUTINE DRMENU(mtitle)
-       INCLUDE 'basics.inc'
+#     include "basics.inc"
        CHARACTER*(*) MTITLE
        CHARACTER*21 TITLE
        CHARACTER*101 BOXLAB
@@ -894,7 +894,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DRCOVR(ICOVER)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       CALL CLSSEG
 c      CALL DELSEG(ICOVER)
@@ -944,7 +944,7 @@ c
 c-----------------------------------------------------------------------
       SUBROUTINE DRBAR(TX,NTX)
 c     Draws Rectangles for temperature scale onto segment 15
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*15 C
       REAL TX(16)
 C     Draw colorbar first time around
@@ -982,7 +982,7 @@ C          XX=XL+.05
       END
 c-----------------------------------------------------------------------
       SUBROUTINE RDMENU(XMOUSE,YMOUSE)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       character ch
 
       IF(XPHY(XMOUSE).GE.XLMEN.AND. XPHY(XMOUSE).LE.XRMEN ) THEN
@@ -1001,7 +1001,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       SUBROUTINE KEYPAD(TEMP)
-      include 'basics.inc'
+#     include "basics.inc"
 
       call rer(temp)
 
@@ -1021,7 +1021,7 @@ c-----------------------------------------------------------------------
       END
 c-----------------------------------------------------------------------
       subroutine getpts(npoint,cspace,iels,isid,xcrved,ycrved)
-      include 'basics.inc'
+#     include "basics.inc"
 
       real cspace(npoint),xcrved(npoint),ycrved(npoint)
       real car(4,4),cpts(3,4),crvs(2,4),zu(3),wk(nxm*nxm),jx(10*nxm*nxm)
@@ -1209,7 +1209,7 @@ C     DRAWs EDge.  IFLIP CAuses to draw from end to beginning
 C     POSITIVE MEANS CCW; ON VERTICAL STRUTS 9-12, MEANS UPWARD
 C     Draws only.  No move or fill.
       DIMENSION XISM(8),YISM(8),CSPACE(100),XCRVED(100),YCRVED(100)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       ZERO=0.0
       NPOINT=10
@@ -1271,7 +1271,7 @@ C        Draw curved side
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETENV
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*10 ARGS(5)
 C     Default Environmant
 C     Look for nekenv.dat
@@ -1408,7 +1408,7 @@ C
 C     XYZ(3,3)
 C     V(3) - V ranges from 0 to 1
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       DIMENSION XY1(4) ,XY2(4) ,XY3(4)
       DIMENSION XYT1(4),XYT2(4),XYT3(4)
       DIMENSION PT1(3),PT2(3)
@@ -1473,7 +1473,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE TRNGL2(XY1,XY2,XY3,IC)
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFBKFC
       DIMENSION XY1(3),XY2(3),XY3(3)
 C
@@ -1643,7 +1643,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE BOX1(XY1,XY2,XY3,XY4,IC)
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFBKFC
       DIMENSION XY1(3),XY2(3),XY3(3),XY4(3)
 C
@@ -1684,7 +1684,7 @@ c-----------------------------------------------------------------------
 C
 C     Returns TRUE if MOUSE is in the menu area.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       IERR=0
       J=0
       YBkey = YPHY(0.7 + J*3./40.)
@@ -1808,7 +1808,7 @@ c
       end
 c-----------------------------------------------------------------------
       SUBROUTINE ADJVUE(ifadjust)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       logical ifadjust
       character*1 adj(2)
       character*3 adj2
@@ -1865,7 +1865,7 @@ C     Rescale screen-world factors so it fits on screen
       END
 c-----------------------------------------------------------------------
       SUBROUTINE XDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws a diamond around XX,YY
       CALL MOVEC(XX+.0025*XFAC ,YY+.0025*YFAC)
       CALL DRAWC(XX-.0025*XFAC ,YY+.0025*YFAC)
@@ -1876,7 +1876,7 @@ c     draws a diamond around XX,YY
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws a diamond around XX,YY
       CALL MOVESC(XX+.0025*XFAC ,YY+.0025*YFAC)
       CALL DRAWSC(XX-.0025*XFAC ,YY+.0025*YFAC)
@@ -1887,7 +1887,7 @@ c     draws a diamond around XX,YY
       END
 c-----------------------------------------------------------------------
       SUBROUTINE RDIAMD(XX,YY)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 c     draws a diamond around XX,YY
       XLFAC=1.0
       YLFAC=1.0
@@ -1900,7 +1900,7 @@ c     draws a diamond around XX,YY
       END
 c-----------------------------------------------------------------------
       subroutine diam2(xmouse,ymouse,iclr)
-      include 'basics.inc'
+#     include "basics.inc"
 c     draws a diamond around xmouse,ymouse
       call color(iclr)
       call movesc(xscr(xmouse)-.015,yscr(ymouse))
@@ -1912,7 +1912,7 @@ c     draws a diamond around xmouse,ymouse
       end
 c-----------------------------------------------------------------------
       subroutine xdiam2(xmouse,ymouse,iclr)
-      include 'basics.inc'
+#     include "basics.inc"
 c     draws a plus around xmouse,ymouse
       call color(iclr)
       call movesc(xscr(xmouse)-.015,yscr(ymouse))

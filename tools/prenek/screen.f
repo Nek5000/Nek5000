@@ -16,7 +16,7 @@ C------------------------------------------------------------------------------
 C
 c-----------------------------------------------------------------------
       subroutine setgrd
-      include 'basics.inc'
+#     include "basics.inc"
       CHARACTER*26 CCART,CPOLAR,CGRIDX,CGRIDY,CGRIDN,CGRIDR,BLNK
       CHARACTER*26 CGRDX,CGRDY,COBJCT,CHEX
       CHARACTER*1  BLNK1(26)
@@ -188,7 +188,7 @@ C        GRIDDY=YFAC*GRIDT  kludge for now
       END
 c-----------------------------------------------------------------------
       subroutine drgrid
-      include 'basics.inc'
+#     include "basics.inc"
 c
       common /chexb/ hexscale(8,2),hexbase(8,2)
 c
@@ -380,7 +380,7 @@ C               Draw Axis
       end
 c-----------------------------------------------------------------------
       subroutine refresh
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Draw big red box
 c
@@ -562,7 +562,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine filter(xmouse,ymouse,xscreen,yscreen)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer icalld
       save    icalld
@@ -723,7 +723,7 @@ C     grid filtering complete
       end
 c-----------------------------------------------------------------------
       subroutine getobjs
-      include 'basics.inc'
+#     include "basics.inc"
 
       open(unit=39,file='obj.dat')
 
@@ -760,7 +760,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine drwobjs
-      include 'basics.inc'
+#     include "basics.inc"
 
       write(6,*) 'drwobjs: ',nobjs
 
@@ -776,7 +776,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine drwobj_dash(iobj)
-      include 'basics.inc'
+#     include "basics.inc"
 
       ioff=1
       do i=1,iobj-1
@@ -810,7 +810,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine drwobj(iobj)
-      include 'basics.inc'
+#     include "basics.inc"
 
       ioff=1
       do 100 i=1,iobj-1
@@ -831,7 +831,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine latchob(x1,y1,x0,y0,z0,dist2,k,i,iobj)
-      include 'basics.inc'
+#     include "basics.inc"
 
       dist2 =1.e23
       x1 = x0
@@ -859,7 +859,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine setzoom
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -1095,7 +1095,7 @@ c.old    CALL RESCAL
       END
 c-----------------------------------------------------------------------
       subroutine setrans
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFTMP
 C
       IFTMP =IFGRID
@@ -1162,7 +1162,7 @@ C              reset clipping window
       END
 c-----------------------------------------------------------------------
       subroutine rescal
-      include 'basics.inc'
+#     include "basics.inc"
 c
       if (ifzoom) return
 c
@@ -1377,15 +1377,15 @@ c     write(60,*) 'x,t',xt,ynew(1)
       end
 c-----------------------------------------------------------------------
       subroutine redraw_mesh
-      include 'basics.inc'
+#     include "basics.inc"
 c
       call refresh
       call drmenu('NOCOVER')
       call drgrid
 
-c     nelcap = min(nel,5000)
-      nelcap = nel
-      do ie=1,nelcap
+      nelcap_l = min(nelcap,nel)
+
+      do ie=1,nelcap_l
          call drawel(ie)
       enddo
 
@@ -1393,7 +1393,7 @@ c     nelcap = min(nel,5000)
 
       if (if3d) then       !  redraw all the isometric elements.
          call sortel
-         do i=1,nelcap
+         do i=1,nelcap_l
             call drawis(isrt(i))
          enddo
       endif
@@ -1402,15 +1402,15 @@ c     nelcap = min(nel,5000)
       end
 c-----------------------------------------------------------------------
       subroutine redraw_mesh_small
-      include 'basics.inc'
+#     include "basics.inc"
 c
       call refresh
       call drmenu('NOCOVER')
       call drgrid
 
-c     nelcap = min(nel,500)
-      nelcap = nel
-      do ie=1,nelcap
+      nelcap_l = min(nelcap,nel)
+
+      do ie=1,nelcap_l
          call drawel(ie)
       enddo
 
@@ -1419,14 +1419,14 @@ c     nelcap = min(nel,500)
 
 C     Now redraw all the isometric elements.
       call sortel
-      do i=1,nelcap
+      do i=1,nelcap_l
          call drawis(isrt(i))
       enddo
       return
       end
 c-----------------------------------------------------------------------
       subroutine setobj
-      include 'basics.inc'
+#     include "basics.inc"
 
       call getobjs
       return
@@ -1450,7 +1450,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine color_test
-      include 'basics.inc'
+#     include "basics.inc"
 
       parameter (mm=100)
       common /ctmp0/ xbz(0:mm),ybz(0:mm)
@@ -1482,7 +1482,7 @@ c    15= ???
       end
 c-----------------------------------------------------------------------
       subroutine bezier
-      include 'basics.inc'
+#     include "basics.inc"
 
       i0   = 1
       nbez = nbez+1 
@@ -1537,7 +1537,7 @@ c     call menu(xmouse,ymouse,button,'BEZIER')
       end
 c-----------------------------------------------------------------------
       subroutine mouse_diam(xmouse,ymouse,button,iclr)
-      include 'basics.inc'
+#     include "basics.inc"
 
       call mouse(xmouse,ymouse,button)
       if (xmouse.lt.xphy(1.0)) call diam2(xmouse,ymouse,iclr)
@@ -1546,7 +1546,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine dr_bezier(j0,j1)
-      include 'basics.inc'
+#     include "basics.inc"
 
       parameter (mm=50)
       common /ctmp0/ xbz(0:mm),ybz(0:mm)

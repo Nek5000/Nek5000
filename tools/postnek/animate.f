@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
       SUBROUTINE ANIMATE
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       INTEGER ICALLD
       SAVE    ICALLD
@@ -30,7 +30,7 @@ C     specified in TBURST prior to calling this routine.
 C
 C     pff  31 Jul 90 18:30:23 PDT
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 YESNO
       LOGICAL IFAUTH,IFMOVI
@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw streamline IP from time TAU1 to TAU2
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 C     Initial offset for streamline #IP is IP0
@@ -228,7 +228,7 @@ C
 C     This routine reads previously written streamline data from the 
 C     file 'session'.st3
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*80 LSTRNG
       CHARACTER*1  PERIOD
@@ -288,7 +288,7 @@ C      ii) Series of bursts, specified by t' and t", for K bursts.
 C
 C     iii) Specify run time, tclock1 - tclock2.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER*1 YESNO
       COMMON /BUB2/XBUBW0,YBUBW0,ZBUBW0,XBUBW1,YBUBW1,ZBUBW1
@@ -364,7 +364,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DMPFRM
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       INTEGER ICALLD
@@ -391,7 +391,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETFRM
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /FILLFG/ IFILLM
 C
@@ -406,7 +406,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE DROBJT
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /FILLFG/ IFILLM
       INTEGER FCORNS (4,6),FEDGES(4,6),FFLIP(4,6)
@@ -645,7 +645,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE ANIVIEW
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*1 YESNO
       LOGICAL IFAUTH,IFMOVI,IFPROF,IFTMP
       COMMON /FILLFG/ IFILLM
@@ -840,7 +840,7 @@ c-----------------------------------------------------------------------
 C
 C     Sets all parameters requied to fix the view
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INTEGER ICALLD
       SAVE    ICALLD
       DATA    ICALLD /0/
@@ -909,7 +909,7 @@ C
       END
 c-----------------------------------------------------------------------
       SUBROUTINE SETVUE2
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
 C     Set viewing transformation
 C
@@ -1047,7 +1047,7 @@ c     READ(5,91) FILE1
       END
 C-----------------------------------------------------------------------
       subroutine draw_state(kdump,ldump,ifprof,THT,phj,ZFAC,XCT,YCT,nre)
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
 c

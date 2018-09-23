@@ -1,27 +1,42 @@
 #!/bin/bash
 set -e
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
-tar -zxvf *.tar.gz
 
-mv netcdf-4.4.1.1 netcdf
-cd netcdf
-export NETCDFPATH=`pwd`
-sed -e "s:^#define NC_MAX_DIMS.*:#define NC_MAX_DIMS     65536:"  \
--e     "s:^#define NC_MAX_VARS.*:#define NC_MAX_VARS     524288:" \
--e     "s:^#define NC_MAX_VAR_DIMS.*:#define NC_MAX_VAR_DIMS 8:" \
-include/netcdf.h > tmp 
-mv tmp include/netcdf.h
-./configure --prefix=`pwd` CC=gcc --disable-netcdf-4 --disable-fsync --disable-dap
-make 
-make install
-cd ..
+# NETCDF
+if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then 
+  if [ ! -f netcdf-4.4.1.1.tar.gz ]; then
+    wget -O netcdf-4.4.1.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz
+  fi
+  tar -zxf *.tar.gz
+  mv netcdf-4.4.1.1 netcdf || ture
+  cd netcdf
+  mkdir install || true
+  export NETCDFPATH=`pwd`/install
+  sed -e "s:^#define NC_MAX_DIMS.*:#define NC_MAX_DIMS     65536:"  \
+      -e "s:^#define NC_MAX_VARS.*:#define NC_MAX_VARS     524288:" \
+      -e "s:^#define NC_MAX_VAR_DIMS.*:#define NC_MAX_VAR_DIMS 8:" \
+  include/netcdf.h > tmp 
+  mv tmp include/netcdf.h
+  ./configure --prefix=$NETCDFPATH --disable-netcdf-4 --disable-fsync --disable-dap
+  make -j4 
+  make install
+  cd ..
+fi
 
-wget https://github.com/gsjaardema/seacas/archive/exodus.zip
-unzip exodus.zip
-cd sea*
-sed -e "s:^-D NetCDF_DIR.*:-D NetCDF_DIR\:PATH=${NETCDFPATH} \\\:" cmake-exodus > cmake-exo
-chmod 755 cmake-exo
-mkdir build; cd ./build
-../cmake-exo
-make
-make install
+# EXODUS
+export NETCDFPATH=`pwd`/netcdf/install
+if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] ||
+   [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exoIIv2for32/libexoIIv2for32.a ]; then
+  if [ ! -f exodus.zip ]; then
+    wget -O exodus.zip https://github.com/gsjaardema/seacas/archive/exodus.zip
+  fi
+  unzip exodus.zip
+  cd sea*
+  sed -e "s:^-D NetCDF_DIR.*:-D NetCDF_DIR\:PATH=${NETCDFPATH} \\\:" \
+      -e "s:CC=.*: CC=${CC}:" cmake-exodus > cmake-exo
+  chmod 755 cmake-exo
+  rm -rf build  
+  mkdir build; cd ./build
+  ../cmake-exo
+  make -j4
+  make install
+fi

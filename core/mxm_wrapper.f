@@ -11,8 +11,9 @@ c
       include 'TOTAL'
 c
       integer*8 tt
+      parameter(tt = 32) 
 
-#ifdef TIMER
+#ifdef TIMER2
       if (isclld.eq.0) then
           isclld=1
           nrout=nrout+1
@@ -29,22 +30,21 @@ c
 
 #ifdef BGQ
       if (n2 .eq. 8 .and. mod(n1,4) .eq. 0 
-c        .and. MOD(LOC(a),tt).eq.0 & 
-c        .and. MOD(LOC(b),tt).eq.0 & 
-c        .and. MOD(LOC(c),tt).eq.0 & 
-     &   ) then
+     $  .and. MOD(LOC(a),tt).eq.0 
+     $  .and. MOD(LOC(b),tt).eq.0 
+     $  .and. MOD(LOC(c),tt).eq.0 
+     $   ) then
         call mxm_bgq_8(a, n1, b, n2, c, n3)  
         goto 111
       endif
       if (n2 .eq. 16 .and. mod(n1,4) .eq. 0 
-c        .and. MOD(LOC(a),tt).eq.0 & 
-c        .and. MOD(LOC(b),tt).eq.0 & 
-c        .and. MOD(LOC(c),tt).eq.0 & 
-     &    ) then
+     $  .and. MOD(LOC(a),tt).eq.0
+     $  .and. MOD(LOC(b),tt).eq.0
+     $  .and. MOD(LOC(c),tt).eq.0
+     $    ) then
         call mxm_bgq_16(a, n1, b, n2, c, n3)  
         goto 111
       endif
-      tt = 32
       if (n2 .eq. 10 .and. mod(n1,4) .eq. 0 .and. mod(n3,2) .eq. 0 
      &   .and. MOD(LOC(a),tt).eq.0 
      &   .and. MOD(LOC(b),tt).eq.0  
@@ -80,7 +80,7 @@ c        .and. MOD(LOC(c),tt).eq.0 &
  101  call mxmf2(a,n1,b,n2,c,n3)
 
  111  continue
-#ifdef TIMER
+#ifdef TIMER2
       tmxmf = tmxmf + dnekclock() - etime1  
 #endif
       return
@@ -89,7 +89,7 @@ c-----------------------------------------------------------------------
       subroutine fgslib_mxm(a,n1,b,n2,c,n3)
       real a(n1,n2),b(n2,n3),c(n1,n3)
 
-      call mxm(a,n1,b,n2,c,n3)
+      call mxmf2(a,n1,b,n2,c,n3)
 
       return
       end

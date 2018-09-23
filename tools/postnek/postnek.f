@@ -19,7 +19,7 @@ c     PROGRAM POSTNK
 C23456789012345678901234567890123456789012345678901234567890123456789012
 C     PostProcessor for Spectral element code.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       common /quantc/ quanto
@@ -512,7 +512,7 @@ c        call scrn_out
       END
 c-----------------------------------------------------------------------
       subroutine PLOTIT(iprompt)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER CVEL*20
 C
@@ -688,7 +688,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine READLN(LOCATN)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 C       Reads a line of text.  Jumps to appropriate place on help.
@@ -729,7 +729,7 @@ C
 c-----------------------------------------------------------------------
       subroutine DRMESH
 C     Draws Mesh.  Draws walls white.
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION ICRVS(4),IWBC(4,NELM)
       INTEGER FCORNS (4,6)
@@ -836,7 +836,7 @@ C
       LOGICAL GAP
       INTEGER IAS(50),IES(50)
       CHARACTER*5 STRING
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
 200   FORMAT(G11.4)
@@ -862,7 +862,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine SETATT
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
 c
@@ -1066,7 +1066,7 @@ c     return
       END
 c-----------------------------------------------------------------------
       subroutine SETRES
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 13    ITEM(1)='MAIN MENU'
       ITEM(2)='FISHNET GRID'
@@ -1211,7 +1211,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine setloc
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       INTEGER FCORNS (4,6)
@@ -1498,7 +1498,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine GETPT(POINT1,POINT2,POINT3,FLAG)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       CHARACTER*26 FLAG
       INTEGER FCORNS (4,6)
       DATA FCORNS / 1,2,6,5,
@@ -1583,7 +1583,7 @@ C           Menu area; use keypad
       END
 c-----------------------------------------------------------------------
       subroutine DRAXIS
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       IF(.NOT.IFDRAX)return
       CALL COLOR(8)
@@ -1603,14 +1603,14 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine SHOW(ARG,IA)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       return
       END
 c-----------------------------------------------------------------------
       subroutine INIT
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
 c
@@ -1754,6 +1754,7 @@ c     CALL RZERO(PSC,MAXPTS)
       CALL RZERO(RR    ,3*NPRT)
       CALL RZERO(XLG   ,4*NPRT)
       CALL RZERO(SCALLG,5*NPRT)
+      call rzero(param,500)
 C
       CALL IZERO(ICRV,NELM)
 C
@@ -1825,14 +1826,31 @@ c         if(int.ge.65 .and. int.le.90) int=int+32
    9  continue
       m=lastch+1
       n=m+3
+      ifnorea = .false.
+      ifpar   = .false.
 c
 C     Read file
       filenm(m:n)='.rea'
       CALL OPENF( 9,FILENM,'OLD',1,IERR)
       IF(IERR.NE.0) THEN
          CALL PRS(' ** ERROR **  Can''t open file '//filenm//'$')
+         ! check for re2
+         filenm(m:n)='.re2'
+         call openf(9,filenm,'OLD',1,ierr)
+         if (ierr.eq.0) then ! <- found re2
+            call prs(' ** SUCCESS ** Found file '//filenm//'$')
+            filenm(m:n)='.par'
+            call openf(55,filenm,'OLD',1,ierr)
+            if (ierr.eq.0) then
+               ifpar = .true. ! <- found par
+               call prs(' ** SUCCESS ** Found file '//filenm//'$')
+            endif
+            ifnorea = .true.
+            goto 123
+         endif
          GOTO 13
       ENDIF
+  123 continue
 c     if(IERR.NE.0)STOP
 C     Field Data  (we move this to AFTER reading in read file)
 C     Streamline Data
@@ -1846,7 +1864,7 @@ c
       iplotnum        = 1
       iplotnam        = m
       fplotnam(m:n+2) = '.plt01'
-c
+
       IF (IFGRAF) THEN
          CALL DEVINI('GENERIC')
          CALL SETENV
@@ -1854,8 +1872,122 @@ c
          IF(IFLASE ) CALL INITQMS
          IF(IFPOSTS) CALL INITPS
       ENDIF
-C
-      filenm(m:n)='.re2'
+
+      if (ifpar) then
+         filenm(m:n)='.par'
+         call chcopy(parfle,filenm,n)
+         call par_read(ierr)
+         filenm(m:n)='.re2'
+         goto 234
+      else if (ifnorea) then
+         ! prompt user for parameters and flags
+
+c        READ(9,'(a1)',ERR=59)ans
+         call prs('Enter ans$')
+         call res(ans,70)
+
+c        READ(9,*,ERR=59) VNEKOLD
+         call prs('Enter vnekold$')
+         call rer(vnekold)
+
+         nktonv=vnekton
+
+c        READ(9,*,ERR=59) NDIM
+         call prs('Enter ndim$')
+         call rei(ndim,70)
+
+         if (ndim.eq.3) if3d = .true.
+         if (ndim.eq.2) if3d = .false.
+
+         call prs('Enter parameter(1) RHO$')
+         call rer(param(1))
+
+         call prs('Enter parameter(2) VISC$')
+         call rer(param(2))
+
+         call prs('Enter parameter(7) RHOCP$')
+         call rer(param(7))
+
+         call prs('Enter parameter(8) CONDUCT$')
+         call rer(param(8))
+
+         call prs('Enter parameter(10) FINTIM$')
+         call rer(param(10))
+
+         call prs('Enter parameter(11) NSTEPS$')
+         call rer(param(11))
+
+         call prs('Enter parameter(12) DT    $')
+         call rer(param(12))
+
+         call prs('Enter parameter(15) IOSTEP$')
+         call rer(param(15))
+
+         call prs('Enter parameter(18) GRID$')
+         call rer(param(18))
+
+         call prs('Enter parameter(20) NX$')
+         call rer(param(20))
+
+         call prs('Enter parameter(23) NPSCAL$')
+         call rer(param(23)) 
+
+         call prs('Enter parameter(66)$')
+         call rer(param(66))
+
+         call prs('Enter parameter(68)$')
+         call rer(param(68))
+
+         call prs('Enter parameter(116) MELX$')
+         call rer(param(116))
+
+         call prs('Enter parameter(117) MELY$')
+         call rer(param(117))
+
+         call prs('Enter parameter(118) MELZ$')
+         call rer(param(118))
+
+         call prs('Enter nskip$')
+         call rei(nskip)
+
+         ! initialize pcond & prhocp
+         do i=3,11
+            pcond(i)  = 1.
+            prhocp(i) = 1.
+         enddo
+
+         if (nskip.ne.0) then
+            do i=3,11
+               write (6,*) 'i=',i
+               call prs('Enter pcond(i) and prhocp(i)$')
+               call rerr(pcond(i),prhocp(i))
+            enddo
+         endif
+
+         ifflow    = .false.
+         ifheat    = .false.
+         iftran    = .false.
+         ifnav     = .false.
+         ifaxis    = .false.
+
+         call prs('Enter ifflow$')
+         call rel(ifflow)
+
+         call prs('Enter ifheat$')
+         call rel(ifheat)
+
+         call prs('enter iftran$')
+         call rel(iftran)
+
+         call prs('enter ifadvc$')
+         call rel(ifadvc)
+
+         call prs('enter ifaxis$')
+         call rel(ifaxis)
+
+         goto 234
+      endif
+
 C     Read in stuff
       READ(9,'(a1)',ERR=59)ans
       READ(9,*,ERR=59) VNEKOLD
@@ -1914,6 +2046,12 @@ c          READ(9,*,ERR=59)
 c053     CONTINUE
 c     ENDIF
 C
+  234 continue
+      filenm(m:n)='.re2'
+      param(66) = 6
+      do i=1,66
+         write (6,*) i,param(i)
+      enddo
       NFLDS=1
       IF(IFHEAT)NFLDS=2+NPSCAL
 c     NX=PARAM(20)
@@ -1948,20 +2086,31 @@ C           Default if it can't read from end of history file
          NDUMPS=1
       ENDIF
 c
-      READ(9,*,ERR=40,end=34)XFAC,YFAC,XZERO,YZERO
+      if (ifnorea) then
+         if (ifpar) then
+
+         else
+            ! prompt user for xfac,yfac,xzero,yzero
+         endif
+      else
+         read(9,*,err=40,end=34) xfac,yfac,xzero,yzero
+      endif
 C     Preserve original coordinates for 2D case
       XFACO=XFAC
       YFACO=YFAC
       XZEROO=XZERO
       YZEROO=YZERO
 C     Read Elemental Mesh data
-      READ(9,*,ERR=41,end=41)
-
-      read(9,*,err=41,end=41)nelr,ndim
+      if (ifnorea) then
+         ! prompt user for nelr,ndim
+      else
+         read(9,*,err=41,end=41)
+         read(9,*,err=41,end=41) nelr,ndim
+      endif
 
       ifsubset = .false.
       IFFMTIN  = .TRUE.
-      IF (NELR.LT.0) IFFMTIN=.FALSE.
+      IF (NELR.LT.0.or.ifpar) IFFMTIN=.FALSE.
 c     OPEN .re2
       if (.not.iffmtin) then
          ilen= ltrunc(filenm,40)
@@ -2547,13 +2696,12 @@ c
       ntot = nx*ny*nz*nel
       if (ntot.gt.maxpts) then
          CALL PRS(' ** ERROR **  Too many points!$')
-         WRITE(6,*) 'Increase maxpts to',ntot,' in basicsp.inc'
          WRITE(6,*) 'EXITING'
          CALL EXITT
       endif
       if (nel.gt.nelm) then
-         CALL PRS(' ** ERROR **  Too many elements!$')
-         WRITE(6,*) 'Increase NELM to',nel,' in basics.inc'
+         CALL PRS('Abort: number of elements too large!$')
+         WRITE(6,*) 'Change MAXNEL and recompile'
          WRITE(6,*) 'EXITING'
          CALL EXITT
       endif
@@ -2699,7 +2847,7 @@ c
       END
 c-----------------------------------------------------------------------
       subroutine tem
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -2960,7 +3108,7 @@ c-----------------------------------------------------------------------
  
 c     fill color bar
  
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
 
@@ -2984,7 +3132,7 @@ c-----------------------------------------------------------------------
 C
 C     Draw and label color bar
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -3125,7 +3273,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRFRAM
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CALL COLOR(1)
 C     Draw Title
@@ -3180,7 +3328,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRISO
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       logical ifcbdr,ifcbdn
@@ -3396,7 +3544,7 @@ C      Draw only if draw mesh is .TRUE.
       END
 c-----------------------------------------------------------------------
       subroutine plerr
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common/Ttscal/ TX(16),CONTRS,CNTRLV,TMPMIN,TMPMAX
       CHARACTER LABEL1*10,LABEL2*10,C*20
@@ -3509,7 +3657,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine DRERR(IEL,ICOLOR)
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       IND(I,J,K,IEL)=I+NX*(J-1)+NX*NY*(K-1)+NX*NY*NZ*(IEL-1)
       CALL COLOR(1)
@@ -3596,7 +3744,7 @@ C              Draw curved sides for hardcopy
 c-----------------------------------------------------------------------
       subroutine MESPOS
 C     Generates mesh in postprocessor
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       DIMENSION DXCHEB(20),DYCHEB(20)
       REAL CSPACE(100),XCRVED(100),YCRVED(100),XFRAC(20)
@@ -3757,7 +3905,7 @@ c-----------------------------------------------------------------------
 C
 C     Subroutine that draws velocity arrow plots
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
       PARAMETER (NXM2=NXM*NYM)
@@ -3973,7 +4121,7 @@ C
 c-----------------------------------------------------------------------
       subroutine FINDNAM(CHOICES,NCC)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 C
       CHARACTER*26 CHOICES(1)
@@ -3994,7 +4142,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine relite
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       do 100 ihi=1,nhi
          ie = ieh(ihi)
          CALL HILIGHT(IE,9)
@@ -4006,7 +4154,7 @@ c-----------------------------------------------------------------------
 c
 c     See if there is a state array...
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4048,7 +4196,7 @@ c-----------------------------------------------------------------------
 c
 c     dump out last state array
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4069,7 +4217,7 @@ c-----------------------------------------------------------------------
 c
 c     See if there is a state array...
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       include 'state.inc'
       logical ifdrm
@@ -4104,7 +4252,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine INIT0
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       REAL PN(NXM)
@@ -4125,7 +4273,7 @@ c
 c-----------------------------------------------------------------------
       subroutine post_reset_window
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       call devini('GENERIC')
@@ -4139,7 +4287,7 @@ c-----------------------------------------------------------------------
 c
 c     Set location based on boundary conditions
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       COMMON /PFFLG/  ILGRNG,ISCND,IENTRP,inewt
       INTEGER FCORNS (4,6)
@@ -4329,7 +4477,7 @@ c-----------------------------------------------------------------------
 c
 c     See if noncon is true
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       logical ifnc
@@ -4368,7 +4516,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine TEMVEL
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER LABEL1*10,LABEL2*10,LABEL3*6
       LOGICAL IFCRV(4)
@@ -4679,7 +4827,7 @@ c     return
 c     end
 c-----------------------------------------------------------------------
       subroutine get_subset_list
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       integer e,e0,e1,es
 
@@ -4729,7 +4877,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine quickfill(pp)
-      include 'basics.inc'
+#     include "basics.inc"
       real   pp(nx,ny,nz)
       do k = 1, nz
       do j = 1, ny

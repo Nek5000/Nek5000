@@ -1,7 +1,7 @@
 C     Utilities to be included in all subroutines in Preprocessor Program
 C     BASICS.INC
 
-      parameter (nelm=10 000,nxm=7,nym=7,nzm=7,maxfld=5)
+      parameter (nelm=MAXNEL,nxm=7,nym=7,nzm=7,maxfld=5)
       parameter (lx1=nxm,ly1=nym,lz1=nzm)
 
       PARAMETER ( MAXCRV=4,MAXIBC=4,MAXHIS=2,MPSCAL=4)
@@ -50,6 +50,7 @@ C     BASICS.INC
      $         ,igroup(nelm),isobj
      $         ,ibc(6,nelm,0:maxfld) ! For periodic with nel>1e6
      $         ,matype(-5:10,0:maxfld)
+     $         ,nelcap
 
       COMMON /CHAAR/LINE,SESION,ITEM,CHOICE,OLDVER,CMD(500),RSTV,RSTT
      $,X13,CPARAM(500),HCODE(11,MAXHIS),OCODE(20),CBC1,CBC3,DARROW

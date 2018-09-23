@@ -31,10 +31,8 @@ c-----------------------------------------------------------------------
       integer e,f,eg
 c     e = gllel(eg)
 
-
 c     Note: this is an acceleration term, NOT a force!
 c     Thus, ffx will subsequently be multiplied by rho(x,t).
-
 
       ffx = 0.0
       ffy = 0.0
@@ -60,6 +58,41 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+
+      real uex (lx1,ly1,lz1,lelv)
+     $    ,vex (lx1,ly1,lz1,lelv)
+     $    ,du1 (lx1,ly1,lz1,lelv)
+     $    ,du2 (lx1,ly1,lz1,lelv)
+     $    ,pex (lx2,ly2,lz2,lelv)
+
+      ntot1 = nx1*ny1*nz1*nelv
+      ntot2 = nx2*ny2*nz2*nelv
+      Rad = 0.5
+
+      do i=1,ntot1
+         rr = ym1(i,1,1,1)/Rad
+         uex(i,1,1,1) = 1.0 - rr*rr
+         vex(i,1,1,1) = 0.0
+      enddo
+
+      do i=1,ntot2
+         pex(i,1,1,1) = 16.0*param(2)*(4.0-xm2(i,1,1,1))
+      enddo
+
+c  Calculate parabolic velocity difference norms
+      call sub3 (du1,VX,uex,ntot1)
+      dumax = glmax(du1,ntot1)
+
+      call col3    (du2,du1,du1,ntot1)
+      call col2    (du2,bm1    ,ntot1)
+      du2sm= GLSUM (du2,ntot1)/ VOLVM1
+      du2sm= SQRT  (du2sm)
+
+      if (nid.eq.0 .and. lastep.eq.1) then
+         write(6,2) istep,dt,time,dumax,du2sm,'err '
+      endif
+ 2    format(i9,4e17.7,a8)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -81,7 +114,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-      ux=0.0
+      ux=0.0 ! 1-4*y*y !0.0
       uy=0.0
       uz=0.0
       temp=0

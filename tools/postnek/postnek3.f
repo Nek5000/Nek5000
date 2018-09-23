@@ -19,7 +19,7 @@ c-----------------------------------------------------------------------
 C
 C     Draws multiple plots on the domain
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
       common /inputc/ input
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
 C
 C     Set up WORK array according to current plotting state.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ WORK1(LXYZ),WORK2(LXYZ)
@@ -454,7 +454,7 @@ c-----------------------------------------------------------------------
 C
 C     Plot a profile in the physical domain
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common /inputc/ input
 c
@@ -735,7 +735,7 @@ C
 c-----------------------------------------------------------------------
       subroutine drawel(iel)
 C     IF ELEMENT NUMBER IS NEGATIVE, ERASE ELEMENT
-      include 'basics.inc'
+#     include "basics.inc"
       real xx(3,9)
 
       CHARACTER STRING*6
@@ -846,7 +846,7 @@ c-----------------------------------------------------------------------
 C
 C     Draws multiple plots on the domain
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       common /inputc/ input
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
@@ -913,7 +913,7 @@ c-----------------------------------------------------------------------
 C
 C     Gets a set of lines
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
 C
@@ -1117,7 +1117,7 @@ c-----------------------------------------------------------------------
 C
 C     Modify WORK array according to current plotting state.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ WORK1(LXYZ),WORK2(LXYZ)
@@ -1197,7 +1197,7 @@ C     GENERATE Derivative operators
 C
 C-----------------------------------------------------------------
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       REAL PN(20)
 C
@@ -1546,7 +1546,7 @@ c-----------------------------------------------------------------------
 c
 c     Set uvwpt to be linear combination of current and new .fld files
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ wk(LXYZ,3,3)
@@ -1649,7 +1649,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute vortices as recommended by Jeong & Hussai JFM 95 [285]
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ wk(LXYZ,3,3)
@@ -1792,7 +1792,7 @@ c-----------------------------------------------------------------------
 c
 c     Compute dvel/dx_j  j=1,3
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       parameter (lxyz=nxm*nym*nzm)
@@ -1920,7 +1920,7 @@ c
 c-----------------------------------------------------------------------
       subroutine vol_int(sum,vol,g)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real g(1)
 c
@@ -1972,7 +1972,7 @@ c
 c-----------------------------------------------------------------------
       subroutine vol_int2(sum,vol,g,h)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
       real g(1),h(1)
 c
@@ -2272,7 +2272,7 @@ c-----------------------------------------------------------------------
 C
 C     Draws multiple vector plots on the domain  (pff 2/25/00)
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
       PI=4.0*ATAN(1.0)
@@ -2334,7 +2334,7 @@ c-----------------------------------------------------------------------
 C
 C     Draws multiple vector plots on the domain  2/25/00 pff
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
 C
@@ -2390,7 +2390,7 @@ c-----------------------------------------------------------------------
 C
 C     Plot a vector in the physical domain
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       character*1 dollar
       DIMENSION UL(3),VP(3)
@@ -2479,7 +2479,7 @@ c
 c     Assumes current data set is u_av, v_av, etc.
 c
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ wk(LXYZ,3,3)
@@ -2531,7 +2531,7 @@ c
 c     Assumes current data set is u_av, v_av, etc.
 c
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ wk(LXYZ,3,3)
@@ -2574,7 +2574,7 @@ c-----------------------------------------------------------------------
 c
 c     filter vx,vy,vz, and T by projecting in the L_k - L_k-2 basis
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /lfilt/ ifstdfilt
@@ -2826,7 +2826,7 @@ c     Get list of variables for profile output
 c
 c     10/25/03 pff
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       character*26 items(11)
@@ -2965,7 +2965,7 @@ c     Get profile output
 c
 c     10/25/03 pff
 C
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       x0 = xo
@@ -3110,7 +3110,7 @@ c-----------------------------------------------------------------------
 C
 C     Set up WORK array according to current plotting state.
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       PARAMETER (LXYZ=NXM*NYM*NZM)
       COMMON /CTMP4/ WORK1(LXYZ),WORK2(LXYZ)
@@ -3160,7 +3160,7 @@ C        WORK1=DV/DX ; WORK2=DU/DY
 c-----------------------------------------------------------------------
       subroutine magnitude(wk,v1,v2,v3)
 C
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real wk(1),v1(1),v2(1),v3(1)
 c
@@ -3185,7 +3185,7 @@ c-----------------------------------------------------------------------
 C
 C     Gets a set of lines corresponding to a box 
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
 c
@@ -3279,7 +3279,7 @@ c-----------------------------------------------------------------------
 C
 C     Gets a set of lines corresponding to a box 
 C
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
       CHARACTER KEY,STRING*5,ELE(4),CVEL*20
 c

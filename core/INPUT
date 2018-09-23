@@ -16,10 +16,13 @@ c
      $    ,cpgrp(-5:10,ldimt1,3)
      $    ,qinteg(ldimt3,maxobj)
      $    ,uparam(20)
-     $    ,atol(ldimt3)
+     $    ,atol(0:ldimt1)
+     $    ,restol(0:ldimt1)
+     $    ,fem_amg_param(10)
      $    ,filterType
+
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
-     $                atol,filterType
+     $                atol,restol,fem_amg_param,filterType
 
       integer matype(-5:10,ldimt1)
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)
@@ -33,30 +36,32 @@ c
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid
      $               ,ifadvc(ldimt1),ifdiff(ldimt1),ifdeal(ldimt1)
+     $               ,iffilter(ldimt1),ifprojfld(0:ldimt1)
      $               ,iftmsh(0:ldimt1),ifdgfld(0:ldimt1),ifdg
-     $               ,ifmvbd,ifnatc,ifchar,ifnonl(ldimt1)
+     $               ,ifmvbd,ifchar,ifnonl(ldimt1)
      $               ,ifvarp(ldimt1),ifpsco(ldimt1),ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso(ldimt1),iffmtin
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
      $               ,ifmpiio,ifrich
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
      $               ,ifadvc,ifdiff,ifdeal
+     $               ,iffilter, ifprojfld
      $               ,iftmsh,ifdgfld,ifdg
-     $               ,ifmvbd,ifnatc,ifchar,ifnonl
+     $               ,ifmvbd,ifchar,ifnonl
      $               ,ifvarp        ,ifpsco        ,ifvps
      $               ,ifmodel,ifkeps,ifintq,ifcons
      $               ,ifxyo,ifpo,ifvo,ifto,iftgo,ifpso        ,iffmtin
      $               ,ifbo,ifanls,ifanl2,ifmhd,ifessr,ifpert,ifbase
      $               ,ifcvode,iflomach,ifexplvis,ifschclob,ifuservp
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
-     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm
+     $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
      $               ,ifmpiio,ifrich
 

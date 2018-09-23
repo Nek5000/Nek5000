@@ -1,12 +1,24 @@
 #!/bin/bash
 set -e
 
-rm -rf *.tar.gz* sundials-* 2>/dev/null
-wget https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
-tar -zxvf *.tar.gz
+if [ "$1" == "clean" ]; then
+  rm -rf sundials-2.7.0 lib include 2>/dev/null 
+  exit 0
+fi
+
+if [ -f ./lib/libsundials_fcvode.a ]; then
+  exit 0
+fi
+
+if [ ! -f sundials-2.7.0.tar.gz ]; then
+  wget -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
+  tar -zxvf *.tar.gz
+fi
+
+tar -zxf *.tar.gz
 
 cd sundials*
-mkdir build
+mkdir -p build
 cd build
 
 cmake \
@@ -21,10 +33,10 @@ cmake \
 -DMPI_ENABLE=ON \
 -DFCMIX_ENABLE=ON \
 -DBUILD_SHARED_LIBS=OFF \
--DCMAKE_C_COMPILER=gcc \
--DCMAKE_Fortran_COMPILER=gfortran \
--DMPI_MPICC=`which mpicc` \
--DMPI_MPIF77=`which mpif77` \
+-DCMAKE_C_COMPILER=`which $CC` \
+-DCMAKE_Fortran_COMPILER=`which $FC` \
+-DMPI_MPICC=`which $CC` \
+-DMPI_MPIF77=`which $FC` \
 ..
 
 make install -j4

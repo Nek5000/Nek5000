@@ -4,115 +4,15 @@
 |-----------------|---------------------|
 | [![Build](https://travis-ci.org/Nek5000/Nek5000.svg?branch=master)](https://travis-ci.org/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
 
-Nek5000 is a fast and scalable open source CFD solver. 
+Nek5000 is a fast and scalable open source CFD solver.
+
+## Release Notes
 Make sure to read the [release notes](https://github.com/Nek5000/Nek5000/blob/master/RELEASE.md) before using the code.
-. 
 
-## Directory Structure
-
-Here's a brief description of each top-level directory:
-
-#### `core`
-contains the Nek5000 application sources.
-
-#### `bin`
-contains scripts for running nek5000 and manipulating its output.
-
-#### `tools`
-contains the sources for the pre- and post-processing tools which are stand-alone.
-
-#### `short-tests`
-contains light-weight regression tests for verification.
-
-#### `run`
-consistent place for users to place their problem cases.
-
-#### `examples`
-reserved for the Nek5000 example problems.
-
-#### `doc`
-contains the user documentation in HTML and PDF.
-
-#### `3rd_party`
-its purpose it to provide a consistent place for 3rd party code.
-
-## Case Files
-
-#### `SIZE`
-contains some hardwired runtime parameters to dimension static arrays
-
-#### `foo.par`
-contains runtime parameters 
-
-#### `foo.re2`
-contains mesh and boundary data
-
-#### `foo.ma2`
-contains partioning data
-
-#### `foo.usr`
-contains user specific code to initialize solver, set source terms and boundary conditions or to manipulate solver internals. 
-
-#### `foo.his`
-contains probing points
-
-#### `foo.f00000`
-contains checkpoint data
-
-#### `foo.nek5000`
-contains metadata for VisIt
-
-#### `foo.rea` (legacy)
-contains runtime parameters and mesh in ASCII. Replaced by .par and .re2 file
-
-#### `foo.map` (legacy)
-contains partioning data in ASCII
-
-**Note:** The old legacy files (.rea & .map) are recommended for debugging purposes only. 
-
-## Scripts
-
-Let's walk us through some useful batch scripts:
-
-* `makenek <case>` compiles your case
-* `nek/nekb <case>` runs a serial job in foreground or background
-* `nekmpi/nekbmpi <case> <number of ranks>` runs a parallel job
-* `neknek <case1> <cas2> <ranks 1> <ranks 2>` runs Nek5000 with two overlapping component grids
-* `visnek <case>` creates metadata file required by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/)
-* `mvn <old name> <new name>` renames all case files
-* `cpn <old name> <new name>` copies all case files
-
-## Running your very first simulation
-
-Hold your horses, this needs less than 5 min.
-
-```
-cd ~
-tar -xvzf Nek5000_17.0.0.tar.gz
-export PATH=$HOME/Nek5000/bin:$PATH
-cd ~/Nek5000/tools; ./maketools genmap
-cd ~/Nek5000/run
-cp -r ../examples/turbChannel .
-cd turbChannel
-genmap                    # run partioner, on input type turbChannel
-makenek turbChannel       # build case, edit script to change settings
-nekbmpi turbChannel 2     # run Nek5000 on 2 ranks in the background
-echo -2 >ioinfo           # stop Nek5000 run and dump checkpoint
-visnek turbChannel; visit -o turbChannel.nek5000 # requires a VisIt installation
-
-```
-
-## Meshing
-
-Nek5000 is mainly a solver. However, simple box type meshes can be generated with the `genbox` tool. For more complex meshes please consider using `PRENEK` and the meshing tools `nekmerge` and `n2to3`. We provide mesh converters like `exo2nek` and `msh2nek` which are quite handy if you want to use your favorite mesh generator. Also check our [Bazaar](https://github.com/Nek5000/NekBazaar) for 3rd party meshing tools. 
-
-## Visualization
-
-Nek5000 output (fld) files can be read by [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/) or [ParaView](https://www.paraview.org/). There is also an build-in X-Window based postprocessor called `POSTNEK` located in tools.
 
 ## Documentation
 
-Visit our online [User's Guide](http://Nek5000.github.io/NekDoc/) which is also available in [PDF](http://nek5000.github.io/NekDoc/Nek_users.pdf).
+Visit our  [User's Guide](http://Nek5000.github.io/NekDoc/).
 
 ## Troubleshooting
 

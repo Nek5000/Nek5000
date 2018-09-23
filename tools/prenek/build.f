@@ -16,31 +16,31 @@ C
 c-----------------------------------------------------------------------
       subroutine build
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       if (ifconj_merge) then
 
          call build0             ! Read in fluid mesh
-         nelv = nel
+         melv = nel + 0
 
          call imp_mesh(.false.)  ! Get thermal mesh
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
-         call set_igroup(nelv,nelt)
+         call set_igroup(melv,melt)
 
          call build2             ! Set bcs
 
-         nelt  = nel
-         ncond = nelt-nelv
+         melt  = nel
+         ncond = melt-melv
 
       else          ! Std. menu-driven mesh construction
 
          call build0
          call build1
 
-         nelt = nel
-         nelv = nel
+         melt = nel
+         melv = nel
          call build2
 
       endif
@@ -52,7 +52,7 @@ c-----------------------------------------------------------------------
 
 c     Menu-based module that prompts the user to input corners.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -166,7 +166,7 @@ c-----------------------------------------------------------------------
 
 c     Menu-based module that prompts the user to input corners.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -293,7 +293,6 @@ C        MODEL and CURVE know about it, too
             ifundo = .false.
          else
             call prs('ERROR: Already at the original mesh$')
-            write(*,*) '(build)itsave=',itsave
          endif
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'IMPORT VTK MESH')THEN
@@ -330,7 +329,10 @@ C     Only floor of elevator hilighted during modify
  160     continue
          ifautosave = .false.
       ELSE IF(CHOICE.EQ.'REDRAW MESH')THEN
+         nelcap_save = nelcap
+         nelcap      = nel
          call redraw_mesh
+         nelcap      = nelcap_save
       ELSE IF(CHOICE.EQ.'ZOOM')THEN
          call setzoom
          call redraw_mesh
@@ -496,7 +498,7 @@ c         construct elemental mesh.
 
 c     Call routines that set boundary conditions.
      
-      include 'basics.inc'
+#     include "basics.inc"
       dimension icrvs(4)
       character key,string*6,leto,char1
       logical iftmp
@@ -595,7 +597,7 @@ c     All internal boundaries are set.  Query remaining bcs
       end
 c-----------------------------------------------------------------------
       subroutine readat
-      include 'basics.inc'
+#     include "basics.inc"
       logical iffold,ifhold
       character chtemp*3
       character*80 string
@@ -640,8 +642,8 @@ C     Read Elemental Mesh data
       READ(9,*,ERR=33,END=33)NEL,NDIM
 
       if (nel.ge.nelm) then
-         call prsii('NELM too small in basics.inc.$',nel,nelm)
-         call prs  ('Recompile prenek.  ABORT$')
+         call prsii('Abort: number of elements too large.$',nel,nelm)
+         call prs  ('change MAXNEL and recompile.  ABORT$')
       endif
      
       iffmtin = .true.
@@ -972,7 +974,7 @@ c-----------------------------------------------------------------------
       subroutine setscl
 C     Sets scale factors
 C     
-      include 'basics.inc'
+#     include "basics.inc"
       LOGICAL IFMENU
       REAL XSC(4),YSC(4)
       GRID=PARAM(18)
@@ -1141,7 +1143,7 @@ C
 c-----------------------------------------------------------------------
       subroutine imp_mesh(ifquery_displace)
 
-      include 'basics.inc'
+#     include "basics.inc"
       character*3 d
       character*1  fnam1(70)
       character*70 fname
@@ -1162,7 +1164,6 @@ c-----------------------------------------------------------------------
 
       call blank(fname,70)
 
-      write(*,*) '(imp_mesh)itsave=',itsave
       if (ifundo) then
          itsave=itsave-1
          if (itsave.le.9) then
@@ -1174,11 +1175,13 @@ c-----------------------------------------------------------------------
          endif
          write(fname,'(A4,A3)') 'tmp.',ntsave
       else
-         call prs('input name of new .rea file$')
+         if (ifconj_merge) then
+            call prs(' Enter name of the solid session$')
+         else
+            call prs('input name of new .rea file$')
+         endif
          call res  (fname,70)
       endif
-
-      write(*,*) 'fname=',fname
 
       ifdisplace  = .false.
       iftranslate = .false.
@@ -1214,8 +1217,10 @@ c     Successfully opened file, scan until 'MESH DATA' is found
       call get_flow_heat(iflow,iheat,nlogic,47) ! iflow/iheat _local_ logicals
 
       call readscan('MESH DATA',9,47)
-      read (47,*) nelin,ndimn
-      neln = nelin + nel
+      read (47,*) nelint,ndimn,nelinv
+
+      nelnv = nelinv + nel  ! With velocity
+      nelnt = nelint + nel  ! With temperature
 
       if (ndimn.ne.ndim) then
          call prs('Dimension must match dimension of current session.$')
@@ -1224,10 +1229,10 @@ c     Successfully opened file, scan until 'MESH DATA' is found
          return
       endif
 
-      if (neln.ge.nelm) then
+      if (nelnt.ge.nelm) then
          call prs('Sorry, number of elements would exceed nelm.$')
          call prs('Returning.$')
-         call prii(neln,nelm)
+         call prii(nelnt,nelm)
          close(47)
          return
       endif
@@ -1240,14 +1245,22 @@ c     Read geometry
 
       ierr=imp_geom(x(1,nels),y(1,nels),z(1,nels),nelm
      $             ,numapt(nels),letapt(nels),igroup(nels)
-     $             ,ndim,nelin,47)
+     $             ,ndim,nelint,47)
       if (ierr.ne.0) then
          call prs('Error reading geometry... returning.$')
          close(47)
          return
       endif
-c
-      ierr=imp_curv(nc,ccurve,curve,ndim,nelin,nel,47)
+
+c     Check group number for Conjugate Heat Transfer import
+
+      if (nelint.gt.nelinv) then
+         do e=nelnv+1,nelnt
+            igroup(e)=1
+         enddo
+      endif
+
+      ierr=imp_curv(nc,ccurve,curve,ndim,nelint,nel,47)
       if (ierr.ne.0) then
          call prs('Error reading curve side info... returning.$')
          close(47)
@@ -1260,17 +1273,22 @@ c
 c
       read(47,3) d
     3 format(a3)
-c
+
       ifld0 = 1
       if (.not.iflow) ifld0=2
-      write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
-c
+c     write(6,*) 'IFLD:',ifld0,nflds,iflow,iheat
+
       do ifld=ifld0,nflds
          if (.not.iflow) read(47,*) ans  ! dummy read
+
+         nelget=nelint
+         if (ifld.eq.1) nelget=nelinv
+c        write(6,*) nelget,nelinv,nelint,' nelget'
+
          ierr=imp_bc(cbc(1,nels,ifld),bc(1,1,nels,ifld),ibc(1,nels,ifld)
-     $      ,ndim,nelin,nel,47)
+     $      ,ndim,nelget,nel,47)
          if (ierr.ne.0) then
-            call prsii('nelin,ifld:$',nelin,ifld)
+            call prsii('nelget,ifld:$',nelget,ifld)
             call prs('Error reading boundary conditions. Returning.$')
             close(47)
             return
@@ -1291,14 +1309,18 @@ c
         endif
 
         ie0=nel+1
-        ie1=neln
+        ie1=nelnt
         call translate_sub_mesh(ie0,ie1,xt,yt,zt)
       endif
 
-      write(6,*) 'This is nel,ncurve old:',nel,ncurve
-      nel  = neln
+c     write(6,*) 'This is nel,ncurve old:',nel,ncurve
+
+      nel  = nelnt
+      nelt = nelnt
+      nelv = nelnv
+
       ncurve = ncurve + nc
-      write(6,*) 'This is nel,ncurve new:',nel,ncurve
+c     write(6,*) 'This is nel,ncurve new:',nel,ncurve
 
       call gencen
 
@@ -1584,7 +1606,7 @@ c-----------------------------------------------------------------------
 c
 c     Read a file until "key" is found or eof is found.
 c
-      include 'basics.inc'
+#     include "basics.inc"
 
       parameter (maxv = 8*nelm)
       real      xp(maxv),yp(maxv),zp(maxv)
@@ -1761,7 +1783,7 @@ c-----------------------------------------------------------------------
 c
 c     Read vtk-like unstructured mesh format
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       parameter (maxv = 8*nelm)
       integer        vv(8,nelm),vnum(maxv)
@@ -1909,7 +1931,7 @@ c-----------------------------------------------------------------------
 c
 c     Read vtk unstructured mesh format
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       parameter (maxv = 8*nelm)
       integer        vv(8,nelm),vnum(0:maxv-1)
@@ -2089,7 +2111,7 @@ c-----------------------------------------------------------------------
 c
 c     Check for split (parent) - join (child) nonconforming interfaces.
 c
-      include 'basics.inc'
+#     include "basics.inc"
       logical ifclose,ifok
 c
       integer jvs(4,6)
@@ -2174,7 +2196,7 @@ c-----------------------------------------------------------------------
       logical function ifclose(ie,is,je,js)
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer jvs(4,6)
       save    jvs
@@ -2210,7 +2232,7 @@ c                  (g1,e1) = (0.,0.) and  (g2,e2) = (1.,0.),  or
 c                  (g1,e1) = (1.,0.) and  (g2,e2) = (0.,0.).
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer jvs(4,6)
       save    jvs
@@ -2259,7 +2281,7 @@ c
 c     Currently predicated on assumption that faces are PLANAR.
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
       logical ifok,ifxoeq0
 c
@@ -2380,7 +2402,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine chk_right_hand(nl)
-      include 'basics.inc'
+#     include "basics.inc"
 c
       real xyz(2,4)
 c
@@ -2423,7 +2445,7 @@ C            cyclic permutation (counter clock-wise):  reverse
       end
 c-----------------------------------------------------------------------
       subroutine special_delete
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer dflag(nelm),e,emin,ecount
 c
@@ -2476,7 +2498,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine list_delete
-      include 'basics.inc'
+#     include "basics.inc"
       character*80 dname
 
       common /idelt/ dflag(nelm)
@@ -2518,7 +2540,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine special_delete_cyls
-      include 'basics.inc'
+#     include "basics.inc"
 c
       integer dflag(nelm),e,emin,ecount
 c
@@ -2571,7 +2593,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine set_std_bcs(nelo)
-      include 'basics.inc'
+#     include "basics.inc"
       integer e
 
       do e=nelo+1,nel
@@ -2655,7 +2677,7 @@ c-----------------------------------------------------------------------
 
 c***  BIG DECISION POINT  ****
 
-      include 'basics.inc'
+#     include "basics.inc"
 
       nchoic = 0
 
@@ -2743,7 +2765,7 @@ c        nchoic = nchoic+1
 c-----------------------------------------------------------------------
       subroutine cell_cell_connectivity
 
-      include 'basics.inc'
+#     include "basics.inc"
 
 
       parameter(lpts=8*nelm)
@@ -3485,7 +3507,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine chker
 
-      include 'basics.inc'
+#     include "basics.inc"
 
 c     character*1 ans
 
@@ -3557,7 +3579,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine delete  ! Query to delete elements
 
-      include 'basics.inc'
+#     include "basics.inc"
       logical iftmp
 
       if (nel.eq.0) call prs('ERROR: No elements to delete$')
@@ -3704,7 +3726,7 @@ c150  continue
       end
 c-----------------------------------------------------------------------
       subroutine set_igroup(nelv_i,nelt_i)
-      include 'basics.inc'
+#     include "basics.inc"
 
       ncond=nelt_i - nelv_i ! recalculate ncond
       do i=nelv_i+1,nelt_i

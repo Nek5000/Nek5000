@@ -28,7 +28,7 @@ C> \f$\oint \mathbf{H}^{c\ast}\cdot\mathbf{n}dA\f$ on face points
       real fatface,notyet
       integer eq
       character*32 cname
-      nfq=nx1*nz1*2*ndim*nelt
+      nfq=lx1*lz1*2*ldim*nelt
       nstate = nqq
 ! where different things live
       iwm =1
@@ -82,10 +82,10 @@ C> @}
       include 'CMTDATA'
       include 'DG'
       integer e
-      real yourface(nx1,nz1,2*ldim,nelt)
+      real yourface(lx1,lz1,2*ldim,nelt)
 
       do e=1,nelt
-         call full2face_cmt(1,nx1,ny1,nz1,iface_flux(1,e),
+         call full2face_cmt(1,lx1,ly1,lz1,iface_flux(1,e),
      >                      yourface(1,1,1,e),u(1,1,1,ivar,e))
       enddo
 
@@ -99,16 +99,16 @@ C> @}
       include 'DG'
 
       integer ivar! intent(in)
-      real field(nx1,ny1,nz1,nelt)! intent(in)
-!     real, intent(out)wminus(7,nx1*nz1*2*ldim*nelt) ! gs_op no worky
-      real wminus(nx1*nz1*2*ndim*nelt,*)! intent(out)
-      real yourface(nx1,nz1,2*ndim,*)
+      real field(lx1,ly1,lz1,nelt)! intent(in)
+!     real, intent(out)wminus(7,lx1*lz1*2*ldim*nelt) ! gs_op no worky
+      real wminus(lx1*lz1*2*ldim*nelt,*)! intent(out)
+      real yourface(lx1,lz1,2*ldim,*)
       integer e,f
 
-      nxz  =nx1*nz1
-      nface=2*ndim
+      nxz  =lx1*lz1
+      nface=2*ldim
 
-      call full2face_cmt(nelt,nx1,ny1,nz1,iface_flux,yourface,field)
+      call full2face_cmt(nelt,lx1,ly1,lz1,iface_flux,yourface,field)
 
       do i=1,ndg_face
          wminus(i,ivar)=yourface(i,1,1,1)
@@ -178,9 +178,9 @@ C> @}
 ! Arguments
 ! ==============================================================================
       integer nstate,nflux
-      real wminus(nx1*nz1,2*ndim,nelt,nstate),
-     >     wplus(nx1*nz1,2*ndim,nelt,nstate),
-     >     flux(nx1*nz1,2*ndim,nelt,nflux)
+      real wminus(lx1*lz1,2*ldim,nelt,nstate),
+     >     wplus(lx1*lz1,2*ldim,nelt,nstate),
+     >     flux(lx1*lz1,2*ldim,nelt,nflux)
 
 ! ==============================================================================
 ! Locals
@@ -226,10 +226,10 @@ C> @}
 
       nTol = 1.0E-14
 
-      fdim=ndim-1
-      nface = 2*ndim
-      nxz   = nx1*nz1
-      nxzd  = nxd*nzd
+      fdim=ldim-1
+      nface = 2*ldim
+      nxz   = lx1*lz1
+      nxzd  = lxd*lzd
       ifield= 1 ! You need to figure out the best way of dealing with
                 ! this variable
 
@@ -261,33 +261,33 @@ C> @}
 !        endif
 ! diagnostic
 
-         if (nxd.gt.nx1) then
-            call map_faced(nx,unx(1,1,f,e),nx1,nxd,fdim,0)
-            call map_faced(ny,uny(1,1,f,e),nx1,nxd,fdim,0)
-            call map_faced(nz,unz(1,1,f,e),nx1,nxd,fdim,0)
+         if (lxd.gt.lx1) then
+            call map_faced(nx,unx(1,1,f,e),lx1,lxd,fdim,0)
+            call map_faced(ny,uny(1,1,f,e),lx1,lxd,fdim,0)
+            call map_faced(nz,unz(1,1,f,e),lx1,lxd,fdim,0)
 
-            call map_faced(rl,wminus(1,f,e,irho),nx1,nxd,fdim,0)
-            call map_faced(ul,wminus(1,f,e,iux),nx1,nxd,fdim,0)
-            call map_faced(vl,wminus(1,f,e,iuy),nx1,nxd,fdim,0)
-            call map_faced(wl,wminus(1,f,e,iuz),nx1,nxd,fdim,0)
-            call map_faced(pl,wminus(1,f,e,ipr),nx1,nxd,fdim,0)
-            call map_faced(tl,wminus(1,f,e,ithm),nx1,nxd,fdim,0)
-            call map_faced(al,wminus(1,f,e,isnd),nx1,nxd,fdim,0)
-            call map_faced(cpl,wminus(1,f,e,icpf),nx1,nxd,fdim,0)
+            call map_faced(rl,wminus(1,f,e,irho),lx1,lxd,fdim,0)
+            call map_faced(ul,wminus(1,f,e,iux),lx1,lxd,fdim,0)
+            call map_faced(vl,wminus(1,f,e,iuy),lx1,lxd,fdim,0)
+            call map_faced(wl,wminus(1,f,e,iuz),lx1,lxd,fdim,0)
+            call map_faced(pl,wminus(1,f,e,ipr),lx1,lxd,fdim,0)
+            call map_faced(tl,wminus(1,f,e,ithm),lx1,lxd,fdim,0)
+            call map_faced(al,wminus(1,f,e,isnd),lx1,lxd,fdim,0)
+            call map_faced(cpl,wminus(1,f,e,icpf),lx1,lxd,fdim,0)
 
-            call map_faced(rr,wplus(1,f,e,irho),nx1,nxd,fdim,0)
-            call map_faced(ur,wplus(1,f,e,iux),nx1,nxd,fdim,0)
-            call map_faced(vr,wplus(1,f,e,iuy),nx1,nxd,fdim,0)
-            call map_faced(wr,wplus(1,f,e,iuz),nx1,nxd,fdim,0)
-            call map_faced(pr,wplus(1,f,e,ipr),nx1,nxd,fdim,0)
-            call map_faced(tr,wplus(1,f,e,ithm),nx1,nxd,fdim,0)
-            call map_faced(ar,wplus(1,f,e,isnd),nx1,nxd,fdim,0)
-            call map_faced(cpr,wplus(1,f,e,icpf),nx1,nxd,fdim,0)
+            call map_faced(rr,wplus(1,f,e,irho),lx1,lxd,fdim,0)
+            call map_faced(ur,wplus(1,f,e,iux),lx1,lxd,fdim,0)
+            call map_faced(vr,wplus(1,f,e,iuy),lx1,lxd,fdim,0)
+            call map_faced(wr,wplus(1,f,e,iuz),lx1,lxd,fdim,0)
+            call map_faced(pr,wplus(1,f,e,ipr),lx1,lxd,fdim,0)
+            call map_faced(tr,wplus(1,f,e,ithm),lx1,lxd,fdim,0)
+            call map_faced(ar,wplus(1,f,e,isnd),lx1,lxd,fdim,0)
+            call map_faced(cpr,wplus(1,f,e,icpf),lx1,lxd,fdim,0)
 
-            call map_faced(phl,wminus(1,f,e,iph),nx1,nxd,fdim,0)
+            call map_faced(phl,wminus(1,f,e,iph),lx1,lxd,fdim,0)
 
             call invcol3(jaco_c,area(1,1,f,e),wghtc,nxz)
-            call map_faced(jaco_f,jaco_c,nx1,nxd,fdim,0) 
+            call map_faced(jaco_f,jaco_c,lx1,lxd,fdim,0) 
             call col2(jaco_f,wghtf,nxzd)
          else
 
@@ -326,9 +326,9 @@ C> @}
             call col2(flx(1,j),phl,nxzd)
          enddo
 
-         if (nxd.gt.nx1) then
+         if (lxd.gt.lx1) then
             do j=1,toteq
-               call map_faced(flux(1,f,e,j),flx(1,j),nx1,nxd,fdim,1)
+               call map_faced(flux(1,f,e,j),flx(1,j),lx1,lxd,fdim,1)
             enddo
          else
             do j=1,toteq
@@ -350,15 +350,15 @@ C> @}
       include 'GEOM'
       include 'DG'
       include 'CMTDATA'
-      real vol(nx1*ny1*nz1*nelt),flux(*)
+      real vol(lx1*ly1*lz1*nelt),flux(*)
       integer e,f
 
 ! weak form until we get the time loop rewritten
 !     onem=-1.0
-!     ntot=nx1*nz1*2*ndim*nelt
+!     ntot=lx1*lz1*2*ldim*nelt
 !     call cmult(flux,onem,ntot)
 ! weak form until we get the time loop rewritten
-      call add_face2full_cmt(nelt,nx1,ny1,nz1,iface_flux,vol,flux)
+      call add_face2full_cmt(nelt,lx1,ly1,lz1,iface_flux,vol,flux)
 
       return
       end
@@ -373,25 +373,25 @@ C> @}
       include  'CMTDATA'
       include  'GEOM'
       integer e,eq
-      real graduf(nx1*nz1*2*ndim,nelt,toteq)
+      real graduf(lx1*lz1*2*ldim,nelt,toteq)
       common /scrns/ hface(lx1*lz1,2*ldim)
      >              ,normal(lx1*ly1,2*ldim)
       real hface, normal
 
       integer f
 
-      nf    = nx1*nz1*2*ndim*nelt
-      nfaces=2*ndim
-      nxz   =nx1*nz1
+      nf    = lx1*lz1*2*ldim*nelt
+      nfaces=2*ldim
+      nxz   =lx1*lz1
       nxzf  =nxz*nfaces
-      nxyz  = nx1*ny1*nz1
+      nxyz  = lx1*ly1*lz1
 
       call rzero(graduf(1,e,eq),nxzf) !   . dot nhat -> overwrites beginning of flxscr
-      do j =1,ndim
+      do j =1,ldim
          if (j .eq. 1) call copy(normal,unx(1,1,1,e),nxzf)
          if (j .eq. 2) call copy(normal,uny(1,1,1,e),nxzf)
          if (j .eq. 3) call copy(normal,unz(1,1,1,e),nxzf)
-         call full2face_cmt(1,nx1,ny1,nz1,iface_flux,hface,diffh(1,j)) 
+         call full2face_cmt(1,lx1,ly1,lz1,iface_flux,hface,diffh(1,j)) 
          call addcol3(graduf(1,e,eq),hface,normal,nxzf)
       enddo
       call col2(graduf(1,e,eq),area(1,1,1,e),nxzf)
@@ -407,16 +407,16 @@ C> @}
       include 'CMTDATA'
       include 'DG'
 
-      real flxscr(nx1*nz1*2*ndim*nelt,toteq)
-      real gdudxk(nx1*nz1*2*ndim,nelt,toteq)
-      real wminus(nx1*nz1,2*ndim,nelt,nqq)
+      real flxscr(lx1*lz1*2*ldim*nelt,toteq)
+      real gdudxk(lx1*lz1*2*ldim,nelt,toteq)
+      real wminus(lx1*lz1,2*ldim,nelt,nqq)
       real const
       integer e,eq,f
 
-      nxz = nx1*nz1
-      nfaces=2*ndim
+      nxz = lx1*lz1
+      nfaces=2*ldim
       nxzf=nxz*nfaces
-      nfq =nx1*nz1*nfaces*nelt
+      nfq =lx1*lz1*nfaces*nelt
       ntot=nfq*toteq
 
       call copy (flxscr,gdudxk,ntot) ! save AgradU.n
@@ -449,12 +449,12 @@ C> @}
       include 'SIZE'
       include 'TOTAL'
       integer e,eq,f
-      real flux(nx1*nz1,2*ndim,nelt,toteq)
-      real agradu(nx1*nz1,2*ndim,nelt,toteq)
+      real flux(lx1*lz1,2*ldim,nelt,toteq)
+      real agradu(lx1*lz1,2*ldim,nelt,toteq)
       character*3 cb2
 
-      nxz=nx1*nz1
-      nfaces=2*ndim
+      nxz=lx1*lz1
+      nfaces=2*ldim
 
       ifield=1
       do e=1,nelt

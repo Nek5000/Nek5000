@@ -3,18 +3,18 @@ C> superceded by nek5000 core DG handles and operators.
 c-----------------------------------------------------------------------
       subroutine iface_vert_int8cmt(nx,ny,nz,fa,va,jz0,jz1,nel)
       include 'SIZE'
-      integer*8 fa(nx*nz,2*ndim,nel),va(0:nx+1,0:ny+1,jz0:jz1,nel)
+      integer*8 fa(nx*nz,2*ldim,nel),va(0:nx+1,0:ny+1,jz0:jz1,nel)
       integer e,f
 
-      n = nx*nz*2*ndim*nel
+      n = nx*nz*2*ldim*nel
       call izero8(fa,n)
 
       mx1 = nx+2
       my1 = ny+2
       mz1 = nz+2
-      if (ndim.eq.2) mz1=1
+      if (ldim.eq.2) mz1=1
 
-      nface = 2*ndim
+      nface = 2*ldim
       do e=1,nel
       do f=1,nface
          call facind (kx1,kx2,ky1,ky2,kz1,kz2,nx,ny,nz,f)
@@ -79,7 +79,7 @@ c-----------------------------------------------------------------------
       if (if3d) mz1 = nz+1
       call iface_vert_int8cmt(nx,ny,nz,gnf,gnv,mz0,mz1,nelt) 
 
-      nf = nx*nz*2*ndim*nelt !total number of points on faces BETTA BE 4-byte!
+      nf = nx*nz*2*ldim*nelt !total number of points on faces BETTA BE 4-byte!
       call fgslib_gs_setup(dg_hndl,gnf,nf,nekcomm,np)
 
       return
@@ -97,9 +97,9 @@ c-----------------------------------------------------------------------
      $             , glo_num_vol((lx1+2)*(ly1+2)*(lz1+2)*lelt)
       integer*8 glo_num_face,glo_num_vol,ngv
 
-      call setup_cmt_gs(dg_hndl,nx1,ny1,nz1,nelt,nelgt,vertex,
+      call setup_cmt_gs(dg_hndl,lx1,ly1,lz1,nelt,nelgt,vertex,
      >                  glo_num_vol,glo_num_face)
-      call cmt_set_fc_ptr(nelt,nx1,ny1,nz1,ndg_face,iface_flux)
+      call cmt_set_fc_ptr(nelt,lx1,ly1,lz1,ndg_face,iface_flux)
 
       return
       end
@@ -123,7 +123,7 @@ c-----------------------------------------------------------------------
 
       nxyz = nx*ny*nz
       nxz  = nx*nz
-      nfpe = 2*ndim
+      nfpe = 2*ldim
       nxzf = nx*nz*nfpe ! red'd mod to area, unx, etc.
 
       do e=1,nel
@@ -173,7 +173,7 @@ c-----------------------------------------------------------------------
       real     vols (nx,ny,nz       ,1  )
       integer  e,i,j
 
-      n= nx*nz*2*ndim
+      n= nx*nz*2*ldim
       do e=1,nel
       do j=1,n
          i=iface(j,e)
@@ -197,7 +197,7 @@ c-----------------------------------------------------------------------
       real     vols (nx,ny,nz       ,nel)
       integer  ie,i,j
 
-      n= nx*nz*2*ndim
+      n= nx*nz*2*ldim
       do ie=1,nel
       do j=1,n
          i=iface(j,ie)

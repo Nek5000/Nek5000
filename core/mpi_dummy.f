@@ -263,7 +263,7 @@ c
 
       return
       end
-      subroutine mpi_cart_create ( comm, ndims, dims, periods,
+      subroutine mpi_cart_create ( comm, ldims, dims, periods,
      &  reorder, comm_cart, ierror )
 
 c*********************************************************************72
@@ -272,7 +272,7 @@ cc MPI_CART_CREATE creates a communicator for a Cartesian topology.
 c
       implicit none
 
-      integer ndims
+      integer ldims
 
       integer comm
       integer comm_cart
@@ -289,7 +289,7 @@ c
 
       return
       end
-      subroutine mpi_cart_get ( comm, ndims, dims, periods,
+      subroutine mpi_cart_get ( comm, ldims, dims, periods,
      &  coords, ierror )
 
 c*********************************************************************72
@@ -298,7 +298,7 @@ cc MPI_CART_GET returns the "Cartesian coordinates" of the calling process.
 c
       implicit none
 
-      integer ndims
+      integer ldims
 
       integer comm
       integer coords(*)
@@ -313,7 +313,7 @@ c
 
       ierror = MPI_SUCCESS
 
-      do i = 1, ndims
+      do i = 1, ldims
         coords(i) = 0
       end do
 
@@ -586,6 +586,7 @@ c
       integer MPI_SUCCESS
       parameter ( MPI_SUCCESS = 0 )
 
+      write(6,*) 'Initialize dummy MPI library'
       ierror = MPI_SUCCESS
 
       return
@@ -1060,6 +1061,21 @@ c
       return
       end
 
+      subroutine mpi_intercomm_create(ilcomm,ill,ipcomm,irl,itag,
+     $                                newcomm,ierr)
+
+      call exitti('mpi_intercomm_create not supported!$',1)
+
+      return
+      end
+
+      subroutine mpi_intercomm_merge(icomm,ihigh,icommd,ierr)
+
+      call exitti('mpi_intercomm_merge not supported!$',1)
+
+      return
+      end
+
       subroutine mpi_comm_group(icomm,igroup,ierr)
 
       igroup = 1
@@ -1082,3 +1098,16 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mpi_type_extent(ikey,isize,ierr)
+
+      include "mpi_dummy.h"
+
+      if (ikey.eq.MPI_DOUBLE_PRECISION) isize = 8 
+      if (ikey.eq.MPI_INTEGER)  isize = 4 
+      if (ikey.eq.MPI_INTEGER8) isize = 8 
+
+      ierr = 0
+
+      return
+      end
+

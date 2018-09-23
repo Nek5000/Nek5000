@@ -1,49 +1,48 @@
-# Release 17.0.0-dev
+# Release v18.0-3
 
 ## Major Features and Improvements
 
-* New paramater file `.par` (replacing .rea)
-* Added `OIFS` for `moving mesh`
-* Added `Moving mesh` for `PN/PN`
-* Improved stability for varying visosity and `PN/PN`
-* Added support for mixed `Helmholtz/CVODE` solves
-* New fast `AMG setup` tool based on HYPRE
-* New `EXODUSII` mesh converter
-* New interface to `libxsmm` (fast MATMUL library).
-* Extended `lowMach` solver for time varying thermodynamic pressure
-* Added DG for scalars
-* Added support for `implicit none` in .usr file
-* Reduced solver initilization time (parallel binary reader for .re2 and .ma2)
-* Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
-* Optional new user friendly `SIZE` file format (see SIZE.template)
-* Refactored `NEKNEK`
-* Added high-pass filter relaxation (alternative to our existing explicit filter)
-* Added parallel readers for .re2 and AMG .dat files
-* Introduced new binary map (.ma2) format
+* Introduced uncoupled multisession simulations
+* Added gather scatter operations across sessions
+* Added gather scatter options across gtp-planes
+* Added par file support for postnek
+* Added mkSIZE script to automatically create SIZE file
+* Refactored object and boundary handling
+* Added RANS models (experimental) 
+* Added mesh-smoother (experimental)
+* Added elapsedTime option for writeControl (in par)
+* Print runtime-statistics every 100 steps
+* Added support for GNU 8.x
+* Added FEM-AMG precoditioner (experimental)
+* Added support for CHT to generic fld reader
 
 ## Backwards-Incompatible Changes 
 
-* When p20>0 use it as solver tolerance for temperature instead of p22 (only for Helmholtz) 
-* Replaced usr interpolation wrapper `intpts()` by `intp()` with a different interface
-* Replaced `g2gi()` by new generic fld reader `gfldr()`
-* Moved `makenek` from `core` to `bin` folder
-* Removed `MOAB` support 
-* Replaced `hpts.in/hpts.out` by `<casename>.his` 
-* Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
-* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if they don't exist
-* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=semg_amg in PRESSURE section) 
-* Renamed preconditioner value in .par from `amg` to `semg_amg` 
+* Remove PPLIST symbol `NEKNEK` (not required anymore)
+* Use valint instead of ubc in `userbc` for neknek
+* Remove multimesh_create call from `usr` file (not required anymore)
+* Change to modified interpolation routines (see interp.f)
+* Remove CB CTORQ from usr files (now part of OBJDATA included in TOTAL)
+* Use amg_setup instead of amg_hypre (only required for semg_amg preconditioner) 
 
-## Bug Fixes and Other Changes
+## Bug Fixes
+[529](https://github.com/Nek5000/Nek5000/issues/527),
+[527](https://github.com/Nek5000/Nek5000/issues/527),
+[525](https://github.com/Nek5000/Nek5000/issues/525),
+[522](https://github.com/Nek5000/Nek5000/issues/522),
+[511](https://github.com/Nek5000/Nek5000/issues/511),
+[497](https://github.com/Nek5000/Nek5000/issues/497),
+[470](https://github.com/Nek5000/Nek5000/issues/470),
+[467](https://github.com/Nek5000/Nek5000/issues/467),
+[463](https://github.com/Nek5000/Nek5000/issues/463)
 
-* Use rank id to tag MPI message instead of global element 
-* Fix periodic BC bug of `genmap` when using more than 1M elemtents
-* Many bug fixes
+## Known Bugs 
+
+[507](https://github.com/Nek5000/Nek5000/issues/507),
+[474](https://github.com/Nek5000/Nek5000/issues/474),
+[407](https://github.com/Nek5000/Nek5000/issues/407),
+[65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors
-This release contains contributions from the Nek5000 core developers, as well as:
 
-@ggiannako, @nicooff, @kmittal2, @cliosaglietti, @EvelynOtero, @mattiabr, @maxhutch, @hackljf, @negips 
-
-
-We are also grateful to all who filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.
+We are grateful to all who added new features, filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.

@@ -24,7 +24,7 @@ c     an ascii rea file for just the parameters
  
       character*80 sstring
 
-      parameter(nelm=1 000 000)
+      parameter(nelm=MAXNEL)
       real*8 x(8),y(8),z(8)
       real*8 bc(5,6,nelm)
       integer id, jd, wdsizi
@@ -44,14 +44,14 @@ c     for workstation:
       in = 5
  
 c     Get file name
-      write(6,*) 'Input old (source) file name:'      
+      write(6,*) 'Input old .rea and .re2 (source) file name:'      
       call blank(fin,80)
       read(in,80) fin
       len = ltrunc(fin,80)
    80 format(a80)
  
 c     Get file name
-      write(6,*) 'Input new (output) file name:'      
+      write(6,*) 'Input new .rea (output) file name:'      
       call blank(fout,80)
       read(in,80) fout
       lou = ltrunc(fout,80)
@@ -167,7 +167,7 @@ c curved sides
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
             call byte_read(buf,nwds)
-            call buf_to_curve(buf,ifbswap,wdsizi)
+            call buf_to_curve(buf,nel,ifbswap,wdsizi)
  50      CONTINUE
       endif
 
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
-      subroutine buf_to_curve(buf,ifbswap,wdsizi)
+      subroutine buf_to_curve(buf,nel,ifbswap,wdsizi)
 
       integer e,f,wdsizi,buf(30)
       logical ifbswap

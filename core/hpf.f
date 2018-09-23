@@ -49,6 +49,7 @@ c      implicit none
       save hpf_op
 
 c---------------------------------------- 
+      if(.not. iffilter(ifield)) return
 
       hpf_kut = int(param(101))+1
       hpf_chi = -1.0*abs(param(103))
@@ -62,7 +63,7 @@ c     keep parameter as false unless you know what you are doing.
 
       if (hpf_chi.eq.0) return
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply hpf ',
-     $                                 ifield, hpf_chi
+     $                                 ifield, hpf_kut, hpf_chi
 
       if (icalld.eq.0) then
 c       Create the filter transfer function
@@ -79,9 +80,9 @@ c       Only initialize once
       if (ifield.eq.1) then
 c       Apply the filter
 c       to velocity fields
-        call build_hpf_fld(ta1,vx,hpf_op,nx1,nz1)
-        call build_hpf_fld(ta2,vy,hpf_op,nx1,nz1)
-        if (if3d) call build_hpf_fld(ta3,vz,hpf_op,nx1,nz1)
+        call build_hpf_fld(ta1,vx,hpf_op,lx1,lz1)
+        call build_hpf_fld(ta2,vy,hpf_op,lx1,lz1)
+        if (if3d) call build_hpf_fld(ta3,vz,hpf_op,lx1,lz1)
 
 c       Multiply by filter weight (chi)
         call cmult(ta1,hpf_chi,n)    
@@ -96,7 +97,7 @@ c       and add to forcing term
 
 c       Apply filter to temp/passive scalar fields      
         call build_hpf_fld(ta1,t(1,1,1,1,ifield-1),
-     $       hpf_op,nx1,nz1)
+     $       hpf_op,lx1,lz1)
 
 c       Multiply by filter weight (chi)
         call cmult(ta1,hpf_chi,n)    
@@ -108,7 +109,7 @@ c       and add to source term
       endif
 
       return
-      end subroutine MAKE_HPF
+      end
 
 c----------------------------------------------------------------------
 
@@ -157,7 +158,7 @@ c      implicit none
       call mxm  (wk_xmap,lx1,wk2,lx1,op_mat,lx1)      !     V D V
 
       return
-      end subroutine build_hpf_mat
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -192,7 +193,7 @@ c
 c
       call transpose(ft,nx,f,nx)
 c
-      if (ndim.eq.3) then
+      if (ldim.eq.3) then
         do e=1,nel
 c         Filter
           call copy(w2,v(1,e),nxyz)
@@ -225,7 +226,7 @@ c          call copy(v(1,e),w1,nxyz)
       endif
 c
       return
-      end subroutine build_hpf_fld
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -262,7 +263,7 @@ c     Output normalized transfer function
       endif
 
       return
-      end subroutine hpf_trns_fcn
+      end
 
 c---------------------------------------------------------------------- 
 
@@ -318,7 +319,4 @@ c----------------------------------------
       call transpose (ref_xmap,nx,pht,nx)
 
       return
-      end subroutine spec_coeff_init
-
-c=======================================================================
-
+      end

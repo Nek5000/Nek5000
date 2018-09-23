@@ -4,6 +4,4 @@ c
       call nek_solve()
       call nek_end()
 
-      call exitt()
-
       end

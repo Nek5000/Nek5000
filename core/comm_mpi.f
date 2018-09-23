@@ -1,72 +1,187 @@
+c-----------------------------------------------------------------------
+      subroutine setupcomm()
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL' 
+      include 'TSTEP' 
+      include 'INPUT' 
+    
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+ 
+      integer nid_global_root(0:nsessmax-1)
+      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
+
+      logical ifhigh
+      logical mpi_is_initialized
+
+      ! Init MPI
+      call mpi_initialized(mpi_is_initialized, ierr)
+      if (.not.mpi_is_initialized) call mpi_init(ierr)
+      call mpi_comm_size(MPI_COMM_WORLD,np_global,ierr)
+      call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
+
+      ! check upper tag size limit
+      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
+      if (nval.lt.(10000+lp)) then
+         if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
+         call exitt
+      endif
+
+      ! set defaults
+      nid         = nid_global
+      nekcomm     = MPI_COMM_WORLD
+      iglobalcomm = MPI_COMM_WORLD 
+      ifneknek    = .false.
+      ifneknekc   = .false. ! session are uncoupled
+      ifneknekm   = .false. ! not moving
+      nsessions   = 1
+
+      ierr = 0
+      nlin = 0
+      if (nid .eq. 0) then
+         write(6,*) 'Reading session file ...'
+         open (unit=8,file='SESSION.NAME',status='old',err=24)
+ 21      read (8,*,END=22)
+         nlin = nlin + 1 
+         goto 21
+ 22      rewind(8)
+         if (nlin.gt.2) read(8,*,err=24) nsessions
+         if (nsessions.gt.1) read(8,*,err=24) ifneknekc
+         do n=0,nsessions-1
+            call blank(session_mult(n),132)
+            call blank(path_mult(n)   ,132)
+            read(8,11,err=24) session_mult(n)
+            read(8,11,err=24) path_mult(n)
+            if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
+         enddo
+ 11      format(a132)
+         close(8)
+         write(6,*) 'Number of sessions:',nsessions
+         goto 23
+ 24      ierr = 1
+      endif
+ 23   continue
+      call err_chk(ierr,' Error while reading SESSION.NAME!$')
+
+      call bcast(nsessions,ISIZE)
+      call bcast(ifneknekc,LSIZE)
+      do n = 0,nsessions-1
+         call bcast(npsess(n),ISIZE)
+         call bcast(session_mult(n),132*CSIZE)
+         call bcast(path_mult(n),132*CSIZE)
+      enddo
+
+      if (nsessions .gt. 1) ifneknek = .true.
+
+      if (nsessions .gt. nsessmax) 
+     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
+
+      ! single session run
+      if (.not.ifneknek) then
+         ifneknekc = .false.
+         session   = session_mult(0)
+         path      = path_mult(0)
+         call mpi_comm_dup(mpi_comm_world,iglobalcomm,ierr)
+         intracomm = iglobalcomm
+         return
+      endif
+ 
+c     Check if specified number of ranks in each session is consistent 
+c     with the total number of ranks
+      npall=0
+      do n=0,nsessions-1
+         npall=npall+npsess(n)
+      enddo
+      if (npall.ne.np_global) 
+     &   call exitti('Number of ranks does not match!$',npall)
+
+c     Assign key for splitting into multiple groups
+      nid_global_root_next=0
+      do n=0,nsessions-1
+         nid_global_root(n)=nid_global_root_next
+         nid_global_root_next=nid_global_root(n)+npsess(n)
+         if (nid_global.ge.nid_global_root(n).and.
+     &       nid_global.lt.nid_global_root_next) idsess = n
+      enddo
+
+      call mpi_comm_split(mpi_comm_world,idsess,nid,intracomm,ierr)
+ 
+      session = session_mult(idsess)
+      path    = path_mult   (idsess)
+
+      ! setup intercommunication 
+      if (ifneknekc) then
+         if (nessions.gt.2) call exitti(
+     &     'More than 2 coupled sessions are currently not supported!$',
+     $     nsessions)
+
+         if (idsess.eq.0) idsess_neighbor=1
+         if (idsess.eq.1) idsess_neighbor=0
+ 
+         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
+     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
+
+         np_neighbor=npsess(idsess_neighbor)
+      
+         ifhigh=.true.
+         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
+
+         ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
+         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
+      endif 
+
+      return
+      end
 c---------------------------------------------------------------------
-      subroutine iniproc(intracomm)
+      subroutine iniproc()
       include 'SIZE'
       include 'PARALLEL'
+      include 'INPUT'
       include 'mpif.h'
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
 
-c      call mpi_initialized(mpi_is_initialized, ierr) !  Initialize MPI
-c      if ( mpi_is_initialized .eq. 0 ) then
-c         call mpi_init (ierr)
-c      endif
-
-      ! set nek communicator
-      call init_nek_comm(intracomm)
-      nid  = nid_
-      np   = np_
+      nid  = mynode()
+      nid_ = nid
+      np   = numnodes()
+      np_  = np
 
       nio = -1             ! Default io flag 
-      if(nid.eq.0) nio=0   ! Only node 0 writes
+      if (nid.eq.0) nio=0  ! Only node 0 writes
 
-      if(nid.eq.nio) call printHeader
-
-      ! check upper tag size limit
-      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-c     to avoid problems with MPI_TAG_UB on Cray we change
-c     tags from global (eg) to local (e) element number
-c      if (nval.lt.(10000+max(lp,lelg))) then
-      if (nval.lt.(10000+lp)) then
-         if(nid.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
-         call exitt
+      if (nid.eq.nio) then
+         if (ifneknek) then
+           call set_stdout(' ',idsess) 
+         else
+           call set_stdout(' ',-1) 
+         endif
       endif
 
-      IF (NP.GT.LP) THEN
-         WRITE(6,*) 
-     $   'ERROR: Code compiled for a max of',LP,' processors.'
-         WRITE(6,*) 
-     $   'Recompile with LP =',NP,' or run with fewer processors.'
-         WRITE(6,*) 
-     $   'Aborting in routine INIPROC.'
-         call exitt
+      if (nid.eq.nio) call printHeader
+
+      if (wdsize .eq. 4)
+     $   call exitti('Single precision mode not supported!',wdsize)
+
+      call MPI_Type_Extent(MPI_DOUBLE_PRECISION,isize_mpi,ierr)
+      if (isize_mpi .ne. wdsize) then
+         call exitti('MPI real size does not match$',isize_mpi)
       endif
 
-      ! set word size for REAL
-      wdsize=4
-      eps=1.0e-12
-      oneeps = 1.0+eps
-      if (oneeps.ne.1.0) then
-         wdsize=8
-      else
-         if(nid.eq.0) 
-     &     write(6,*) 'ABORT: single precision mode not supported!'
-         call exitt
+      call MPI_Type_Extent(MPI_INTEGER,isize_mpi,ierr)
+       if (isize_mpi .ne. isize) then
+         call exitti('MPI integer size does not match$',isize_mpi)
       endif
-      nekreal = mpi_real
-      if (wdsize.eq.8) nekreal = mpi_double_precision
 
-      ! set word size for INTEGER
-      ! HARDCODED since there is no secure way to detect an int overflow
-      isize = 4
+      call MPI_Type_Extent(MPI_INTEGER8,isize_mpi,ierr)
+       if (isize_mpi .ne. isize8) then
+         call exitti('MPI integer8 size does not match$',isize_mpi)
+      endif
 
-      ! set word size for LOGICAL
-      lsize = 4
+      if (np.gt.lp)
+     $   call exitti('Increase LPMAX or run with fewer processors!$',np)
 
-      ! set word size for CHARACTER
-      csize = 1
-c
       PID = 0
       NULLPID=0
       NODE0=0
@@ -90,18 +205,6 @@ C     Test timer accuracy
       endif
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine init_nek_comm(intracomm)
-      include 'mpif.h'
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-C
-      nekcomm = intracomm
-      nid     = mynode()
-      np      = numnodes()
-c
       return
       end
 c-----------------------------------------------------------------------
@@ -130,16 +233,16 @@ c     Global vector commutative operation
 #endif
 c
       if (op.eq.'+  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_sum ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_sum,nekcomm,ie)
       elseif (op.EQ.'M  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_max ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_max,nekcomm,ie)
       elseif (op.EQ.'m  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_min ,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_min,nekcomm,ie)
       elseif (op.EQ.'*  ') then
-         call mpi_allreduce (x,w,n,nekreal,mpi_prod,nekcomm,ierr)
+      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_prod,nekcomm,ie)
       else
-         write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
-         call exitt
+      write(6,*) nid,' OP ',op,' not supported.  ABORT in GOP.'
+      call exitt
       endif
 
       call copy(x,w,n)
@@ -491,67 +594,70 @@ c     include 'CTIMER'
 c
 c-----------------------------------------------------------------------
       subroutine exitt0
+
       include 'SIZE'
       include 'TOTAL'
-      include 'CTIMER'
-      include 'mpif.h'
 
-      write(6,*) 'Emergency exit'
+      if (nid.eq.0) then
+         write(6,*) ' '
+         write(6,'(A)') 'run successful: dying ...'
+         write(6,*) ' '
+      endif
 
-c      call print_stack()
-      call flush_io
-
-      call mpi_finalize (ierr)
-#ifdef EXTBAR
-      call exit_(0)
-#else
-      call exit(0)
-#endif
- 
+c      if (nid.eq.0) call close_files
+      call print_runtime_info
+      call nek_die(0) 
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine exitt
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      if (nid.eq.0) then
+         write(6,*) ' '
+         write(6,'(A)') 'an error occured: dying ...'
+         write(6,*) ' '
+      endif
+
+c      call print_stack()
+c      if (nid.eq.0) call close_files
+c      call print_runtime_info
+      call nek_die(1) 
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine print_runtime_info
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
       include 'mpif.h'
-      common /happycallflag/ icall
-
-      logical ifopen              !check for opened files
-c
-
-c     Communicate unhappiness to the other session
-      if (ifneknek.and.icall.eq.0) call happy_check(0)
-
-      call nekgsync()
 
 #ifdef PAPI
       gflops = glsum(dnekgflops(),1)
 #endif
 
-      tstop  = dnekclock()
+      tstop  = dnekclock_sync()
       ttotal = tstop-etimes
       tsol   = max(ttime - tprep,0.0)
-      nxyz   = nx1*ny1*nz1
+      nxyz   = lx1*ly1*lz1
 
       dtmp4 = glsum(getmaxrss(),1)/1e9
 
       if (nid.eq.0) then 
-         call close_files(ifopen)
          dtmp1 = 0
          dtmp2 = 0
          if(istep.gt.0) then
            dgp   = nvtot
            dgp   = max(dgp,1.)*max(istep,1)
-           dtmp1 = dgp/(np*(ttime-tprep))
+           dtmp0 = np*(ttime-tprep)
+           dtmp1 = 0
+           if (dtmp0.gt.0) dtmp1 = dgp/dtmp0 
            dtmp2 = (ttime-tprep)/max(istep,1)
          endif 
-         write(6,*) ' '
-         write(6,'(A)') 'call exitt: dying ...'
-         write(6,*) ' '
-c         call print_stack()
          write(6,*) ' '
          write(6,'(5(A,1p1e13.5,A,/))') 
      &       'total elapsed time             : ',ttotal, ' sec'
@@ -566,12 +672,16 @@ c         call print_stack()
       endif 
       call flush_io
 
-      call mpi_finalize (ierr)
-#ifdef EXTBAR
-      call exit_(0)
-#else
-      call exit(0)
-#endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine nek_die(ierr)
+      include 'SIZE'
+      include 'mpif.h'
+
+      call mpi_finalize (ierr_)
+      call cexit(ierr)
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -1277,7 +1387,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine close_files(ifopen)
+      subroutine close_files
       logical ifopen
 
       do ii=1,99
@@ -1289,4 +1399,27 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+c----------------------------------------------------------------------
+      subroutine neknekgsync()
+
+      include 'SIZE'
+      include 'PARALLEL'
+
+      call mpi_barrier(iglobalcomm,ierr)
+
+      return
+      end
+c------------------------------------------------------------------------
+      subroutine setnekcomm(comm_in)
+
+      include 'SIZE'
+
+      integer comm_in
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      nekcomm = comm_in
+      call mpi_comm_size(nekcomm,mp,ierr)
+      np = mp
+
+      return
+      end

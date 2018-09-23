@@ -30,26 +30,12 @@ C
 C
 C        New geometry, new b.c.
 C
-         INTYPE = -1
-         CALL SETHLM  (H1,H2,INTYPE)
-         CALL CRESVIF (RESV1,RESV2,RESV3,H1,H2)
+         intype = -1
+         call sethlm  (h1,h2,intype)
+         call cresvif (resv1,resv2,resv3,h1,h2)
 
-         mstep = abs(param(94))
-         if (param(94).ne.0. .and. istep.ge.mstep) then
-          call ophinv_pr(dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
-c         CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
-         else
-           CALL OPHINV  (DV1,DV2,DV3,RESV1,RESV2,RESV3,H1,H2,TOLHV,NMXH)
-         endif
-         CALL OPADD2  (VX,VY,VZ,DV1,DV2,DV3)
-c
-c        Default Filtering
-c
-c        alpha_filt = 0.05
-c        if (param(103).ne.0.) alpha_filt=param(103)
-c        call q_filter(alpha_filt)
-c
-c        CALL SSNORMD (DV1,DV2,DV3)
+         call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 c
          call incomprn(vx,vy,vz,pr)
 C
@@ -71,7 +57,7 @@ C--------------------------------------------------------------------
       common /cgeom/ igeom
 
       IF (NBDINP.EQ.3.and.igeom.le.2) THEN
-         NTOT2 = NX2*NY2*NZ2*NELV
+         NTOT2 = lx2*ly2*lz2*NELV
          CALL COPY (PRLAG,PR,NTOT2)
       ENDIF
       RETURN
@@ -96,8 +82,8 @@ C---------------------------------------------------------------------
 
       common /cgeom/ igeom
 
-      NTOT1 = NX1*NY1*NZ1*NELV
-      NTOT2 = NX2*NY2*NZ2*NELV
+      NTOT1 = lx1*ly1*lz1*NELV
+      NTOT2 = lx2*ly2*lz2*NELV
       if (igeom.eq.2) CALL LAGVEL 
       CALL BCDIRVC (VX,VY,VZ,v1mask,v2mask,v3mask)
       CALL BCNEUTR

@@ -2,23 +2,12 @@
 # nek parameter file
 #
 [GENERAL] 
-#startFrom = restart.fld 
-stopAt = numSteps #endTime
 numSteps = 1000
-
 dt = 5e-02
-timeStepper = bdf #char #steady
-tOrder = 2
-
-writeControl = timeStep #runTime
 writeInterval = 500
 
-dealiasing = yes
-filtering = no  
-filterWeight = 1e-02
-
 [PROBLEMTYPE]
-#stressFormulation = yes
+equation = incompNS
 variableProperties = yes
 
 [PRESSURE]
@@ -27,7 +16,6 @@ residualProj = no
 
 [VELOCITY]
 residualTol = 1e-08
-residualProj = no
 density = 1
 viscosity = 0.5
 
@@ -36,13 +24,13 @@ conjugateHeatTransfer = yes
 rhoCp = 1.0
 conductivity = 0.5
 residualTol = 1e-08
+residualProj = yes
 
 [SCALAR01] # temperature with CVODE
 conjugateHeatTransfer = yes 
 solver = cvode
-absoluteTol = 1e-08
+absoluteTol = 1e-10
 
 [CVODE]
-relativeTol = 1e-04
-stiff = no
-dtmax = 1e-01
+relativeTol = 1e-06
+dtmax = 5e-02 

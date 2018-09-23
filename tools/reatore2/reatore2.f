@@ -18,7 +18,7 @@ c     an ascii rea file for just the parameters
       equivalence (fbout1,fbout)
       equivalence (string,string1)
 
-      parameter(lelt=1 000 000)
+      parameter(lelt=MAXNEL)
       common /array/ x(8),y(8),z(8),bc(5,6,lelt),curve(6,8)
       common /arrai/ nel,ncurve
       common /arrac/ cbc
@@ -68,9 +68,8 @@ c     an ascii rea file for just the parameters
    11 format(i12,2x,i1,2x,i12,5x,'NELT,NDIM,NELV')
    
       if(nel.ge.lelt) then
-        write(6,*) 'Abort: number of elements too large'
-        write(6,*) 'maximum number of elements ',lelt
-        write(6,*) 'change lelt and recompile'
+        write(6,*) 'Abort: number of elements too large',nel
+        write(6,*) 'change MAXNEL and recompile'
         stop
       endif
 

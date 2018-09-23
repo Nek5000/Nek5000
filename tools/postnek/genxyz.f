@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine genxyz (xml,yml,zml,ie,nxl,nyl,nzl)
 C
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Note : CTMP1 is used in this format in several subsequent routines
 C
@@ -119,7 +119,7 @@ C
 C     Program to generate spherical shell elements for NEKTON
 C     input.  Paul F. Fischer
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
       DIMENSION XML(MX,MY,MZ,1),YML(MX,MY,MZ,1),ZML(MX,MY,MZ,1)
       DIMENSION XYSRF(3,MX,MZ)
@@ -310,7 +310,7 @@ c-----------------------------------------------------------------------
 C
 C     Generate XYZ vector along an edge of a surface.
 C
-      include 'basics.inc'
+#     include "basics.inc"
       PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
       COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
@@ -422,7 +422,7 @@ c-----------------------------------------------------------------------
 C
 C     Set up arrays IXCN,ESKIP,SKPDAT,NEDG,NOFFST for new MX,MY,MZ
 C
-      include 'basics.inc'
+#     include "basics.inc"
       INTEGER MXO,MYO,MZO
       SAVE    MXO,MYO,MZO
       DATA    MXO,MYO,MZO /3*0/
@@ -508,7 +508,7 @@ C
 C     Program to generate surface deformations for NEKTON
 C     input.  Paul F. Fischer
 C
-      include 'basics.inc'
+#     include "basics.inc"
 C
       PARAMETER (LX1=NXM,LY1=NYM,LZ1=NZM)
       DIMENSION XML(MX,MY,MZ,1),YML(MX,MY,MZ,1),ZML(MX,MY,MZ,1)
@@ -707,7 +707,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine arcsrf(xml,yml,zml,nxl,nyl,nzl,ie,isid)
-      include 'basics.inc'
+#     include "basics.inc"
 C
 C     Note : CTMP1 is used in this format in several subsequent routines
 C

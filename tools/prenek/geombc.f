@@ -3,7 +3,7 @@ c-----------------------------------------------------------------------
 c
 c     Set BCs based upon geometric information
 c
-      include 'basics.inc'
+#     include "basics.inc"
 c
 c
       call compute_adj_srf
@@ -16,7 +16,7 @@ c-----------------------------------------------------------------------
       subroutine compute_adj_srf(ia,ja,vals,x_centroid,y_centroid
      $     ,z_centroid,n,vertex,nv)
 c
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
       INCLUDE 'basicsp.inc'
 c
       integer n,nv
@@ -84,7 +84,7 @@ c
                zmax          =0.
                z_centroid(ie)=0.
             endif
-            vertex(k) = 9999999
+            vertex(k) = 999999999
             start_pt(k) = k
             start_el(k) = ie
          enddo

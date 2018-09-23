@@ -1,5 +1,5 @@
       SUBROUTINE SCRDMP
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       character*80 command
       common /iscdmp/ nsdump
@@ -22,7 +22,7 @@ C        Ultrix
       RETURN
       END
       SUBROUTINE SCRuDMP
-      INCLUDE 'basics.inc'
+#     include "basics.inc"
 C
       character*80 command
       common /iscdmp/ nsdump

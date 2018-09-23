@@ -9,8 +9,8 @@ c     Operator splitting technique.
 
       common /scrns/  resv  (lx1*ly1*lz1*lelv,3)
 
-      n   = nx1*ny1*nz1*nelv
-      n2  = nx2*ny2*nz2*nelv
+      n   = lx1*ly1*lz1*nelv
+      n2  = lx2*ly2*lz2*nelv
       dt2 = dt/2
       dti = 1/dt
 
@@ -83,12 +83,12 @@ c-----------------------------------------------------------------------
      $ ,              h2    (lx1*ly1*lz1*lelv)
 
 
-      if (nx1.eq.nx2) 
-     $   call exitti('midstep requires lx2=lx1-2 in SIZE$',nx2)
+      if (lx1.eq.lx2) 
+     $   call exitti('midstep requires lx2=lx1-2 in SIZE$',lx2)
 
       ifield = 1                ! Set field for velocity
-      n   = nx1*ny1*nz1*nelv
-      n2  = nx2*ny2*nz2*nelv
+      n   = lx1*ly1*lz1*nelv
+      n2  = lx2*ly2*lz2*nelv
 
       dti = 1/dtl
       call copy    (h1,vdiff ,n)
@@ -130,7 +130,7 @@ c-----------------------------------------------------------------------
 
       tolhv = abs(param(22))
       nmxh  = 100
-      call ophinv_pr(dv1,dv2,dv3
+      call ophinv(dv1,dv2,dv3
      $   ,resv(1,1),resv(1,2),resv(1,3),h1,h2,tolhv,nmxh)
 
       call opadd2(ux,uy,uz,dv1,dv2,dv3)

@@ -21,13 +21,14 @@ c-----------------------------------------------------------------------
       if (ifheat) nfldt = 2+npscal
       if (ifmhd ) nfldt = 2+npscal+1
 
-c
-c     If p32 = 0.1, there will be no bcs read in
-c
-      if (param(32).gt.0) nfldt = ibc + param(32)-1
+      ! first field to read
+      if (param(33).gt.0) ibc = int(param(33))
 
-      lcbc=18*lelt*(ldimt1 + 1)
-      call blank(cbc,lcbc)
+      ! number of fields to read
+      if (param(32).gt.0) nfldt = ibc + int(param(32)) - 1
+
+      call blank(cbc,3*size(cbc))
+      call rzero(bc ,size(bc))
 
 #ifndef NOMPIIO
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
@@ -99,7 +100,7 @@ c-----------------------------------------------------------------------
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
-      if(ierr.gt.0) goto 100
+      if (ierr.gt.0) goto 100
 
       ! pack buffer
       do i = 1,nr
@@ -117,18 +118,21 @@ c-----------------------------------------------------------------------
      &                                   key)
 
       ! unpack buffer
-      if(n.gt.nrmax) goto 100
+      ierr = 0
+      if (n.gt.nrmax) then
+         ierr = 1
+         goto 100
+      endif
+
       do i = 1,n
          iel = gllel(vi(2,i)) 
          call icopy     (bufr,vi(3,i),lrs4)
          call buf_to_xyz(bufr,iel,ifbswap,ierr)
       enddo
 
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+
       return
-
- 100  ierr = 1
-      call err_chk(ierr,'Error reading .re2 mesh$')
-
       end
 c-----------------------------------------------------------------------
       subroutine readp_re2_curve(ifbswap)
@@ -176,8 +180,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) ' preading curved sides '
 
       ! read data from file
-      nr = nrg/np
-      do i = 0,mod(nrg,np)-1
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
       irankoff  = igl_running_sum(nr) - nr
@@ -283,8 +288,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) ' preading bc for ifld',ifield
 
       ! read data from file
-      nr = nrg/np
-      do i = 0,mod(nrg,np)-1
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
       irankoff  = igl_running_sum(nr) - nr
@@ -347,7 +353,7 @@ c-----------------------------------------------------------------------
 c      integer e,eg,buf(0:49)
       integer e,eg,buf(0:49)
 
-      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 
       if     (ifbswap.and.ierr.eq.0.and.wdsizi.eq.8) then
           call byte_reverse8(buf,nwds,ierr)
@@ -358,7 +364,7 @@ c      integer e,eg,buf(0:49)
 
       if(wdsizi.eq.8) then
          call copyi4(igroup(e),buf(0),1) !0-1
-         if (ndim.eq.3) then
+         if (ldim.eq.3) then
             call copy  (xc(1,e),buf( 2),8) !2 --17
             call copy  (yc(1,e),buf(18),8) !18--33
             call copy  (zc(1,e),buf(34),8) !34--49
@@ -463,7 +469,7 @@ c-----------------------------------------------------------------------
 
       if (nio.eq.0) write(6,*)    '  reading mesh '
 
-      nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
+      nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
       len  = 4*nwds                          ! 4 bytes / wd
 
       if (nwds.gt.55.or.isize.gt.4) then
@@ -685,7 +691,7 @@ c        write(6,*) mid,' bclose ',eg,nbc_max
 
       else               ! wait for data from node 0
 
-         nbc_max = 2*ndim*nelt
+         nbc_max = 2*ldim*nelt
          do k=1,nbc_max+1  ! Need one extra !
 
 c           write(6,*) nid,' recvbc1',k
@@ -791,7 +797,7 @@ c-----------------------------------------------------------------------
          call byte_read(hdr,20,ierr)
          if(ierr.ne.0) goto 100
 
-         read (hdr,1) version,nelgt,ndim,nelgv
+         read (hdr,1) version,nelgt,ldimr,nelgv
     1    format(a5,i9,i3,i9)
  
          wdsizi = 4
@@ -814,8 +820,8 @@ c-----------------------------------------------------------------------
       call bcast(wdsizi, ISIZE)
       call bcast(ifbswap,LSIZE)
       call bcast(nelgv  ,ISIZE)
-      call bcast(ndim   ,ISIZE)
       call bcast(nelgt  ,ISIZE)
+      call bcast(ldimr  ,ISIZE)
       call bcast(param(32),WDSIZE)
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 

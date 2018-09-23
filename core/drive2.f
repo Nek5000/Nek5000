@@ -7,25 +7,25 @@ C-------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
 C
+      NELT=LELT
+      NELV=LELV
+
       NX1=LX1
       NY1=LY1
       NZ1=LZ1
-C
+ 
       NX2=LX2
       NY2=LY2
       NZ2=LZ2
-C
+ 
       NX3=LX3
       NY3=LY3
       NZ3=LZ3
-C
+ 
       NXD=LXD
       NYD=LYD
       NZD=LZD
 
-C
-      NELT=LELT
-      NELV=LELV
       NDIM=LDIM
 C
       RETURN
@@ -70,7 +70,7 @@ C
       CALL RZERO(YC,NEL8)
       CALL RZERO(ZC,NEL8)
 C
-      NTOT=NX1*NY1*NZ1*LELT
+      NTOT=lx1*ly1*lz1*LELT
       CALL RZERO(ABX1,NTOT)
       CALL RZERO(ABX2,NTOT)
       CALL RZERO(ABY1,NTOT)
@@ -80,7 +80,7 @@ C
       CALL RZERO(VGRADT1,NTOT)
       CALL RZERO(VGRADT2,NTOT)
 
-      NTOT=NX2*NY2*NZ2*LELT
+      NTOT=lx2*ly2*lz2*LELT
       CALL RZERO(USRDIV,NTOT)
       CALL RZERO(QTL,NTOT)
 
@@ -155,13 +155,6 @@ C------------------------------------------------------------------------
       include 'DEALIAS'
       include 'TSTEP'
 C
-C     Enforce splitting/Uzawa according to the way the code was compiled
-C
-c
-      nxd = lxd
-      nyd = lyd
-      nzd = lzd
-C
 C     Geometry on Mesh 3 or 1?
 C
       IFGMSH3 = .TRUE.
@@ -183,19 +176,6 @@ c
          nfldtm = nfldtm + 1
       endif
 c
-      IF (IFMODEL) CALL SETTMC
-      IF (IFMODEL.AND.IFKEPS) THEN
-         NPSCAL = 1
-         NFLDTM = NPSCAL + 1
-         IF (LDIMT.LT.NFLDTM) THEN
-            WRITE (6,*) 'k-e turbulence model activated'
-            WRITE (6,*) 'Insufficient number of field arrays'
-            WRITE (6,*) 'Rerun through PRE or change SIZE file'
-            call exitt
-         ENDIF
-         NFIELD = NFIELD + 2
-         CALL SETTURB
-      ENDIF
       MFIELD = 1
       IF (IFMVBD) MFIELD = 0
 C
@@ -215,8 +195,6 @@ C
 C
       PARAM(86) = 0 ! No skew-symm. convection for now
 C
-      BETAG  = 0 ! PARAM(3)
-      GTHETA = 0 ! PARAM(4)
       DT     = abs(PARAM(12))
       DTINIT = DT
       FINTIM = PARAM(10)
@@ -236,7 +214,7 @@ C
       if (nbdinp.gt.lorder) then
          if (nid.eq.0) then
            write(6,*) 'ERROR: torder > lorder.',nbdinp,lorder
-           write(6,*) 'Change SIZEu and recompile entire code.'
+           write(6,*) 'Change SIZE and recompile entire code.'
          endif
          call exitt
       endif
@@ -262,13 +240,6 @@ C
 C     Print interval defaults to 1
 C
       IF (IOCOMM.EQ.0)  IOCOMM = nsteps+1
-
-C
-C     Set logical for Boussinesq approx (natural convection)
-C
-      IFNATC = .FALSE.
-      IF (BETAG.GT.0.) IFNATC=.TRUE.
-      IF(IFLOMACH) IFNATC = .FALSE.
 C
 C     Set default for mesh integration scheme
 C
@@ -276,11 +247,6 @@ C
          NABMSH    = NBDINP
          PARAM(28) = (NABMSH)
       ENDIF
-C
-C     Set default for mixing length factor
-C
-      TLFAC = 0.14
-c     IF (PARAM(49) .LE. 0.0) PARAM(49) = TLFAC
 C
 C     Courant number only applicable if convection in ANY field.
 C
@@ -339,10 +305,10 @@ C
          PRINT*,' to bring the .rea file up to date.'
          call exitt
       ENDIF
-      READ(9,*,ERR=400) NDIM
+      READ(9,*,ERR=400) ldimr
 c     error check
-      IF(NDIM.NE.LDIM)THEN
-         WRITE(6,10) LDIM,NDIM
+      IF(ldimr.NE.LDIM)THEN
+         WRITE(6,10) LDIMR,ldim
    10       FORMAT(//,2X,'Error: This NEKTON Solver has been compiled'
      $              /,2X,'       for spatial dimension equal to',I2,'.'
      $              /,2X,'       The data file has dimension',I2,'.')
@@ -372,12 +338,6 @@ c         write(6,*) 'Note VISCOS not equal to CONDUCT!'
 c         write(6,*) 'Note VISCOS  =',PARAM(2)
 c         write(6,*) 'Note CONDUCT =',PARAM(8)
 c      endif
-
-      if (param(62).gt.0) then
-         if(nio.eq.0) write(6,*)
-     &      'enable byte swap for output'
-         call set_bytesw_write(1)
-      endif
 c
       return
 C
@@ -437,27 +397,6 @@ c        Take direct stiffness avg of mesh
 c
          ifieldo = ifield
          if (.not.ifneknekm) CALL GENCOOR (XM3,YM3,ZM3)
-         if (ifheat) then
-            ifield = 2
-            CALL dssum(xm3,nx3,ny3,nz3)
-            call col2 (xm3,tmult,ntot3)
-            CALL dssum(ym3,nx3,ny3,nz3)
-            call col2 (ym3,tmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,nx3,ny3,nz3)
-               call col2 (xm3,tmult,ntot3)
-            endif
-         else
-            ifield = 1
-            CALL dssum(xm3,nx3,ny3,nz3)
-            call col2 (xm3,vmult,ntot3)
-            CALL dssum(ym3,nx3,ny3,nz3)
-            call col2 (ym3,vmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,nx3,ny3,nz3)
-               call col2 (xm3,vmult,ntot3)
-            endif
-         endif
          CALL GEOM1 (XM3,YM3,ZM3)
          CALL GEOM2
          CALL UPDMSYS (1)
@@ -759,9 +698,9 @@ c                - Same approximation spaces for pressure and velocity.
 c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model              
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.ge.2) call printdiverr
 
       elseif (iftran) then
 
@@ -774,7 +713,6 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
                                   !  Std. NEKTON time stepper  !
          endif
 
-         if (ifmodel)    call twalluz (igeom) ! Turbulence model
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
          if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
 
@@ -812,7 +750,6 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO' 
       include 'DEALIAS'
 
       real*8 ts, dnekclock
@@ -845,7 +782,6 @@ C
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
-      include 'TURBO' 
       include 'DEALIAS'
 
       real*8 ts, dnekclock
@@ -922,10 +858,10 @@ c
       data    icall2 /0/
 c
       if (np.gt.1) return
-      ntov1=nx1*ny1*nz1*nelv
-      ntov2=nx2*ny2*nz2*nelv
-      ntot1=nx1*ny1*nz1*nelt
-      ntfc1=nx1*nz1*6*nelv 
+      ntov1=lx1*ly1*lz1*nelv
+      ntov2=lx2*ly2*lz2*nelv
+      ntot1=lx1*ly1*lz1*nelt
+      ntfc1=lx1*lz1*6*nelv 
       ntow1=lx1m*ly1m*lz1m*nelfld(0)
       ntoe1=lx1m*ly1m*lz1m*nelv
       ntotf=ntot1*ldimt
@@ -951,16 +887,16 @@ c
           if (ifmvbd) then
              read (iru,1100,end=9000) (xm1(i,1,1,1),i=1,ntot1)
              read (iru,1100,end=9000) (ym1(i,1,1,1),i=1,ntot1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (zm1(i,1,1,1),i=1,ntot1)
              read (iru,1100,end=9000) (wx(i,1,1,1) ,i=1,ntow1)
              read (iru,1100,end=9000) (wy(i,1,1,1) ,i=1,ntow1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (wz(i,1,1,1) ,i=1,ntow1)
             if (nlag.ge.1) then
              read (iru,1100,end=9000) (wxlag(i,1,1,1,1) ,i=1,ntow1*nlag)
              read (iru,1100,end=9000) (wylag(i,1,1,1,1) ,i=1,ntow1*nlag)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (wzlag(i,1,1,1,1) ,i=1,ntow1*nlag)
             endif
           endif
@@ -969,21 +905,21 @@ c
           if (ifflow) then
              read (iru,1100,end=9000) (vx(i,1,1,1) ,i=1,ntov1)
              read (iru,1100,end=9000) (vy(i,1,1,1) ,i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (vz(i,1,1,1) ,i=1,ntov1)
              read (iru,1100,end=9000) (pr(i,1,1,1) ,i=1,ntov2)
              read (iru,1100,end=9000) (abx2(i,1,1,1),i=1,ntov1)
              read (iru,1100,end=9000) (aby2(i,1,1,1),i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (abz2(i,1,1,1),i=1,ntov1)
              read (iru,1100,end=9000) (abx1(i,1,1,1),i=1,ntov1)
              read (iru,1100,end=9000) (aby1(i,1,1,1),i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (abz1(i,1,1,1),i=1,ntov1)
             if (nlag.ge.1) then
              read (iru,1100,end=9000) (vxlag (i,1,1,1,1),i=1,ntov1*nlag)
              read (iru,1100,end=9000) (vylag (i,1,1,1,1),i=1,ntov1*nlag)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       read (iru,1100,end=9000) (vzlag (i,1,1,1,1),i=1,ntov1*nlag)
              read (iru,1100,end=9000) (bm1lag(i,1,1,1,1),i=1,ntot1*nlag)
             endif
@@ -998,16 +934,6 @@ c
              read (iru,1100,end=9000) (tlag(i,1,1,1,1,1),i=1,ntotf*nlag)
             endif
           endif
-c
-          iread = 3
-          if (ifmodel .and. .not.ifkeps) then
-             read (iru,1100,end=9000) tlmax,tlimul
-             read (iru,1100,end=9000) (turbl(i,1,1,1),i=1,ntov1)
-          endif
-          if (ifcwuz) then
-             read (iru,1100,end=9000) (zwall (i,1,1,1),i=1,ntfc1)
-             read (iru,1100,end=9000) (uwall(i,1,1,1),i=1,ntfc1)
-          endif 
 c
           if (ifgeom) then
              call geom1 (xm3,ym3,zm3)
@@ -1036,16 +962,16 @@ c
           if (ifmvbd) then
              write (iwu,1100) (xm1(i,1,1,1),i=1,ntot1)
              write (iwu,1100) (ym1(i,1,1,1),i=1,ntot1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (zm1(i,1,1,1),i=1,ntot1)
              write (iwu,1100) (wx(i,1,1,1) ,i=1,ntow1)
              write (iwu,1100) (wy(i,1,1,1) ,i=1,ntow1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (wz(i,1,1,1) ,i=1,ntow1)
             if (nlag.ge.1) then
              write (iwu,1100) (wxlag(i,1,1,1,1) ,i=1,ntow1*nlag)
              write (iwu,1100) (wylag(i,1,1,1,1) ,i=1,ntow1*nlag)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (wzlag(i,1,1,1,1) ,i=1,ntow1*nlag)
             endif
           endif
@@ -1053,21 +979,21 @@ c
           if (ifflow) then
              write (iwu,1100) (vx(i,1,1,1) ,i=1,ntov1)
              write (iwu,1100) (vy(i,1,1,1) ,i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (vz(i,1,1,1) ,i=1,ntov1)
              write (iwu,1100) (pr(i,1,1,1) ,i=1,ntov2)
              write (iwu,1100) (abx2(i,1,1,1),i=1,ntov1)
              write (iwu,1100) (aby2(i,1,1,1),i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (abz2(i,1,1,1),i=1,ntov1)
              write (iwu,1100) (abx1(i,1,1,1),i=1,ntov1)
              write (iwu,1100) (aby1(i,1,1,1),i=1,ntov1)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (abz1(i,1,1,1),i=1,ntov1)
             if (nlag.ge.1) then
              write (iwu,1100) (vxlag (i,1,1,1,1),i=1,ntov1*nlag)
              write (iwu,1100) (vylag (i,1,1,1,1),i=1,ntov1*nlag)
-             if (ndim.eq.3)
+             if (ldim.eq.3)
      $       write (iwu,1100) (vzlag (i,1,1,1,1),i=1,ntov1*nlag)
              write (iwu,1100) (bm1lag(i,1,1,1,1),i=1,ntot1*nlag)
             endif
@@ -1081,15 +1007,6 @@ c
              write (iwu,1100) (tlag(i,1,1,1,1,1),i=1,ntotf*nlag)
             endif
           endif
-c
-          if (ifmodel .and. .not.ifkeps) then
-             write (iwu,1100) tlmax,tlimul
-             write (iwu,1100) (turbl(i,1,1,1),i=1,ntov1)
-          endif
-          if (ifcwuz) then
-             write (iwu,1100) (zwall(i,1,1,1),i=1,ntfc1)
-             write (iwu,1100) (uwall(i,1,1,1),i=1,ntfc1)
-          endif 
 c
       endif
 c
@@ -1176,6 +1093,9 @@ c
       ttime=0.0
       tcvf =0.0
       tproj=0.0
+      tuchk=0.0
+      tmakf=0.0
+      tmakq=0.0
 C
       return
       end
@@ -1317,6 +1237,7 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nio.eq.0) then
+         write(6,*) ''
          write(6,'(A)') 'runtime statistics:'
 
          pinit=tinit/tttstp
@@ -1343,13 +1264,21 @@ c        E solver timings
          peslv=teslv/tttstp 
          write(6,*) 'eslv time',neslv,teslv,peslv
 
+c        makef timings
+         pmakf=tmakf/tttstp 
+         write(6,*) 'makf time',tmakf,pmakf
+
+c        makeq timings
+         pmakq=tmakq/tttstp 
+         write(6,*) 'makq time',tmakq,pmakq
+
 c        CVODE RHS timings
          pcvf=tcvf/tttstp
          if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        Resiual projection timings
          pproj=tproj/tttstp
-         write(6,*) 'proj time',0,tproj,pproj
+         write(6,*) 'proj time',tproj,pproj
 
 c        Variable properties timings
          pspro=tspro/tttstp
@@ -1365,6 +1294,10 @@ c        USERBC timings
          write(6,*) 'usbc min ',min_usbc 
          write(6,*) 'usbc max ',max_usbc 
          write(6,*) 'usb  avg ',avg_usbc 
+
+c        User check timings
+         puchk=tuchk/tttstp
+         write(6,*) 'uchk time',tuchk,puchk
 
 c        Operator timings
          pmltd=tmltd/tttstp
@@ -1471,17 +1404,20 @@ c        MPI_Allreduce(sync) timings
          write(6,*) 'allreduce_sync  max ',max_gop_sync 
          write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
 #endif
+         write(6,*) ''
       endif
 
-      if (nio.eq.0)  ! header for timing
-     $ write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop',ifsync
-    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
+      if (lastep.eq.1) then
+        if (nio.eq.0)  ! header for timing
+     $    write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',
+     $               ' tgop',ifsync
+    1     format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
-      call blank(s132,132)
-      write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
-  132 format(i12,1p6e12.4,' qqq')
-      call pprint_all(s132,132,6)
-
+        call blank(s132,132)
+        write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
+  132   format(i12,1p6e12.4,' qqq')
+        call pprint_all(s132,132,6)
+      endif
 #endif
 
       return
@@ -1594,7 +1530,7 @@ c-----------------------------------------------------------------------
       integer*8 i8glsum
       integer*8 ntot,ntotp,ntotv, nn
 
-      nxyz  = nx1*ny1*nz1
+      nxyz  = lx1*ly1*lz1
       nel   = nelv
 
       ! unique points on v-mesh
@@ -1609,8 +1545,8 @@ C
       if (nio.eq.0) write(6,'(A,2i13)') 
      &   'gridpoints unique/tot: ',nvtot,ntot
 
-      ntot1=nx1*ny1*nz1*nelv
-      ntot2=nx2*ny2*nz2*nelv
+      ntot1=lx1*ly1*lz1*nelv
+      ntot2=lx2*ly2*lz2*nelv
 
       ntotv = glsc2(tmult,tmask,ntot1)
       nn = ntot2
@@ -1642,7 +1578,6 @@ c     Swap the comments on these two lines if you don't want to fix the
 c     flow rate for periodic-in-X (or Z) flow problems.
 c
       parameter (kx1=lx1,ky1=ly1,kz1=lz1,kx2=lx2,ky2=ly2,kz2=lz2)
-c     parameter (kx1=1,ky1=1,kz1=1,kx2=1,ky2=1,kz2=1)
 c
       common /cvflow_a/ vxc(kx1,ky1,kz1,lelv)
      $                , vyc(kx1,ky1,kz1,lelv)
@@ -1667,8 +1602,8 @@ c     param (55) -- volume flow rate, if nonzero
 c     forcing in X? or in Z?
 
 
-      ntot1 = nx1*ny1*nz1*nelv
-      ntot2 = nx2*ny2*nz2*nelv
+      ntot1 = lx1*ly1*lz1*nelv
+      ntot2 = lx2*ly2*lz2*nelv
 
       if (param(55).eq.0.) return
       if (kx1.eq.1) then
@@ -1725,9 +1660,9 @@ c     in userf then the true FFX is given by ffx_userf + scale.
 
       scale = delta_flow/base_flow
       scale_vf(icvflow) = scale
-      if (nio.eq.0) write(6,1) istep
-     $   ,time,scale,delta_flow,current_flow,flow_rate,chv(icvflow)
-    1    format(i8,e14.7,1p4e13.5,' volflow',1x,a1)
+      if (nio.eq.0) write(6,1) istep,chv(icvflow)
+     $   ,time,scale,delta_flow,current_flow,flow_rate
+    1    format(i11,'  Volflow ',a1,11x,1p5e13.4)
 
       call add2s2(vx,vxc,scale,ntot1)
       call add2s2(vy,vyc,scale,ntot1)
@@ -1763,7 +1698,7 @@ c
       data    icalld/0/
 c
 c
-      ntot1 = nx1*ny1*nz1*nelv
+      ntot1 = lx1*ly1*lz1*nelv
       if (icalld.eq.0) then
          icalld=icalld+1
          xlmin = glmin(xm1,ntot1)
@@ -1792,9 +1727,9 @@ c
       if (icvflow.eq.2) base_flow = glsc2(vyc,bm1,ntot1)/domain_length
       if (icvflow.eq.3) base_flow = glsc2(vzc,bm1,ntot1)/domain_length
 c
-      if (nio.eq.0) write(6,1) 
-     $   istep,base_flow,domain_length,flow_rate,chv(icvflow)
-    1    format(i9,1p3e13.5,' basflow',1x,a1)
+      if (nio.eq.0 .and. loglevel.gt.2) write(6,1) 
+     $   istep,chv(icvflow),base_flow,domain_length,flow_rate
+    1    format(i11,'  basflow ',a1,11x,1p3e13.4)
 c
       return
       end
@@ -1825,7 +1760,7 @@ C
 C
 C     Compute pressure 
 C
-      ntot1  = nx1*ny1*nz1*nelv
+      ntot1  = lx1*ly1*lz1*nelv
 c
       if (icvflow.eq.1) then
          call cdtp     (respr,v1mask,rxm2,sxm2,txm2,1)
@@ -1887,8 +1822,8 @@ c
 c
 c     Compute velocity, 1st part 
 c
-      ntot1  = nx1*ny1*nz1*nelv
-      ntot2  = nx2*ny2*nz2*nelv
+      ntot1  = lx1*ly1*lz1*nelv
+      ntot2  = lx2*ly2*lz2*nelv
       ifield = 1
 c
       if (icvflow.eq.1) then
@@ -1962,7 +1897,7 @@ c     (Tombo splitting scheme).
 
       common /cvflow_i/ icvflow,iavflow
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call invers2  (h1,vtrans,n)
       call rzero    (h2,       n)
 
@@ -2009,7 +1944,7 @@ c
      $             , h1(LX1,LY1,LZ1,LELT)
      $             , h2(LX1,LY1,LZ1,LELT)
 c
-      ntot = nx1*ny1*nz1*nelv
+      ntot = lx1*ly1*lz1*nelv
       call rone (h1,ntot)
       call rzero(h2,ntot)
       do i=1,ntot
@@ -2059,7 +1994,7 @@ C
 c
       rfinal   = 1./param(2) ! Target Re
 c
-      ntot  = nx1*ny1*nz1*nelv
+      ntot  = lx1*ly1*lz1*nelv
       iramp = 200
       istpp = istep
 c     istpp = istep+2033+1250

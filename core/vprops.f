@@ -14,7 +14,10 @@ C-----------------------------------------------------------------------
       include 'TSTEP'
       LOGICAL  IFKFLD,IFEFLD
 C
-      NXYZ1 = NX1*NY1*NZ1
+      if (nio.eq.0.and.loglevel.gt.2)
+     $   write(6,*) 'vprops', ifield
+
+      NXYZ1 = lx1*ly1*lz1
       NEL   = NELFLD(IFIELD)
       NTOT1 = NXYZ1*NEL
 C
@@ -41,18 +44,6 @@ C
       endif         
 C
 C     Fill up property arrays every time step
-C
-C     First, check for turbulence models
-C
-      IF (IFMODEL .AND. IFKEPS) THEN
-         CALL TURBFLD (IFKFLD,IFEFLD)
-         IF (IFKFLD)           CALL TPROPK
-         IF (IFEFLD)           CALL TPROPE
-         IF (IFKFLD.OR.IFEFLD) return
-      endif
-C
-C...  No turbulence models, OR current field is not k or e.
-C
       DO 1000 IEL=1,NEL
 C
          IGRP=IGROUP(IEL)
@@ -117,11 +108,6 @@ c           write(6,*) 'vdiff:',ifield,cdiff,ctrans
          endif
 C
  1000 CONTINUE
-C
-C     Turbulence models --- sum eddy viscosity/diffusivity
-C
-      IF (IFMODEL .AND. (IFIELD.EQ.1 .OR. IFIELD.EQ.2)) 
-     $    CALL TVISCOS
 C
       return
       end

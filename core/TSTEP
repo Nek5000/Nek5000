@@ -1,7 +1,7 @@
 c 
 c     Variables related to time integration
 c
-      real time,timef,fintim,timeio
+      real time,timef,fintim,timeio,timeioe
      $    ,dt,dtlag(10),dtinit,dtinvm,courno,ctarg
      $    ,ab(10),bd(10),abmsh(10)
      $    ,avdiff(ldimt1),avtran(ldimt1),volfld(0:ldimt1)
@@ -10,7 +10,7 @@ c
      $    ,vnrmh1,vnrmsm,vnrml2,vnrml8,vmean
      $    ,tnrmh1(ldimt),tnrmsm(ldimt),tnrml2(ldimt)
      $    ,tnrml8(ldimt),tmean(ldimt)
-      common /tstep1/ time,timef,fintim,timeio
+      common /tstep1/ time,timef,fintim,timeio,timeioe
      $               ,dt,dtlag,dtinit,dtinvm,courno,ctarg
      $               ,ab,bd,abmsh
      $               ,avdiff,avtran,volfld
@@ -35,8 +35,8 @@ c
      $               ,nconv,nconv_max
      $               ,ioinfodmp
 
-      real pi,betag,gtheta
-      common /tstep3/ pi,betag,gtheta
+      real pi
+      common /tstep3/ pi
       
       logical ifprnt,if_full_pres,ifoutfld
       common /tstep4/ ifprnt,if_full_pres,ifoutfld

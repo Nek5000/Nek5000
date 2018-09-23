@@ -1,6 +1,6 @@
       subroutine particle_paths
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cpathr/ time0,time1,time2
@@ -138,7 +138,7 @@ c
 c         time0  <  time1  =<  t_str  =<  time2  <  time
 c
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       common /cpathr/ time0,time1,time2
@@ -231,7 +231,7 @@ c
 c-----------------------------------------------------------------------
       subroutine get_part(isel)
 c
-      include 'basics.inc'
+#     include "basics.inc"
       include 'basicsp.inc'
 c
       parameter (maxpart=500)

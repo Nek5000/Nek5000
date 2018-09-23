@@ -47,127 +47,118 @@ c     outpost arrays
 
       logical if_fltv
 
+      ncut = param(101)+1
+
       if(wght.le.0) return
-      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',wght
+      if(ifaxis) call exitti('Filtering not supported w/ IFAXIS!$',1)
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
+     $                                            ncut, wght
 
       imax = nid
       imax = iglmax(imax,1)
       jmax = iglmax(imax,1)
       if (icalld.eq.0) then
          icalld = 1
-         ncut = param(101)+1
-         call build_new_filter(intv,zgm1,nx1,ncut,wght,nio)
+         call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
       elseif (icalld.lt.0) then   ! old (std.) filter
          icalld = 1
          call zwgll(zgmv,wgtv,lxv)
-         call igllm(intuv,intw,zgmv,zgm1,lxv,nx1,lxv,nx1)
-         call igllm(intdv,intw,zgm1,zgmv,nx1,lxv,nx1,lxv)
+         call igllm(intuv,intw,zgmv,zgm1,lxv,lx1,lxv,lx1)
+         call igllm(intdv,intw,zgm1,zgmv,lx1,lxv,lx1,lxv)
 c
          call zwgl (zgmp,wgtp,lxp)
-         call iglm (intup,intw,zgmp,zgm2,lxp,nx2,lxp,nx2)
-         call iglm (intdp,intw,zgm2,zgmp,nx2,lxp,nx2,lxp)
+         call iglm (intup,intw,zgmp,zgm2,lxp,lx2,lxp,lx2)
+         call iglm (intdp,intw,zgm2,zgmp,lx2,lxp,lx2,lxp)
 c
 c        Multiply up and down interpolation into single operator
 c
-         call mxm(intup,nx2,intdp,lxp,intp,nx2)
-         call mxm(intuv,nx1,intdv,lxv,intv,nx1)
+         call mxm(intup,lx2,intdp,lxp,intp,lx2)
+         call mxm(intuv,lx1,intdv,lxv,intv,lx1)
 c
 c        Weight the filter to make it a smooth (as opposed to truncated)
 c        decay in wave space
 
          w0 = 1.-wght
-         call ident(intup,nx2)
-         call add2sxy(intp,wght,intup,w0,nx2*nx2)
+         call ident(intup,lx2)
+         call add2sxy(intp,wght,intup,w0,lx2*lx2)
 
-         call ident   (intuv,nx1)
-         call add2sxy (intv ,wght,intuv,w0,nx1*nx1)
+         call ident   (intuv,lx1)
+         call add2sxy (intv ,wght,intuv,w0,lx1*lx1)
 
       endif
 
       ifldt  = ifield
-c     ifield = 1
+      ifield = 1
 
       if_fltv = .false.
       if ( ifflow .and. .not. ifmhd ) if_fltv = .true.
-      if ( ifield.eq.1  .and. ifmhd ) if_fltv = .true.
-
-c     Adam Peplinski; to take into account freezing of base flow
-      if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
+      if ( ifmhd                    ) if_fltv = .true.
+      if ( .not.ifbase              ) if_fltv = .false. ! base-flow frozen
+      if ( .not. iffilter(1)        ) if_fltv = .false. 
 
       if ( if_fltv ) then
-         call filterq(vx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vy,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
+         call filterq(vx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+         call filterq(vy,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $      call filterq(vz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+
          if (ifsplit.and..not.iflomach) 
-     $      call filterq(pr,intv,nx1,nz1,wk1,wk2,intt,if3d,pmax)
-      endif
-c
-      if (ifmhd.and.ifield.eq.ifldmhd) then
-         call filterq(bx,intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(by,intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
-         if (if3d)
-     $   call filterq(bz,intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
-      endif
-c
-      if (ifpert) then
-        do j=1,npert
+     $      call filterq(pr,intv,lx1,lz1,wk1,wk2,intt,if3d,pmax)
 
-         ifield = 1
-         call filterq(vxp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vyp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,vmax)
-         if (if3d)
-     $   call filterq(vzp(1,j),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
-
-         ifield = 2
-         if (ifheat .and. .not.ifcvfld(ifield)) 
-     $   call filterq(tp(1,j,1),intv,nx1,nz1,wk1,wk2,intt,if3d,wmax)
-
-        enddo
-      endif
-c
-      mmax = 0
-      if (ifflow) then
-c        pmax    = glmax(pmax,1)
-         omax(1) = glmax(umax,1)
-         omax(2) = glmax(vmax,1)
-         omax(3) = glmax(wmax,1)
-         mmax = ndim
-      endif
-         
-c
-      nfldt = 1+npscal
-      if (ifheat .and. .not.ifcvode) then
-         do ifld=1,nfldt
-            ifield = ifld + 1
-            call filterq(t(1,1,1,1,ifld),intv
-     $                  ,nx1,nz1,wk1,wk2,intt,if3d,tmax(ifld))
-            mmax = mmax+1
-            omax(mmax) = glmax(tmax(ifld),1)
-         enddo
-      endif
-
-      if (nio.eq.0) then
-         if (npscal.eq.0) then
-c           write(6,101) mmax
-c           write(sfmt,101) mmax
-c 101       format('''(i8,1p',i1,'e12.4,a6)''')
-c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
-c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
-         else
-            if (if3d) then
-               write(6,1) istep,ifield,umax,vmax,wmax
-            else
-               write(6,1) istep,ifield,umax,vmax
-            endif
-    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
-            if(ifheat .and. .not.ifcvode) 
-     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+         if (ifpert) then
+           do j=1,npert
+              call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+              call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
+              if (if3d)
+     $        call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+           enddo
          endif
       endif
 
-      ifield = ifldt   ! RESTORE ifield
+      if (ifmhd.and.ifield.eq.ifldmhd) then
+         call filterq(bx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+         call filterq(by,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
+         if (if3d)
+     $   call filterq(bz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+      endif
 
+      mmax = 0
+      if (ifflow) then
+c        pmax    = glmax(pmax,1)
+c         omax(1) = glmax(umax,1)
+c         omax(2) = glmax(vmax,1)
+c         omax(3) = glmax(wmax,1)
+         mmax = ldim
+      endif
+         
+      nfldt = 1+npscal
+      do ifld=1,nfldt
+         ifield = ifld + 1
+         if (.not. iffilter(ifield)) goto 10
+         call filterq(t(1,1,1,1,ifld),intv,
+     $                lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
+         if (ifpert) then
+            do j=1,npert
+               call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,
+     $                      wmax)
+            enddo
+         endif
+  10     mmax = mmax+1
+c         omax(mmax) = glmax(tmax(ifld),1)
+      enddo
+
+c      if (nio.eq.0) then
+c            if (if3d) then
+c               write(6,1) istep,ifield,umax,vmax,wmax
+c            else
+c               write(6,1) istep,ifield,umax,vmax
+c            endif
+c    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
+c            if(ifheat) 
+c     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+c      endif
+
+      ifield = ifldt   ! RESTORE ifield
 
       return
       end
@@ -189,9 +180,8 @@ c
       nxyz=nx*nx*nz
       dmax = 0.
 
-
+      if (nio.eq.0 .and. loglevel.gt.2) write(6,*) 'call filterq',ifield
       nel = nelfld(ifield)
-
 
       if (if3d) then
          do e=1,nel
@@ -243,269 +233,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine drag_calc(scale)
-c
-      INCLUDE 'SIZE'  
-      INCLUDE 'TOTAL' 
-c
-      common /scrns/         pm1(lx1,ly1,lz1,lelv)
-     $,vxx(lx1,ly1,lz1,lelv),vxy(lx1,ly1,lz1,lelv),vxz(lx1,ly1,lz1,lelv)
-     $,vyx(lx1,ly1,lz1,lelv),vyy(lx1,ly1,lz1,lelv),vyz(lx1,ly1,lz1,lelv)
-      common /scruz/ 
-     $ vzx(lx1,ly1,lz1,lelv),vzy(lx1,ly1,lz1,lelv),vzz(lx1,ly1,lz1,lelv)
-     $,one(lx1,ly1,lz1,lelv)
-       real work(1)
-       equivalence (work,one)
-c
-      common /cdrag/ dragx(0:maxobj),dragy(0:maxobj),dragz(0:maxobj)
-     $             ,  momx(0:maxobj), momy(0:maxobj), momz(0:maxobj)
-     $             ,  dpdx_mean,dpdy_mean,dpdz_mean
-      real momx ,momy ,momz
-c
-      common /tdrag/ drag(11)
-      real dragpx,dragpy,dragpz,dragvx,dragvy,dragvz
-      real momvx ,momvy ,momvz
-      real check1,check2
-c
-      equivalence (dragpx,drag(1)),(dragpy,drag(2)),(dragpz,drag(3))
-      equivalence (dragvx,drag(4)),(dragvy,drag(5)),(dragvz,drag(6))
-      equivalence (momvx ,drag(7)),(momvy ,drag(8)),(momvz ,drag(9)) 
-      equivalence (check1,drag(10)),(check2,drag(11))
-
-      common /cvflow_r/ flow_rate,base_flow,domain_length,xsec
-     $                , scale_vf(3)
-
-      ntot1  = nx1*ny1*nz1*nelv
-
-c    Map pressure onto mesh 1   (vxx and vyy are used as work arrays)
-      call mappr(pm1,pr,vxx,vyy)
-      call rone (one,ntot1)
-c
-c    Add mean_pressure_gradient.X to p:
-
-      if (param(55).ne.0) then
-         dpdx_mean = -scale_vf(1)
-         dpdy_mean = -scale_vf(2)
-         dpdz_mean = -scale_vf(3)
-      endif
-
-      call add2s2(pm1,xm1,dpdx_mean,ntot1)  ! Doesn't work if object is cut by 
-      call add2s2(pm1,ym1,dpdy_mean,ntot1)  ! periodicboundary.  In this case,
-      call add2s2(pm1,zm1,dpdz_mean,ntot1)  ! set ._mean=0 and compensate in
-c                                           ! usrchk()  [ pff 10/21/04 ].
-
-c    Compute du/dn
-                CALL DUDXYZ (vxx,vx,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vxy,vx,RYM1,SYM1,TYM1,JACM1,1,1)
-      if (if3d) CALL DUDXYZ (vxz,vx,RZM1,SZM1,TZM1,JACM1,1,1)
-c
-                CALL DUDXYZ (vyx,vy,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vyy,vy,RYM1,SYM1,TYM1,JACM1,1,1)
-      if (if3d) CALL DUDXYZ (vyz,vy,RZM1,SZM1,TZM1,JACM1,1,1)
-c
-      if (if3d) then
-                CALL DUDXYZ (vzx,vz,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vzy,vz,RYM1,SYM1,TYM1,JACM1,1,1)
-                CALL DUDXYZ (vzz,vz,RZM1,SZM1,TZM1,JACM1,1,1)
-      endif
-c
-c     Fill up viscous array w/ default
-c
-      if (istep.lt.1) call cfill(vdiff,param(2),ntot1)
-c
-      call col2(vxx,vdiff,ntot1)
-      call col2(vxy,vdiff,ntot1)
-      call col2(vxz,vdiff,ntot1)
-      call col2(vyx,vdiff,ntot1)
-      call col2(vyy,vdiff,ntot1)
-      call col2(vyz,vdiff,ntot1)
-      call col2(vzx,vdiff,ntot1)
-      call col2(vzy,vdiff,ntot1)
-      call col2(vzz,vdiff,ntot1)
-c
-      dragxt=0.0
-      dragyt=0.0
-      dragzt=0.0
-c
-      DO 100 II=1,NHIS
-         IF (HCODE(10,II).NE.'I') GOTO 100
-         IOBJ   = LOCHIS(1,II)
-         MEMTOT = NMEMBER(IOBJ)
-C
-c
-         IF (HCODE(1,II).NE.' ' .OR. HCODE(2,II).NE.' ' .OR.
-     $       HCODE(3,II).NE.' ' ) THEN
-            IFIELD = 1
-c
-c---------------------------------------------------------------------------
-c           Compute drag for this object
-c---------------------------------------------------------------------------
-c
-            dragvx=0.0
-            dragvy=0.0
-            dragvz=0.0
-            dragpx=0.0
-            dragpy=0.0
-            dragpz=0.0
-c
-            momvx=0.0
-            momvy=0.0
-            momvz=0.0
-c
-            check1=0.0
-            check2=0.0
-            DO 50 MEM=1,MEMTOT
-               ISK   = 0
-               IEG   = OBJECT(IOBJ,MEM,1)
-               IFC   = OBJECT(IOBJ,MEM,2)
-               IF (GLLNID(IEG).EQ.NID) THEN
-C                 This processor has a contribution
-                  IE = GLLEL(IEG)
-c
-c                 Pressure drag
-                  check1=check1+facint(one,one,area,ifc,ie)
-                  check2=check2+facint(one,uny,area,ifc,ie)
-c
-                  dragpx=dragpx+facint(pm1,unx,area,ifc,ie)
-                  dragpy=dragpy+facint(pm1,uny,area,ifc,ie)
-                  if (if3d) dragpz=dragpz+facint(pm1,unz,area,ifc,ie)
-c
-c                 Viscous drag
-                  if (if3d) then
-                     dragvx=dragvx+facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vxy,uny,area,ifc,ie)
-     $                            +facint(vxz,unz,area,ifc,ie)
-     $                            +facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vyx,uny,area,ifc,ie)
-     $                            +facint(vzx,unz,area,ifc,ie)
-                     dragvy=dragvy+facint(vyx,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-     $                            +facint(vyz,unz,area,ifc,ie)
-     $                            +facint(vxy,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-     $                            +facint(vzy,unz,area,ifc,ie)
-                     dragvz=dragvz+facint(vzx,unx,area,ifc,ie)
-     $                            +facint(vzy,uny,area,ifc,ie)
-     $                            +facint(vzz,unz,area,ifc,ie)
-     $                            +facint(vxz,unx,area,ifc,ie)
-     $                            +facint(vyz,uny,area,ifc,ie)
-     $                            +facint(vzz,unz,area,ifc,ie)
-c
-                     momvx=momvx-facint2(vxy,unx,unz,area,ifc,ie)
-     $                        -facint2(vyx,unx,unz,area,ifc,ie)
-     $                        -facint2(vyy,uny,unz,area,ifc,ie)
-     $                        -facint2(vyy,uny,unz,area,ifc,ie)
-     $                        -facint2(vzy,unz,unz,area,ifc,ie)
-     $                        -facint2(vyz,unz,unz,area,ifc,ie)
-     $                        +facint2(vxz,unx,uny,area,ifc,ie)
-     $                        +facint2(vzx,unx,uny,area,ifc,ie)
-     $                        +facint2(vyz,uny,uny,area,ifc,ie)
-     $                        +facint2(vzy,uny,uny,area,ifc,ie)
-     $                        +facint2(vzz,unz,uny,area,ifc,ie)
-     $                        +facint2(vzz,unz,uny,area,ifc,ie)
-                     momvy=momvy+facint2(vxx,unx,unz,area,ifc,ie)
-     $                        +facint2(vxx,unx,unz,area,ifc,ie)
-     $                        +facint2(vyx,uny,unz,area,ifc,ie)
-     $                        +facint2(vxy,uny,unz,area,ifc,ie)
-     $                        +facint2(vzx,unz,unz,area,ifc,ie)
-     $                        +facint2(vxz,unz,unz,area,ifc,ie)
-     $                        -facint2(vxz,unx,unx,area,ifc,ie)
-     $                        -facint2(vzx,unx,unx,area,ifc,ie)
-     $                        -facint2(vyz,uny,unx,area,ifc,ie)
-     $                        -facint2(vzy,uny,unx,area,ifc,ie)
-     $                        -facint2(vzz,unz,unx,area,ifc,ie)
-     $                        -facint2(vzz,unz,unx,area,ifc,ie)
-                     momvz=momvz-facint2(vxx,unx,uny,area,ifc,ie)
-     $                        -facint2(vxx,unx,uny,area,ifc,ie)
-     $                        -facint2(vyx,uny,uny,area,ifc,ie)
-     $                        -facint2(vxy,uny,uny,area,ifc,ie)
-     $                        -facint2(vzx,unz,uny,area,ifc,ie)
-     $                        -facint2(vxz,unz,uny,area,ifc,ie)
-     $                        +facint2(vxy,unx,unx,area,ifc,ie)
-     $                        +facint2(vyx,unx,unx,area,ifc,ie)
-     $                        +facint2(vyy,uny,unx,area,ifc,ie)
-     $                        +facint2(vyy,uny,unx,area,ifc,ie)
-     $                        +facint2(vzy,unz,unx,area,ifc,ie)
-     $                        +facint2(vyz,unz,unx,area,ifc,ie) 
-c
-                  else
-                     dragvx=dragvx+facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vxy,uny,area,ifc,ie)
-                     dragvy=dragvy+facint(vyx,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-                  endif
-               ENDIF
-   50       CONTINUE
-c
-c          Sum contributions from all processors
-            call gop(drag,work,'+  ',11)
-            dragvx = -dragvx
-            dragvy = -dragvy
-            dragvz = -dragvz
-         ENDIF
-c
-c        Scale by user specified scale factor (for convenience)
-c
-         dragvx = scale*dragvx
-         dragvy = scale*dragvy
-         dragvz = scale*dragvz
-c
-         dragpx = scale*dragpx
-         dragpy = scale*dragpy
-         dragpz = scale*dragpz
-c
-         dragx(iobj) = dragvx+dragpx
-         dragy(iobj) = dragvy+dragpy
-         dragz(iobj) = dragvz+dragpz
-c
-c
-         momx(iobj)  = 0.5*momvx
-         momy(iobj)  = 0.5*momvy
-         momz(iobj)  = 0.5*momvz
-c
-         dragxt = dragxt + dragx(iobj)
-         dragyt = dragyt + dragy(iobj)
-         dragzt = dragzt + dragz(iobj)
-c
-         if (nio.eq.0.and.istep.eq.1) 
-     $      write(6,*) 'drag_calc: scale=',scale
-         if (nio.eq.0) then
-            write(6,6) istep,time,dragx(iobj),dragpx,dragvx,'dragx',iobj
-            write(6,6) istep,time,dragy(iobj),dragpy,dragvy,'dragy',iobj
-            if (if3d) 
-     $      write(6,6) istep,time,dragz(iobj),dragpz,dragvz,'dragz',iobj
-c
-c done by zly (3/17/03)
-c          if(if3d) then
-c             write(6,113) istep,time,momx,momy,momz
-c          else
-c             write(6,112) istep,time,momx,momy
-c          endif
-c         
-         endif
-    6    format(i8,1p4e15.7,2x,a5,i5)
-  112    format(i6,1p3e15.7,'  momx')
-  113    format(i6,1p4e15.7,'  momx')
-         if (istep.lt.10.and.nio.eq.0) 
-     $      write(6,9) 'check:',check1,check2,dpdx_mean,istep
-    9    format(a6,1p3e16.8,i9)
-c        if (time.gt.1.0.and.dragx.gt.10.) call emerxit
-  100 continue
-c
-      if (nio.eq.0) then
-         write(6,6) istep,time,dragxt,dragpx,dragvx,'drgxt',iobj
-         write(6,6) istep,time,dragyt,dragpy,dragvy,'drgyt',iobj
-         if (if3d) 
-     $   write(6,6) istep,time,dragzt,dragpz,dragvz,'drgzt',iobj
-      endif
-c
-      dragx(0) = dragxt
-      dragy(0) = dragyt
-      dragz(0) = dragzt
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine mappr(pm1,pm2,pa,pb)
 c
       INCLUDE 'SIZE'
@@ -515,25 +242,25 @@ c
 c
 C     Map the pressure onto the velocity mesh
 C
-      NGLOB1 = NX1*NY1*NZ1*NELV
-      NYZ2   = NY2*NZ2
-      NXY1   = NX1*NY1
-      NXYZ   = NX1*NY1*NZ1
+      NGLOB1 = lx1*ly1*lz1*NELV
+      NYZ2   = ly2*lz2
+      NXY1   = lx1*ly1
+      NXYZ   = lx1*ly1*lz1
 C
       IF (IFSPLIT) THEN
          CALL COPY(PM1,PM2,NGLOB1)
       ELSE
          DO 1000 IEL=1,NELV
-            CALL MXM (IXM21,NX1,PM2(1,1,1,IEL),NX2,pa (1,1,1),NYZ2)
-            DO 100 IZ=1,NZ2
-               CALL MXM (PA(1,1,IZ),NX1,IYTM21,NY2,PB(1,1,IZ),NY1)
+            CALL MXM (IXM21,lx1,PM2(1,1,1,IEL),lx2,pa (1,1,1),NYZ2)
+            DO 100 IZ=1,lz2
+               CALL MXM (PA(1,1,IZ),lx1,IYTM21,ly2,PB(1,1,IZ),ly1)
  100        CONTINUE
-            CALL MXM (PB(1,1,1),NXY1,IZTM21,NZ2,PM1(1,1,1,IEL),NZ1)
+            CALL MXM (PB(1,1,1),NXY1,IZTM21,lz2,PM1(1,1,1,IEL),lz1)
  1000    CONTINUE
 
 C     Average the pressure on elemental boundaries
        IFIELD=1
-       CALL DSSUM (PM1,NX1,NY1,NZ1)
+       CALL DSSUM (PM1,lx1,ly1,lz1)
        CALL COL2  (PM1,VMULT,NGLOB1)
 
       ENDIF
@@ -577,7 +304,7 @@ c        27 June, 2012            PFF
 
       integer e,f,fd
 
-      call dsset(nx1,ny1,nz1) ! set counters
+      call dsset(lx1,ly1,lz1) ! set counters
       fd     = eface1(f)
       js1    = skpdat(1,fd)
       jf1    = skpdat(2,fd)
@@ -616,7 +343,7 @@ C
 C
 C     Set up counters
 C
-      CALL DSSET(NX1,NY1,NZ1)
+      CALL DSSET(lx1,ly1,lz1)
       IFACE  = EFACE1(IFC)
       JS1    = SKPDAT(1,IFACE)
       JF1    = SKPDAT(2,IFACE)
@@ -646,7 +373,7 @@ c-----------------------------------------------------------------------
      $        , b    (lx1,lz1,6,lelv)
      $        , c    (lx1,lz1,6,lelv)
      $        , area (lx1,lz1,6,lelv) 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
       iface  = eface1(ifc)
       js1    = skpdat(1,iface)
       jf1    = skpdat(2,iface)
@@ -749,10 +476,10 @@ c
 
       integer e
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
       ntot = nxyz*nelt
 
-      N = nx1-1
+      N = lx1-1
       do e=1,nelt
          if (if3d) then
             call local_grad3(ur,us,ut,u,N,e,dxm1,dxtm1)
@@ -801,7 +528,7 @@ c-----------------------------------------------------------------------
  
       ntot  = lx1*ly1*lz1*nelt
       nxyz  = lx1*ly1*lz1
-      nx    = nx1 - 1      ! Polynomial degree
+      nx    = lx1 - 1      ! Polynomial degree
 
       if (ldim.eq.3) then
        k=0
@@ -852,14 +579,14 @@ c
       ifielt = ifield
       ifield = 1
       if (if3d) then
-         do idim=1,ndim
+         do idim=1,ldim
             call col2  (vort(1,idim),bm1,ntot)
-            call dssum (vort(1,idim),nx1,ny1,nz1)
+            call dssum (vort(1,idim),lx1,ly1,lz1)
             call col2  (vort(1,idim),binvm1,ntot)
          enddo
       else
          call col2  (vort,bm1,ntot)
-         call dssum (vort,nx1,ny1,nz1)
+         call dssum (vort,lx1,ly1,lz1)
          call col2  (vort,binvm1,ntot)
       endif
       ifield = ifielt
@@ -877,7 +604,7 @@ C
 
       integer e,f
 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
 
       iface  = eface1(f)
       js1    = skpdat(1,iface)
@@ -917,7 +644,7 @@ c-----------------------------------------------------------------------
       call           faddcl3 (w,qy(1,e),uny(1,1,f,e),f)
       if (if3d) call faddcl3 (w,qz(1,e),unz(1,1,f,e),f)
 
-      call dsset(nx1,ny1,nz1)
+      call dsset(lx1,ly1,lz1)
       iface  = eface1(f)
       js1    = skpdat(1,iface)
       jf1    = skpdat(2,iface)
@@ -1190,9 +917,9 @@ c
          call exitt
       endif
 
-      ntot  = nx1*ny1*nz1*nelv
-      ntott = nx1*ny1*nz1*nelt
-      nto2  = nx2*ny2*nz2*nelv
+      ntot  = lx1*ly1*lz1*nelv
+      ntott = lx1*ly1*lz1*nelt
+      nto2  = lx2*ly2*lz2*nelv
 
       ! initialization
       if (icalld.eq.0) then
@@ -1270,11 +997,14 @@ c-----------------------------------------------------------------------
 
          time_temp = time
          time      = atime   ! Output the duration of this avg
+         dtmp      = param(63)
+         param(63) = 1       ! Enforce 64-bit output
 
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
          call outpost (uvms,vwms,wums,prms,trms,      'rm2')
 
+         param(63) = dtmp
          atime = 0.
          time  = time_temp  ! Restore clock
 
@@ -1360,6 +1090,7 @@ c
 c
       parameter (lm=90)
       integer   indr(lm),indc(lm),ipiv(lm)
+      real rmult(lm)
 c
       if (nx.gt.lm) then
          write(6,*) 'ABORT in build_legend_transform:',nx,lm
@@ -1392,7 +1123,7 @@ c
 c
       call rzero(err,10)
 c
-      nxyz = nx**ndim
+      nxyz = nx**ldim
       utot = vlsc2(u,u,nxyz)
       if (utot.eq.0) return
 c
@@ -1765,12 +1496,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nz1,nelz),u(nx1*ny1,nz1,nelv),w1(nz1,nelz),w2(nz1,nelz)
+      real ua(lz1,nelz),u(lx1*ly1,lz1,nelv),w1(lz1,nelz),w2(lz1,nelz)
       integer e,eg,ez
 c
       melxy = nelx*nely
 c
-      nz = nz1*nelz
+      nz = lz1*nelz
       call rzero(ua,nz)
       call rzero(w1,nz)
 c
@@ -1779,9 +1510,9 @@ c
          eg = lglel(e)
          ez = 1 + (eg-1)/melxy
 c
-         do k=1,nz1
-         do i=1,nx1*ny1
-            zz = (1.-zgm1(k,3))/2.  ! = 1 for k=1, = 0 for k=nz1
+         do k=1,lz1
+         do i=1,lx1*ly1
+            zz = (1.-zgm1(k,3))/2.  ! = 1 for k=1, = 0 for k=lz1
             aa = zz*area(i,1,5,e) + (1-zz)*area(i,1,6,e)  ! wgtd jacobian
             w1(k,ez) = w1(k,ez) + aa
             ua(k,ez) = ua(k,ez) + aa*u(i,k,e)
@@ -1820,7 +1551,7 @@ c
       integer f,e,pf
       real    n1,n2,n3
 c
-      call dsset(nx1,ny1,nz1)    ! set up counters
+      call dsset(lx1,ly1,lz1)    ! set up counters
       pf     = eface1(f)         ! convert from preproc. notation
       js1    = skpdat(1,pf)
       jf1    = skpdat(2,pf)
@@ -1962,19 +1693,7 @@ c
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 c
-      common /ctorq/ dragx(0:maxobj),dragpx(0:maxobj),dragvx(0:maxobj)
-     $             , dragy(0:maxobj),dragpy(0:maxobj),dragvy(0:maxobj)
-     $             , dragz(0:maxobj),dragpz(0:maxobj),dragvz(0:maxobj)
-c
-     $             , torqx(0:maxobj),torqpx(0:maxobj),torqvx(0:maxobj)
-     $             , torqy(0:maxobj),torqpy(0:maxobj),torqvy(0:maxobj)
-     $             , torqz(0:maxobj),torqpz(0:maxobj),torqvz(0:maxobj)
-c
-     $             , dpdx_mean,dpdy_mean,dpdz_mean
-     $             , dgtq(3,4)
-c
-c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 c
       call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
 c
@@ -2035,48 +1754,35 @@ c
       enddo
 c
 c
-      nobj = 0
-      do ii=1,nhis
-        if (hcode(10,ii).EQ.'I') then
-          iobj   = lochis(1,ii)
-          memtot = nmember(iobj)
-          nobj   = max(iobj,nobj)
-c
-          if (hcode(1,ii).ne.' ' .or. hcode(2,ii).ne.' ' .or.
-     $      hcode(3,ii).ne.' ' ) then
-            ifield = 1
-c
-c           Compute drag for this object
-c
-            do mem=1,memtot
-               ieg   = object(iobj,mem,1)
-               ifc   = object(iobj,mem,2)
-               if (gllnid(ieg).eq.nid) then ! this processor has a contribution
-                  ie = gllel(ieg)
-                  call drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
-c
-                  call cmult(dgtq,scale,12)
-c
-                  dragpx(iobj) = dragpx(iobj) + dgtq(1,1)  ! pressure 
-                  dragpy(iobj) = dragpy(iobj) + dgtq(2,1)
-                  dragpz(iobj) = dragpz(iobj) + dgtq(3,1)
-c
-                  dragvx(iobj) = dragvx(iobj) + dgtq(1,2)  ! viscous
-                  dragvy(iobj) = dragvy(iobj) + dgtq(2,2)
-                  dragvz(iobj) = dragvz(iobj) + dgtq(3,2)
-c
-                  torqpx(iobj) = torqpx(iobj) + dgtq(1,3)  ! pressure 
-                  torqpy(iobj) = torqpy(iobj) + dgtq(2,3)
-                  torqpz(iobj) = torqpz(iobj) + dgtq(3,3)
-c
-                  torqvx(iobj) = torqvx(iobj) + dgtq(1,4)  ! viscous
-                  torqvy(iobj) = torqvy(iobj) + dgtq(2,4)
-                  torqvz(iobj) = torqvz(iobj) + dgtq(3,4)
-c
-               endif
-            enddo
-          endif
-        endif
+      ifield = 1
+      do iobj = 1,nobj
+         memtot = nmember(iobj)
+      do mem  = 1,memtot
+         ieg   = object(iobj,mem,1)
+         ifc   = object(iobj,mem,2)
+         if (gllnid(ieg).eq.nid) then ! this processor has a contribution
+            ie = gllel(ieg)
+            call drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+
+            call cmult(dgtq,scale,12)
+
+            dragpx(iobj) = dragpx(iobj) + dgtq(1,1)  ! pressure 
+            dragpy(iobj) = dragpy(iobj) + dgtq(2,1)
+            dragpz(iobj) = dragpz(iobj) + dgtq(3,1)
+
+            dragvx(iobj) = dragvx(iobj) + dgtq(1,2)  ! viscous
+            dragvy(iobj) = dragvy(iobj) + dgtq(2,2)
+            dragvz(iobj) = dragvz(iobj) + dgtq(3,2)
+
+            torqpx(iobj) = torqpx(iobj) + dgtq(1,3)  ! pressure 
+            torqpy(iobj) = torqpy(iobj) + dgtq(2,3)
+            torqpz(iobj) = torqpz(iobj) + dgtq(3,3)
+
+            torqvx(iobj) = torqvx(iobj) + dgtq(1,4)  ! viscous
+            torqvy(iobj) = torqvy(iobj) + dgtq(2,4)
+            torqvz(iobj) = torqvz(iobj) + dgtq(3,4)
+         endif
+      enddo
       enddo
 c
 c     Sum contributions from all processors
@@ -2094,48 +1800,42 @@ c
       call gop(torqvx,w1,'+  ',maxobj+1)
       call gop(torqvy,w1,'+  ',maxobj+1)
       call gop(torqvz,w1,'+  ',maxobj+1)
-c
-      nobj = iglmax(nobj,1)
-c
+
       do i=1,nobj
          dragx(i) = dragpx(i) + dragvx(i)
          dragy(i) = dragpy(i) + dragvy(i)
          dragz(i) = dragpz(i) + dragvz(i)
-c
+
          torqx(i) = torqpx(i) + torqvx(i)
          torqy(i) = torqpy(i) + torqvy(i)
          torqz(i) = torqpz(i) + torqvz(i)
-c
+
          dragpx(0) = dragpx (0) + dragpx (i)
          dragvx(0) = dragvx (0) + dragvx (i)
          dragx (0) = dragx  (0) + dragx  (i)
-c
+
          dragpy(0) = dragpy (0) + dragpy (i)
          dragvy(0) = dragvy (0) + dragvy (i)
          dragy (0) = dragy  (0) + dragy  (i)
-c
+
          dragpz(0) = dragpz (0) + dragpz (i)
          dragvz(0) = dragvz (0) + dragvz (i)
          dragz (0) = dragz  (0) + dragz  (i)
-c
+
          torqpx(0) = torqpx (0) + torqpx (i)
          torqvx(0) = torqvx (0) + torqvx (i)
          torqx (0) = torqx  (0) + torqx  (i)
-c
+
          torqpy(0) = torqpy (0) + torqpy (i)
          torqvy(0) = torqvy (0) + torqvy (i)
          torqy (0) = torqy  (0) + torqy  (i)
-c
+
          torqpz(0) = torqpz (0) + torqpz (i)
          torqvz(0) = torqvz (0) + torqvz (i)
          torqz (0) = torqz  (0) + torqz  (i)
-c
       enddo
-c
-      i0 = 0
-      if (nobj.le.1) i0 = 1  ! one output for single-object case
-c
-      do i=i0,nobj
+
+      do i=1,nobj
         if (nio.eq.0) then
           if (if3d.or.ifaxis) then
            if (ifdout) then
@@ -2160,7 +1860,7 @@ c
         endif
     6   format(i8,1p4e19.11,2x,i5,a5)
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2184,8 +1884,8 @@ c
 
       real j ! Inverse Jacobian
 
-      n    = nx1-1      ! Polynomial degree
-      nxyz = nx1*ny1*nz1
+      n    = lx1-1      ! Polynomial degree
+      nxyz = lx1*ly1*lz1
 
       if (if3d) then     ! 3D CASE
        do e=1,nelv
@@ -2332,8 +2032,8 @@ c
       if (nid.eq.0) open(77,file=fname127,status='old',err=199)
       ierr = iglmax(ierr,1)
       if (ierr.gt.0) goto 199
-      n = nx1*ny1*nz1*nelt
-      n2= nx2*ny2*nz2*nelt
+      n = lx1*ly1*lz1*nelt
+      n2= lx2*ly2*lz2*nelt
 
       call rzero (ua,n)
       call rzero (va,n)
@@ -2405,8 +2105,8 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(ny1,nz1,nely,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(ny1,nz1,nely,nelz),w2(ny1,nz1,nely,nelz)
+      real ua(ly1,lz1,nely,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(ly1,lz1,nely,nelz),w2(ly1,lz1,nely,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 
@@ -2414,7 +2114,7 @@ c
       if (nelyz.gt.lely*lelz) call exitti
      $  ('ABORT IN x_average. Increase lely*lelz in SIZE:$',nelyz)
 
-      myz = nely*nelz*ny1*nz1
+      myz = nely*nelz*ly1*lz1
       call rzero(ua,myz)
       call rzero(w1,myz)
 
@@ -2423,9 +2123,9 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-            do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+            do i=1,lx1
                dx2 = 1.0  !  Assuming uniform element size in "x" direction
                ua(j,k,ey,ez) = ua(j,k,ey,ez)+dx2*wzm1(i)*u(i,j,k,e)
                w1(j,k,ey,ez) = w1(j,k,ey,ez)+dx2*wzm1(i) ! redundant but clear
@@ -2452,7 +2152,7 @@ c-----------------------------------------------------------------------
       include 'WZ'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(ny1,nz1,nely,nelz)
+      real u(lx1,ly1,lz1,nelv),ua(ly1,lz1,nely,nelz)
 
       integer e,eg,ex,ey,ez
 
@@ -2462,9 +2162,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-            do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+            do i=1,lx1
                u(i,j,k,e) = ua(j,k,ey,ez)
             enddo
          enddo
@@ -2533,12 +2233,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,nz1,nelx,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,nz1,nelx,nelz),w2(nx1,nz1,nelx,nelz)
+      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxz = nelx*nelz*nx1*nz1
+      mxz = nelx*nelz*lx1*lz1
       call rzero(ua,mxz)
 c
       do e=1,nelt
@@ -2548,8 +2248,8 @@ c
 
          j = 1
          if (ey.eq.1) then
-            do k=1,nz1
-            do i=1,nx1
+            do k=1,lz1
+            do i=1,lx1
                ua(i,k,ex,ez) = u(i,j,k,e)
             enddo
             enddo
@@ -2570,9 +2270,9 @@ c             as would be produced by n2to3 or genbox.
 c
 c     Arguments:
 c
-c     uz(nx1,ny1,nlxy):       extracted z-slice data
-c     u (nx1,ny1,nz1,nelt):   input data
-c     w1(nx1,ny1,nlxy):       work array
+c     uz(lx1,ly1,nlxy):       extracted z-slice data
+c     u (lx1,ly1,lz1,nelt):   input data
+c     w1(lx1,ly1,nlxy):       work array
 c     kz:                     z-plane within element ezi to be extracted
 c     ezi:                    elemental z-slab to be extracted
 c     nx,ny,nz:               dimensions for 3D spectral element input
@@ -2616,12 +2316,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
+      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxy = nelx*nely*nx1*ny1
+      mxy = nelx*nely*lx1*ly1
       call rzero(ua,mxy)
 c
       do e=1,nelt
@@ -2631,8 +2331,8 @@ c
 
          k = 1
          if (ez.eq.1) then
-            do j=1,ny1
-            do i=1,nx1
+            do j=1,ly1
+            do i=1,lx1
                ua(i,j,ex,ey) = u(i,j,k,e)
             enddo
             enddo
@@ -2654,12 +2354,12 @@ c
       include 'WZ'
       include 'ZPER'
 c
-      real ua(nx1,nz1,nelx,nelz),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,nz1,nelx,nelz),w2(nx1,nz1,nelx,nelz)
+      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
       integer e,eg,ex,ey,ez
       real dy2
 c
-      mxz = nelx*nelz*nx1*nz1
+      mxz = nelx*nelz*lx1*lz1
       call rzero(ua,mxz)
       call rzero(w1,mxz)
 c
@@ -2668,11 +2368,11 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 c
-         do k=1,nz1
-         do i=1,nx1
-c           dy2 = .5*( ym1(i,ny1,k,e) - ym1(i,1,k,e) )
+         do k=1,lz1
+         do i=1,lx1
+c           dy2 = .5*( ym1(i,ly1,k,e) - ym1(i,1,k,e) )
             dy2 = 1.0  !  Assuming uniform in "y" direction
-            do j=1,ny1
+            do j=1,ly1
                ua(i,k,ex,ez) = ua(i,k,ex,ez)+dy2*wym1(j)*u(i,j,k,e)
                w1(i,k,ex,ez) = w1(i,k,ex,ez)+dy2*wym1(j) ! redundant but clear
             enddo
@@ -2712,7 +2412,7 @@ c
       call y_average(v,uy,w1,w2)
       call y_average(w,uz,w1,w2)
 
-      call buff_2d_out(u,v,w,nx1,nz1,nelx,nelz,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
 
       return
       end
@@ -2739,7 +2439,7 @@ c
       call z_average(v,uy,w1,w2)
       call z_average(w,uz,w1,w2)
 
-      call buff_2d_out(u,v,w,nx1,ny1,nelx,nely,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
 
       return
       end
@@ -2766,7 +2466,7 @@ c
       call y_slice  (v,uy,w1,w2)
       call y_slice  (w,uz,w1,w2)
 c
-      call buff_2d_out(u,v,w,nx1,nz1,nelx,nelz,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
 c
       return
       end
@@ -2793,7 +2493,7 @@ c
       call z_slice  (v,uy,w1,w2)
       call z_slice  (w,uz,w1,w2)
 c
-      call buff_2d_out(u,v,w,nx1,ny1,nelx,nely,c2,name,icount)
+      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
 c
       return
       end
@@ -2868,7 +2568,7 @@ c
 c
 c     Convert velocities to poloidal-toroidal
 c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       do i=1,n
          rr = xm1(i,1,1,1)*xm1(i,1,1,1)+ym1(i,1,1,1)*ym1(i,1,1,1)
          rr = sqrt(rr)
@@ -2918,7 +2618,7 @@ c
 c
 c     Convert velocities to poloidal-toroidal
 c
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       do i=1,n
          wr(i) = u (i)**2
          wt(i) = v (i)**2
@@ -3015,7 +2715,7 @@ c-----------------------------------------------------------------------
 
       common /cmesh/ xt(2**ldim,ldim)
 
-      len = wdsize*ndim*(2**ndim)
+      len = wdsize*ldim*(2**ldim)
 
       if (nid.eq.0) open(unit=29,file='rea.new')
 
@@ -3023,8 +2723,6 @@ c-----------------------------------------------------------------------
          call nekgsync()          !  belt
          jnid = gllnid(eg)
          e    = gllel (eg)
-c     tag for sending and receiving changed from global (eg) to 
-c     local (e) element number to avoid problems with MPI_TAG_UB on Cray
          mtype = e
          if (jnid.eq.0 .and. nid.eq.0) then
             call get_el(xt,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e))
@@ -3058,8 +2756,8 @@ c-----------------------------------------------------------------------
       data    ed  / 1,2,4,3 , 5,6,8,7 /
 
       write(29,1) e
-      write(29,2) ((xt(ed(k),j),k=1,4),j=1,ndim)
-      write(29,2) ((xt(ed(k),j),k=5,8),j=1,ndim)
+      write(29,2) ((xt(ed(k),j),k=1,4),j=1,ldim)
+      write(29,2) ((xt(ed(k),j),k=5,8),j=1,ldim)
 
     1 format(12x,'ELEMENT',i6,' [    1 ]    GROUP     0')
     2 format(1p4e18.10)
@@ -3072,12 +2770,12 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       real xt(2**ldim,ldim)
-      real x(nx1,ny1,nz1),y(nx1,ny1,nz1),z(nx1,ny1,nz1)
+      real x(lx1,ly1,lz1),y(lx1,ly1,lz1),z(lx1,ly1,lz1)
 
       l = 0
-      do k=1,nz1,nz1-1
-      do j=1,ny1,ny1-1
-      do i=1,nx1,nx1-1
+      do k=1,lz1,max(lz1-1,1)
+      do j=1,ly1,ly1-1
+      do i=1,lx1,lx1-1
          l = l+1
          xt(l,1) = x(i,j,k)
          xt(l,2) = y(i,j,k)
@@ -3119,7 +2817,7 @@ c
      $                     , wr(lr),ws(lr),wt(lr)
 
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
 
       call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
 
@@ -3159,44 +2857,27 @@ c
       x3max=glmax(zm0(1,1,1,1),n)
 c
       call rzero(strsmx,maxobj)
-c
-c
-      nobj = 0
-      do ii=1,nhis
-        if (hcode(10,ii).EQ.'I') then
-          iobj   = lochis(1,ii)
-          memtot = nmember(iobj)
-          nobj   = max(iobj,nobj)
-c
-          if (hcode(1,ii).ne.' ' .or. hcode(2,ii).ne.' ' .or.
-     $      hcode(3,ii).ne.' ' ) then
-            ifield = 1
-c
-c           Compute max stress for this object
-c
-            strsmx(ii) = 0.
-            do mem=1,memtot
-               ieg   = object(iobj,mem,1)
-               ifc   = object(iobj,mem,2)
-               if (gllnid(ieg).eq.nid) then ! this processor has a contribution
 
-                  ie = gllel(ieg)
-                  call get_strsmax
-     $                    (strsmxl,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+      ifield = 1
 
-                  call cmult(strsmxl,scale,1)
-                  strsmx(ii)=max(strsmx(ii),strsmxl)
-
-               endif
-            enddo
-          endif
-        endif
+      strsmx(ii) = 0.
+      do iobj = 1,nobj
+         memtot = nmember(iobj)
+      do mem  = 1,memtot
+         ieg   = object(iobj,mem,1)
+         ifc   = object(iobj,mem,2)
+         if (gllnid(ieg).eq.nid) then ! this processor has a contribution
+            ie = gllel(ieg)
+            call get_strsmax(strsmxl,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+            call cmult(strsmxl,scale,1)
+            strsmx(ii)=max(strsmx(ii),strsmxl)
+         endif
+      enddo
       enddo
 c
 c     Max contributions over all processors
 c
       call gop(strsmx,w1,'M  ',maxobj)
-
 
       return
       end
@@ -3220,7 +2901,7 @@ c
       integer f,e,pf
       real    n1,n2,n3
 
-      call dsset(nx1,ny1,nz1)    ! set up counters
+      call dsset(lx1,ly1,lz1)    ! set up counters
       pf     = eface1(f)         ! convert from preproc. notation
       js1    = skpdat(1,pf)
       jf1    = skpdat(2,pf)
@@ -3307,28 +2988,28 @@ c-----------------------------------------------------------------------
       integer e,f
       character*3 cb
 
-      n      = nx1*ny1*nz1*nelt
-      nxyz   = nx1*ny1*nz1
-      nfaces = 2*ndim
+      n      = lx1*ly1*lz1*nelt
+      nxyz   = lx1*ly1*lz1
+      nfaces = 2*ldim
       ifield = 1                   ! velocity field
       if (ifheat) ifield = 2       ! temperature field
 
 
       call rone  (tmlt,n)
-      call dssum (tmlt,nx1,ny1,nz1)  ! denominator
+      call dssum (tmlt,lx1,ly1,lz1)  ! denominator
 
       call rone  (tmsk,n)
       do e=1,nelt                ! fill mask where bc is periodic
       do f=1,nfaces              ! so we don't translate periodic bcs (z only)
          cb =cbc(f,e,ifield)
-         if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,nx1,ny1,nz1)
+         if (cb.eq.'P  ') call facev (tmsk,e,f,0.0,lx1,ly1,lz1)
       enddo
       enddo
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
-      call dsop(tmsk,'*  ',nx1,ny1,nz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
+      call dsop(tmsk,'*  ',lx1,ly1,lz1)
 
-      do kpass = 1,ndim+1   ! This doesn't work for 2D, yet.
+      do kpass = 1,ldim+1   ! This doesn't work for 2D, yet.
                             ! Extra pass is just to test convergence
 
 c        call opcopy (xb,yb,zb,xm1,ym1,zm1) ! Must use WHOLE field,
@@ -3336,9 +3017,9 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
          call copy   (xb,xm1,n)
          call copy   (yb,ym1,n)
          call copy   (zb,zm1,n)
-         call dssum  (xb,nx1,ny1,nz1)
-         call dssum  (yb,nx1,ny1,nz1)
-         call dssum  (zb,nx1,ny1,nz1)
+         call dssum  (xb,lx1,ly1,lz1)
+         call dssum  (yb,lx1,ly1,lz1)
+         call dssum  (zb,lx1,ly1,lz1)
 
          xm = 0.
          ym = 0.
@@ -3363,15 +3044,15 @@ c        call opdssum(xb,yb,zb)             ! not just fluid domain.
                zm = max(zm,abs(zb(i,e)))
             enddo
 
-            if (kpass.le.ndim) then
-               call gh_face_extend(xb(1,e),zgm1,nx1,kpass,w1,w2)
-               call gh_face_extend(yb(1,e),zgm1,nx1,kpass,w1,w2)
-               call gh_face_extend(zb(1,e),zgm1,nx1,kpass,w1,w2)
+            if (kpass.le.ldim) then
+               call gh_face_extend(xb(1,e),zgm1,lx1,kpass,w1,w2)
+               call gh_face_extend(yb(1,e),zgm1,lx1,kpass,w1,w2)
+               call gh_face_extend(zb(1,e),zgm1,lx1,kpass,w1,w2)
             endif
 
          enddo
 
-         if (kpass.le.ndim) then
+         if (kpass.le.ldim) then
             call add2(xm1,xb,n)
             call add2(ym1,yb,n)
             call add2(zm1,zb,n)
@@ -3402,7 +3083,7 @@ c-----------------------------------------------------------------------
       real x(1),zg(1),e(1),v(1)
       integer gh_type
 
-      if (ndim.eq.2) then
+      if (ldim.eq.2) then
          call gh_face_extend_2d(x,zg,n,gh_type,e,v)
       else
          call gh_face_extend_3d(x,zg,n,gh_type,e,v)
@@ -3666,7 +3347,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       real x(1)
 
-      n=nx1*ny1*nz1*nelt
+      n=lx1*ly1*lz1*nelt
       id = n
       do i=1,n
          x(i) = ran1(id)
@@ -3680,7 +3361,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       real x(1)
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       xmin = glmin(x,n)
       xmax = glmax(x,n)
 
@@ -3730,8 +3411,8 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(nx1,ny1,nelx,nely),u (nx1,ny1,nz1,nelv)
-     $    ,w1(nx1,ny1,nelx,nely),w2(nx1,ny1,nelx,nely)
+      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
+     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
       integer e,eg,ex,ey,ez
       real dy2
 
@@ -3739,7 +3420,7 @@ c
       if (nelxy.gt.lelx*lely) call exitti
      $  ('ABORT IN z_average. Increase lelx*lely in SIZE:$',nelxy)
 
-      mxy = nelx*nely*nx1*ny1
+      mxy = nelx*nely*lx1*ly1
       call rzero(ua,mxy)
       call rzero(w1,mxy)
 
@@ -3748,10 +3429,10 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do j=1,ny1
-         do i=1,nx1
+         do j=1,ly1
+         do i=1,lx1
             dz2 = 1.0  !  Assuming uniform in "z" direction
-            do k=1,nz1
+            do k=1,lz1
                ua(i,j,ex,ey) = ua(i,j,ex,ey)+dz2*wzm1(k)*u(i,j,k,e)
                w1(i,j,ex,ey) = w1(i,j,ex,ey)+dz2*wzm1(k) ! redundant but clear
             enddo
@@ -3777,7 +3458,7 @@ c-----------------------------------------------------------------------
       include 'WZ'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(nx1,ny1,nelx,nely)
+      real u(lx1,ly1,lz1,nelv),ua(lx1,ly1,nelx,nely)
 
       integer e,eg,ex,ey,ez
 
@@ -3787,9 +3468,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do j=1,ny1
-         do i=1,nx1
-            do k=1,nz1
+         do j=1,ly1
+         do i=1,lx1
+            do k=1,lz1
                u(i,j,k,e) = ua(i,j,ex,ey)
             enddo
          enddo
@@ -3822,7 +3503,7 @@ c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
       call z_profile          (ua,u,w1,w2)
       call z_profile_transpose(ub,ua) ! distribute ua to each z-plane
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call sub2(u,ub,n)
 
       return
@@ -3838,11 +3519,11 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
      $    ,w1(lz1,lelz),w2(lz1,lelz)
       integer e,eg,ex,ey,ez
 
-      mz = nz1*nelz
+      mz = lz1*nelz
       call rzero(ua,mz)
       call rzero(w1,mz)
 
@@ -3851,8 +3532,8 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do i=1,nx1*ny1
+         do k=1,lz1
+         do i=1,lx1*ly1
             ua(k,ez) = ua(k,ez) + area(i,1,5,e)*u(i,1,k,e)
             w1(k,ez) = w1(k,ez) + area(i,1,5,e)
          enddo
@@ -3876,7 +3557,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
       integer e,eg,ex,ey,ez
 
       do e=1,nelt
@@ -3884,8 +3565,8 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do i=1,nx1*ny1
+         do k=1,lz1
+         do i=1,lx1*ly1
             u(i,1,k,e) = ua(k,ez)
          enddo
          enddo
@@ -3918,7 +3599,7 @@ c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
       call y_profile          (ua,u,w1,w2)
       call y_profile_transpose(ub,ua) ! distribute ua to each y-plane
 
-      n = nx1*ny1*nz1*nelv
+      n = lx1*ly1*lz1*nelv
       call sub2(u,ub,n)
 
       return
@@ -3934,11 +3615,11 @@ c
       include 'WZ'
       include 'ZPER'
 
-      real ua(lz1,lelz),u (nx1,ny1,nz1,nelv)
+      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
      $    ,w1(lz1,lelz),w2(lz1,lelz)
       integer e,eg,ex,ey,ez
 
-      my = ny1*nely
+      my = ly1*nely
       call rzero(ua,my)
       call rzero(w1,my)
 
@@ -3947,9 +3628,9 @@ c
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1
             ua(j,ey) = ua(j,ey) + area(i,k,1,e)*u(i,j,k,e)
             w1(j,ey) = w1(j,ey) + area(i,k,1,e)
          enddo
@@ -3974,7 +3655,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'ZPER'
 
-      real u(nx1,ny1,nz1,nelv),ua(lz1,lelz)
+      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
       integer e,eg,ex,ey,ez
 
       do e=1,nelt
@@ -3982,9 +3663,9 @@ c-----------------------------------------------------------------------
          eg = lglel(e)
          call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
 
-         do k=1,nz1
-         do j=1,ny1
-         do i=1,nx1
+         do k=1,lz1
+         do j=1,ly1
+         do i=1,lx1
             u(i,j,k,e) = ua(j,ey)
          enddo
          enddo
@@ -4068,8 +3749,8 @@ c
       ifldt = ifield
       ifield = ifld
 
-      call build_filter(f,diag,nx1)
-      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+      call build_filter(f,diag,lx1)
+      call filterq(u,f,lx1,lz1,wk1,wk2,wk3,if3d,umax)
 
       ifield = ifldt
 
@@ -4091,13 +3772,13 @@ c
       ifldt = ifield
       ifield = ifld
 
-      call rone(diag,nx1)
-      do i=mx+1,nx1
+      call rone(diag,lx1)
+      do i=mx+1,lx1
          diag(i)=0.
       enddo
 
-      call build_filter(f,diag,nx1)
-      call filterq(u,f,nx1,nz1,wk1,wk2,wk3,if3d,umax)
+      call build_filter(f,diag,lx1)
+      call filterq(u,f,lx1,lz1,wk1,wk2,wk3,if3d,umax)
 
       ifield = ifldt
 
@@ -4117,7 +3798,7 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      n   = nx1*ny1*nz1*nelt
+      n   = lx1*ly1*lz1*nelt
       nn  = nx-1
       nel = nelfld(ifield)
 
@@ -4136,7 +3817,7 @@ c-----------------------------------------------------------------------
         call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
 
         if (ifd4) then
-           wght = 20./(nx1**4)
+           wght = 20./(lx1**4)
            do e=1,nel
              do i=1,lt
                w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
@@ -4152,7 +3833,7 @@ c-----------------------------------------------------------------------
            call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
         endif
 
-        wght = wgt/(nx1**4)
+        wght = wgt/(lx1**4)
         do e=1,nel
           do i=1,lt
             v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
@@ -4172,7 +3853,7 @@ c-----------------------------------------------------------------------
         call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
 
         if (ifd4) then
-           wght = 200./(nx1**4)
+           wght = 200./(lx1**4)
            do e=1,nel
              do i=1,lt
                w(i,e)  = wght*w(i,e)/w3m1(i,1,1)
@@ -4187,7 +3868,7 @@ c-----------------------------------------------------------------------
            call dsavg(w)  !NOTE STILL NEED BC TREATMENT !
         endif
 
-        wght = wgt/(nx1**4)
+        wght = wgt/(lx1**4)
         do e=1,nel
           do i=1,lt
             v(i,e)  = v(i,e) - wght*w(i,e)/w3m1(i,1,1)
@@ -4228,7 +3909,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
 
       xmin = glmin(xm1,n)
       xmax = glmax(xm1,n)
@@ -4272,7 +3953,7 @@ c     will not.
       integer e,eg,f
 
       nel = nelfld(ifld)
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
 
@@ -4285,10 +3966,10 @@ c     will not.
       call cfill(d,big,n)
 
 
-      nface = 2*ndim
+      nface = 2*ldim
       do e=1,nel     ! Set d=0 on walls
       do f=1,nface
-         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,0.,lx1,ly1,lz1)
       enddo
       enddo
 
@@ -4296,15 +3977,15 @@ c     will not.
          dmax    = 0
          nchange = 0
          do e=1,nel
-           do k=1,nz1
-           do j=1,ny1
-           do i=1,nx1
+           do k=1,lz1
+           do j=1,ly1
+           do i=1,lx1
              i0=max(  1,i-1)
              j0=max(  1,j-1)
              k0=max(  1,k-1)
-             i1=min(nx1,i+1)
-             j1=min(ny1,j+1)
-             k1=min(nz1,k+1)
+             i1=min(lx1,i+1)
+             j1=min(ly1,j+1)
+             k1=min(lz1,k+1)
              do kk=k0,k1
              do jj=j0,j1
              do ii=i0,i1
@@ -4335,7 +4016,7 @@ c     will not.
          call fgslib_gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
          nchange = iglsum(nchange,1)
          dmax = glmax(dmax,1)
-         if (nio.eq.0) write(6,1) ipass,nchange,dmax,b
+         if (nio.eq.0.and.loglevel.gt.2) write(6,1) ipass,nchange,dmax,b
     1    format(i9,i12,1pe12.4,' max distance b: ',a3)
          if (nchange.eq.0) goto 1000
       enddo
@@ -4372,7 +4053,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
       integer e,eg,f
 
       nel = nelfld(ifld)
-      n = nx1*ny1*nz1*nel
+      n = lx1*ly1*lz1*nel
 
       call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
 
@@ -4386,28 +4067,28 @@ c     Work arrays:  dmin,emin,xn,yn,zn
 
       call opcopy(xn,yn,zn,xm1,ym1,zm1)
 
-      nface = 2*ndim
+      nface = 2*ldim
       do e=1,nel     ! Set d=0 on walls
       do f=1,nface
-         if (cbc(f,e,1).eq.b) call facev(d,e,f,0.,nx1,ny1,nz1)
+         if (cbc(f,e,1).eq.b) call facev(d,e,f,0.,lx1,ly1,lz1)
       enddo
       enddo
 
-      nxyz = nx1*ny1*nz1
+      nxyz = lx1*ly1*lz1
 
       do ipass=1,10000
          dmax    = 0
          nchange = 0
          do e=1,nel
-            do k=1,nz1
-            do j=1,ny1
-            do i=1,nx1
+            do k=1,lz1
+            do j=1,ly1
+            do i=1,lx1
               i0=max(  1,i-1)
               j0=max(  1,j-1)
               k0=max(  1,k-1)
-              i1=min(nx1,i+1)
-              j1=min(ny1,j+1)
-              k1=min(nz1,k+1)
+              i1=min(lx1,i+1)
+              j1=min(ly1,j+1)
+              k1=min(lz1,k+1)
               do kk=k0,k1
               do jj=j0,j1
               do ii=i0,i1
@@ -4482,7 +4163,7 @@ c     Work arrays:  dmin,emin,xn,yn,zn
  1000 continue
 
 c     wgt = 0.3
-c     call filter_d2(d,nx1,nz1,wgt,.true.)
+c     call filter_d2(d,lx1,lz1,wgt,.true.)
 
       return
       end
@@ -4529,10 +4210,10 @@ c
 
       character*3 b
 
-      n     = nx1*ny1*nz1*nelv
-      n2    = nx2*ny2*nz2*nelv
-      nxyz  = nx1*ny1*nz1
-      nxyz2 = nx2*ny2*nz2
+      n     = lx1*ly1*lz1*nelv
+      n2    = lx2*ly2*lz2*nelv
+      nxyz  = lx1*ly1*lz1
+      nxyz2 = lx2*ly2*lz2
 
       if (icalld.eq.0) then
          icalld = 1
@@ -4547,13 +4228,13 @@ c
 
          do e=1,nelv
            ifout = .false.
-           do f=1,2*ndim
+           do f=1,2*ldim
              if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
              if (cbc(f,e,1).eq.b) noutf = noutf+1
            enddo
            if (ifout) then
             if (lx2.lt.lx1) then ! Map distance function to Gauss
-             call maph1_to_l2(d(1,1,1,e),nx2,m1(1,e),nx1,if3d,w,lw)
+             call maph1_to_l2(d(1,1,1,e),lx2,m1(1,e),lx1,if3d,w,lw)
             else
              call copy(d(1,1,1,e),m1(1,e),nxyz)
             endif
@@ -4569,7 +4250,7 @@ c
 
          do e=1,nelv
            ifout = .false.
-           do f=1,2*ndim
+           do f=1,2*ldim
              if (cbc(f,e,1).eq.b) ifout = .true. ! outflow
            enddo
            if (ifout) then
@@ -4678,7 +4359,7 @@ c     enddo
 
       nfield = nfld
 
-      nface = 2*ndim
+      nface = 2*ldim
       do k=1,nbc               ! BC conversion
         do e=1,nelfld(nfld)
         do f=1,nface
@@ -4691,3 +4372,4 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
+

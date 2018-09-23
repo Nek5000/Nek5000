@@ -6,18 +6,18 @@
       parameter (ldd=lxd*lyd*lzd)
       common /ctmp1/ xface(lx1*lz1,2*ldim),yface(lx1*lz1,2*ldim),
      >               supapad(6*ldd-4*ldim*lx1*lz1)
-      real   pileoffaces(nx1*nz1,2*ndim,nelt,toteq)!,ndim)
+      real   pileoffaces(lx1*lz1,2*ldim,nelt,toteq)!,ldim)
       integer   e,f,lu
       real ghere, betahere,pi,kond,h
       pi=4.0*atan(1.0)
       ghere=1.4
       betahere=5.0
 
-      call full2face_cmt(1,nx1,ny1,nz1,iface_flux(1,e),xface,
+      call full2face_cmt(1,lx1,ly1,lz1,iface_flux(1,e),xface,
      >                   xm1(1,1,1,e))
-      call full2face_cmt(1,nx1,ny1,nz1,iface_flux(1,e),yface,
+      call full2face_cmt(1,lx1,ly1,lz1,iface_flux(1,e),yface,
      >                   ym1(1,1,1,e))
-      nxz=nx1*nz1
+      nxz=lx1*lz1
       write(lu,*) '# e=',e
       do i=1,nxz
 !        x=xface(i,f)-5.0
@@ -74,21 +74,24 @@ c----------------------------------------------------------------------
       real                OTVAR
       integer e,f
 
-      n = nx1*ny1*nz1
+      n = lx1*ly1*lz1
       do e=1,nelt
-         call copy(otvar(1,1,1,e,1),u(1,1,1,1,e),n)
-         call copy(otvar(1,1,1,e,2),u(1,1,1,2,e),n)
-         call copy(otvar(1,1,1,e,3),u(1,1,1,3,e),n)
-         call copy(otvar(1,1,1,e,4),u(1,1,1,4,e),n)
-         call copy(otvar(1,1,1,e,5),u(1,1,1,5,e),n)
+         call copy(otvar(1,1,1,e,4),u(1,1,1,1,e),n)
+         call copy(otvar(1,1,1,e,5),u(1,1,1,2,e),n)
+         call copy(otvar(1,1,1,e,6),u(1,1,1,3,e),n)
+         call copy(otvar(1,1,1,e,7),u(1,1,1,4,e),n)
+         call copy(otvar(1,1,1,e,1),u(1,1,1,5,e),n)
       enddo
+
+      call copy(otvar(1,1,1,1,2),tlag(1,1,1,1,1,2),n*nelt) ! s_{n-1}
+      call copy(otvar(1,1,1,1,3),tlag(1,1,1,1,2,1),n*nelt) ! s_n
 
 c     ifxyo=.true.
       if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
 
-      itmp = 1
-      call outpost2(otvar(1,1,1,1,2),otvar(1,1,1,1,3),otvar(1,1,1,1,4)
-     $             ,otvar(1,1,1,1,1),otvar(1,1,1,1,5),itmp,'fld')
+      itmp = 3
+      call outpost2(otvar(1,1,1,1,5),otvar(1,1,1,1,6),otvar(1,1,1,1,7)
+     $             ,otvar(1,1,1,1,4),otvar(1,1,1,1,1),itmp,'fld')
       return
       end
 c----------------------------------------------------------------------
@@ -101,7 +104,7 @@ c----------------------------------------------------------------------
       real                OTVAR
 
       integer e,f
-      n = nx1*ny1*nz1*nelt
+      n = lx1*ly1*lz1*nelt
       itmp = 1
       if (lx2.ne.lx1) call exitti('Set LX1=LX2 for I/O$',lx2)
 
@@ -168,8 +171,8 @@ c        exit ! Not valid w/ pgf77
 c        exit ! Not valid w/ pgf77
          endif
       enddo
-      nxyz1 = nx1*ny1*nz1
-      nxy1  = nx1*ny1
+      nxyz1 = lx1*ly1*lz1
+      nxy1  = lx1*ly1
       open(unit=11,file=wfnav(1:i1)//'.'//'it='//citer(is:il)//
      $                     '.'//'p='//citer2(is2:il2))
       write(11,*)'Title="',wfnav(1:i1),'"'
@@ -183,7 +186,7 @@ c      write(6,*)wfnav(1:i1),'.',citer(is:il)
       if(if3d)then
         write(11,*)'Variables=x,y,z,e1,e2,e3,e4,e5'
         do e = 1,nelt
-          write(11,*)'zone T="',e,'",i=',nx1,',j=',ny1,',k=',nz1
+          write(11,*)'zone T="',e,'",i=',lx1,',j=',ly1,',k=',lz1
           do i=1,nxyz1
              do eq=1,toteq
                 rhseqs(eq) = res1(i,1,1,e,eq)/bm1(i,1,1,e)
@@ -196,7 +199,7 @@ c      write(6,*)wfnav(1:i1),'.',citer(is:il)
       else
         write(11,*)'Variables=x,y,e1,e2,e3,e4,e5'
         do e = 1,nelt
-          write(11,*)'zone T="',e,'",i=',nx1,',j=',ny1
+          write(11,*)'zone T="',e,'",i=',lx1,',j=',ly1
           do i=1,nxy1
              do eq=1,toteq
                 rhseqs(eq) = res1(i,1,1,e,eq)/bm1(i,1,1,e)
@@ -231,9 +234,9 @@ c          need to add glsum to make it parallel
          msum = 0.0
          do e=1,nelt
             il = 0
-            do k=1,nz1
-               do j=1,ny1
-                  do i=1,nx1
+            do k=1,lz1
+               do j=1,ly1
+                  do i=1,lx1
                      il = il +1
                      msum = msum + (u(i,j,k,1,e)*bm1(i,j,k,e))
                   enddo
@@ -244,8 +247,8 @@ c          need to add glsum to make it parallel
          msum = 0.0
          do e=1,nelt
             il = 0
-            do j=1,ny1
-            do i=1,nx1
+            do j=1,ly1
+            do i=1,lx1
                il = il +1
                msum = msum + (u(i,j,1,1,e)*bm1(i,j,1,e))
             enddo
@@ -304,8 +307,8 @@ c
       common /ICPVARS/ pvars(lx1,ly1,lz1,7)
       real             pvars
 c
-      n = nx1*ny1*nz1*nelv
-      ntot1 = nx1*ny1*nz1
+      n = lx1*ly1*lz1*nelv
+      ntot1 = lx1*ly1*lz1
 c
 c     call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
 c     IN CMT-Nek Pressure is defined on the velocity grid
@@ -524,8 +527,8 @@ c
       common /ICPVARS/ pvars(lx1,ly1,lz1,7)
       real             pvars
 
-      n    = nx1-1      ! Polynomial degree
-      nxyz = nx1*ny1*nz1
+      n    = lx1-1      ! Polynomial degree
+      nxyz = lx1*ly1*lz1
 
       if (if3d) then     ! 3D CASE
        do e=1,nelv
