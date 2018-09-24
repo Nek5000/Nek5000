@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-VER=1.0.1
+VER=1.0.3
 
 if [ "$1" == "clean" ]; then
-  rm -rf gslib-$VER lib 2>/dev/null 
+  rm -rf gslib lib 2>/dev/null 
   exit 0
 fi
 
-if [ -f ./gslib-$VER/src/libgs.a ]; then
+if [ -f ./lib/libgs.a ]; then
   exit 0
 fi
 
@@ -17,8 +17,10 @@ if [ ! -f v$VER.tar.gz ]; then
 fi
 
 tar -zxf *.tar.gz
+rm -rf gslib 2>/dev/null
+mv -f gslib-$VER gslib
+cd gslib
 
-cd gslib-$VER
 make -j4 CC="$CC" CFLAGS="$CFLAGS" $GSLIB_OPT lib
-mkdir `pwd`/../lib 
+`mkdir $(pwd)/../lib || true` 
 make PREFIX="`pwd`/../lib" install

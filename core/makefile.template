@@ -12,6 +12,7 @@ FC=
 CC=
 FFLAGS=
 CFLAGS=
+LDFLAGS=
 PPPO=
 PPS=
 USR=
@@ -19,6 +20,8 @@ USR_LFLAGS=
 VISIT=0
 VISIT_IFLAGS=
 VISIT_LFLAGS=
+HYPRE_IFLAGS=
+GSLIB_IFLAGS=
 
 ################################################################################
 
@@ -35,13 +38,14 @@ map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
 genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
-byte.o chelpers.o byte_mpi.o postpro.o dprocmap.o interp.o \
+byte.o chelpers.o byte_mpi.o postpro.o interp.o \
 cvode_driver.o nek_comm.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
 finiparser.o iniparser.o dictionary.o \
-hpf.o
+hpf.o \
+sparse_cholesky.o fcrs.o xxt.o amg.o fem_amg_preco.o
 ################################################################################
 # MXM 
 MXM =  
@@ -63,7 +67,7 @@ else
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o artvisc.o
 endif
-# VISIT ########################################################################
+
 ifneq ($(VISIT),0)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
@@ -93,9 +97,9 @@ FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) $(CFLAGS) $(PPS_C)
-cFL2   = $(L2) $(CFLAGS) $(PPS_C)
-cFL3   = $(L3) $(CFLAGS) $(PPS_C)
+cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S
+cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S
+cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S
 
 ################################################################################
 all : nek5000
@@ -108,7 +112,7 @@ usrfile:
 
 nek5000:	objdir $(NOBJS) usrfile
 	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
-	$(FC) $(FL2) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
+	$(FC) $(LDFLAGS) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(LDFLAGS) $(USR_LFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
 	echo "#############################################################"; \
@@ -203,7 +207,7 @@ $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_rea.o	:$S/reader_rea.f;	 	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/reader_par.f $S/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/reader_re2.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(FC) -c $(FL2) $< -o $@
 
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
@@ -232,9 +236,14 @@ $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(FC) -c $(FL3) $< -o $@
 
 # C Files ##################################################################################
-$(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
-$(OBJDIR)/byte.o                 :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
-$(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/nek_comm.o         :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/byte.o             :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/chelpers.o         :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/fcrs.o             :$S/fcrs.c;              $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/xxt.o              :$S/xxt.c;               $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/sparse_cholesky.o  :$S/sparse_cholesky.c;   $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/amg.o              :$S/amg.c;               $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/fem_amg_preco.o    :$S/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
