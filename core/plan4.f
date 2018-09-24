@@ -61,6 +61,7 @@ c
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
+         call bcneutr ! XXXXXX change for stress formulation and Pn-Pn
 
 C        first, compute pressure
 
@@ -85,7 +86,7 @@ C        first, compute pressure
 
 C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
-         call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call ophinv_pr(dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
@@ -568,6 +569,7 @@ c
       ntot = lx1*ly1*lz1*nelv
 
       call rzero(qtl,ntot)
+c      call userqtl_level()
       call userqtl()
 
       return

@@ -58,7 +58,7 @@ C
             IF  (CB.EQ.'VL ' .OR. CB.EQ.'vl ' .OR.
      $           CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR.
      $           CB.EQ.'SL ' .OR. CB.EQ.'sl ' .OR.
-     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR.
+     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM' .OR.
      $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR.
      $           CB.EQ.'O  ' .OR. CB.EQ.'o  ' .OR.
@@ -90,6 +90,22 @@ C
       ENDIF
 
       if (ifmhd) call set_ifbcor
+C
+      IF (NHIS.GT.0) THEN
+         IQ = 0
+         DO 300 IH=1,NHIS
+            IF ( HCODE(10,IH) .EQ. 'I' ) THEN
+               IFINTQ = .TRUE.
+               IOBJ   = LOCHIS(1,IH)
+               IQ     = IQ + 1
+               IF (IOBJ.GT.NOBJ .OR. IOBJ.LT.0)  THEN
+                  WRITE (6,*) 
+     $            'ERROR : Undefined Object for integral',IQ
+                  call exitt
+               ENDIF
+            ENDIF
+  300    CONTINUE
+      ENDIF
 C
 C     Establish global consistency of LOGICALS amongst all processors.
 C
@@ -282,7 +298,8 @@ C
 
       ieg  = lglel(iel)
 
-      if (ifstrs .and. .not.ifsplit) return
+c      if (ifstrs .and. .not.ifsplit) return
+      if (ifstrs) return !XXXXXXXXXXXX change for Pn-Pn
 
 C     Laplacian formulation only
       IF  (CB.EQ.'SH ' .OR.  CB.EQ.'sh ' .OR.
@@ -293,8 +310,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
-c      IF ( .NOT.IFALGN .AND.
-c     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+      IF ( .NOT.IFALGN .AND.
+     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
 
       RETURN
 
@@ -321,6 +338,7 @@ C
       INCLUDE 'MVGEOM'
       INCLUDE 'SOLN'
       INCLUDE 'TOPOL'
+      INCLUDE 'GEOM' !XXXX
 
       common  /nekcb/ cb
       character*3 cb
@@ -388,6 +406,18 @@ c        write(6,*) 'MASK ifstrs',ifstrs,ifield
 c        call exitt
          IF (IFSTRS) THEN
            CALL STSMASK (V1MASK,V2MASK,V3MASK)
+           do iel=1,nelv
+           iz=1
+           do iy=1,ny1
+           do ix=1,nx1
+c             write(75,'(A,3I4,10(1X,G14.7))') 'mask ', ix, iy, iel
+c     $                 , xm1   (ix,iy,iz,iel), ym1   (ix,iy,iz,iel)
+c     $                 , v1mask(ix,iy,iz,iel), v2mask(ix,iy,iz,iel)
+           enddo
+           enddo
+           enddo
+c           call flush(75)
+
          ELSE
 C
            CALL RONE(V1MASK,NTOT)
@@ -409,11 +439,11 @@ C
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
-         ENDIF
+           ENDIF
 C
 C        Mixed-Dirichlet-Neumann boundary conditions
 C
-         IF (CB.EQ.'SYM') THEN
+           IF (CB.EQ.'SYM') THEN
              IF ( .NOT.IFALGN .OR. IFNORX )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( IFNORY )
@@ -421,9 +451,9 @@ C
              IF ( IFNORZ )
      $            CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
-         ENDIF
+           ENDIF
 
-         IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') THEN
+           IF (CB.EQ.'ON ' .OR. CB.EQ.'on ') THEN
              IF ( IFNORY .OR. IFNORZ )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORZ )
@@ -431,11 +461,11 @@ C
              IF ( .NOT.IFALGN .OR. IFNORX .OR. IFNORY )
      $            CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
-         ENDIF
-         IF (CB.EQ.'A  ') THEN
+           ENDIF
+           IF (CB.EQ.'A  ') THEN
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              CALL FACEV ( OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
-         ENDIF
+           ENDIF
   100    CONTINUE
 
          CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
@@ -651,6 +681,14 @@ c     write(6,*) 'BCDIRV: ifield',ifield
                 call faceiv (cb,tmp1(1,1,1,ie),tmp2(1,1,1,ie),
      $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
 
+                IF ( IFQINP(IFACE,IE) )
+     $          CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
+     $                        TMP3(1,1,1,IE),IE,IFACE)
+            ENDIF
+
+            IF (CB.EQ.'SYM') then !XXXXXXXXXXXXX 6/15/2018 AT 
+                call faceiv ('vl ',tmp1(1,1,1,ie),tmp2(1,1,1,ie),
+     $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
                 IF ( IFQINP(IFACE,IE) )
      $          CALL GLOBROT (TMP1(1,1,1,IE),TMP2(1,1,1,IE),
      $                        TMP3(1,1,1,IE),IE,IFACE)
@@ -1057,6 +1095,9 @@ C
          DO 120 IX=KX1,KX2
             if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
+c            write(*,'(A,3I5,5G14.7)') 'from vl bcs '
+c     $                               , ix, iy, ieg, un, u1, u2
+c     $                                                , ux, uy
             V1(IX,IY,IZ) = UN
             V2(IX,IY,IZ) = U1
             V3(IX,IY,IZ) = U2
@@ -1076,7 +1117,7 @@ C
   200    CONTINUE
          RETURN
 C
-      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl') THEN
+      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM') THEN
 C
          DO 220 IZ=KZ1,KZ2
          DO 220 IY=KY1,KY2
@@ -1236,7 +1277,7 @@ C
              GOTO 120
          ENDIF
          IF (CB.EQ.'s  ' .OR. CB.EQ.'sl ' .OR.
-     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' ) THEN
+     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM') THEN
              CALL FACEIV (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
              CALL FACCVS (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
              IF (IFQINP(IFC,IEL)) CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
