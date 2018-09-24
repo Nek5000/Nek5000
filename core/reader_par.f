@@ -262,42 +262,6 @@ c set parameters
          endif
       endif
 
-      call finiparser_getString(c_out,'problemType:fixedFlow',ifnd)
-      if (ifnd .eq. 1) then
-         call capit(c_out,132)
-         if (index(c_out,'NO') .eq. 1) then
-            param(54) = 0.0
-            param(55) = 0.0
-         else if (index(c_out,'VELOCITYX') .eq. 1) then
-            param(54) = -1.0
-         else if (index(c_out,'VELOCITYY') .eq. 1) then
-            param(54) = -2.0
-         else if (index(c_out,'VELOCITYZ') .eq. 1) then
-            param(54) = -3.0
-         else if (index(c_out,'VOLUMETRICX') .eq. 1) then
-            param(54) = 1.0
-         else if (index(c_out,'VOLUMETRICY') .eq. 1) then
-            param(54) = 2.0
-         else if (index(c_out,'VOLUMETRICZ') .eq. 1) then
-            param(54) = 3.0
-         else
-            write(6,*) 'value: ',trim(c_out)
-            write(6,*) 'is invalid for problemType:fixedFlow!'
-            goto 999
-         endif
-         if(param(54).ne.0.0) then
-            call finiparser_getDbl(d_out,'problemType:flowrate',ifnd)
-            if (ifnd .eq. 1) then
-               param(55) = d_out
-            else
-               write(6,*) 'problemType:flowrate'
-               write(6,*) 'is required for problemType:fixedFlow = '
-     &                                                      ,trim(c_out)
-               goto 999
-            endif
-         endif  
-      endif
-
       call finiparser_getDbl(d_out,'general:dt',ifnd)
       if (ifnd .eq. 1) then
          param(12) = d_out
@@ -827,6 +791,7 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
+
 100   if(ierr.eq.0) call finiparser_dump()
       return
 
@@ -1026,7 +991,7 @@ c
 
       IF(ldimr.NE.LDIM) THEN
          IF(NID.EQ.0) THEN
-           WRITE(6,10) LDIM,ldimr
+           WRITE(6,10) LDIM,ldim
    10      FORMAT(//,2X,'Error: Nek has been compiled'
      $             /,2X,'       for spatial dimension equal to',I2,'.'
      $             /,2X,'       The mesh file has dimension',I2,'.')

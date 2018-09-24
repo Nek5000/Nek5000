@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 101)
+      parameter(PARDICT_NKEYS = 99)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -104,6 +104,3 @@ c
      &  pardictkey(97) / 'GENERAL:MAXNUMPROCESSES' /
      &  pardictkey(98) / 'GENERAL:MAXNUMSESSIONS' /
      &  pardictkey(99) / 'GENERAL:MAXNUMELEMENTS' /
-     &  pardictkey(100) / 'PROBLEMTYPE:FIXEDFLOW' /
-     &  pardictkey(101) / 'PROBLEMTYPE:FLOWRATE' /
-
