@@ -38,8 +38,8 @@ c     Boundary conditions are changed back to 'v' or 't'.
          icalld = icalld + 1
       endif
 
-      nfld_min = ms_iglmin(nfld_neknek,1)
-      nfld_max = ms_iglmax(nfld_neknek,1)
+      nfld_min = iglmin_ms(nfld_neknek,1)
+      nfld_max = iglmax_ms(nfld_neknek,1)
       if (nfld_min .ne. nfld_max)
      $   call exitti('nfld_neknek does not match across sessions!$',1)
  
@@ -224,7 +224,7 @@ c-----------------------------------------------------------------------
       if (ifmvbd) imove=0
       call neknekgsync()
 
-      iglmove = ms_iglmin(imove,1)
+      iglmove = iglmin_ms(imove,1)
 
       if (iglmove.eq.0) then
          ifneknekm=.true.
@@ -254,8 +254,8 @@ c     Get total number of processors and number of p
       enddo
 
 c     Get diamter of the domain
-      mx_glob = ms_glmax(xm1,lx1*ly1*lz1*nelt)
-      mn_glob = ms_glmin(xm1,lx1*ly1*lz1*nelt)
+      mx_glob = glmax_ms(xm1,lx1*ly1*lz1*nelt)
+      mn_glob = glmin_ms(xm1,lx1*ly1*lz1*nelt)
       dx1 = mx_glob-mn_glob
 
       dxf = 10.+dx1
@@ -421,7 +421,7 @@ c     zero out valint
        call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
       enddo
 
-      ierror = ms_iglmax(ierror,1)
+      ierror = iglmax_ms(ierror,1)
       if (ierror.eq.1) call exitt
  
       call neknekgsync()

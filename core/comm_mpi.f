@@ -680,11 +680,7 @@ c-----------------------------------------------------------------------
       include 'mpif.h'
 
       call mpi_finalize (ierr_)
-#ifdef EXTBAR
-      call exit_(ierr)
-#else
-      call exit(ierr)
-#endif
+      call cexit(ierr)
  
       return
       end

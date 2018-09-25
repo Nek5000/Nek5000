@@ -857,7 +857,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ms_gs_setup(hndl,nel,nx,ny,nz)
+      subroutine gs_setup_ms(hndl,nel,nx,ny,nz)
 
       include 'SIZE'
       include 'TOTAL'
@@ -888,7 +888,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ms_gs_op(u,op,hndl)
+      subroutine gs_op_ms(u,op,hndl)
 c
 c     gather-scatter operation across sessions 
 c
@@ -914,7 +914,7 @@ c
      &         .or. op.eq.'MAX' .or. op.eq.'MXA') then
          call fgslib_gs_op(hndl,u,1,4,0)
       else
-         call exitti('ms_gs_op: invalid operation!$',1)
+         call exitti('gs_op_ms: invalid operation!$',1)
       endif
 
       return

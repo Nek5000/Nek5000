@@ -47,14 +47,12 @@ c     outpost arrays
 
       logical if_fltv
 
-      if(.not. iffilter(ifield)) return
-
       ncut = param(101)+1
 
       if(wght.le.0) return
       if(ifaxis) call exitti('Filtering not supported w/ IFAXIS!$',1)
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
-     $                                            ifield, ncut, wght
+     $                                            ncut, wght
 
       imax = nid
       imax = iglmax(imax,1)
@@ -90,89 +88,77 @@ c        decay in wave space
       endif
 
       ifldt  = ifield
-c     ifield = 1
+      ifield = 1
 
       if_fltv = .false.
       if ( ifflow .and. .not. ifmhd ) if_fltv = .true.
-      if ( ifield.eq.1  .and. ifmhd ) if_fltv = .true.
-
-c     Adam Peplinski; to take into account freezing of base flow
-      if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
+      if ( ifmhd                    ) if_fltv = .true.
+      if ( .not.ifbase              ) if_fltv = .false. ! base-flow frozen
+      if ( .not. iffilter(1)        ) if_fltv = .false. 
 
       if ( if_fltv ) then
          call filterq(vx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
          call filterq(vy,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $      call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+
          if (ifsplit.and..not.iflomach) 
      $      call filterq(pr,intv,lx1,lz1,wk1,wk2,intt,if3d,pmax)
+
+         if (ifpert) then
+           do j=1,npert
+              call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+              call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
+              if (if3d)
+     $        call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+           enddo
+         endif
       endif
-c
+
       if (ifmhd.and.ifield.eq.ifldmhd) then
          call filterq(bx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
          call filterq(by,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
      $   call filterq(bz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
       endif
-c
-      if (ifpert) then
-        do j=1,npert
 
-         ifield = 1
-         call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
-         if (if3d)
-     $   call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
-
-         ifield = 2
-         if (ifheat .and. .not.ifcvfld(ifield)) 
-     $   call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
-
-        enddo
-      endif
-c
       mmax = 0
       if (ifflow) then
 c        pmax    = glmax(pmax,1)
-         omax(1) = glmax(umax,1)
-         omax(2) = glmax(vmax,1)
-         omax(3) = glmax(wmax,1)
+c         omax(1) = glmax(umax,1)
+c         omax(2) = glmax(vmax,1)
+c         omax(3) = glmax(wmax,1)
          mmax = ldim
       endif
          
-c
       nfldt = 1+npscal
-      if (ifheat .and. .not.ifcvode) then
-         do ifld=1,nfldt
-            ifield = ifld + 1
-            call filterq(t(1,1,1,1,ifld),intv
-     $                  ,lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
-            mmax = mmax+1
-            omax(mmax) = glmax(tmax(ifld),1)
-         enddo
-      endif
-
-      if (nio.eq.0) then
-         if (npscal.eq.0) then
-c           write(6,101) mmax
-c           write(sfmt,101) mmax
-c 101       format('''(i8,1p',i1,'e12.4,a6)''')
-c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
-c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
-         else
-            if (if3d) then
-               write(6,1) istep,ifield,umax,vmax,wmax
-            else
-               write(6,1) istep,ifield,umax,vmax
-            endif
-    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
-            if(ifheat .and. .not.ifcvode) 
-     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+      do ifld=1,nfldt
+         ifield = ifld + 1
+         if (.not. iffilter(ifield)) goto 10
+         call filterq(t(1,1,1,1,ifld),intv,
+     $                lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
+         if (ifpert) then
+            do j=1,npert
+               call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,
+     $                      wmax)
+            enddo
          endif
-      endif
+  10     mmax = mmax+1
+c         omax(mmax) = glmax(tmax(ifld),1)
+      enddo
+
+c      if (nio.eq.0) then
+c            if (if3d) then
+c               write(6,1) istep,ifield,umax,vmax,wmax
+c            else
+c               write(6,1) istep,ifield,umax,vmax
+c            endif
+c    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
+c            if(ifheat) 
+c     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+c      endif
 
       ifield = ifldt   ! RESTORE ifield
-
 
       return
       end
@@ -194,9 +180,8 @@ c
       nxyz=nx*nx*nz
       dmax = 0.
 
-
+      if (nio.eq.0 .and. loglevel.gt.2) write(6,*) 'call filterq',ifield
       nel = nelfld(ifield)
-
 
       if (if3d) then
          do e=1,nel
@@ -1012,11 +997,14 @@ c-----------------------------------------------------------------------
 
          time_temp = time
          time      = atime   ! Output the duration of this avg
+         dtmp      = param(63)
+         param(63) = 1       ! Enforce 64-bit output
 
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
          call outpost (uvms,vwms,wums,prms,trms,      'rm2')
 
+         param(63) = dtmp
          atime = 0.
          time  = time_temp  ! Restore clock
 
