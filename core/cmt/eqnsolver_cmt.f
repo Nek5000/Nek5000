@@ -88,11 +88,11 @@ C> \f$G^T U\f$
       nfaces = 2*ldim
       nf     = nxz*nfaces ! 1 element's face points
       nfq    = nf*nelt ! all points in a pile of faces
-!     if (ifsip) then
-!        const=-1.0 ! SIP
-!     else
+      if (ifsip) then
+         const=-1.0 ! SIP
+      else
          const=1.0 ! Baumann-Oden
-!     endif
+      endif
 
 ! compute (U-{{U}})_i * n_k
 ! OK FOLKS GIANT BUG UMMCU IS BAD AT INFLOW
