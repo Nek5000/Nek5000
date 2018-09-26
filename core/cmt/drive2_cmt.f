@@ -165,13 +165,14 @@ c------------------------------------------------------------------------
             epsebdg(e)=1.0
          else
             epsebdg(e)=tau/(tau-rhoeavg)
-            do m=1,toteq
-               do i=1,nxyz
-                  uold=u(i,1,1,m,e)
-                  u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
-               enddo
-            enddo
          endif
+!        epsebdg(e)=1.0 ! Godunov test
+         do m=1,toteq
+            do i=1,nxyz
+               uold=u(i,1,1,m,e)
+               u(i,1,1,m,e)=uold+epsebdg(e)*(avstate(m)-uold)
+            enddo
+         enddo
 
 !-----------------------------------------------------------------------
 ! diagnostics
