@@ -165,7 +165,7 @@ c-----------------------------------------------------------------------
       ntot=n*nelt
 
       if (istep .eq. 1) return
-      rdt=1.0/(dsdtcoef(stage)*DT_cmt)
+      rdt=1.0/(dsdtcoef(stage)*dt)
       if (stage .eq. 1) then ! THE MOST SABOTAGEABLE PART OF THE CODE
          call sub3(res2,s(1,1,1),s(1,1,2),ntot) ! EVALUATE s_n-s_{n-1}
       else
