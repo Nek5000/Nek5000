@@ -456,11 +456,6 @@ C> @}
 
         if (eq_num.eq.4.and.ldim.eq.2)then
 
-#ifdef LPM
-           call subcol3(res1(1,1,1,e,eq_num),phigvdum(1,1,1,e)
-     >                  ,bm1(1,1,1,e),nxyz)
-#endif
-
         else
 #ifdef LPM
            call subcol3(res1(1,1,1,e,eq_num),phigdum(1,1,1,e,eq_num-1)
