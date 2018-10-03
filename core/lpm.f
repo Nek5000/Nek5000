@@ -3369,7 +3369,7 @@ c     endif
          rylbin = max(rylbin,xdrange(1,2))
          ryrbin = min(ryrbin,xdrange(2,2))
       endif
-      if (bc_part(3) .eq. 0) then
+      if (bc_part(5) .eq. 0) then
       if (if3d) then
          rzlbin = rzlbin - ninc/2*rdzgp
          rzrbin = rzrbin + ninc/2*rdzgp
@@ -3381,7 +3381,7 @@ c     endif
       nbin_now = ndxgp*ndygp*ndzgp
 c     if (nbin_now .eq. nbin_save) return ! except not all the time..
 
-      nreach = nbin_new/np
+      nreach = nbin_now/np
       nreach = max(1,nreach)
 
 c     if (nid.eq.0) write(6,*) 'Setting up bins'
