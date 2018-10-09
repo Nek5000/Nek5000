@@ -64,6 +64,13 @@ c        call compute_neighbor_el_proc
          call create_extra_particles
          call send_ghost_particles
          call spread_props_grid           
+
+         if (two_way.gt. 2) then ! setup collision stuff
+            rdt_part = abs(param(12))
+            call lpm_set_dt(rdt_part)
+            param(12) = rdt_part
+         endif
+
       endif
       call init_interpolation
       call interp_props_part_location 
