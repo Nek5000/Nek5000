@@ -88,7 +88,7 @@ c ----------------------
       common /new_gpi/ ndxgp,ndygp,ndzgp,mod_gp_grid
       real    rdxgp, rdygp, rdzgp , binb(6)
       common /new_gpr/ rdxgp, rdygp, rdzgp, binb
-      common /nlastbin/ nbin_save,nbin_now
+      common /nlastbin/ nbin_now
 
       parameter (nfldpm = 9)
       real xm1b(lx1,ly1,lz1,3,lbmax),ptwb(lx1,ly1,lz1,nfldpm,lbmax)
