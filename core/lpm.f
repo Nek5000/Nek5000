@@ -350,7 +350,7 @@ c----------------------------------------------------------------------
       rdeff_max = rdeff_max*2. ! to get diameter
 
       d2chk(2) = d2chk(2)*rdeff_max
-      d2chk(3) = 0.6     *rdeff_max
+      d2chk(3) = 1.10    *rdeff_max
 
       d2chk(1) = max(d2chk(2),d2chk(3))
 
@@ -671,7 +671,6 @@ c
 
       logical partl
 
-      if (npro_method .eq. 0 .or. two_way .lt. 2) return
 
       nxyz = lx1*ly1*lz1
 
@@ -1191,9 +1190,6 @@ c
       include 'CMTDATA'
 #endif
 
-      real MixtPerf_C_GRT_part
-      external MixtPerf_C_GRT_part
-
       if (ipre .eq. 0) then
       lpmx_p(1)    = rpart(jx,i)
       lpmx_p(2)    = rpart(jy,i)
@@ -1225,14 +1221,15 @@ c
      >                    (lpmv_p(3) - lpmv_f(3))**2)
       if (abs(lpmvdiff_pf) .lt. 1E-6) lpmvdiff_pf=1E-6
 
-      lpmmach_p    = MixtPerf_C_GRT_part(gmaref,rgasref,
-     >                                   rpart(jtempf,i),icmtp)
+      lpmmach_p    = rpart(ja,i)
       if (icmtp .eq. 0) then
          lpmmach_p  = 0.0
       elseif (icmtp .eq. 1) then
          lpmmach_p = lpmvdiff_pf/lpmmach_p
+         if(lpmmach_p .lt. 1E-12) lpmmach_p = 1E-12
       endif
       lpmre_p      = rpart(jrho,i)*rpart(jdp,i)*lpmvdiff_pf/mu_0 ! Re
+      if(lpmre_p .lt. 1E-12) lpmre_p = 1E-12
       lpmi         = i
       elseif (ipre .eq. 1) then
 
@@ -1263,9 +1260,6 @@ c
      >                    (rpart(ju0+2,i)-rpart(jv0+2,i))**2)
       if (abs(lpmvdiff_pf) .lt. 1E-6) lpmvdiff_pf=1E-6
 
-      lpmmach_p    = MixtPerf_C_GRT_part(gmaref,rgasref,
-     >                                   rpart(jtempf,i),icmtp)
-      lpmmach_p    = lpmvdiff_pf/lpmmach_p
       lpmre_p      = rpart(jrho,i)*rpart(jdp,i)*lpmvdiff_pf/mu_0 ! Re
 
       endif
@@ -3304,53 +3298,6 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (if3d) rdzgp = (binb(6) - binb(5))/real(ndzgp)
 
       ninc = 2
-c     if (bc_part(1) .ne. 0) then
-c        binb(1) = binb(1) - ninc/2*rdxgp
-c        binb(2) = binb(2) + ninc/2*rdxgp
-c        ndxgp = ndxgp + ninc
-c        ic = 0
-c        if (binb(1) .lt. xdrange(1,1)) then
-c           ic = ic + 1
-c           binb(1) = xdrange(1,1)
-c        endif
-c        if (binb(2) .gt. xdrange(2,1)) then
-c           ic = ic + 1
-c           binb(2) = xdrange(2,1)
-c        endif
-c        ndxgp = ndxgp - ic
-c     endif
-c     if (bc_part(3) .ne. 0) then
-c        binb(3) = binb(3) - ninc/2*rdygp
-c        binb(4) = binb(4) + ninc/2*rdygp
-c        ndygp = ndygp + ninc
-c        ic = 0
-c        if (binb(3) .lt. xdrange(1,2)) then
-c           ic = ic + 1
-c           binb(3) = xdrange(1,2)
-c        endif
-c        if (binb(4) .gt. xdrange(2,2)) then
-c           ic = ic + 1
-c           binb(4) = xdrange(2,2)
-c        endif
-c        ndygp = ndygp - ic
-c     endif
-c     if (bc_part(5) .ne. 0) then
-c     if (if3d) then
-c        binb(5) = binb(5) - ninc/2*rdzgp
-c        binb(6) = binb(6) + ninc/2*rdzgp
-c        ndzgp = ndzgp + ninc
-c        ic = 0
-c        if (binb(5) .lt. xdrange(1,3)) then
-c           ic = ic + 1
-c           binb(5) = xdrange(1,3)
-c        endif
-c        if (binb(6) .gt. xdrange(2,3)) then
-c           ic = ic + 1
-c           binb(6) = xdrange(2,3)
-c        endif
-c        ndzgp = ndzgp - ic
-c     endif
-c     endif
       rxlbin = binb(1)
       rxrbin = binb(2)
       rylbin = binb(3)
@@ -3379,13 +3326,9 @@ c     endif
       endif
 
       nbin_now = ndxgp*ndygp*ndzgp
-c     if (nbin_now .eq. nbin_save) return ! except not all the time..
 
       nreach = nbin_now/np
       nreach = max(1,nreach)
-
-c     if (nid.eq.0) write(6,*) 'Setting up bins'
-c     if (nid.eq.0) write(6,*) ndxgp,ndygp,ndzgp,d2chk(1), np,nbin_now
 
       if (npro_method .eq. 0) return ! only for projection
 
@@ -3503,62 +3446,7 @@ c-----------------------------------------------------------------------
 
       integer irmv(lbmax)
 
-         nxyz = lx1*ly1*lz1
-
-c     if (nbin_now .lt. np) then
-
-c        do i=1,np
-c           lpm_binsort(1,i) = i-1
-c           lpm_binsort(2,i) = n
-c           lpm_binsort(3,i) = i-1
-c        enddo
-c        
-c        nps   = 1 ! index of new proc for doing stuff
-c        nglob = 2 ! unique key to sort by
-c        nkey  = 1 ! number of keys (just 1 here)
-c        ndum = 3
-c        call fgslib_crystal_ituple_transfer(i_cr_hndl,lpm_binsort,
-c    >                 ndum,np,lpmax,nps)
-c        call fgslib_crystal_ituple_sort(i_cr_hndl,lpm_binsort,
-c    >                 ndum,np,nglob,nkey)
-
-c        call bcast(lpm_binsort, 3*np*isize)
-
-c        np_high = np
-c        np_low  = np - nbin_now +1
-c        np_low  = max(np_low,nbin_now)
-
-c        if (n .gt. 0) then
-c        do i=np_high,np_low,-1
-c           if (lpm_binsort(1,i) .eq. nid) then
-c              ii = np_high + 1 - i
-c              neltb_save = neltb
-c              do ie=1,neltb_save
-c                 neltb = neltb + 1
-c                 call icopy(er_map(1,neltb),er_map(1,ie),4)
-c                 er_map(5,ie)    = er_map(4,ie)
-c                 er_map(6,ie)    = er_map(4,ie)
-c                 er_map(5,neltb) = lpm_binsort(1,ii)
-c                 er_map(6,neltb) = lpm_binsort(1,ii)
-
-c                 call copy(xm1b(1,1,1,1,neltb), xm1b(1,1,1,1,ie),nxyz)
-c                 call copy(xm1b(1,1,1,2,neltb), xm1b(1,1,1,2,ie),nxyz)
-c                 call copy(xm1b(1,1,1,3,neltb), xm1b(1,1,1,3,ie),nxyz)
-c              enddo
-c           endif
-c        enddo
-c        endif
-
-c     endif
-
-c     nl = 0
-c     nii = 6
-c     njj = 6
-c     nrr = nxyz*3
-c     nkey = 3
-c     call fgslib_crystal_tuple_transfer(i_cr_hndl,neltb,lbmax
-c    >                  , er_map,nii,partl,nl,xm1b,nrr,njj)
-
+      nxyz = lx1*ly1*lz1
 
       nl = 0
       nii = 6
@@ -3569,13 +3457,6 @@ c    >                  , er_map,nii,partl,nl,xm1b,nrr,njj)
      $              , er_map,nii,partl,nl,xm1b,nrr,nkey,1)
 
 
-
-c     nd_min = iglmin(neltb,1)
-c     nd_max = iglmax(neltb,1)
-c     nd_sum = iglsum(neltb,1)
-c     if (nid.eq.0) write(6,*) 'Finished setting up bins'
-c     if (nid.eq.0) write(6,*) ndxgp,ndygp,ndzgp,nd_sum,nd_min,nd_max
-      
       do ie=1,neltb
       do k=1,nz1
       do j=1,ny1
@@ -3640,11 +3521,6 @@ c     call exitt
          lpm_el_map(7,ie) = klow
          lpm_el_map(8,ie) = khigh
       enddo
-
-
-
-      nbin_save = nbin_now
-
 
       return
       end
@@ -3847,6 +3723,9 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       include 'LPM'
       include 'GEOM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       common /myparth/ i_fp_hndl, i_cr_hndl
 
@@ -3921,6 +3800,14 @@ c-----------------------------------------------------------------------
      &                             ipart(je0,1)     ,ni,
      &                             rpart(jr,1)      ,nr,n,
      &                             ptw(1,1,1,1,4))
+#ifdef CMTNEK
+      call fgslib_findpts_eval(i_fp_hndl,rpart(ja,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             csound)
+#endif
 
 
 c        call dzlib_interp
@@ -4053,6 +3940,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'LPM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       real xerange(2,3,lbmax)
       common /lpm_elementrange/ xerange
@@ -4078,6 +3968,9 @@ c-----------------------------------------------------------------------
          call copy(ptwb(1,1,1,7,ie),rhs_fluidp(1,1,1,iee,2),nxyz)
          call copy(ptwb(1,1,1,8,ie),rhs_fluidp(1,1,1,iee,3),nxyz)
          call copy(ptwb(1,1,1,9,ie),ptw(1,1,1,iee,4)       ,nxyz)
+#ifdef CMTNEK
+         call copy(ptwb(1,1,1,10,ie),csound(1,1,1,iee)     ,nxyz)
+#endif
       enddo
 
       neltbc = neltbb
@@ -4116,19 +4009,13 @@ c-----------------------------------------------------------------------
             call baryinterp(ptwb(1,1,1,7,ie),rpart(jDuDt+1,i),nxyz)
             call baryinterp(ptwb(1,1,1,8,ie),rpart(jDuDt+2,i),nxyz)
             call baryinterp(ptwb(1,1,1,9,ie),rpart(jvol1,i)  ,nxyz)
+            call baryinterp(ptwb(1,1,1,10,ie),rpart(ja,i)    ,nxyz)
 
             endif
             endif
 
          enddo
       enddo
-
-
-
-      
-
-
-
 
       return
       end
@@ -4255,6 +4142,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'LPM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       real xerange(2,3,lbmax)
       common /lpm_elementrange/ xerange
@@ -4343,6 +4233,14 @@ c-----------------------------------------------------------------------
      &                             ipart_nf(je0,1)     ,ni,
      &                             rpart_nf(jr,1)      ,nr,nfpts1,
      &                             ptw(1,1,1,1,4))
+#ifdef CMTNEK
+      call fgslib_findpts_eval(i_fp_hndl,rpart(ja,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             csound)
+#endif
 
       do i=1,nfpts1
          j = infpts_map(i) 
@@ -5485,8 +5383,6 @@ c----------------------------------------------------------------------
       np_walls = 0
       nc_walls = 0
 
-      nbin_save = 0
-
       ifrectp = 0
 
 c     zlpart = 0.0
@@ -5930,41 +5826,6 @@ c     integer gfirst, inoassignd, resetFindpts, pload
       enddo
       call fgslib_crystal_tuple_transfer(i_cr_hndl,n,llpart
      $           , ipart,ni,partl,nl,rpart,nr,jps)
-
-
-c     if (nbin_now .ne. nbin_save) call partition_bins
-
-c     if (nbin_now .lt. np) then
-c        np_high = np
-c        np_low  = np - nbin_now +1
-c        np_low  = max(np_low,nbin_now)
-
-c        if (n .gt. 0) then
-c        do i=np_high,np_low,-1
-c           if (lpm_binsort(1,i) .eq. nid) then
-c              ii = np_high + 1 - i
-
-c              write(6,*) 'yoo',ii
-
-c              nhalf = n/2 + 1
-c              nhalf = max(nhalf,0)
-
-c              do ip =1,nhalf
-c                 ipart(jpt,ip) = lpm_binsort(1,ii)
-c              enddo
-c           endif
-c        enddo
-c        endif
-
-c        jps = jpid1-1     ! Pointer to temporary proc id for swapping
-c        do i=1,n        ! Can't use jpt because it messes up particle info
-c           ipart(jps,i) = ipart(jpt,i)
-c        enddo
-
-c        call fgslib_crystal_tuple_transfer(i_cr_hndl,n,llpart
-c    $           , ipart,ni,partl,nl,rpart,nr,jps)
-
-c     endif
 
 
       return
@@ -6417,18 +6278,6 @@ c     Solve for velocity at time t^n
       return
       end
 c-----------------------------------------------------------------------
-      FUNCTION MixtPerf_C_GRT_part(G,R,T,icmt)
-      REAL G,R,T! INTENT(IN) 
-      REAL MixtPerf_C_GRT_part
-      integer icmt
-      if (icmt .eq. 0) then
-         MixtPerf_C_GRT_part = 1.
-      else
-         MixtPerf_C_GRT_part = SQRT(G*R*T)
-      endif
-
-      END
-c-----------------------------------------------------------------------
 c     Force models below
 c-----------------------------------------------------------------------
       subroutine lpm_f_qs
@@ -6460,7 +6309,10 @@ c
      >               0.42*(1.+42500./lpmre_p**(1.16))**(-1)
          rcd_mcr = 1.+0.15*lpmre_p**(0.684) + 
      >               0.513*(1. + 483./lpmre_p**(0.669))**(-1)
-         rcd1 = rcd_std + (rcd_mcr - rcd_std)*lpmmach_p/rmacr
+
+         rmach_rat = lpmmach_p/rmacr
+         rmach_rat = min(1.0,rmach_rat)
+         rcd1 = rcd_std + (rcd_mcr - rcd_std)*rmach_rat
          
          rdum = rdum*rcd1
 
