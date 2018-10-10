@@ -64,13 +64,6 @@ c        call compute_neighbor_el_proc
          call create_extra_particles
          call send_ghost_particles
          call spread_props_grid           
-
-         if (two_way.gt. 2) then ! setup collision stuff
-            rdt_part = abs(param(12))
-            call lpm_set_dt(rdt_part)
-            param(12) = rdt_part
-         endif
-
       endif
       call init_interpolation
       call interp_props_part_location 
@@ -1197,9 +1190,6 @@ c
       include 'CMTDATA'
 #endif
 
-      real MixtPerf_C_GRT_part
-      external MixtPerf_C_GRT_part
-
       if (ipre .eq. 0) then
       lpmx_p(1)    = rpart(jx,i)
       lpmx_p(2)    = rpart(jy,i)
@@ -1231,14 +1221,15 @@ c
      >                    (lpmv_p(3) - lpmv_f(3))**2)
       if (abs(lpmvdiff_pf) .lt. 1E-6) lpmvdiff_pf=1E-6
 
-      lpmmach_p    = MixtPerf_C_GRT_part(gmaref,rgasref,
-     >                                   rpart(jtempf,i),icmtp)
+      lpmmach_p    = rpart(ja,i)
       if (icmtp .eq. 0) then
          lpmmach_p  = 0.0
       elseif (icmtp .eq. 1) then
          lpmmach_p = lpmvdiff_pf/lpmmach_p
+         if(lpmmach_p .lt. 1E-12) lpmmach_p = 1E-12
       endif
       lpmre_p      = rpart(jrho,i)*rpart(jdp,i)*lpmvdiff_pf/mu_0 ! Re
+      if(lpmre_p .lt. 1E-12) lpmre_p = 1E-12
       lpmi         = i
       elseif (ipre .eq. 1) then
 
@@ -1269,9 +1260,6 @@ c
      >                    (rpart(ju0+2,i)-rpart(jv0+2,i))**2)
       if (abs(lpmvdiff_pf) .lt. 1E-6) lpmvdiff_pf=1E-6
 
-      lpmmach_p    = MixtPerf_C_GRT_part(gmaref,rgasref,
-     >                                   rpart(jtempf,i),icmtp)
-      lpmmach_p    = lpmvdiff_pf/lpmmach_p
       lpmre_p      = rpart(jrho,i)*rpart(jdp,i)*lpmvdiff_pf/mu_0 ! Re
 
       endif
@@ -3735,6 +3723,9 @@ c-----------------------------------------------------------------------
       include 'SOLN'
       include 'LPM'
       include 'GEOM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       common /myparth/ i_fp_hndl, i_cr_hndl
 
@@ -3809,6 +3800,14 @@ c-----------------------------------------------------------------------
      &                             ipart(je0,1)     ,ni,
      &                             rpart(jr,1)      ,nr,n,
      &                             ptw(1,1,1,1,4))
+#ifdef CMTNEK
+      call fgslib_findpts_eval(i_fp_hndl,rpart(ja,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             csound)
+#endif
 
 
 c        call dzlib_interp
@@ -3941,6 +3940,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'LPM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       real xerange(2,3,lbmax)
       common /lpm_elementrange/ xerange
@@ -3966,6 +3968,9 @@ c-----------------------------------------------------------------------
          call copy(ptwb(1,1,1,7,ie),rhs_fluidp(1,1,1,iee,2),nxyz)
          call copy(ptwb(1,1,1,8,ie),rhs_fluidp(1,1,1,iee,3),nxyz)
          call copy(ptwb(1,1,1,9,ie),ptw(1,1,1,iee,4)       ,nxyz)
+#ifdef CMTNEK
+         call copy(ptwb(1,1,1,10,ie),csound(1,1,1,iee)     ,nxyz)
+#endif
       enddo
 
       neltbc = neltbb
@@ -4004,19 +4009,13 @@ c-----------------------------------------------------------------------
             call baryinterp(ptwb(1,1,1,7,ie),rpart(jDuDt+1,i),nxyz)
             call baryinterp(ptwb(1,1,1,8,ie),rpart(jDuDt+2,i),nxyz)
             call baryinterp(ptwb(1,1,1,9,ie),rpart(jvol1,i)  ,nxyz)
+            call baryinterp(ptwb(1,1,1,10,ie),rpart(ja,i)    ,nxyz)
 
             endif
             endif
 
          enddo
       enddo
-
-
-
-      
-
-
-
 
       return
       end
@@ -4143,6 +4142,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'LPM'
+#ifdef CMTNEK
+      include 'CMTDATA'
+#endif
 
       real xerange(2,3,lbmax)
       common /lpm_elementrange/ xerange
@@ -4231,6 +4233,14 @@ c-----------------------------------------------------------------------
      &                             ipart_nf(je0,1)     ,ni,
      &                             rpart_nf(jr,1)      ,nr,nfpts1,
      &                             ptw(1,1,1,1,4))
+#ifdef CMTNEK
+      call fgslib_findpts_eval(i_fp_hndl,rpart(ja,1)  ,nr,
+     &                             ipart(jrc,1)  ,ni,
+     &                             ipart(jpt,1)  ,ni,
+     &                             ipart(je0,1)   ,ni,
+     &                             rpart(jr,1)    ,nr,n,
+     &                             csound)
+#endif
 
       do i=1,nfpts1
          j = infpts_map(i) 
@@ -6268,18 +6278,6 @@ c     Solve for velocity at time t^n
       return
       end
 c-----------------------------------------------------------------------
-      FUNCTION MixtPerf_C_GRT_part(G,R,T,icmt)
-      REAL G,R,T! INTENT(IN) 
-      REAL MixtPerf_C_GRT_part
-      integer icmt
-      if (icmt .eq. 0) then
-         MixtPerf_C_GRT_part = 1.
-      else
-         MixtPerf_C_GRT_part = SQRT(G*R*T)
-      endif
-
-      END
-c-----------------------------------------------------------------------
 c     Force models below
 c-----------------------------------------------------------------------
       subroutine lpm_f_qs
@@ -6311,7 +6309,10 @@ c
      >               0.42*(1.+42500./lpmre_p**(1.16))**(-1)
          rcd_mcr = 1.+0.15*lpmre_p**(0.684) + 
      >               0.513*(1. + 483./lpmre_p**(0.669))**(-1)
-         rcd1 = rcd_std + (rcd_mcr - rcd_std)*lpmmach_p/rmacr
+
+         rmach_rat = lpmmach_p/rmacr
+         rmach_rat = min(1.0,rmach_rat)
+         rcd1 = rcd_std + (rcd_mcr - rcd_std)*rmach_rat
          
          rdum = rdum*rcd1
 
