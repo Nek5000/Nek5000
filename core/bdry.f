@@ -1,4 +1,4 @@
-c-----------------------------------------------------------------------
+-----------------------------------------------------------------------
       SUBROUTINE SETLOG
 C                                                                     
 C     Subroutine to initialize logical flags
@@ -58,7 +58,7 @@ C
             IF  (CB.EQ.'VL ' .OR. CB.EQ.'vl ' .OR.
      $           CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR.
      $           CB.EQ.'SL ' .OR. CB.EQ.'sl ' .OR.
-     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml' .OR.
+     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR. CB.EQ.'tml' .OR.
      $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR.
      $           CB.EQ.'O  ' .OR. CB.EQ.'o  ' .OR.
@@ -311,7 +311,7 @@ C     Laplacian formulation only
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
       IF ( .NOT.IFALGN .AND.
-     $    (CB.EQ.'ON '.OR.CB.EQ.'on '.OR.CB.EQ.'SYM'.OR.CB.EQ.'sml') ) 
+     $    (CB.EQ.'ON '.OR.CB.EQ.'on '.OR.CB.EQ.'SYM'.OR.CB.EQ.'tml') ) 
      $                                                       GOTO 9010
 
       RETURN
@@ -432,7 +432,7 @@ C
 C
 C        Mixed-Dirichlet-Neumann boundary conditions
 C
-           IF (CB.EQ.'SYM'.OR.CB.EQ.'sml') THEN
+           IF (CB.EQ.'SYM'.OR.CB.EQ.'tml') THEN
              IF ( .NOT.IFALGN .OR. IFNORX )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( IFNORY )
@@ -675,7 +675,7 @@ c     write(6,*) 'BCDIRV: ifield',ifield
      $                        TMP3(1,1,1,IE),IE,IFACE)
             ENDIF
 
-            IF (CB.EQ.'sml') then !10/17/2018 DRS
+            IF (CB.EQ.'tml') then !10/17/2018 DRS
                 call faceiv ('vl ',tmp1(1,1,1,ie),tmp2(1,1,1,ie),
      $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
                 IF ( IFQINP(IFACE,IE) )
@@ -1106,7 +1106,7 @@ C
   200    CONTINUE
          RETURN
 C
-      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml') THEN
+      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl' .OR. CB.EQ.'tml') THEN
 C
          DO 220 IZ=KZ1,KZ2
          DO 220 IY=KY1,KY2
@@ -1266,7 +1266,7 @@ C
              GOTO 120
          ENDIF
          IF (CB.EQ.'s  ' .OR. CB.EQ.'sl ' .OR.
-     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml') THEN
+     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' .OR. CB.EQ.'tml') THEN
              CALL FACEIV (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
              CALL FACCVS (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
              IF (IFQINP(IFC,IEL)) CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
