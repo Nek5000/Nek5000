@@ -1,4 +1,4 @@
------------------------------------------------------------------------
+C-----------------------------------------------------------------------
       SUBROUTINE SETLOG
 C                                                                     
 C     Subroutine to initialize logical flags
@@ -675,7 +675,7 @@ c     write(6,*) 'BCDIRV: ifield',ifield
      $                        TMP3(1,1,1,IE),IE,IFACE)
             ENDIF
 
-            IF (CB.EQ.'tml') then !10/17/2018 DRS
+            IF (CB.EQ.'tml') then !10/17/2018 AT, DRS
                 call faceiv ('vl ',tmp1(1,1,1,ie),tmp2(1,1,1,ie),
      $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
                 IF ( IFQINP(IFACE,IE) )
@@ -1084,9 +1084,6 @@ C
          DO 120 IX=KX1,KX2
             if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
-c            write(*,'(A,3I5,5G14.7)') 'from vl bcs '
-c     $                               , ix, iy, ieg, un, u1, u2
-c     $                                                , ux, uy
             V1(IX,IY,IZ) = UN
             V2(IX,IY,IZ) = U1
             V3(IX,IY,IZ) = U2
