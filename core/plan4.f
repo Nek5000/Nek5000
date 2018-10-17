@@ -569,7 +569,6 @@ c
       ntot = lx1*ly1*lz1*nelv
 
       call rzero(qtl,ntot)
-c      call userqtl_level()
       call userqtl()
 
       return

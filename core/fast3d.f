@@ -841,6 +841,7 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,e,ifield).eq.'V  ') ibc = 2
          if (cbc(ied,e,ifield).eq.'W  ') ibc = 2
          if (cbc(ied,e,ifield).eq.'SYM') ibc = bsym
+         if (cbc(ied,e,ifield).eq.'sml') ibc = bsym
          if (cbc(ied,e,ifield).eq.'SL ') ibc = 2
          if (cbc(ied,e,ifield).eq.'sl ') ibc = 2
          if (cbc(ied,e,ifield).eq.'SHL') ibc = 2

@@ -58,7 +58,7 @@ C
             IF  (CB.EQ.'VL ' .OR. CB.EQ.'vl ' .OR.
      $           CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR.
      $           CB.EQ.'SL ' .OR. CB.EQ.'sl ' .OR.
-     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM' .OR.
+     $           CB.EQ.'SHL' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml' .OR.
      $           CB.EQ.'MM ' .OR. CB.EQ.'mm ' .OR.
      $           CB.EQ.'MS ' .OR. CB.EQ.'ms ' .OR.
      $           CB.EQ.'O  ' .OR. CB.EQ.'o  ' .OR.
@@ -311,7 +311,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
       IF ( .NOT.IFALGN .AND.
-     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+     $    (CB.EQ.'ON '.OR.CB.EQ.'on '.OR.CB.EQ.'SYM'.OR.CB.EQ.'sml') ) 
+     $                                                       GOTO 9010
 
       RETURN
 
@@ -406,18 +407,6 @@ c        write(6,*) 'MASK ifstrs',ifstrs,ifield
 c        call exitt
          IF (IFSTRS) THEN
            CALL STSMASK (V1MASK,V2MASK,V3MASK)
-           do iel=1,nelv
-           iz=1
-           do iy=1,ny1
-           do ix=1,nx1
-c             write(75,'(A,3I4,10(1X,G14.7))') 'mask ', ix, iy, iel
-c     $                 , xm1   (ix,iy,iz,iel), ym1   (ix,iy,iz,iel)
-c     $                 , v1mask(ix,iy,iz,iel), v2mask(ix,iy,iz,iel)
-           enddo
-           enddo
-           enddo
-c           call flush(75)
-
          ELSE
 C
            CALL RONE(V1MASK,NTOT)
@@ -443,7 +432,7 @@ C
 C
 C        Mixed-Dirichlet-Neumann boundary conditions
 C
-           IF (CB.EQ.'SYM') THEN
+           IF (CB.EQ.'SYM'.OR.CB.EQ.'sml') THEN
              IF ( .NOT.IFALGN .OR. IFNORX )
      $            CALL FACEV (V1MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              IF ( IFNORY )
@@ -686,7 +675,7 @@ c     write(6,*) 'BCDIRV: ifield',ifield
      $                        TMP3(1,1,1,IE),IE,IFACE)
             ENDIF
 
-            IF (CB.EQ.'SYM') then !XXXXXXXXXXXXX 6/15/2018 AT 
+            IF (CB.EQ.'sml') then !10/17/2018 DRS
                 call faceiv ('vl ',tmp1(1,1,1,ie),tmp2(1,1,1,ie),
      $                       tmp3(1,1,1,ie),ie,iface,lx1,ly1,lz1)
                 IF ( IFQINP(IFACE,IE) )
@@ -1117,7 +1106,7 @@ C
   200    CONTINUE
          RETURN
 C
-      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM') THEN
+      ELSEIF (CB.EQ.'sl ' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml') THEN
 C
          DO 220 IZ=KZ1,KZ2
          DO 220 IY=KY1,KY2
@@ -1277,7 +1266,7 @@ C
              GOTO 120
          ENDIF
          IF (CB.EQ.'s  ' .OR. CB.EQ.'sl ' .OR.
-     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' .OR. CB.EQ.'SYM') THEN
+     $       CB.EQ.'sh ' .OR. CB.EQ.'shl' .OR. CB.EQ.'sml') THEN
              CALL FACEIV (CB,TRX,TRY,TRZ,IEL,IFC,lx1,ly1,lz1)
              CALL FACCVS (TRX,TRY,TRZ,AREA(1,1,IFC,IEL),IFC)
              IF (IFQINP(IFC,IEL)) CALL GLOBROT (TRX,TRY,TRZ,IEL,IFC)
