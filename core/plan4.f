@@ -233,7 +233,7 @@ C     surface terms
                IF (ldim.EQ.3)
      $          CALL FACCL3
      $         (W3(1,IEL),VZ(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
-            ELSE IF (CB(1:3).EQ.'SYM') THEN
+            ELSE IF (CB(1:3).EQ.'SYM'.or.CB(1:3).EQ.'tml') THEN
                CALL FACCL3
      $         (W1(1,IEL),TA1(1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3

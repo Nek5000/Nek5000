@@ -738,7 +738,7 @@ C
          IF (CB.EQ.'SYM' .OR. CB.EQ.'A  ' .OR. CB.EQ.'WS ' .OR.
      $       CB.EQ.'ws ' .OR. CB.EQ.'WSL' .OR. CB.EQ.'wsl' .OR. 
      $       CB.EQ.'SH ' .OR. CB.EQ.'sh ' .OR. CB.EQ.'SHL' .OR. 
-     $       CB.EQ.'shl')                                  THEN
+     $       CB.EQ.'shl' .OR. CB.EQ.'tml' )                THEN
              CALL FACEV (HVMASK,IEL,IFC,2.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),2.0,NXZ1)
          ENDIF
@@ -768,7 +768,7 @@ C
       DO 210 IEL=1,NEL
       DO 210 IFC=1,NFACE
          CB=CBC(IFC,IEL,IFLD)
-         IF (CB.EQ.'SYM') THEN
+         IF (CB.EQ.'SYM'.OR.CB.EQ.'tml') THEN
              CALL FACEV (HVMASK,IEL,IFC,2.0,lx1,ly1,lz1)
              CALL CFILL (HFMASK(1,1,IFC,IEL),2.0,NXZ1)
          ENDIF
