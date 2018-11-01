@@ -95,6 +95,11 @@ c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
       enddo
       enddo
 
+c      zero out valint
+       do i=1,nfld_neknek
+         call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
+       enddo
+
       return
       end
 c------------------------------------------------------------------------
@@ -415,11 +420,6 @@ c     Make sure rcode_all is fine
       if (nid.eq.0) write(6,*) 
      $      idsess,ipg,nbpg,'int pts bcs found findpt'
       npoints_nn = ip
-
-c     zero out valint
-      do i=1,nfld_neknek
-       call rzero(valint(1,1,1,1,i),lx1*ly1*lz1*nelt)
-      enddo
 
       ierror = iglmax_ms(ierror,1)
       if (ierror.eq.1) call exitt
