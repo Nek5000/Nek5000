@@ -1,6 +1,6 @@
       program exo2nek
 
-#     include "SIZE"
+      use SIZE
 
       call read_input_name
       call exodus_read
@@ -11,24 +11,27 @@
 c-----------------------------------------------------------------------
       subroutine read_input_name
 
-#     include "SIZE"
+      use SIZE
 
-      character*1 re2nam1(80)
-      character*1 exonam1(32)
-
-      equivalence(re2name,re2nam1)
-      equivalence(exoname,exonam1) 
-
-      call blank (exoname, 32)
-      call blank (re2name, 80)
+      character(1)  re2nam1(80)
+      character(1)  exonam1(32)
+      character(32) fname
 
       write(6,*) 'Input (.exo) file name:'
-      read (5,'(a32)') exoname
-      len = ltrunc(exoname,32)
+      read (5,'(A32)') fname
+      len = ltrunc(fname,32)
+      
+      call blank  (exonam1, 32)
+      call blank  (re2nam1, 80)
+      call chcopy (exonam1,fname,32)
+      call chcopy (re2nam1,fname,80)
+      call chcopy (exonam1(len+1) ,'.exo',4)
+      call chcopy (re2nam1(len+1) ,'.re2',4)
 
-      call chcopy(re2name        ,exoname,32)
-      call chcopy(exonam1(len+1) ,'.exo' , 4)
-      call chcopy(re2nam1(len+1) ,'.re2' , 4)
+      call blank  (exoname, 32)
+      call blank  (re2name, 80)
+      call chcopy (exoname,exonam1,len+4)
+      call chcopy (re2name,re2nam1,len+4)
 
       return 
       end
@@ -39,18 +42,18 @@ c  Subroutine to read an exodusII binary file containing a mesh.
 c  It uses exodus fortran binding subroutines, which depend on
 c  the netcdf library for low level data access.
 c
+      use SIZE
       include 'exodusII.inc'
-#     include "SIZE"
 
       integer exoid, cpu_ws, io_ws
 
-      character*(MXSTLN) typ, qa_record(4,10)
-      character*(MXLNLN) titl
-      character*1        cdum
+      character(MXSTLN) typ, qa_record(4,10)
+      character(MXLNLN) titl
+      character(1)      cdum
 
-      integer idblk              (max_num_elem_blk)
-      integer num_attr           (max_num_elem_blk)  ! not used
-      integer num_nodes_per_elem (max_num_elem_blk)
+      integer,allocatable,dimension(:) :: idblk
+      integer,allocatable,dimension(:) :: num_nodes_per_elem
+      integer,allocatable,dimension(:) :: num_attr    !not used
 c
 c open EXODUS II file
 c
@@ -85,20 +88,23 @@ c
      &               num_elem_blk, num_side_sets
       write (6,*)
 c
-c perform some checks
+c allocate some arrays    
 c
-      if (num_elem.gt.max_num_elem) then
-        write(6,*) 'Abort: number of elements too large',num_elem
-        write(6,*) 'change MAXNEL and recompile'
-        STOP
-      endif
-      if (num_side_sets.gt.max_num_sidesets) then
-        write(6,'(a)')
-     &    "ERROR: number of sidesets > max_num_sidesets. "
-        write(6,'(a,i2,a)') "Set max_num_sidesets >= ",num_side_sets,
-     &                      " and recompile exo2nek. "
-        STOP
-      endif
+      ! EXODUS:
+      allocate (idblk              (num_elem_blk)                     )
+      allocate (num_nodes_per_elem (num_elem_blk)                     )
+      allocate (num_attr           (num_elem_blk)                     )
+      allocate (num_elem_in_block  (num_elem_blk)                     )
+      allocate (num_sides_in_set   (num_side_sets)                    )
+      allocate (idss               (num_side_sets)                    )
+      allocate (connect            (3**num_dim*num_elem)              )
+      allocate (x_exo              (3**num_dim*num_elem)              )
+      allocate (y_exo              (3**num_dim*num_elem)              )
+      allocate (z_exo              (3**num_dim*num_elem)              )
+      ! Nek5000:
+      allocate (xm1                (3,3,3,num_elem)                   )
+      allocate (ym1                (3,3,3,num_elem)                   )
+      allocate (zm1                (3,3,3,num_elem)                   )
 c
 c read element block parameters
 c
@@ -117,11 +123,12 @@ c
           STOP
         endif
         write (6, '("element block id   = ", i8,/
-     &              "element type       = ", a8,/
+     &              "element type       = ", 3x,a8,/
      &              "num_elem_in_block  = ", i8,/
      &              "num_nodes_per_elem = ", i8)')
      &              idblk(i), typ, num_elem_in_block(i),
      &              num_nodes_per_elem(i)
+        write(6,*)
 
         if (i.eq.1) then
           nvert=num_nodes_per_elem(i)
@@ -188,7 +195,7 @@ c
       do 60 i = 1, num_elem_blk
         istart = iend + 1
         call exgelc (exoid, idblk(i), connect(istart), ierr)
-        iend = num_nodes_per_elem(i)*num_elem_in_block(i)
+        iend = iend+num_nodes_per_elem(i)*num_elem_in_block(i)
         if (ierr.lt.0) then
           write(6,'(a)') "ERROR: cannot read elm. connectivity (exgelc)"
           STOP
@@ -197,13 +204,14 @@ c
 c
 c read individual side sets
 c
+      num_sides_tot = 0
       if (num_side_sets .gt. 0) then
         call exgssi (exoid, idss, ierr)
         if (ierr.lt.0) then
           write(6,'(a)') "ERROR: cannot read SideSet ids (exgssi)"
           STOP
         endif
-
+        maxnss=0
         do i = 1, num_side_sets
           call exgsp (exoid,idss(i),num_sides_in_set(i),idum,ierr)
           if (ierr.lt.0) then
@@ -213,6 +221,15 @@ c
           endif
           write (6, '("side set ", i2, " num_sides = ", i8)')
      &           idss(i), num_sides_in_set(i)
+          num_sides_tot = num_sides_tot + num_sides_in_set(i)
+          maxnss        = max(maxnss,num_sides_in_set(i))
+        enddo
+
+        ! allocate sideset arrays
+        allocate (elem_list(maxnss,num_side_sets) )
+        allocate (side_list(maxnss,num_side_sets) )
+
+        do i = 1, num_side_sets
           call exgss (exoid,idss(i),elem_list(1,i),side_list(1,i),ierr)
           if (ierr.lt.0) then
             write(6,'(a,i3,a)')
@@ -263,8 +280,8 @@ c  mesh. The idea is to fill each element's node coordinates of
 c  size lx1**3 (3D) or lx1**2 (2D) (lx1=3) with the hex27/quad9
 c  coordinates.
 c
+      use SIZE
       include 'exodusII.inc'
-#     include "SIZE"
 
 c node and face conversion (it works at least for cubit):
       integer exo_to_nek_vert3D(27)
@@ -284,8 +301,8 @@ c node and face conversion (it works at least for cubit):
 
       write(6,'(A)') ' '
       write(6,'(A)') 'Converting elements ... '
-      do iel = 1, num_elem
-        do ivert = 1, nvert
+      do iel=1,num_elem
+        do ivert =1,nvert
           if (num_dim.eq.2) then
             jvert = exo_to_nek_vert2D(ivert)
             xm1(jvert,1,1,iel)=x_exo(connect(nvert*(iel-1)+ivert))
@@ -298,42 +315,47 @@ c node and face conversion (it works at least for cubit):
           endif
         enddo
       enddo
+      deallocate(x_exo,y_exo,z_exo,connect)
       write(6,'(A)') 'done :: Converting elements '
 c
-c zero-out bc and curve sides arrays
-      call blank   (cbc,3*2*ldim*max_num_elem)
-      call rzero   (bc,5*2*ldim*max_num_elem)
-      call blank   (ccurve,(4+8*(ldim-2))*max_num_elem)
-      call rzero   (curve,2*ldim*12*max_num_elem)
+c allocate and zero-out curve sides arrays
+c
+      allocate   (ccurve (4+8*(num_dim-2),num_elem) )
+      allocate   (curve  (2*num_dim,12,   num_elem) )
+      call rzero (curve,2*num_dim*12*num_elem)
+      call blank (ccurve,(4+8*(num_dim-2))*num_elem)
+c
+c allocate and zero-out bc arrays only if sidesets are specified
+c
+      if (num_side_sets.eq.0) return   
+
+      allocate   (cbc    (2*num_dim,      num_elem) )
+      allocate   (bc     (5,2*num_dim,    num_elem) ) 
+      call rzero (bc,5*2*num_dim*num_elem)
+      call blank (cbc,3*2*num_dim*num_elem)
 c
 c set bc's
 c
-      if (num_side_sets.eq.0) return   ! no sidesets
-
       write(6,'(a)') ''
       write(6,'(a)') 'Converting SideSets ...'
-c the expensive part, improve it...
-      do iss=1,num_side_sets   ! loop over ss 
+      do iss=1,num_side_sets
         write(6,'(a)') ''
         write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
-        do iel=1,num_elem
-          do ifc=1,2*num_dim             ! loop over faces
-            do i=1,num_sides_in_set(iss) ! loop over sides in ss
-              if    ( (iel.eq.elem_list(i,iss))
-     &        .and. (ifc.eq.side_list(i,iss)) ) then
-                if (num_dim.eq.2) then
-                  jfc = exo_to_nek_face2D(ifc)
-                else
-                  jfc = exo_to_nek_face3D(ifc)
-                endif
-                cbc(jfc,iel)   = 'EXO' ! dummy exodus bc 
-                bc (5,jfc,iel) = idss(iss)
-              endif
-            enddo
-          enddo
+        do i=1,num_sides_in_set(iss) 
+          iel = elem_list(i,iss)
+          ifc = side_list(i,iss)
+          if (num_dim.eq.2) then 
+            jfc = exo_to_nek_face2D(ifc)
+          else
+            jfc = exo_to_nek_face3D(ifc)
+          endif
+          cbc(jfc,iel)   = 'EXO' ! dummy exodus bc 
+          bc (5,jfc,iel) = idss(iss)
         enddo
-        write(6,'(A,I2)') 'done :: Sideset ',idss(iss)
+      write(6,'(A,I2)') 'done :: Sideset ',idss(iss)
       enddo
+      deallocate(elem_list,side_list)
+
       write(6,'(a)') ''
       write(6,'(a)') 'done :: Converting SideSets '
 
@@ -342,7 +364,7 @@ c the expensive part, improve it...
 C--------------------------------------------------------------------
       subroutine gen_re2
 
-#     include "SIZE"
+      use SIZE
 
       write(6,*)
       write(6,'(A,A)') 'writing ', re2name
@@ -358,9 +380,9 @@ C--------------------------------------------------------------------
 C--------------------------------------------------------------------
       subroutine open_re2
 
-#     include "SIZE"
+      use SIZE
 
-      character*80  hdr
+      character(80) hdr
 
 
       real*4 test
@@ -369,7 +391,7 @@ C--------------------------------------------------------------------
       call byte_open(re2name,ierr)
             
 c  Write the header
-      call blank     (hdr,80)    
+      call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, num_elem
     1 format('#v003',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20,ierr)         
@@ -380,7 +402,7 @@ c  Write the header
 C--------------------------------------------------------------------
       subroutine write_xyz
 
-#     include "SIZE"
+      use SIZE
 
       real     xx(8), yy(8), zz(8)
       real*8   rgroup, buf2(30)
@@ -442,12 +464,12 @@ C--------------------------------------------------------------------
 C-----------------------------------------------------------------------
       subroutine write_curve
 
-#     include "SIZE"
+      use SIZE
 
       real*8     buf2(30)
       real*8     rcurve
 
-      character*1 cc
+      character(1) cc
 
       do iel=1,num_elem
          call gen_rea_midside_e(iel)
@@ -475,7 +497,7 @@ C-----------------------------------------------------------------------
             call copy       (buf2(3),curve(1,iedge,iel),5)
             call blank      (buf2(8),8)
             call chcopy     (buf2(8),cc,1)
-            call byte_write (buf2,16, ierr)
+            call byte_write (buf2,16,ierr)
           endif
         enddo
       enddo
@@ -485,30 +507,21 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
       subroutine write_bc
       
-#     include "SIZE"
+      use SIZE
 
       real*8  rbc, buf2(30)
 
-      character*3 ch3
-      character*1 chdum
-      data        chdum /' '/
+      character(3) ch3
+      character(1) chdum
+      data         chdum /' '/
 
       if (num_side_sets.eq.0) return
 
-      nface = 2*num_dim
-      nbc   = 0
-
-      do iel=1,num_elem
-        do ifc=1,nface
-          if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
-        enddo
-      enddo
-
-      rbc = nbc
-      call byte_write (rbc,2, ierr)
+      rbc = num_sides_tot
+      call byte_write (rbc,2,ierr)
 
       do iel = 1,num_elem
-        do ifc = 1,nface
+        do ifc = 1,2*num_dim
           ch3 = cbc(ifc,iel)
           if (ch3.eq.'EXO') then
             buf2(1)=iel
@@ -520,7 +533,7 @@ C-----------------------------------------------------------------------
               ibc     = bc(1,ifc,iel)
               buf2(3) = ibc
             endif
-            call byte_write (buf2,16, ierr)
+            call byte_write (buf2,16,ierr)
           endif
         enddo
       enddo
@@ -537,12 +550,12 @@ C-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine gen_rea_midside_e(e)
 
-#     include "SIZE"
+      use SIZE
 
-      real        len
-      real        x3(27),y3(27),z3(27),xyz(3,3)
-      character*1 ccrve(12)
-      integer     e,edge
+      real         len
+      real         x3(27),y3(27),z3(27),xyz(3,3)
+      character(1) ccrve(12)
+      integer      e,edge
 
       integer e3(3,12)
       save    e3
@@ -552,9 +565,9 @@ c-----------------------------------------------------------------------
 
       call chcopy(ccrve,ccurve(1,e),12)
 
-      call map2reg     (x3,3,xm1(1,1,1,e),1)  ! Map to 3x3x3 array
-      call map2reg     (y3,3,ym1(1,1,1,e),1)
-      if (num_dim.eq.3) call map2reg    (z3,3,zm1(1,1,1,e),1)
+      call map2reg                   (x3,3,xm1(1,1,1,e),1)  ! Map to 3x3x3 array
+      call map2reg                   (y3,3,ym1(1,1,1,e),1)
+      if (num_dim.eq.3) call map2reg (z3,3,zm1(1,1,1,e),1)
 
 c     Take care of spherical curved face defn
       if (ccurve(5,e).eq.'s') then
@@ -595,7 +608,7 @@ c-----------------------------------------------------------------------
 c
 c     Map scalar field u() to regular n x n x n array ur
 
-#     include "SIZE"
+      use SIZE
 
       real    ur(1), u(3*3*3,1)
       integer e
@@ -697,8 +710,8 @@ c        n   = number of points on g grid
       end
 c-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
-      CHARACTER*1 A(1)
-      CHARACTER*1 BLNK
+      CHARACTER(1) A(1)
+      CHARACTER(1) BLNK
       SAVE        BLNK
       DATA        BLNK /' '/
 C
@@ -725,7 +738,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine chcopy(a,b,n)
-      CHARACTER*1 A(1), B(1)
+      CHARACTER(1) A(1), B(1)
 C
       DO 100 I = 1, N
  100     A(I) = B(I)
@@ -810,8 +823,8 @@ c
       end
 c-----------------------------------------------------------------------
       function ltrunc(string,l)
-      CHARACTER*1 STRING(L)
-      CHARACTER*1   BLNK
+      CHARACTER(1) STRING(L)
+      CHARACTER(1)   BLNK
       DATA BLNK/' '/
 C
       DO 100 I=L,1,-1
