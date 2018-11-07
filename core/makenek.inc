@@ -4,6 +4,15 @@ function make_3rd_party() {
   fi
   echo "build 3rd-party software ..."
 
+  CFLAGS_=$CFLAGS
+  if ! echo $CFLAGS | grep -q '\-O' ; then 
+     CFLAGS+=" -O2"
+  fi 
+  FFLAGS_=$FFLAGS
+  if ! echo $FFLAGS | grep -q '\-O' ; then 
+     FFLAGS+=" -O2"
+  fi 
+
   cd $SOURCE_ROOT/3rd_party/gslib
   ./install
   cd $CASEDIR 
@@ -19,6 +28,11 @@ function make_3rd_party() {
      ./install
   fi
   cd $CASEDIR
+
+  CFLAGS=$CFLAGS_
+  export CFLAGS
+  FFLAGS=$FFLAGS_
+  export FFLAGS
 }
 
 function clean_3rd_party() {
@@ -183,6 +197,10 @@ case $FCcomp in
   *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
                ;;
   *gfortran*)   FFLAGS+=" -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp"
+               ;;
+  *ftn*)       FFLAGS+=" -sreal64 -eZ"
+               ;;
+  *armflang*)   FFLAGS+=" -r8 -cpp -std=legacy"
                ;;
   *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
                ;;
