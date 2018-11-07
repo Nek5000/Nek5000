@@ -183,6 +183,7 @@ C
       ifreguo   = .false.   ! dump on the GLL mesh
 
       fem_amg_param(1) = 0
+      crs_param(1) = 0
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
@@ -439,10 +440,12 @@ c set parameters
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
          call capit(c_out,132)
-         if (index(c_out,'SEMG_AMG') .eq. 1) then
-            param(40) = 1
-         else if (index(c_out,'SEMG_XXT') .eq. 1) then
+         if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
+        else if (index(c_out,'SEMG_AMG_HYPRE') .eq. 1) then
+            param(40) = 2
+         else if (index(c_out,'SEMG_AMG') .eq. 1) then
+            param(40) = 1
          else if (index(c_out,'FEM_AMG_HYPRE') .eq. 1) then
             param(40) = 3
          else

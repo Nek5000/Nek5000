@@ -498,6 +498,7 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
     
       fem_amg_param(1) = 0
+      crs_param(1) = 0
 
       filterType = 0
       if (param(103).gt.0) then 

@@ -201,10 +201,10 @@ c      endif
       endif
 
       nz=ncr*ncr*nelv
-      imode = param(40) 
+      isolver = param(40)
 
-      call fgslib_crs_setup(xxth(ifield),imode,nekcomm,mp,ntot,
-     $                      se_to_gcrs,nz,ia,ja,a, null_space)
+      call fgslib_crs_setup(xxth(ifield),isolver,nekcomm,mp,ntot,
+     $     se_to_gcrs,nz,ia,ja,a, null_space, crs_param)
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then

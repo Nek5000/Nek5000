@@ -129,11 +129,15 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
                 call set_overlap
             else if (isolver.eq.1) then ! semg_amg
                 call set_overlap
-            else if (isolver.eq.3) then ! fem_amg_hypre 
+            else if (isolver.eq.2) then ! semg_amg_hypre
+                call set_overlap
+            else if (isolver.eq.3) then ! fem_amg_hypre
+                null_space = 0
+                if (ifvcor) null_space = 1 
                 call fem_amg_setup(nx1,ny1,nz1,
      $                             nelv,ndim,
      $                             xm1,ym1,zm1,
-     $                             pmask,binvm1,
+     $                             pmask,binvm1,null_space,
      $                             gsh_fld(1),fem_amg_param)
             endif
          elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
@@ -161,16 +165,15 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call setprop
 
       if (instep.ne.0) then
-         if (ifneknek) call xfer_bcs_neknek
-         if (ifneknek) call bcopy
-         if (ifneknek) call chk_outflow
+         if (ifneknekc) call neknek_exchange
+         if (ifneknekc) call chk_outflow
 
          if (nio.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-      call setprop
+      call setprop      ! call again because input has changed in userchk
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
@@ -301,7 +304,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+         if (ifneknekc .and. igeom.gt.2) call neknek_exchange
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -330,7 +333,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+            if (ifneknekc .and. igeom.gt.2) call neknek_exchange
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -392,9 +395,8 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call xfer_bcs_neknek
-         if (ifneknek) call bcopy
-         if (ifneknek) call chk_outflow
+         if (ifneknekc) call neknek_exchange
+         if (ifneknekc) call chk_outflow
       enddo
 
       return
