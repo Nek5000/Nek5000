@@ -12,7 +12,7 @@ exo2nek: $(OBJS)
 	$(FC) $(FFLAGS) -o $(prefix)/exo2nek $^ $(LIBS) $(LDFLAGS)
 
 clean:
-	@rm -f *.o 
+	@rm -f *.o *.mod 
 	@cd ./3rd_party ; rm -rf seacas-exodus netcdf
 
 lib:

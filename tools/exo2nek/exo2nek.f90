@@ -8,7 +8,7 @@
       call gen_re2
 
       end 
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine read_input_name
 
       use SIZE
@@ -35,13 +35,13 @@ c-----------------------------------------------------------------------
 
       return 
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine exodus_read
-c
-c  Subroutine to read an exodusII binary file containing a mesh.
-c  It uses exodus fortran binding subroutines, which depend on
-c  the netcdf library for low level data access.
-c
+!
+!  Subroutine to read an exodusII binary file containing a mesh.
+!  It uses exodus fortran binding subroutines, which depend on
+!  the netcdf library for low level data access.
+!
       use SIZE
       include 'exodusII.inc'
 
@@ -54,9 +54,9 @@ c
       integer,allocatable,dimension(:) :: idblk
       integer,allocatable,dimension(:) :: num_nodes_per_elem
       integer,allocatable,dimension(:) :: num_attr    !not used
-c
-c open EXODUS II file
-c
+!
+! open EXODUS II file
+!
       cpu_ws = 8 ! use real*8 to communicate with exodus
       io_ws  = 0
       exoid  = exopen (exoname, EXREAD, cpu_ws, io_ws, vers, ierr)
@@ -65,49 +65,49 @@ c
         STOP
       endif
       write(6,*)
-      write(6,'(a32,a,f4.2)') 
-     &      exoname," is an EXODUSII file; version ",vers
+      write(6,'(a32,a,f4.2)') & 
+            exoname," is an EXODUSII file; version ",vers
       write(6,'(a,i2)') "I/O word size", io_ws
-c
-c read database parameters
-c
-      call exgini (exoid, titl, num_dim, num_nodes, num_elem,
-     &             num_elem_blk, num_node_sets, num_side_sets, ierr)
+!
+! read database parameters
+!
+      call exgini (exoid, titl, num_dim, num_nodes, num_elem, &
+                   num_elem_blk, num_node_sets, num_side_sets, ierr)
       if (ierr.lt.0) then
         write(6,'(a)') "ERROR: cannot read exodusII parameters (exgini)"
         STOP
       endif
-      write (6,    '(/"database parameters:"/ /
-     &               "title         = ", a81 / /
-     &               "num_dim       = ", i8 /
-     &               "num_nodes     = ", i8 /
-     &               "num_elem      = ", i8 /
-     &               "num_elem_blk  = ", i8 /
-     &               "num_side_sets = ", i8)')
-     &               titl,num_dim, num_nodes, num_elem,
-     &               num_elem_blk, num_side_sets
+      write (6, '(/"database parameters:"/ /        &
+                 "title         = ", a81 / /        &
+                 "num_dim       = ", i8 /           &
+                 "num_nodes     = ", i8 /           &
+                 "num_elem      = ", i8 /           &
+                 "num_elem_blk  = ", i8 /           &
+                 "num_side_sets = ", i8)')          &
+                 titl,num_dim, num_nodes, num_elem, &
+                  num_elem_blk, num_side_sets
       write (6,*)
-c
-c allocate some arrays    
-c
+!
+! allocate some arrays    
+!
       ! EXODUS:
-      allocate (idblk              (num_elem_blk)                     )
-      allocate (num_nodes_per_elem (num_elem_blk)                     )
-      allocate (num_attr           (num_elem_blk)                     )
-      allocate (num_elem_in_block  (num_elem_blk)                     )
-      allocate (num_sides_in_set   (num_side_sets)                    )
-      allocate (idss               (num_side_sets)                    )
-      allocate (connect            (3**num_dim*num_elem)              )
-      allocate (x_exo              (3**num_dim*num_elem)              )
-      allocate (y_exo              (3**num_dim*num_elem)              )
-      allocate (z_exo              (3**num_dim*num_elem)              )
+      allocate ( idblk              (num_elem_blk)        )
+      allocate ( num_nodes_per_elem (num_elem_blk)        )
+      allocate ( num_attr           (num_elem_blk)        )
+      allocate ( num_elem_in_block  (num_elem_blk)        )
+      allocate ( num_sides_in_set   (num_side_sets)       )
+      allocate ( idss               (num_side_sets)       )
+      allocate ( connect            (3**num_dim*num_elem) )
+      allocate ( x_exo              (3**num_dim*num_elem) )
+      allocate ( y_exo              (3**num_dim*num_elem) )
+      allocate ( z_exo              (3**num_dim*num_elem) )
       ! Nek5000:
-      allocate (xm1                (3,3,3,num_elem)                   )
-      allocate (ym1                (3,3,3,num_elem)                   )
-      allocate (zm1                (3,3,3,num_elem)                   )
-c
-c read element block parameters
-c
+      allocate ( xm1                (3,3,3,num_elem)      )
+      allocate ( ym1                (3,3,3,num_elem)      )
+      allocate ( zm1                (3,3,3,num_elem)      )
+!
+! read element block parameters
+!
       call exgebi (exoid, idblk, ierr)
       if (ierr.lt.0) then
         write(6,'(a)') "ERROR: cannot read block ids (exgebi)"
@@ -115,19 +115,19 @@ c
       endif
 
       do i = 1, num_elem_blk
-        call exgelb (exoid, idblk(i), typ, num_elem_in_block(i),
-     &               num_nodes_per_elem(i), num_attr(i), ierr)
+        call exgelb (exoid, idblk(i), typ, num_elem_in_block(i), &
+                     num_nodes_per_elem(i), num_attr(i), ierr)
         if (ierr.lt.0) then
-          write(6,'(a,i3,a)')
-     &    "ERROR: cannot read parameters for block ",i," (exgelb)"
+          write(6,'(a,i3,a)') &
+          "ERROR: cannot read parameters for block ",i," (exgelb)"
           STOP
         endif
-        write (6, '("element block id   = ", i8,/
-     &              "element type       = ", 3x,a8,/
-     &              "num_elem_in_block  = ", i8,/
-     &              "num_nodes_per_elem = ", i8)')
-     &              idblk(i), typ, num_elem_in_block(i),
-     &              num_nodes_per_elem(i)
+        write (6, '("element block id   = ", i8,/       &
+                   "element type       = ", 3x,a8,/     &
+                   "num_elem_in_block  = ", i8,/        &
+                   "num_nodes_per_elem = ", i8)')       &
+                   idblk(i), typ, num_elem_in_block(i), &
+                   num_nodes_per_elem(i)
         write(6,*)
 
         if (i.eq.1) then
@@ -136,15 +136,15 @@ c
             if (nvert.ne.8) then
               if (nvert.eq.9) then
                 write(6,*)
-                write(6,'(a)')
-     &          "WARNING: QUAD9 elements are not officially supported"
-                write(6,'(a)')
-     &          "as there is no exodus standard for this element type."
+                write(6,'(a)') &
+                "WARNING: QUAD9 elements are not officially supported"
+                write(6,'(a)') &
+                "as there is no exodus standard for this element type."
                 write(6,*)
               else
                 write(6,*)
-                write(6,'(a)')
-     &          "ERROR: Only QUAD8 elements are allowed in a 2D mesh!"
+                write(6,'(a)') &
+                "ERROR: Only QUAD8 elements are allowed in a 2D mesh!"
                 STOP
               endif
             endif      
@@ -152,45 +152,45 @@ c
             if (nvert.ne.20) then
               if (nvert.eq.27) then
                 write(6,*)
-                write(6,'(a)')
-     &          "WARNING: HEX27 elements are not officially supported"
-                write(6,'(a)')
-     &          "as there is no exodus standard for this element type."
+                write(6,'(a)') &
+                "WARNING: HEX27 elements are not officially supported"
+                write(6,'(a)') &
+                "as there is no exodus standard for this element type."
                 write(6,*)
               else
                 write(6,*)
-                write(6,'(a)')
-     &          "ERROR: Only HEX20 elements are allowed in a 3D mesh!"
+                write(6,'(a)') &
+                "ERROR: Only HEX20 elements are allowed in a 3D mesh!"
                 STOP
               endif
             endif      
           else
-          write(6,'(a,i3)')  
-     &     "ERROR: Unknown number of dimensions! num_dim= ",num_dim
+          write(6,'(a,i3)') &
+           "ERROR: Unknown number of dimensions! num_dim= ",num_dim
           STOP
           endif
         endif
 
         if (num_nodes_per_elem(i).ne.nvert) then
           write(6,*)
-          write(6,'(a)') 
-     &     "ERROR: All blocks should contain elements of the same type!"
+          write(6,'(a)') &
+           "ERROR: All blocks should contain elements of the same type!"
           write(6,'(a,i3)') "num_nodes_per_elem= ",num_nodes_per_elem(i)
           write(6,'(a,i3)') "num_nodes_per_elem of block 1 ",nvert
           STOP
         endif
       enddo
-c
-c read nodal coordinates values from database
-c
+!
+! read nodal coordinates values from database
+!
       call exgcor (exoid, x_exo, y_exo, z_exo, ierr)
       if (ierr.lt.0) then
         write(6,'(a)') "ERROR: cannot read nodal coordinates (exgcor)"
         STOP
       endif
-c
-c read element connectivity
-c
+!
+! read element connectivity
+!
       iend = 0
       do 60 i = 1, num_elem_blk
         istart = iend + 1
@@ -201,9 +201,9 @@ c
           STOP
         endif
 60    continue
-c
-c read individual side sets
-c
+!
+! read individual side sets
+!
       num_sides_tot = 0
       if (num_side_sets .gt. 0) then
         call exgssi (exoid, idss, ierr)
@@ -215,12 +215,12 @@ c
         do i = 1, num_side_sets
           call exgsp (exoid,idss(i),num_sides_in_set(i),idum,ierr)
           if (ierr.lt.0) then
-            write(6,'(a,i3,a)')
-     &      "ERROR: cannot read parameters for SideSet No.",i," (exgsp)"
+            write(6,'(a,i3,a)') &
+            "ERROR: cannot read parameters for SideSet No.",i," (exgsp)"
             STOP
           endif
-          write (6, '("side set ", i2, " num_sides = ", i8)')
-     &           idss(i), num_sides_in_set(i)
+          write (6, '("side set ", i2, " num_sides = ", i8)') &
+                 idss(i), num_sides_in_set(i)
           num_sides_tot = num_sides_tot + num_sides_in_set(i)
           maxnss        = max(maxnss,num_sides_in_set(i))
         enddo
@@ -232,8 +232,8 @@ c
         do i = 1, num_side_sets
           call exgss (exoid,idss(i),elem_list(1,i),side_list(1,i),ierr)
           if (ierr.lt.0) then
-            write(6,'(a,i3,a)')
-     &      "ERROR: cannot read parameters for SideSet No.",i," (exgss)"
+            write(6,'(a,i3,a)') &
+            "ERROR: cannot read parameters for SideSet No.",i," (exgss)"
             STOP
           endif
         enddo
@@ -241,9 +241,9 @@ c
       else
         write(6,'(a)') "WARNING: No SideSets in exodus file!"
       endif
-c
-c read QA records
-c
+!
+! read QA records
+!
       call exinq (exoid, EXQA, num_qa_rec, fdum, cdum, ierr)
       if (ierr.lt.0) then
         write(6,'(a)') "ERROR: cannot read QA records (exinq QA) "
@@ -257,9 +257,9 @@ c
         else
           write (6, '("QA records = ")')
           if (num_qa_rec.gt.10) then
-            write(6,'(2a)')
-     &        'WARNING: Cannot handle more than 10 QA records',
-     &        'Printing only the first 10...'
+            write(6,'(2a)') &
+              'WARNING: Cannot handle more than 10 QA records', &
+              'Printing only the first 10...'
           else
             do i = 1, num_qa_rec
               do j = 1, 4
@@ -272,32 +272,32 @@ c
 
       return
       end
-C-----------------------------------------------------------------
+!-----------------------------------------------------------------
       subroutine convert
-c
-c  Subroutine to convert an already read exodusII mesh to a nek
-c  mesh. The idea is to fill each element's node coordinates of
-c  size lx1**3 (3D) or lx1**2 (2D) (lx1=3) with the hex27/quad9
-c  coordinates.
-c
+!
+!  Subroutine to convert an already read exodusII mesh to a nek
+!  mesh. The idea is to fill each element's node coordinates of
+!  size lx1**3 (3D) or lx1**2 (2D) (lx1=3) with the hex27/quad9
+!  coordinates.
+!
       use SIZE
       include 'exodusII.inc'
 
-c node and face conversion (it works at least for cubit):
-      integer exo_to_nek_vert3D(27)
-      data    exo_to_nek_vert3D
-     &      / 19,  1,  7, 25, 21,  3,  9, 27, 10                  ! hex27 to nek numbering
-     &      ,  4, 16, 22, 20,  2,  8, 26, 12,  6
-     &      , 18, 24, 14, 13, 15, 23,  5, 11, 17 /
+! node and face conversion (it works at least for cubit):
+      integer exo_to_nek_vert3D(27)                   ! hex27 to nek numbering
+      data    exo_to_nek_vert3D                     &
+            / 19,  1,  7, 25, 21,  3,  9, 27, 10    &     
+            ,  4, 16, 22, 20,  2,  8, 26, 12,  6    &
+            , 18, 24, 14, 13, 15, 23,  5, 11, 17 /
 
-      integer exo_to_nek_vert2D(9)
-      data    exo_to_nek_vert2D   / 1, 3, 9, 7, 2, 6, 8, 4, 5  /  ! quad9 to nek numbering
+      integer exo_to_nek_vert2D(9)                     ! quad9 to nek numbering
+      data    exo_to_nek_vert2D   / 1, 3, 9, 7, 2, 6, 8, 4, 5  / 
 
       integer exo_to_nek_face3D(6)
-      data    exo_to_nek_face3D  / 1, 5, 3, 6, 4, 2 /    ! symmetric face numbering
+      data    exo_to_nek_face3D  / 1, 5, 3, 6, 4, 2 /  ! symmetric face numbering
 
       integer exo_to_nek_face2D(4)
-      data    exo_to_nek_face2D  / 1, 2, 3, 4 /          ! symmetric face numbering
+      data    exo_to_nek_face2D  / 1, 2, 3, 4 /        ! symmetric face numbering
 
       write(6,'(A)') ' '
       write(6,'(A)') 'Converting elements ... '
@@ -317,25 +317,25 @@ c node and face conversion (it works at least for cubit):
       enddo
       deallocate(x_exo,y_exo,z_exo,connect)
       write(6,'(A)') 'done :: Converting elements '
-c
-c allocate and zero-out curve sides arrays
-c
+!
+! allocate and zero-out curve sides arrays
+!
       allocate   (ccurve (4+8*(num_dim-2),num_elem) )
       allocate   (curve  (2*num_dim,12,   num_elem) )
       call rzero (curve,2*num_dim*12*num_elem)
       call blank (ccurve,(4+8*(num_dim-2))*num_elem)
-c
-c allocate and zero-out bc arrays only if sidesets are specified
-c
+!
+! allocate and zero-out bc arrays only if sidesets are specified
+!
       if (num_side_sets.eq.0) return   
 
       allocate   (cbc    (2*num_dim,      num_elem) )
       allocate   (bc     (5,2*num_dim,    num_elem) ) 
       call rzero (bc,5*2*num_dim*num_elem)
       call blank (cbc,3*2*num_dim*num_elem)
-c
-c set bc's
-c
+!
+! set bc's
+!
       write(6,'(a)') ''
       write(6,'(a)') 'Converting SideSets ...'
       do iss=1,num_side_sets
@@ -361,7 +361,7 @@ c
 
       return
       end
-C--------------------------------------------------------------------
+!--------------------------------------------------------------------
       subroutine gen_re2
 
       use SIZE
@@ -377,7 +377,7 @@ C--------------------------------------------------------------------
 
       return
       end
-C--------------------------------------------------------------------
+!--------------------------------------------------------------------
       subroutine open_re2
 
       use SIZE
@@ -390,7 +390,7 @@ C--------------------------------------------------------------------
 
       call byte_open(re2name,ierr)
             
-c  Write the header
+!  Write the header
       call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, num_elem
     1 format('#v003',i9,i3,i9,' this is the hdr')
@@ -399,7 +399,7 @@ c  Write the header
 
       return
       end
-C--------------------------------------------------------------------
+!--------------------------------------------------------------------
       subroutine write_xyz
 
       use SIZE
@@ -461,7 +461,7 @@ C--------------------------------------------------------------------
 
       return
       end
-C-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine write_curve
 
       use SIZE
@@ -504,7 +504,7 @@ C-----------------------------------------------------------------------
 
       return
       end
-C-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine write_bc
       
       use SIZE
@@ -529,7 +529,7 @@ C-----------------------------------------------------------------------
             call copy   (buf2(3),bc(1,ifc,iel),5)
             call blank  (buf2(8),8)
             call chcopy (buf2(8),ch3,3)
-            if (num_elem.ge.1 000 000) then
+            if (num_elem.ge.1000000) then
               ibc     = bc(1,ifc,iel)
               buf2(3) = ibc
             endif
@@ -540,14 +540,14 @@ C-----------------------------------------------------------------------
 
       return
       end 
-C-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine close_re2
 
       call byte_close (ierr)
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine gen_rea_midside_e(e)
 
       use SIZE
@@ -559,9 +559,9 @@ c-----------------------------------------------------------------------
 
       integer e3(3,12)
       save    e3
-      data    e3 /  1, 2, 3,    3, 6, 9,    9, 8, 7,    7, 4, 1
-     $           , 19,20,21,   21,24,27,   27,26,25,   25,22,19
-     $           ,  1,10,19,    3,12,21,    9,18,27,    7,16,25 /
+      data    e3 /  1, 2, 3,    3, 6, 9,    9, 8, 7,    7, 4, 1, &
+                   19,20,21,   21,24,27,   27,26,25,   25,22,19, &
+                    1,10,19,    3,12,21,    9,18,27,    7,16,25  /
 
       call chcopy(ccrve,ccurve(1,e),12)
 
@@ -569,7 +569,7 @@ c-----------------------------------------------------------------------
       call map2reg                   (y3,3,ym1(1,1,1,e),1)
       if (num_dim.eq.3) call map2reg (z3,3,zm1(1,1,1,e),1)
 
-c     Take care of spherical curved face defn
+!     Take care of spherical curved face defn
       if (ccurve(5,e).eq.'s') then
          call chcopy (ccrve(1),'ssss',4) ! face 5
          call chcopy (ccrve(5),' ',1)    ! face 5
@@ -603,10 +603,10 @@ c     Take care of spherical curved face defn
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine map2reg(ur,n,u,nel)
-c
-c     Map scalar field u() to regular n x n x n array ur
+!
+!     Map scalar field u() to regular n x n x n array ur
 
       use SIZE
 
@@ -624,7 +624,7 @@ c     Map scalar field u() to regular n x n x n array ur
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine map2reg_2di_e(uf,n,uc,m) ! Fine, uniform pt
 
       real uf(n,n),uc(m,m)
@@ -650,7 +650,7 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine map2reg_3di_e(uf,n,uc,m) ! Fine, uniform pt
 
       real uf(n,n,n),uc(m,m,m)
@@ -687,15 +687,15 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine gen_int_gz(j,jt,g,n,z,m)
 
-c     Generate interpolater from m z points to n g points
+!     Generate interpolater from m z points to n g points
 
-c        j   = interpolation matrix, mapping from z to g
-c        jt  = transpose of interpolation matrix
-c        m   = number of points on z grid
-c        n   = number of points on g grid
+!        j   = interpolation matrix, mapping from z to g
+!        jt  = transpose of interpolation matrix
+!        m   = number of points on z grid
+!        n   = number of points on g grid
 
       real j(n,m),jt(m,n),g(n),z(m)
 
@@ -708,25 +708,25 @@ c        n   = number of points on g grid
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
       CHARACTER(1) A(1)
       CHARACTER(1) BLNK
       SAVE        BLNK
       DATA        BLNK /' '/
-C
+ 
       DO 10 I=1,N
          A(I)=BLNK
    10 CONTINUE
       RETURN
       END
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine exitt
 
       stop
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine copy(a,b,n)
       real a(1),b(1)
 
@@ -736,57 +736,57 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine chcopy(a,b,n)
       CHARACTER(1) A(1), B(1)
-C
+ 
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
       END
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine icopy(a,b,n)
       INTEGER A(1), B(1)
-C
+ 
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
       END
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine fd_weights_full(xx,x,n,m,c)
-c
-c     This routine evaluates the derivative based on all points
-c     in the stencils.  It is more memory efficient than "fd_weights"
-c
-c     This set of routines comes from the appendix of
-c     A Practical Guide to Pseudospectral Methods, B. Fornberg
-c     Cambridge Univ. Press, 1996.   (pff)
-c
-c     Input parameters:
-c       xx -- point at wich the approximations are to be accurate
-c       x  -- array of x-ordinates:   x(0:n)
-c       n  -- polynomial degree of interpolant (# of points := n+1)
-c       m  -- highest order of derivative to be approxxmated at xi
-c
-c     Output:
-c       c  -- set of coefficients c(0:n,0:m).
-c             c(j,k) is to be applied at x(j) when
-c             the kth derivative is approxxmated by a
-c             stencil extending over x(0),x(1),...x(n).
-c
-c
+!
+!     This routine evaluates the derivative based on all points
+!     in the stencils.  It is more memory efficient than "fd_weights"
+!
+!     This set of routines comes from the appendix of
+!     A Practical Guide to Pseudospectral Methods, B. Fornberg
+!     Cambridge Univ. Press, 1996.   (pff)
+!
+!     Input parameters:
+!       xx -- point at wich the approximations are to be accurate
+!       x  -- array of x-ordinates:   x(0:n)
+!       n  -- polynomial degree of interpolant (# of points := n+1)
+!       m  -- highest order of derivative to be approxxmated at xi
+!
+!     Output:
+!       c  -- set of coefficients c(0:n,0:m).
+!             c(j,k) is to be applied at x(j) when
+!             the kth derivative is approxxmated by a
+!             stencil extending over x(0),x(1),...x(n).
+!
+!
       real x(0:n),c(0:n,0:m)
-c
+ 
       c1       = 1.
       c4       = x(0) - xx
-c
+ 
       do k=0,m
       do j=0,n
          c(j,k) = 0.
       enddo
       enddo
       c(0,0) = 1.
-c
+ 
       do i=1,n
          mn = min(i,m)
          c2 = 1.
@@ -809,10 +809,10 @@ c
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine transpose(a,lda,b,ldb)
       real a(lda,1),b(ldb,1)
-c
+ 
       do j=1,ldb
          do i=1,lda
             a(i,j) = b(j,i)
@@ -821,12 +821,12 @@ c
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       function ltrunc(string,l)
       CHARACTER(1) STRING(L)
       CHARACTER(1)   BLNK
       DATA BLNK/' '/
-C
+ 
       DO 100 I=L,1,-1
          L1=I
          IF (STRING(I).NE.BLNK) GOTO 200
@@ -836,11 +836,11 @@ C
       LTRUNC=L1
       return
       END
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine zuni(z,np)
-c
-c     Generate equaly spaced np points on the interval [-1:1]
-c
+!
+!     Generate equaly spaced np points on the interval [-1:1]
+!
       real z(1)
 
       dz = 2./(np-1)
@@ -852,7 +852,7 @@ c
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine rzero(a,n)
       real A(1)
       DO 100 I = 1, N
