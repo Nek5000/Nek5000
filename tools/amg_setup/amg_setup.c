@@ -14,7 +14,6 @@
     Code for performing the AMG setup for Nek5000 using the linear algebra
     library Hypre.
 
-    Author of this Hyper version: Nicolas Offermans
     Based on the original implementation of the AMG setup in Matlab by 
     James Lottes. A thorough description of the original setup can be found in
     his Ph. D. thesis "Towards Robust Algebraic Multigrid Methods for 
@@ -29,82 +28,47 @@ int main(int argc, char *argv[])
 
     /* Coarsening strategy */
     printf("Choose a coarsening method. Available options are:\n");
-    printf(" - 0: CLJP,\n");
-    printf(" - 3: Ruege-Stuben (default),\n");
+    //printf(" - 0: CLJP,\n");
+    printf(" - 3: Ruege-Stuben,\n");
     printf(" - 6: Falgout,\n");
-    printf(" - 8: PMIS,\n");
-    printf(" - 10: HMIS,\n");
-    printf(" - 21: CGC,\n");
-    printf(" - 22: CGC-E.\n");
+    //printf(" - 8: PMIS,\n");
+    printf(" - 10: HMIS (default),\n");
+    //printf(" - 21: CGC,\n");
+    //printf(" - 22: CGC-E.\n");
     printf("Choice: ");
     char scoars[30];
     fgets(scoars, sizeof scoars, stdin);
     ret = sscanf(scoars, "%d", &coars_strat);
     if (ret == -1)
     {
-        coars_strat = 3; // default
-    }
-    if (coars_strat == 0) printf("CLJP\n");
-    else if (coars_strat == 3) printf("Ruege-Stuben\n");
-    else if (coars_strat == 6) printf("Falgout\n");
-    else if (coars_strat == 8) printf("PMIS\n");
-    else if (coars_strat == 10) printf("HMIS\n");
-    else if (coars_strat == 21) printf("CGC\n");
-    else if (coars_strat == 22) printf("CGC-E\n");
-    else {printf("Not a valid choice.\n"); exit(0);}
-
-    /* Max number of levels */
-    int maxlvls; 
-    char smaxlvls[30];
-    printf("Maximum number of levels [30]:\n");
-    fgets(smaxlvls, sizeof smaxlvls, stdin);
-    ret = sscanf(smaxlvls, "%d", &maxlvls);
-    if (ret == -1)
-    {
-        maxlvls = 30; // default
+        coars_strat = 10; // default
     }
 
     /* Interpolation strategy */
     printf("Choose an interpolation method. Available options are:\n");
-    printf(" - 0: classical modified interpolation (default),\n");
-    printf(" - 1: LS interpolation,\n");
-    printf(" - 2: classical modified interpolation for hyperbolic PDEs,\n");
-    printf(" - 3: direct interpolation,\n");
-    printf(" - 4: multipass interpolation,\n");
-    printf(" - 5: multipass interpolation (with separation of weights),\n");
-    printf(" - 6: extended + i interpolation,\n");
-    printf(" - 7: extended + i (if no common C neighbour) interpolation,\n");
-    printf(" - 8: standard interpolation,\n");
-    printf(" - 9: standard interpolation (with separation of weights),\n");
-    printf(" - 10: classical block interpolation,\n");
-    printf(" - 11: classical block interpolation with diagonalized diagonal blocks,\n");
-    printf(" - 12: FF interpolation,\n");
-    printf(" - 13: FF1 interpolation,\n");
-    printf(" - 14: extended interpolation,\n");
+    printf(" - 0: classical modified interpolation,\n");
+    //    printf(" - 1: LS interpolation,\n");
+    //printf(" - 2: classical modified interpolation for hyperbolic PDEs,\n");
+    //printf(" - 3: direct interpolation,\n");
+    //printf(" - 4: multipass interpolation,\n");
+    //printf(" - 5: multipass interpolation (with separation of weights),\n");
+    printf(" - 6: extended + i interpolation (default),\n");
+    //printf(" - 7: extended + i (if no common C neighbour) interpolation,\n");
+    //printf(" - 8: standard interpolation,\n");
+    //printf(" - 9: standard interpolation (with separation of weights),\n");
+    //    printf(" - 10: classical block interpolation,\n");
+    //    printf(" - 11: classical block interpolation with diagonalized diagonal blocks,\n");
+    //printf(" - 12: FF interpolation,\n");
+    //printf(" - 13: FF1 interpolation,\n");
+    //printf(" - 14: extended interpolation,\n");
     printf("Choice: ");
     char sinterp[30];
     fgets(sinterp, sizeof sinterp, stdin);
     ret = sscanf(sinterp, "%d", &interp_strat);
     if (ret == -1)
     {
-        interp_strat = 0; // default
+        interp_strat = 6; // default
     }
-    if (interp_strat == 0) printf("classical modified interpolation\n");
-    else if (interp_strat == 1) printf("LS interpolation\n");
-    else if (interp_strat == 2) printf("classical modified interpolation for hyperbolic PDEs\n");
-    else if (interp_strat == 3) printf("direct interpolation\n");
-    else if (interp_strat == 4) printf("multipass interpolation\n");
-    else if (interp_strat == 5) printf("multipass interpolation (with separation of weights)\n");
-    else if (interp_strat == 6) printf("extended + i interpolation\n");
-    else if (interp_strat == 7) printf("extended + i (if no common C neighbour) interpolation\n");
-    else if (interp_strat == 8) printf("standard interpolation\n");
-    else if (interp_strat == 9) printf("standard interpolation (with separation of weights)\n");
-    else if (interp_strat == 10) printf("classical block interpolation\n");
-    else if (interp_strat == 11) printf("classical block interpolation with diagonalized diagonal blocks\n");
-    else if (interp_strat == 12) printf("FF interpolation\n");
-    else if (interp_strat == 13) printf("FF1 interpolation\n");
-    else if (interp_strat == 14) printf("extended interpolation\n");
-    else {printf("Not a valid choice.\n"); exit(0);}
 
     /* Smoother tolerance */
     double tol;
@@ -116,7 +80,12 @@ int main(int argc, char *argv[])
     {
         tol = 0.5; // default
     }
-
+    if (tol <= 0.)
+    {
+        printf("Error: Smoother tolerance should be >0.\n");
+        exit(1);
+    }
+      
     /* Verbose level */
     int print_level = 3;  // Print solve info + parameters
 
@@ -135,7 +104,7 @@ int main(int argc, char *argv[])
     memcpy(Ajd, v+1, (n-1) * sizeof (double));
     readfile(v,n,"amgdmp_p.dat");
     memcpy(Av , v+1, (n-1) * sizeof (double));
-    printf("done\n");
+    printf("Done.\n");
 
     int *Ai = malloc((n-1) * sizeof (int));
     int *Aj = malloc((n-1) * sizeof (int));
@@ -225,49 +194,54 @@ int main(int argc, char *argv[])
     HYPRE_ParVector b;
     HYPRE_ParVector x;
 
-	/* AMG setup */
+    /* AMG setup */
     HYPRE_Solver solver;
     HYPRE_BoomerAMGCreate(&solver); // Create solver
  
     /* Set parameters (See Reference Manual for more parameters) */
     HYPRE_BoomerAMGSetPrintLevel(solver, print_level);
-    //    HYPRE_BoomerAMGSetOldDefault(solver);
     HYPRE_BoomerAMGSetCoarsenType(solver, coars_strat);
     HYPRE_BoomerAMGSetInterpType(solver, interp_strat); 
-    HYPRE_BoomerAMGSetMaxLevels(solver, maxlvls);  // maximum number of levels
-    HYPRE_BoomerAMGSetMaxCoarseSize (solver, 1);
-
+    HYPRE_BoomerAMGSetMaxCoarseSize(solver, 1);
+    
     /* Perform setup */
     printf("BoomerAMGSetup... ");
     HYPRE_BoomerAMGSetup(solver, A, b, x);
-    printf("done\n");
+    printf("Done.\n");
 
     /* Access solver data */
     hypre_ParAMGData *amg_data = (hypre_ParAMGData*) solver; 
             // structure hypre_ParAMGData is described in parcsr_lspar_amg.h
-    int numlvl = (amg_data)->num_levels; // number of levels
+    int numlvls = (amg_data)->num_levels; // number of levels
     hypre_ParCSRMatrix **A_array = (amg_data)->A_array; 
     hypre_ParCSRMatrix **P_array = (amg_data)->P_array;// Interpolation operator
     int **CF_marker_array        = (amg_data)->CF_marker_array;
 
-    /* Initialize data structure */
-    data->nlevels = numlvl;
-    data->n     = malloc( maxlvls    * sizeof (double));
-    data->nnz   = malloc( maxlvls    * sizeof (double));
-    data->nnzf  = malloc((maxlvls-1) * sizeof (double));
-    data->nnzfp = malloc((maxlvls-1) * sizeof (double));
-    data->m     = malloc((maxlvls-1) * sizeof (double));
-    data->rho   = malloc((maxlvls-1) * sizeof (double));
-    data->idc   = malloc( maxlvls    * sizeof (int*));
-    data->idf   = malloc( maxlvls    * sizeof (int*));
-    data->D     = malloc((maxlvls-1) * sizeof (double*));
-    data->Af    = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
-    data->W     = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
-    data->AfP   = malloc((maxlvls-1) * sizeof (hypre_CSRMatrix *));
+    /* Check if last level is made of 1 element */
+    if (A_array[numlvls-1]->diag->num_rows != 1)
+    {
+        printf("Error: Last level has more than one element. Run again with different setup options.\n");
+	exit(1);
+    }
 
+    /* Initialize data structure */
+    data->nlevels = numlvls;
+    data->n     = malloc( numlvls    * sizeof (double));
+    data->nnz   = malloc( numlvls    * sizeof (double));
+    data->nnzf  = malloc((numlvls-1) * sizeof (double));
+    data->nnzfp = malloc((numlvls-1) * sizeof (double));
+    data->m     = malloc((numlvls-1) * sizeof (double));
+    data->rho   = malloc((numlvls-1) * sizeof (double));
+    data->idc   = malloc( numlvls    * sizeof (int*));
+    data->idf   = malloc( numlvls    * sizeof (int*));
+    data->D     = malloc((numlvls-1) * sizeof (double*));
+    data->Af    = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    data->W     = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    data->AfP   = malloc((numlvls-1) * sizeof (hypre_CSRMatrix *));
+    
     /* Exctract data and compute smoother at each level */
     int lvl;
-    for (lvl=0;lvl<numlvl;lvl++)
+    for (lvl=0;lvl<numlvls;lvl++)
     {
         /* Save matrix A */
         hypre_ParCSRMatrix *Alvl = A_array[lvl];
@@ -280,7 +254,7 @@ int main(int argc, char *argv[])
         data->nnz[lvl] = num_nnzs_A;
 
         /* If not last level */
-        if (lvl < numlvl-1)
+        if (lvl < numlvls-1)
         {
             printf("--------\nLevel %d\n--------\n", lvl+1);
             /* Extract fine and coarse variables */
@@ -383,7 +357,7 @@ int main(int argc, char *argv[])
             diag(D, diagAff);
             vv_op(D, s, nF, ewmult);
             free(s);
-            printf("Done!\n");
+            printf("Done.\n");
 
             if (nF >= 2)
             {
@@ -442,7 +416,7 @@ int main(int argc, char *argv[])
 /* -------------------------------------------------------------------------- */ 
         }
 
-        if (lvl == (numlvl - 1))
+        if (lvl == (numlvls - 1))
         {
             data->alast = diagA->data[0];
             if (data->alast <= 1e-9) data->nullspace = 1;
@@ -622,6 +596,11 @@ static void savemats(int *len, const int n, const int nl, const int *lvl,
 {
     const double magic = 3.14159;
     FILE *f = fopen(filename,"w");
+    if (f == NULL)
+    {
+        printf("\nERROR: File %s not found!\n", filename);
+        exit(1);
+    }
     int max=0;
     int i;
     int *row;
@@ -707,6 +686,11 @@ static void savevec(const int nl, const struct amg_setup_data *data,
     }
 
     FILE *f = fopen(filename,"w");
+    if (f == NULL)
+    {
+        printf("\nERROR: File %s not found!\n", filename);
+        exit(1);
+    }
     fwrite(q,sizeof(double),ntot,f);
     fclose(f);
     free(q);
@@ -1234,6 +1218,11 @@ static long filesize(const char *name)
 {
   long n;
   FILE *f = fopen(name,"r");
+  if (f == NULL)
+  {
+      printf("\nERROR: File %s not found!\n", name);
+      exit(1);
+  }
   fseek(f,0,SEEK_END);
   n = ftell(f)/sizeof(double);
   fclose(f);
@@ -1248,6 +1237,11 @@ static long readfile(double *data, long max, const char *name)
   const double magic = 3.14159;
   long n;
   FILE *f = fopen(name,"r");
+  if (f == NULL)
+  {
+      printf("\nERROR: File %s not found!\n", name);
+      exit(1);
+  }  
   
   fseek(f,0,SEEK_END);
   n = ftell(f)/sizeof(double);
