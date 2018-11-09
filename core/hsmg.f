@@ -2606,6 +2606,7 @@ c-----------------------------------------------------------------------
       include 'HSMG'
 
       real uf(nxf,nyf,nzf),uc(nxc,nyc,nzc),w(1)
+      integer e
 
       if (if3d) then
 
@@ -2657,6 +2658,7 @@ c-----------------------------------------------------------------------
       include 'HSMG'
 
       real gf(ng,nxf,nyf,nzf),gc(ng,nxc,nyc,nzc),w(1)
+      integer e
 
 
       if (if3d) then

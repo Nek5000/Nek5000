@@ -111,7 +111,7 @@ c     Assign key for splitting into multiple groups
 
       ! setup intercommunication 
       if (ifneknekc) then
-         if (nessions.gt.2) call exitti(
+         if (nsessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',
      $     nsessions)
 

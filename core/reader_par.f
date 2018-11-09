@@ -1008,9 +1008,9 @@ c
          call exitt
       endif
 
-      IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
+      IF (NPSCAL+1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
-           WRITE(6,22) LDIMT,NPSCL1
+           WRITE(6,22) LDIMT,NPSCAL+1
    22      FORMAT(/s,2X,'Error: Nek has been compiled'
      $             /,2X,'       for',I4,' scalars.  A MHD run'
      $             /,2X,'       requires that LDIMT be set to',I4,'.')
