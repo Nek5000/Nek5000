@@ -2,19 +2,19 @@
 set -e
 
 if [ "$1" == "clean" ]; then
-  rm -rf hypre-2.14.0 lib include 2>/dev/null
+  rm -rf hypre-2.15.1 lib include 2>/dev/null
   exit 0
 fi
 
 if [ -f ./lib/libHYPRE.a ]; then
   exit 0
 fi
-if [ ! -f v2.14.0.tar.gz ]; then
-  wget -O v2.14.0.tar.gz https://github.com/LLNL/hypre/archive/v2.14.0.tar.gz 
+if [ ! -f v2.15.1.tar.gz ]; then
+  wget -O v2.15.1.tar.gz https://github.com/LLNL/hypre/archive/v2.15.1.tar.gz 
 fi
 
-rm -rf hypre-2.14.0
-tar -zxf *.tar.gz
+rm -rf hypre-2.15.1
+tar -zxvf *.tar.gz
 cd hypre*/src
 ./configure --prefix=`pwd`/../.. --enable-bigint 
 make -j4 install
