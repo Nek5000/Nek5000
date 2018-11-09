@@ -19,7 +19,7 @@
 
 #ifdef HYPRE
 
-#define NPARAM 7
+#define NPARAM 10
 double hypre_param[NPARAM];
 
 static struct hypre_crs_data **handle_array = 0;
@@ -51,34 +51,43 @@ struct hypre_crs_data *ccrs_hypre_setup( uint n, const ulong *id,
   // Create AMG solver
   HYPRE_BoomerAMGCreate(&hypre_data->solver);
   HYPRE_Solver solver = hypre_data->solver;
+
+  int uparam = (int) param[0];
  
   // Set AMG parameters
-  if ((int) param[0] == 0)
-  {
+  if (uparam) {
+      int i;
+      for (i = 1; i < NPARAM; i++) {
+          hypre_param[i-1] = param[i]; 
+           if (comm->id == 0)
+              printf("Custom HYPREsettings[%d]: %.2f\n", i, hypre_param[i-1]);
+      }
+  } else {
       hypre_param[0] = 10;    /* HMIS                       */
       hypre_param[1] = 6;     /* Extended+i                 */
-      hypre_param[2] = 3;     /* SOR smoother               */
+      hypre_param[2] = 0;     /* not used                   */
       hypre_param[3] = 3;     /* SOR smoother for crs level */
       hypre_param[4] = 1;
       hypre_param[5] = 0.25;
       hypre_param[6] = 0.1;
-  } else
-  {
-      int i;
-      for(i = 1; i < NPARAM; i++) hypre_param[i-1] = param[i];
+      hypre_param[7] = 0.0;
+      hypre_param[8] = 0.01;
+      hypre_param[9] = 0.05;
   }
 
   HYPRE_BoomerAMGSetCoarsenType(solver,hypre_param[0]);
   HYPRE_BoomerAMGSetInterpType(solver,hypre_param[1]);
-  if (null_space == 1 || (int) param[0] != 0) {
-     HYPRE_BoomerAMGSetRelaxType(solver, hypre_param[2]);
+  if (null_space == 1 || uparam) {
+//     HYPRE_BoomerAMGSetRelaxType(solver, hypre_param[2]);
      HYPRE_BoomerAMGSetCycleRelaxType(solver, hypre_param[3], 3);
      HYPRE_BoomerAMGSetCycleNumSweeps(solver, hypre_param[4], 3);
   }
   HYPRE_BoomerAMGSetStrongThreshold(solver,hypre_param[5]);
   HYPRE_BoomerAMGSetNonGalerkinTol(solver,hypre_param[6]);
+  HYPRE_BoomerAMGSetLevelNonGalerkinTol(solver,hypre_param[7], 0);
+  HYPRE_BoomerAMGSetLevelNonGalerkinTol(solver,hypre_param[8], 1);
+  HYPRE_BoomerAMGSetLevelNonGalerkinTol(solver,hypre_param[9], 2);
 
-  HYPRE_BoomerAMGSetMaxRowSum(solver, 1);
   HYPRE_BoomerAMGSetMinCoarseSize(solver,2);
   HYPRE_BoomerAMGSetMaxIter(solver,1);
   HYPRE_BoomerAMGSetPrintLevel(solver,1);

@@ -66,7 +66,7 @@ HYPRE_Solver amg_preconditioner;
 struct comm comm;
 struct gs_data *gsh;
 
-#define NPARAM 7
+#define NPARAM 10
 double HYPREsettings[NPARAM]; 
 
 /* Interface definition */
@@ -142,32 +142,39 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
 
     HYPRE_BoomerAMGCreate(&amg_preconditioner);
 
-    HYPREsettings[0] = 10;    /* HMIS                       */
-    HYPREsettings[1] = 6;     /* Extended+i                 */
-    HYPREsettings[2] = 3;     /* SOR smoother               */
-    HYPREsettings[3] = 3;     /* SOR smoother for crs level */
-    HYPREsettings[4] = 1;
-    HYPREsettings[5] = 0.25;
-    HYPREsettings[6] = 0.1;
+    int uparam = (int) param[0];
 
     int i;
-    if ((int) param[0] != 0) {
+    if (uparam) {
        for (i=1; i < NPARAM; i++) { 
            HYPREsettings[i-1] = param[i];
            if (comm.id == 0) 
               printf("Custom HYPREsettings[%d]: %.2f\n", i, HYPREsettings[i-1]); 
        }
+    } else {
+      HYPREsettings[0] = 10;    /* HMIS                       */
+      HYPREsettings[1] = 6;     /* Extended+i                 */
+      HYPREsettings[2] = 0;     /* not used                   */
+      HYPREsettings[3] = 3;     /* SOR smoother for crs level */
+      HYPREsettings[4] = 1;
+      HYPREsettings[5] = 0.25;
+      HYPREsettings[6] = 0.1;
     }
 
     HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, HYPREsettings[0]); 
     HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
     if (*nullspace == 1 || (int) param[0] != 0) {
-       HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
+       //HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
        HYPRE_BoomerAMGSetCycleRelaxType(amg_preconditioner, HYPREsettings[3], 3); /* Coarse grid solver */
        HYPRE_BoomerAMGSetCycleNumSweeps(amg_preconditioner, HYPREsettings[4], 3); /* Number of sweeps at coarse level */
     }
     HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, HYPREsettings[5]);
     HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[6]);
+    if (uparam) {
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[7], 0);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[8], 1);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[9], 2);
+    }
 
     HYPRE_BoomerAMGSetMaxRowSum(amg_preconditioner, 1); /* Don't check for maximum row sum */
     HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4);
