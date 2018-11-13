@@ -103,8 +103,8 @@ c
       nxf   = 2*nxs
       nyf   = 2*nys
       nzf   = 2*nzs
-      nhash = nxs*nys*nzs 
-      nmax  = 256
+      nhash = nels*nxs*nys*nzs 
+      nmax  = 128
 
       call fgslib_findpts_setup(inth_gfldr,nekcomm,np,ldim,
      &                          xm1s,ym1s,zm1s,nxs,nys,nzs,

@@ -31,26 +31,18 @@ c
       real w(2*lx1**3)
 
       tol = max(5e-13,tolin)
-      npt_max = 256
+      npt_max = 128
       bb_t    = 0.01
 
       if (nio.eq.0) 
      $   write(6,*) 'call intp_setup ','tol=', tol
 
-      ! setup handle for interpolation
-      call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
-     &                          xm1,ym1,zm1,nx1,ny1,nz1,
-     &                          nelt,nx1,ny1,nz1,bb_t,nelt+2,nelt+2,
-     &                          npt_max,tol)
-
-      ! setup handle for findpts
-      if (nmsh.gt.1 .and. nmsh.lt.lx1-1) then
+      if (nmsh.ge.1 .and. nmsh.lt.lx1-1) then
          if (nio.eq.0) write(6,*) 'Nmsh for findpts:',nmsh
          nxi = nmsh+1
          nyi = nxi
          nzi = 1
          if (if3d) nzi = nxi
-         n   = nelt*nxi*nyi*nzi 
          do ie = 1,nelt
            call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
      $                     ,lx1,if3d,w,size(w))
@@ -60,12 +52,23 @@ c
      $     call map_m_to_n(zmi((ie-1)*nxi*nyi*nzi + 1),nzi,zm1(1,1,1,ie)
      $                     ,lz1,if3d,w,size(w))
          enddo
-  
+
+         n = nelt*nxi*nyi*nzi 
+         call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
+     &                             xm1,ym1,zm1,nx1,ny1,nz1,
+     &                             nelt,nx1,ny1,nz1,bb_t,nelt+2,nelt+2,
+     &                             npt_max,tol)
+
          call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
      $                             xmi,ymi,zmi,nxi,nyi,nzi,
      $                             nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
      $                             npt_max,tol)
       else
+         n = nelt*nx1*ny1*nz1
+         call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
+     &                             xm1,ym1,zm1,nx1,ny1,nz1,
+     &                             nelt,2*nx1,2*ny1,2*nz1,bb_t,n,n,
+     &                             npt_max,tol)
          ih_intp2 = ih_intp1
       endif
 

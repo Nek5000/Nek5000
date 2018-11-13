@@ -252,7 +252,7 @@ c     Displace MESH 1
 
 c     Setup findpts    
       tol     = 5e-13
-      npt_max = 256
+      npt_max = 128
       nxf     = 2*lx1 ! fine mesh for bb-test
       nyf     = 2*ly1
       nzf     = 2*lz1

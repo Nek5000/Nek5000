@@ -1552,7 +1552,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
         tol     = 5e-13
         n       = lx1*ly1*lz1*lelt
-        npt_max = 256
+        npt_max = 128
         nxf     = 2*lx1 ! fine mesh for bb-test
         nyf     = 2*ly1
         nzf     = 2*lz1
