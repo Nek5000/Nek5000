@@ -154,7 +154,7 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     } else {
       HYPREsettings[0] = 10;    /* HMIS                       */
       HYPREsettings[1] = 6;     /* Extended+i                 */
-      HYPREsettings[2] = 0;     /* not used                   */
+      HYPREsettings[2] = 3;     /* SOR is default smoother    */
       HYPREsettings[3] = 3;     /* SOR smoother for crs level */
       HYPREsettings[4] = 1;
       HYPREsettings[5] = 0.25;
@@ -164,7 +164,7 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, HYPREsettings[0]); 
     HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
     if (*nullspace == 1 || (int) param[0] != 0) {
-       //HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
+       HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
        HYPRE_BoomerAMGSetCycleRelaxType(amg_preconditioner, HYPREsettings[3], 3); /* Coarse grid solver */
        HYPRE_BoomerAMGSetCycleNumSweeps(amg_preconditioner, HYPREsettings[4], 3); /* Number of sweeps at coarse level */
     }
