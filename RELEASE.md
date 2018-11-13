@@ -1,40 +1,34 @@
-# Release v18.0-3
+# Release v18.0-4
 
-## Major Features and Improvements
+## What is new? 
 
-* Introduced uncoupled multisession simulations
-* Added gather scatter operations across sessions
-* Added gather scatter options across gtp-planes
-* Added par file support for postnek
-* Added mkSIZE script to automatically create SIZE file
-* Refactored object and boundary handling
-* Added RANS models (experimental) 
-* Added mesh-smoother (experimental)
-* Added elapsedTime option for writeControl (in par)
+* Uncoupled multisession simulations
+* Gather scatter operations across sessions
+* Gather scatter options across gtp-planes
+* par file support for postnek
+* mkSIZE to automatically create SIZE file
+* Object and boundary handling
+* RANS k-Omega and k-Omega-SST (experimental) 
+* Mesh-smoother (experimental)
+* ElapsedTime option for writeControl (in par)
 * Print runtime-statistics every 100 steps
-* Added support for GNU 8.x
-* Added FEM-AMG precoditioner (experimental)
-* Added support for CHT to generic fld reader
+* Support for GNU 8.x compilers
+* Support for Cray compilers
+* Support for ARM compilers
+* FEM-AMG precoditioner (experimental) p40=3
+* AMG-HYPRE precoditioner (experimental) p40=2
+* Support for CHT to generic fld reader
+* User defined core routines in usr
 
-## Backwards-Incompatible Changes 
+## What you may have to change to be compatible 
 
-* Remove PPLIST symbol `NEKNEK` (not required anymore)
-* Use valint instead of ubc in `userbc` for neknek
-* Remove multimesh_create call from `usr` file (not required anymore)
-* Change to modified interpolation routines (see interp.f)
-* Remove CB CTORQ from usr files (now part of OBJDATA included in TOTAL)
-* Use amg_setup instead of amg_hypre (only required for semg_amg preconditioner) 
-
-## Bug Fixes
-[529](https://github.com/Nek5000/Nek5000/issues/527),
-[527](https://github.com/Nek5000/Nek5000/issues/527),
-[525](https://github.com/Nek5000/Nek5000/issues/525),
-[522](https://github.com/Nek5000/Nek5000/issues/522),
-[511](https://github.com/Nek5000/Nek5000/issues/511),
-[497](https://github.com/Nek5000/Nek5000/issues/497),
-[470](https://github.com/Nek5000/Nek5000/issues/470),
-[467](https://github.com/Nek5000/Nek5000/issues/467),
-[463](https://github.com/Nek5000/Nek5000/issues/463)
+* Remove PPLIST symbol NEKNEK (not required anymore)
+* Use valint instead of ubc in userbc for neknek
+* Remove multimesh_create call from usr file (not required anymore)
+* Adjust calls to interpolation wrapper according to new interface in interp.f
+* Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
+* Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
+* Change all user parameters to p170-p200 in rea
 
 ## Known Bugs 
 
