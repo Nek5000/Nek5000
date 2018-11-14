@@ -50,7 +50,7 @@
 set -e
 
 # assign version tag
-mver=17.0.4
+mver=18.0.0
 
 # set defaults
 : ${SOURCE_ROOT:="$HOME/Nek5000"}
@@ -70,10 +70,10 @@ fi
 # create makefile
 source $SOURCE_ROOT/core/makenek.inc
 
+set -o pipefail
 # compile 3rd_party code
 make_3rd_party 2>&1 | tee -a compiler.out
-
-# compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out
+set +o pipefail
 
 exit 0
