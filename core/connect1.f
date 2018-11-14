@@ -979,8 +979,8 @@ C
 C
  2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
      $      ,' in routine VERRHE.')
- 2002 FORMAT('   Right-handed check complete for',I8,' elements. OK.')
- 2003 FORMAT('   Right-handed check failed for',I8,' elements.'
+ 2002 FORMAT('   Right-handed check complete for',I12,' elements. OK.')
+ 2003 FORMAT('   Right-handed check failed for',I12,' elements.'
      $      ,'   Exiting in routine VERRHE.')
       RETURN
       END
