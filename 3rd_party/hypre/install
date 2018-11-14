@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" == "clean" ]; then
-  rm -rf hypre-2.15.1 lib include 2>/dev/null
+  rm -rf hypre lib include 2>/dev/null
   exit 0
 fi
 
@@ -13,8 +13,19 @@ if [ ! -f v2.15.1.tar.gz ]; then
   wget -O v2.15.1.tar.gz https://github.com/LLNL/hypre/archive/v2.15.1.tar.gz 
 fi
 
-rm -rf hypre-2.15.1
-tar -zxvf *.tar.gz
-cd hypre*/src
-./configure --prefix=`pwd`/../.. --enable-bigint 
+rm -rf hypre 2>/dev/null
+mkdir hypre
+tar -zxvf *.tar.gz -C ./hypre --strip-components=1
+cd hypre
+mkdir -p build
+cd build
+
+cmake \
+-DHYPRE_BIGINT=ON \
+-DHYPRE_INSTALL_PREFIX=`pwd`/../.. \
+-DBUILD_SHARED_LIBS=OFF \
+-DMPI_C_COMPILER=`which $CC` \
+-DHYPRE_USING_FEI=OFF \
+../src
+
 make -j4 install
