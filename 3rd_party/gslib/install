@@ -13,7 +13,7 @@ if [ -f ./lib/libgs.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  wget -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
 fi
 
 rm -rf gslib 2>/dev/null
