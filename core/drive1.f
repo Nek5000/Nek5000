@@ -97,6 +97,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
+      if (ifneknek) call init_neknek_par
+
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
@@ -301,7 +303,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+c         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -311,7 +313,13 @@ c-----------------------------------------------------------------------
             call geneig  (igeom)
          endif
 
-         if (ifneknekm.and.igeom.eq.2) call multimesh_create
+         if (ifneknek.and.igeom.ge.2) then
+           if (ifneknekm.and.igeom.eq.2) call multimesh_create
+           call xfer_bcs_neknek
+           if (igeom.eq.2) call bcopy
+           call chk_outflow
+         endif
+c         if (ifneknekm.and.igeom.eq.2) call multimesh_create
          if (ifheat) call heat (igeom)
 
          if (igeom.eq.2) then  
@@ -331,17 +339,23 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+c           if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
             if (ifgeom) then
-               if (.not.ifrich) call gengeom (igeom)
-               call geneig  (igeom)
+              if (.not.ifrich) call gengeom (igeom)
+              call geneig  (igeom)
             endif
 
-            if (ifneknekm.and.igeom.eq.2) call multimesh_create
+            if (ifneknek.and.igeom.ge.2) then
+              if (ifneknekm.and.igeom.eq.2) call multimesh_create
+              call xfer_bcs_neknek
+              if (igeom.eq.2) call bcopy
+              call chk_outflow
+            endif
+c            if (ifneknekm.and.igeom.eq.2) call multimesh_create
 
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
@@ -393,9 +407,9 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call xfer_bcs_neknek
-         if (ifneknek) call bcopy
-         if (ifneknek) call chk_outflow
+c         if (ifneknek) call xfer_bcs_neknek
+c         if (ifneknek) call bcopy
+c         if (ifneknek) call chk_outflow
       enddo
 
       return

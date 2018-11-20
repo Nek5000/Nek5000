@@ -12,6 +12,19 @@ c     "Stability analysis of interface temporal discretization in grid
 c      overlapping methods," Y. Peet, P.F. Fischer, SIAM J. Numer. Anal.
 c      50 (6) (2012) 3375–3401.
 c-----------------------------------------------------------------------
+      subroutine init_neknek_par
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      ntot1 = lx1*ly1*lz1*nelt
+c     Initialize unity partition function to 1
+      call rone(upf,ntot1)
+      call col3(bm1ms,bm1,upf,ntot1)
+
+      return
+      end
+c-------------------------------------------------------------
       subroutine multimesh_create
 
       include 'SIZE'
@@ -29,6 +42,9 @@ c-----------------------------------------------------------------------
 c     Do some sanity checks - just once at setup
 c     Set interpolation flag: points with bc = 'int' get intflag=1. 
 c     Boundary conditions are changed back to 'v' or 't'.
+
+      if (nsessmax.eq.1) 
+     $  call exitti('set nsessmax > 1 in SIZE!$',nsessmax)
 
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
@@ -48,9 +64,9 @@ c     Boundary conditions are changed back to 'v' or 't'.
 c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 
-c     exchange_points2 finds the processor and element number at
+c     exchange_points finds the processor and element number at
 c     comm_world level and displaces the 1st mesh back
-      call exchange_points2(dxf,dyf,dzf)
+      call exchange_points(dxf,dyf,dzf)
 
       return
       end
@@ -249,7 +265,7 @@ c-----------------------------------------------------------------------
       integer i,j,k,n,ntot2,npall
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 c     THIS ROUTINE DISPLACES THE FIRST MESH AND SETUPS THE FINDPTS
-c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS2
+c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS
 
 c     Get total number of processors and number of p
       npall = 0
@@ -292,7 +308,7 @@ c     Setup findpts
       return
       end
 c-----------------------------------------------------------------------
-      subroutine exchange_points2(dxf,dyf,dzf)
+      subroutine exchange_points(dxf,dyf,dzf)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -561,11 +577,11 @@ c     Some sanity checks for neknek
 
       call neknekgsync()
 
-      if (nid.eq.0) write(6,*) idsess,nfld_neknek,nfldmax_nn,
-     $  ifflow,ifheat,'Neknek log'
-c     idsess - session number
-c     nfld_neknek - fields to interpolate
-      if (nid.eq.0) write(6,*) ngeom,ninter,'Neknek log ngeom ninter' 
+      if (nid.eq.0) write(6,105) idsess,ngeom,ninter,
+     $   nfld_neknek,nfldmax_nn,
+     $  ifflow,ifheat
+  105    format(5i5,L3,L3,' NekNek-par')
+
       return
       end
 C--------------------------------------------------------------------------
@@ -593,3 +609,127 @@ c     the information will go to the boundary points
       return
       end
 C--------------------------------------------------------------------------
+      subroutine fix_surface_flux
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
+      integer e,f
+      common /ctmp1/ work(lx1*ly1*lz1*lelt)
+      integer itchk
+      common /idumochk/ itchk
+      integer icalld
+      save    icalld
+      data    icalld /0/
+c     assume that this routine is called at the end of bcdirvc
+c     where all the boundary condition data has been read in for 
+c     velocity.
+      if (icalld.eq.0) then
+       itchk = 0
+       do e=1,nelv
+       do f=1,2*ldim
+         if (cbc(f,e,1).eq.'o  '.or.cbc(f,e,1).eq.'O  ') then
+         if (intflag(f,e).eq.0) then
+           itchk = 1
+         endif
+         endif
+       enddo
+       enddo
+       itchk = iglmax(itchk,1)
+       icalld = 1
+      endif
+      if (itchk.eq.1) return
+      dqg=0
+      aqg=0
+      do e=1,nelv
+      do f=1,2*ldim
+         if (cbc(f,e,1).eq.'v  '.or.cbc(f,e,1).eq.'V  ') then
+            call surface_flux_area(dq,aq
+     $          ,vx,vy,vz,e,f,work)
+            dqg = dqg+dq
+            if (intflag(f,e).eq.1) aqg = aqg+aq
+         endif
+      enddo
+      enddo
+      dqg=glsum(dqg,1) ! sum over all processors for this session
+      aqg=glsum(aqg,1) ! sum over all processors for this session
+      gamma = 0.
+      if (aqg.gt.0) gamma = -dqg/aqg
+      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
+104     format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
+      do e=1,nelv
+      do f=1,2*ldim
+        if (intflag(f,e).eq.1) then
+          call facind (i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)
+          l=0
+          do k=k0,k1
+          do j=j0,j1
+          do i=i0,i1
+            l=l+1
+            vx(i,j,k,e) = vx(i,j,k,e) + gamma*unx(l,1,f,e)
+            vy(i,j,k,e) = vy(i,j,k,e) + gamma*uny(l,1,f,e)
+            if (ldim.eq.3) 
+     $      vz(i,j,k,e) = vz(i,j,k,e) + gamma*unz(l,1,f,e)
+          enddo
+          enddo
+          enddo
+        endif
+      enddo
+      enddo
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine surface_flux_area(dq,aq,qx,qy,qz,e,f,w)
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TOPOL'
+      parameter (l=lx1*ly1*lz1)
+      real qx(l,1),qy(l,1),qz(l,1),w(lx1,ly1,lz1)
+      integer e,f
+      call           faccl3  (w,qx(1,e),unx(1,1,f,e),f)
+      call           faddcl3 (w,qy(1,e),uny(1,1,f,e),f)
+      if (if3d) call faddcl3 (w,qz(1,e),unz(1,1,f,e),f)
+      call dsset(lx1,ly1,lz1)
+      iface  = eface1(f)
+      js1    = skpdat(1,iface)
+      jf1    = skpdat(2,iface)
+      jskip1 = skpdat(3,iface)
+      js2    = skpdat(4,iface)
+      jf2    = skpdat(5,iface)
+      jskip2 = skpdat(6,iface)
+      dq = 0
+      aq = 0
+      i  = 0
+      do 100 j2=js2,jf2,jskip2
+      do 100 j1=js1,jf1,jskip1
+         i = i+1
+         dq    = dq + area(i,1,f,e)*w(j1,j2,1)
+         aq    = aq + area(i,1,f,e)
+  100 continue
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine rescale_x_ms (x,x0,x1)
+      include 'SIZE'
+      real x(1)
+
+      n = lx1*ly1*lz1*nelt
+      xmin = glmin(x,n)
+      xmax = glmax(x,n)
+      xming = glmin_ms(x,n)
+      xmaxg = glmax_ms(x,n)
+
+      if (xmax.le.xmin) return
+
+      scale = (x1-x0)/(xmaxg-xming)
+      x0n = x0 + scale*(xmin-xming)
+
+
+      do i=1,n
+         x(i) = x0n + scale*(x(i)-xmin)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
