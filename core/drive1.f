@@ -303,7 +303,10 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-c         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+         if (ifneknek .and. igeom.gt.2) then
+            if (ifneknekm.and.igeom.eq.3) call multimesh_create
+            call xfer_bcs_neknek
+         endif
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -313,13 +316,6 @@ c         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
             call geneig  (igeom)
          endif
 
-         if (ifneknek.and.igeom.ge.2) then
-           if (ifneknekm.and.igeom.eq.2) call multimesh_create
-           call xfer_bcs_neknek
-           if (igeom.eq.2) call bcopy
-           call chk_outflow
-         endif
-c         if (ifneknekm.and.igeom.eq.2) call multimesh_create
          if (ifheat) call heat (igeom)
 
          if (igeom.eq.2) then  
@@ -339,7 +335,10 @@ c         if (ifneknekm.and.igeom.eq.2) call multimesh_create
          call setprop
          do igeom=1,ngeom
 
-c           if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+            if (ifneknek .and. igeom.gt.2) then
+              if (ifneknekm.and.igeom.eq.3) call multimesh_create
+              call xfer_bcs_neknek
+            endif
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -348,14 +347,6 @@ c           if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
               if (.not.ifrich) call gengeom (igeom)
               call geneig  (igeom)
             endif
-
-            if (ifneknek.and.igeom.ge.2) then
-              if (ifneknekm.and.igeom.eq.2) call multimesh_create
-              call xfer_bcs_neknek
-              if (igeom.eq.2) call bcopy
-              call chk_outflow
-            endif
-c            if (ifneknekm.and.igeom.eq.2) call multimesh_create
 
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
@@ -407,9 +398,11 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-c         if (ifneknek) call xfer_bcs_neknek
-c         if (ifneknek) call bcopy
-c         if (ifneknek) call chk_outflow
+         if (ifneknek) then 
+            call xfer_bcs_neknek
+            call bcopy
+            call chk_outflow
+         endif
       enddo
 
       return
