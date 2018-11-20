@@ -699,7 +699,13 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
          if (igeom.ge.2) call printdiverr
 
       elseif (iftran) then
@@ -714,7 +720,13 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
          endif
 
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then 
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
 
       else   !  steady Stokes, non-split
 
