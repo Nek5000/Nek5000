@@ -1,11 +1,12 @@
 #define INTP_HMAX 20
 
 c-----------------------------------------------------------------------
-      subroutine interp_setup(tolin,nmsh,ih)
+      subroutine interp_setup(ih,tolin,nmsh,nelm)
 c
 c input:
 c tolin ... tolerance newton solve (use 0 for default)
 c nmsh  ... polynomial order for mesh (use 0 to fallback to lx1-1)
+c nelm  ... number of local mesh elements (typically nelt) 
 c 
 c output:
 c ih    ... handle
@@ -43,7 +44,7 @@ c
          nyi = nxi
          nzi = 1
          if (if3d) nzi = nxi
-         do ie = 1,nelt
+         do ie = 1,nelm
            call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
      $                     ,lx1,if3d,w,size(w))
            call map_m_to_n(ymi((ie-1)*nxi*nyi*nzi + 1),nyi,ym1(1,1,1,ie)
@@ -53,21 +54,21 @@ c
      $                     ,lz1,if3d,w,size(w))
          enddo
 
-         n = nelt*nxi*nyi*nzi 
+         n = nelm*nxi*nyi*nzi 
          call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
      &                             xm1,ym1,zm1,nx1,ny1,nz1,
-     &                             nelt,nx1,ny1,nz1,bb_t,nelt+2,nelt+2,
+     &                             nelm,nx1,ny1,nz1,bb_t,nelm+2,nelm+2,
      &                             npt_max,tol)
 
          call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
      $                             xmi,ymi,zmi,nxi,nyi,nzi,
-     $                             nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
+     $                             nelm,2*nxi,2*nyi,2*nzi,bb_t,n,n,
      $                             npt_max,tol)
       else
-         n = nelt*nx1*ny1*nz1
+         n = nelm*nx1*ny1*nz1
          call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
      &                             xm1,ym1,zm1,nx1,ny1,nz1,
-     &                             nelt,2*nx1,2*ny1,2*nz1,bb_t,n,n,
+     &                             nelm,2*nx1,2*ny1,2*nz1,bb_t,n,n,
      &                             npt_max,tol)
          ih_intp2 = ih_intp1
       endif
