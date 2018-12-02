@@ -76,11 +76,7 @@ C
       ncrnr = 2**ldim
 
       if (nelgv.eq.nelgt) then
-         if (ifgtp) then
-            call gen_gtp_vertex(vertex, ncrnr)
-         else
-            call get_vert
-         endif
+         call get_vert
          call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
 

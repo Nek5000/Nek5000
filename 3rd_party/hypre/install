@@ -14,12 +14,13 @@ if [ ! -f v2.15.1.tar.gz ]; then
 fi
 
 rm -rf hypre 2>/dev/null
-mkdir hypr #e
+mkdir hypre
 tar -zxvf *.tar.gz -C ./hypre --strip-components=1
 cd hypre
 mkdir -p build
 cd build
 
+set -x
 cmake \
 -DHYPRE_BIGINT=ON \
 -DHYPRE_INSTALL_PREFIX=`pwd`/../.. \
@@ -27,5 +28,6 @@ cmake \
 -DMPI_C_COMPILER=`which $CC` \
 -DHYPRE_USING_FEI=OFF \
 ../src
+set +x
 
 make -j4 install

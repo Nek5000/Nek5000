@@ -22,7 +22,7 @@ c-----------------------------------------------------------------------
 
       ! check upper tag size limit
       call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-      if (nval.lt.(10000+lp)) then
+      if (nval .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
       endif
@@ -178,9 +178,6 @@ c---------------------------------------------------------------------
        if (isize_mpi .ne. isize8) then
          call exitti('MPI integer8 size does not match$',isize_mpi)
       endif
-
-      if (np.gt.lp)
-     $   call exitti('Increase LPMAX or run with fewer processors!$',np)
 
       PID = 0
       NULLPID=0

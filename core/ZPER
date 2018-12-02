@@ -3,12 +3,6 @@ c     Perturbation variables
 c
 c     Eigenvalue arrays and pointers for Global Tensor Product 
       integer lelg_sm,ltfdm2,leig2,leig,lfdm0
-c     parameter (lelg_sm=2)
-c     parameter (ltfdm2 =2)
-c     parameter (lelg_sm=lelg)
-c     parameter (ltfdm2=2*lx2*ly2*lz2*lelt)
-c     parameter (leig2=2*lx2*lx2*(lelx*lelx+lely*lely+lelz*lelz))
-c     parameter (leig =2*lx2*(lelx+lely+lelz))
 
       parameter (lfdm0 = 1-lfdm)
       parameter (lelg_sm=lfdm0+lfdm*lelg)
@@ -38,10 +32,6 @@ c     Logical, array and geometry data for tensor-product box
      $       ,ngfdm_p(3),ngfdm_v(3,2)
       common /gfdmic/  nelx,nely,nelz,nelxy,lex2pst,pst2lex
      $                ,ngfdm_p,ngfdm_v
-
-c     Complete exchange arrays for pressure
-c     real part_in(0:lp),part_out(0:lp)
-c     common /gfdmcx/  part_in,part_out
 
       integer lp_small
       parameter (lp_small=256)

@@ -2359,7 +2359,7 @@ c      ifgtim  = .true.  ! always get time
       endif
 
       if (nelr.gt.lelr) then
-         write(6,*) 'ERROR: increase lelr in RESTART!', lelr, nelr
+         write(6,*) 'ERROR: increase lfio in SIZE!', lelr, nelr
          call exitt
       endif
 

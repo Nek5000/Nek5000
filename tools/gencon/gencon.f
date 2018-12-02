@@ -1022,7 +1022,7 @@ c-----------------------------------------------------------------------
       data   test  / 6.54321 /
 
       version = '#v001'
-      ifco2 = .false. ! force ASCII for debugging 
+c      ifco2 = .false. ! force ASCII for debugging 
  
       len = ltrunc(session,80)
       call chcopy(fname,session,80)

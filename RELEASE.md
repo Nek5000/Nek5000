@@ -2,26 +2,30 @@
 
 ## What is new? 
 
-* Uncoupled multisession simulations
+* Uncoupled multisession (neknek) simulations
 * Gather scatter operations across sessions
 * Gather scatter options across gtp-planes
 * par file support for postnek
 * mkSIZE to automatically create SIZE file
 * Object and boundary handling
 * RANS k-Omega and k-Omega-SST (experimental) 
-* Mesh-smoother (experimental)
+* Online mesh-smoother (experimental)
 * ElapsedTime option for writeControl (in par)
 * Print runtime-statistics every 100 steps
 * Support for GNU 8.x compilers
 * Support for Cray compilers
 * Support for ARM compilers
-* FEM-AMG precoditioner (experimental) p40=3
-* AMG-HYPRE precoditioner (experimental) p40=2
-* Support for CHT to generic fld reader
-* User defined core routines in usr
+* FEM_AMG precoditioner (experimental) p40=3
+* SEMG_AMG_HYPRE precoditioner (experimental) p40=2
+* CHT support for generic fld reader
+* Overwrite core routines in usr
+* Fully scaleable memory footprint PPLIST=DPROCMAP (experimental)
+* Online genmap PPLIST=PARRSB (experimental) 
+* Various bug fixes
 
 ## What you may have to change to be compatible 
 
+* Use makenek shipped with this release
 * Remove PPLIST symbol NEKNEK (not required anymore)
 * Use valint instead of ubc in userbc for neknek
 * Remove multimesh_create call from usr file (not required anymore)
@@ -29,6 +33,7 @@
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
 * Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
 * Change all user parameters to p170-p200 in rea
+* Set lfio in SIZE to match number of restart files for multi-io reader
 
 ## Known Bugs 
 

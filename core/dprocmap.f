@@ -1,3 +1,12 @@
+#ifdef DPROCMAP
+c-----------------------------------------------------------------------
+c
+c     gllnid and gllel are stored as a distributed array ordered by 
+c     global global element index. Access is provided by the two
+c     functions gllnid() and gllel(). Each ranks holds a local cache
+c     for its local and some remote elements.
+c
+c-----------------------------------------------------------------------
       subroutine dProcmapInit()
 
       include 'mpif.h'
@@ -18,7 +27,9 @@
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
 #endif
-      
+
+      dProcmapCache = .true.
+
       return
       end
 c-----------------------------------------------------------------------
@@ -32,12 +43,14 @@ c-----------------------------------------------------------------------
       integer ibuf(lbuf)
       integer*8 disp
 
-      if (lbuf.lt.1 .or. lbuf.gt.3)
+      if (lbuf.lt.1 .or. lbuf.gt.2)
      $   call exitti('invalid lbuf!',lbuf)
 
 #ifdef MPI
       call dProcMapFind(iloc,nids,ieg)
-      disp = 3*(iloc-1) + ioff
+      disp = 2*(iloc-1) + ioff
+
+c      write(6,*) nid, 'put:', nids, ieg, ibuf 
 
       call mpi_win_lock(MPI_LOCK_EXCLUSIVE,nids,0,dProcmapH,ierr)
 csk      call mpi_win_lock(MPI_LOCK_SHARED,nids,0,dProcmapH,ierr)
@@ -45,7 +58,7 @@ csk      call mpi_win_lock(MPI_LOCK_SHARED,nids,0,dProcmapH,ierr)
      $             dProcmapH,ierr)
       call mpi_win_unlock(nids,dProcmapH,ierr)
 #else
-      call icopy(dProcmapWin(3*(ieg-1) + ioff + 1),ibuf,lbuf)
+      call icopy(dProcmapWin(2*(ieg-1) + ioff + 1),ibuf,lbuf)
 #endif
 
       return
@@ -58,12 +71,12 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'DPROCMAP'
 
-      integer ibuf(3)
+      integer ibuf(2)
 
       integer*8 disp
 
-      ! cache for local and remote elements
-      parameter (lcr = 128)
+      ! local cache
+      parameter (lcr = 2*lelt)                    ! remote elements
       parameter (lc = lelt+lcr+8-mod(lelt+lcr,8)) ! multiple of 8
       integer   cache(lc,3)
       save      cache
@@ -88,17 +101,18 @@ c         write(6,*) nid, 'cache hit ', 'ieg:', ieg
       else
 #ifdef MPI
          call dProcmapFind(il,nidt,ieg)
-         disp = 3*(il-1)
+         disp = 2*(il-1)
          call mpi_win_lock(MPI_LOCK_SHARED,nidt,0,dProcmapH,ierr)
-         call mpi_get(ibuf,3,MPI_INTEGER,nidt,disp,3,MPI_INTEGER,
+         call mpi_get(ibuf,2,MPI_INTEGER,nidt,disp,2,MPI_INTEGER,
      $                dProcmapH,ierr)
          call mpi_win_unlock(nidt,dProcmapH,ierr)
 #else
-         call icopy(ibuf,dProcmapWin(3*(ieg-1) + 1),3)
+         call icopy(ibuf,dProcmapWin(2*(ieg-1) + 1),2)
 #endif
          if (dProcmapCache) then
-            ii = ibuf(1)
-            if (ibuf(2).ne.nid) then
+            if (ibuf(2).eq.nid) then
+               ii = ibuf(1)
+            else
                iran = mod(iran*ia+ic,im)
                ii = lelt + (lcr*iran)/im + 1 ! randomize array location 
             endif
@@ -116,7 +130,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'PARALLEL'
 
-      ! distribute array in blocks across ranks
       nstar = nelgt/np
       nids = (ieg-1)/nstar
       il = ieg - nids * nstar
@@ -143,3 +156,48 @@ c-----------------------------------------------------------------------
 
 10    continue
       end
+c-----------------------------------------------------------------------
+      integer function gllnid(ieg)
+
+      include 'mpif.h'
+
+      integer iegl, nidl
+      save    iegl, nidl
+      data    iegl, nidl /0,0/
+
+      integer ibuf(2)
+
+      if (ieg.eq.iegl) then
+         ibuf(2) = nidl
+         goto 100
+      endif
+      call dProcmapGet(ibuf,ieg)
+
+ 100  iegl   = ieg
+      nidl   = ibuf(2)
+      gllnid = ibuf(2)
+
+      end
+c-----------------------------------------------------------------------
+      integer function gllel(ieg)
+
+      include 'mpif.h'
+
+      integer iegl, iell
+      save    iegl, iell
+      data    iegl, iell /0,0/
+
+      integer ibuf(2)
+
+      if (ieg.eq.iegl) then
+         ibuf(1) = iell
+         goto 100
+      endif
+      call dProcmapGet(ibuf,ieg)
+
+ 100  iegl  = ieg
+      iell  = ibuf(1)
+      gllel = ibuf(1)
+
+      end
+#endif

@@ -29,17 +29,10 @@ C
 
 c     write(6,*) solver_type,' solver type',iesolv
       if (iesolv.eq.1) then
-         if (solver_type.eq.'fdm') then
-            ntot2 = lx2*ly2*lz2*nelv
-            kwave2 = 0.
-            call gfdm_pres_solv  (wk1,res,wk2,wk3,kwave2)
-            call copy            (res,wk1,ntot2)
+         if (param(42).eq.1.or.solver_type.eq.'pdm') then
+            CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
          else
-            if (param(42).eq.1.or.solver_type.eq.'pdm') then
-               CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
-            else
-               call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
-            endif
+            call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
          endif
       else
          WRITE(6,*) 'ERROR: E-solver does not exist',iesolv

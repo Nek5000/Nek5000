@@ -6,18 +6,24 @@ S=
 SCMT=
 OPT_INCDIR=./
 OBJDIR=obj
-MPI=0 
-CMT=0 
+
 FC=
 CC=
 FFLAGS=
 CFLAGS=
 LDFLAGS=
+
 PPPO=
 PPS=
+
 USR=
 USR_LFLAGS=
+
+MPI=0 
+CMT=0 
+DPROCMAP=0
 VISIT=0
+
 VISIT_IFLAGS=
 VISIT_LFLAGS=
 HYPRE_IFLAGS=
@@ -29,14 +35,14 @@ PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
 PPS_C = $(patsubst %,-D%,$(PPS))
 
 # CORE##########################################################################
-CORE = drive.o drive1.o drive2.o \
+CORE = drive1.o drive2.o \
 plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
 map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
-hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
-genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
+genbox.o hmholtz.o subs1.o subs2.o \
+gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o interp.o \
 cvode_driver.o nek_comm.o multimesh.o \
@@ -67,6 +73,12 @@ else
    face.o ausm.o  MixtPerf.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o artvisc.o
+endif
+
+DUMMY:= $(shell cp $S/PARALLEL_ $S/PARALLEL)
+ifeq ($(DPROCMAP),1)
+	CORE := ${CORE} dprocmap.o
+	DUMMY:= $(shell cd $S; patch < PARALLEL.patch)
 endif
 
 ifneq ($(VISIT),0)
@@ -113,7 +125,7 @@ usrfile:
 
 nek5000:	objdir $(NOBJS) usrfile
 	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
-	$(FC) $(FL2) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
+	$(FC) $(FL2) -o ${BINNAME} $S/drive.f ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
 	echo "#############################################################"; \
@@ -145,7 +157,6 @@ endif
 $(NOBJS) : ./SIZE
 
 # NEK CORE     ##################################################################
-$(OBJDIR)/drive.o	:$S/drive.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/drive1.o	:$S/drive1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/drive2.o	:$S/drive2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/prepost.o	:$S/prepost.f;			$(FC) -c $(FL2) $< -o $@

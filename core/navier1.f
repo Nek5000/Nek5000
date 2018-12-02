@@ -62,12 +62,7 @@ C
          if (iftran)  call invers2 (h2inv,h2,ntot1)
          call makeg   (   g1,g2,g3,h1,h2,intype)
          call crespuz (wp,g1,g2,g3,h1,h2,h2inv,intype)
-         if (solver_type.eq.'fdm') then
-            call gfdm_pres_solv(dv1,wp,dv2,dv3,.true.,0.0)
-            call copy (wp,dv1,ntot2)
-         else
-            call uzawa   (wp,h1,h2,h2inv,intype,icg)
-         endif
+         call uzawa   (wp,h1,h2,h2inv,intype,icg)
          if (icg.gt.0) call add2 (pr,wp,ntot2)
 
 C        .... then, compute velocity:
@@ -926,12 +921,6 @@ C
       data    kstep/-1/
 c
       integer*8 ntotg,nxyz2
-c
-c
-      if (solver_type.eq.'pdm') then
-         call gfdm_pres_solv(rpcg,rcg,h1m2,h2m2,.true.,0.0)
-         return
-      endif
 c
       NTOT2 = lx2*ly2*lz2*NELV
       if (istep.ne.kstep .and. .not.ifanls) then

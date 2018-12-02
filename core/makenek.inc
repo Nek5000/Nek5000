@@ -13,18 +13,24 @@ function make_3rd_party() {
      FFLAGS+=" -O2"
   fi 
 
-  cd $SOURCE_ROOT/3rd_party/gslib
+  cd $SOURCE_ROOT_GSLIB
   ./install
   cd $CASEDIR 
 
+  if [ $PARRSB -ne 0 ]; then
+     cd $SOURCE_ROOT_PARRSB
+     ./install
+  fi
+  cd $CASEDIR
+
   if [ $CVODE -ne 0 ]; then
-     cd $SOURCE_ROOT/3rd_party/cvode
+     cd $SOURCE_ROOT_CVODE
      ./install
   fi
   cd $CASEDIR
 
   if [ $HYPRE -ne 0 ]; then
-     cd $SOURCE_ROOT/3rd_party/hypre
+     cd $SOURCE_ROOT_HYPRE
      ./install
   fi
   cd $CASEDIR
@@ -37,11 +43,13 @@ function make_3rd_party() {
 
 function clean_3rd_party() {
   echo "cleaning 3rd-party software ..."
-  cd $SOURCE_ROOT/3rd_party/gslib; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT/3rd_party/cvode; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT/3rd_party/hypre; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
+  cd $CASEDIR
+  cd $SOURCE_ROOT_HYPRE; ./install clean 2>/dev/null
   cd $CASEDIR
 }
 
@@ -59,6 +67,8 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  HYPRE       compile with HYPRE support"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
+  echo "  DPROCMAP    use distributed proc mapping arrays (requires PARRSB)"
+  echo "  PARRSB      activate online paritioner (genmap)"
   exit 1
 fi
 
@@ -89,10 +99,17 @@ if [ "$mver" != "18.0.0" ]; then
   exit 1
 fi
 
-if [ ! "$SOURCE_ROOT_GSLIB" ]; then
-  SOURCE_ROOT_GSLIB="$SOURCE_ROOT/3rd_party/gslib"
-  export SOURCE_ROOT_GSLIB
-fi
+SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
+export SOURCE_ROOT_GSLIB
+
+SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
+export SOURCE_ROOT_PARRSB
+
+SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
+export SOURCE_ROOT_CVODE
+
+SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
+export SOURCE_ROOT_HYPRE
 
 if [[ $1 = "clean" ]]; then
   while true; do
@@ -137,8 +154,8 @@ if [ ! -f SIZE ]; then
    exit 1
 fi
 
-if [ ! -f $SOURCE_ROOT/core/makefile.template ]; then
-  echo "FATAL ERROR: Cannot find $SOURCE_ROOT/core/makefile.template!"
+if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
+  echo "FATAL ERROR: Cannot find $NEK_SOURCE_ROOT/core/makefile.template!"
   exit 1
 fi
 
@@ -267,6 +284,13 @@ PPLIST="${PPLIST}"
 # add user defined preprocessor symbols
 CMT=0
 MPIIO=1
+DPROCMAP=0
+PARRSB=0
+CVODE=0
+HYPRE=0
+MXM_USER="mxm_std.o"
+BLAS="blas.o dsygv.o"
+
 for i in $PPLIST
 do
    if [ "$i" == "CMTNEK" ]; then
@@ -275,48 +299,48 @@ do
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
    fi
+   if [ "$i" == "DPROCMAP" ]; then
+     DPROCMAP=1
+   fi
+   if [ "$i" == "PARRSB" ]; then
+     PARRSB=1
+     DPROCMAP=1
+     PARRSB_OPT=" DESTDIR=$SOURCE_ROOT_PARRSB UNDERSCORE=$UNDERSCORE MPI=$MPI" 
+     PARRSB_OPT+=" GSLIBPATH=$SOURCE_ROOT_GSLIB"
+     USR_LFLAGS+=" -L$SOURCE_ROOT_PARRSB/lib -lparRSB"
+   fi
+   if [ "$i" == "CVODE" ]; then 
+     CVODE=1
+     if [ $MPI -eq 1 ]; then
+       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
+       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+     else
+       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
+       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
+     fi
+   fi
+   if [ "$i" == "HYPRE" ]; then
+     HYPRE=1
+     USR_LFLAGS+=" -L$SOURCE_ROOT_HYPRE/lib -lHYPRE"
+     HYPRE_INC="$SOURCE_ROOT_HYPRE/include"
+   fi
+   if [ "$i" == "BGQ" ]; then
+     MXM_USER+=" mxm_bgq.o" 
+   fi
+   if [ "$i" == "VENDOR_BLAS" ]; then
+     BLAS=" "
+   fi
 done
-
-if echo $PPLIST | grep -q 'CVODE' ; then 
-   CVODE=1
-   if [ ! "$LIBPATH_CVODE" ]; then
-     LIBPATH_CVODE=$SOURCE_ROOT/3rd_party/cvode/lib 
-   fi
-   if [ $MPI -eq 1 ]; then
-     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
-     USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
-   else
-     USR_LFLAGS+=" -L$LIBPATH_CVODE -lsundials_fcvode -lsundials_cvode"
-     USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
-   fi
-else
-   CVODE=0
-fi
-
-if echo $PPLIST | grep -q 'HYPRE' ; then 
-   HYPRE=1
-else
-   HYPRE=0
-fi
-
-MXM_USER="mxm_std.o"
-if echo $PPLIST | grep -q 'BGQ' ; then 
-   MXM_USER+=" mxm_bgq.o" 
-fi
-
-BLAS="blas.o dsygv.o"
-if echo $PPLIST | grep -q 'VENDOR_BLAS' ; then 
-   BLAS=" "
-fi
 
 # gslib build options
 GSLIB_PREFIX="gslib_"
 GSLIB_FPREFIX="fgslib_"
+GSLIB_OPT+=" DESTDIR=$SOURCE_ROOT_GSLIB"
 GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
-GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=1 BLAS=2"
+GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_OPT+=" PREFIX=$GSLIB_PREFIX FPREFIX=$GSLIB_FPREFIX"
 GSLIB_IFLAGS="-DPREFIX=$GSLIB_PREFIX -DFPREFIX=$GSLIB_FPREFIX -DGLOBAL_LONG_LONG"
-GSLIB_IFLAGS+=" -I$SOURCE_ROOT_GSLIB/gslib/src"
+GSLIB_IFLAGS+=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
 # tweak makefile template 
@@ -336,12 +360,13 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^CVODE[ ]*=.*/CVODE=$CVODE/" \
 -e "s/^CMT[ ]*=.*/CMT=$CMT/" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
+-e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S=${SOURCE_ROOT}/core:" \
--e "s:^SCMT[ ]*=.*:SCMT=${SOURCE_ROOT}/core/cmt:" \
-$SOURCE_ROOT/core/makefile.template >.makefile
+-e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}/core:" \
+-e "s:^SCMT[ ]*=.*:SCMT=${NEK_SOURCE_ROOT}/core/cmt:" \
+$NEK_SOURCE_ROOT/core/makefile.template >.makefile
 
 if [ $VISIT -ne 0 ]; then
   echo ""
@@ -371,9 +396,6 @@ if [ $VISIT -ne 0 ]; then
 fi
 
 if [ $HYPRE -ne 0 ]; then
-  PATH_HYPRE=$SOURCE_ROOT/3rd_party/hypre
-  USR_LFLAGS+=" -L$PATH_HYPRE/lib -lHYPRE"  
-  HYPRE_INC="$PATH_HYPRE/include"
   sed -e "s:^HYPRE_IFLAGS[ ]*=.*:HYPRE_IFLAGS\:=-I${HYPRE_INC}:" \
       -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
       .makefile > .makefile.tmp
@@ -397,8 +419,23 @@ else
 fi
 \rm .makefile 2>/dev/null
 
+# tweak SIZE file
+if ! cat SIZE | grep -qi 'lfio' ; then
+   echo >>SIZE
+   echo 'c automatically added by makenek' >>SIZE
+   echo '      integer lfio' >>SIZE
+   echo '      parameter (lfio=1) ! max number of I/O files' >>SIZE
+fi
+if ! cat SIZE | grep -qi 'ldimt_proj' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer ldimt_proj' >>SIZE
+     echo '      parameter(ldimt_proj=1) ! max auxiliary fields residual projection ' >>SIZE
+fi
+
 # tweak leagacy SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
+
   if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
@@ -467,14 +504,6 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 fi
 
-# tweak all SIZE file versions
-if ! cat SIZE | grep -qi 'ldimt_proj' ; then
-     echo >>SIZE
-     echo 'c automatically added by makenek' >>SIZE
-     echo '      integer ldimt_proj' >>SIZE
-     echo '      parameter(ldimt_proj = 1) ! max auxiliary fields residual projection ' >>SIZE
-fi
-
 export FC
 export CC
 export NEK_WARN 
@@ -484,14 +513,14 @@ export FFLAGS
 export CFLAGS
 export UNDERSCORE
 export GSLIB_OPT
-
+export PARRSB_OPT
 
 if [ $NOCOMPILE -ne 0 ]; then
   exit 0
 fi
 
 declare -a varlist=(
-"SOURCE_ROOT"
+"NEK_SOURCE_ROOT"
 "FC"
 "FFLAGS"
 "CC"

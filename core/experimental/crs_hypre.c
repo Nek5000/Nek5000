@@ -440,17 +440,22 @@ struct hypre_crs_data* ccrs_hypre_setup( uint n, const ulong *id,
 {
   fail(1,__FILE__,__LINE__,"recompile with HYPRE support.");
   exit(EXIT_FAILURE);
+  return NULL;
 }
 
 void ccrs_hypre_solve(double *x, struct hypre_crs_data *data, double *b)
 {
+  fail(1,__FILE__,__LINE__,"recompile with HYPRE support.");
   exit(EXIT_FAILURE);
+  while(1);
 }
 
 
 void ccrs_hypre_free(struct hypre_crs_data *data)
 {
+  fail(1,__FILE__,__LINE__,"recompile with HYPRE support.");
   exit(EXIT_FAILURE);
+  while(1);
 }
 
 #endif

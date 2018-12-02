@@ -140,13 +140,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
      $                             pmask,binvm1,null_space,
      $                             gsh_fld(1),fem_amg_param)
             endif
-         elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
-            ifemati = .true.
-            kwave2  = 0.0
-            if (ifsplit) ifemati = .false.
-            call gfdm_init(lx2,ly2,lz2,ifemati,kwave2)
-         elseif (solver_type.eq.'25D') then
-            call g25d_init
          endif
       endif
 

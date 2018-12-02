@@ -21,6 +21,7 @@ cd sundials
 mkdir -p build
 cd build
 
+set -x
 cmake \
 -DBUILD_ARKODE=OFF \
 -DBUILD_CVODES=OFF \
@@ -38,5 +39,6 @@ cmake \
 -DMPI_MPICC=`which $CC` \
 -DMPI_MPIF77=`which $FC` \
 ..
+set +x
 
 make install -j4

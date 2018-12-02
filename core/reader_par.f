@@ -51,8 +51,8 @@ C
       param(14) = 0    ! iostep
       param(15) = 0    ! iotime 
 
-      param(21) = 1e-6 ! pressure tolerance
-      param(22) = 1e-8 ! velocity tolerance
+      param(21) = 1e-5 ! pressure tolerance
+      param(22) = 1e-7 ! velocity tolerance
 
       param(26) = 0.5  ! target Courant number
       param(27) = 2    ! 2nd order in time
@@ -123,6 +123,12 @@ C
       iffilter(1) = .false.  
       do i=1,ldimt
          iffilter(i+1) = .false.  
+      enddo 
+
+      ifdgfld(0) = .false. 
+      ifdgfld(1) = .false. 
+      do i=1,ldimt
+         ifdgfld(i+1) = .false.  
       enddo 
 
       ifdiff(1) = .true.  
@@ -924,21 +930,8 @@ c set some internals
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
 
-c
-c     Check here for global fast diagonalization method or z-homogeneity.
-c     This is here because it influence the mesh read, which follows.
-      nelx   = abs(param(116))   ! check for global tensor-product structure
-      nely   = abs(param(117))
-      nelz   = abs(param(118))
-      n_o    = 0
-
-      if (n_o.eq.0) then
-         ifzper=.false.
-         ifgfdm=.false.
-         if (nelz.gt.0) ifzper=.true.
-         if (nelx.gt.0) ifgfdm=.true.
-         if (nelx.gt.0) ifzper=.false.
-      endif
+      ifzper=.false.
+      ifgfdm=.false.
 
       return
       END

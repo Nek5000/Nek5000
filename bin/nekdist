@@ -31,6 +31,10 @@ cd 3rd_party/gslib
 wget -O v1.0.3.tar.gz https://github.com/gslib/gslib/archive/v1.0.3.tar.gz
 cd ../../
 
+cd 3rd_party/parRSB
+wget -O v0.1.tar.gz https://github.com/Nek5000/parRSB/archive/v0.1.tar.gz
+cd ../../
+
 cd 3rd_party/hypre
 wget -O v2.15.1.tar.gz https://github.com/LLNL/hypre/archive/v2.15.1.tar.gz
 cd ../../

@@ -4,7 +4,7 @@ set -e
 VER=1.0.3
 
 if [ "$1" == "clean" ]; then
-  rm -rf gslib lib 2>/dev/null 
+  rm -rf gslib lib include 2>/dev/null 
   exit 0
 fi
 
@@ -17,9 +17,9 @@ if [ ! -f v$VER.tar.gz ]; then
 fi
 
 rm -rf gslib 2>/dev/null
-mkdir gslib
+mkdir gslib 
 tar -zxvf *.tar.gz -C ./gslib --strip-components=1
 cd gslib
-make -j4 CC="$CC" CFLAGS="$CFLAGS" $GSLIB_OPT lib
-`mkdir $(pwd)/../lib || true` 
-make PREFIX="`pwd`/../lib" install
+set -x
+make -j4 $GSLIB_OPT
+set +x

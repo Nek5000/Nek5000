@@ -97,11 +97,13 @@ c
 C
 C     Read logical equation type descriptors....
 C
-      IFTMSH(0) = .false.
+      IFTMSH(0)    = .false.
       IFPROJFLD(0) = .false.
+      IFDGFLD(0)   = .false.
       do i=1,NPSCL2
          IFTMSH(i)    = .false.
          IFADVC(i)    = .false. 
+         IFDGFLD(i)   = .false.
          IFFILTER(i)  = .false.
          IFDIFF(i)    = .true.
          IFDEAL(i)    = .true. ! still depends on param(99)
@@ -305,23 +307,9 @@ C
             param(19) = 0.0
          endif
       endif
-c
-c     Check here for global fast diagonalization method or z-homogeneity.
-c     This is here because it influence the mesh read, which follows.
-      nelx   = abs(param(116))   ! check for global tensor-product structure
-      nely   = abs(param(117))
-      nelz   = abs(param(118))
-      n_o    = 0
-
-      if (n_o.eq.0) then
-         ifzper=.false.
-         ifgfdm=.false.
-         if (nelz.gt.0) ifzper=.true.
-         if (nelx.gt.0) ifgfdm=.true.
-         if (nelx.gt.0) ifzper=.false.
-      endif
-
-
+C
+      ifzper=.false.
+      ifgfdm=.false.
 C
 C     Do some checks
 C
