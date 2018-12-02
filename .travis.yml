@@ -44,7 +44,7 @@ env:
 before_install: 
   - export ROOT_DIR=`pwd`
 
-  - export SOURCE_ROOT=$ROOT_DIR
+  - export NEK_SOURCE_ROOT=$ROOT_DIR
   - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
   - export VERBOSE_TESTS=true
   - export PARALLEL_PROCS=2
