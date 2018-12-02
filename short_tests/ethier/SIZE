@@ -40,3 +40,7 @@ c
 
       ! INTERNALS
       include 'SIZE.inc'
+
+c automatically added by makenek
+      integer lfio
+      parameter (lfio=1) ! max number of I/O files
