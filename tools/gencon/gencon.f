@@ -3,11 +3,12 @@
 #     include "SIZE"
 
       parameter(lpts=8*lelm)
-      common /carrayi/ cell (lpts) , pmap (lpts)
-     $               , order(lpts) , elist(lpts)
+      integer cell
+      common /carrayi/ cell (lpts) 
+
+      real w1,w2,w3,w4
       common /carrayw/ w1   (lpts) , w2   (lpts)
      $               , w3   (lpts) , w4   (lpts)
-     $               , w5   (lpts)
 
       real        w14(4*lpts)
       equivalence (w1,w14)
@@ -21,9 +22,6 @@
 
       logical ifconn,is_connected,face_conn
 
-      integer     cell,pmap,order,elist,w1,w2,w3,w4,depth
-      integer     e1,c1,f1
-
       wdsize=4
       eps=1.0e-12
       oneeps = 1.0+eps
@@ -36,7 +34,6 @@ c                                    irnk is # unique points
 
       nfc = 2*ndim
       nv  = 2**ndim
-      mo  = 0   !max order initally zero.
 
       nic = lpts
       njc = lpts
@@ -54,23 +51,13 @@ c                                    irnk is # unique points
       endif
   15  continue
 
-      call izero (order,irnk)
-
-c     Find all periodic connections, based on cbc info.
-      call periodic_vtx
-     $               (cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w14,w5)
-      
+      call periodic_vtx(cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w14,w1)
+     
       npts = nv*nelt
       call iranku       (cell,nrnk,npts,w1)
       call self_chk     (cell,nv,nelt,1)    ! check for not self-ptg.
 
-      call fill_order   (order,mo,cell,nv,nelt)
-      call assign_order (cell,nv,nelt,order)
-
-      call iranku       (cell,nrnk,npts,w1) ! make cell numbering contiguous
-      call self_chk     (cell,nv,nelt,2)    ! check for not self-ptg.
-
-      call dmp_confile(cell,nv,nelt,nelv,irnk)
+      call dmpfile(cell,nv,nelt,nelv,irnk)
 
       end
 c-----------------------------------------------------------------------
@@ -1014,106 +1001,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine fill_order(order,mo,cell,nv,nel)
-      integer order(1),cell(nv,nel)
-      integer e,v
-   
-c     Fill in remaining separator sets
-      do e=1,nel
-      do v=1,nv
-         i = cell(v,e)
-c        write(6,*) i,v,e,order(i),mo
-         if (order(i).eq.0) then
-            mo = mo+1
-            order(i) = mo
-         endif
-         order(i) = -abs(order(i)) ! set flag
-c        write(6,*) i,v,e,order(i),mo
-c        write(6,*) 
-      enddo
-      enddo
-
-c     Reverse separator set ordering
-      do e=1,nel
-      do v=1,nv
-         i = cell(v,e)
-         if (order(i).lt.0) order(i) = mo+1+order(i)
-c        write(6,*) order(i),e,v
-      enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outmatti(u,m,n,name6,nid,ic)
-      integer u(m,n)
-      character*6 name6
-      character*1 adum
-c
-c     Print out copies of a global matrix, transpose
-c
-         write(6,1) nid,m,n,name6,nid,ic
-   1     format(3i6,'  Matrix T:',2x,a6,2i9)
-
-         m8 = min(m,10)
-         do j=1,n
-            write(6,2) j,name6,(u(i,j),i=1,m8)
-         enddo
-   2     format(i8,1x,a6,10i9)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outmati(u,m,n,name6,nid,ic)
-      integer u(m,n)
-      character*6 name6
-      character*1 adum
-c
-c     return
-c
-c     Print out copies of a global matrix
-c
-      n200 = min(n,200)
-      if (m.gt.1) then
-         write(6,1) nid,m,n,name6
-   1     format(3i6,'  Matrix:',2x,a6)
-         do i=1,m
-            write(6,2) i,name6,(u(i,j),j=1,n200)
-         enddo
-   2     format(i8,1x,a6,20(10i9,/,10x))
-      else
-         write(6,3) nid,n,name6,(u(1,j),j=1,n200)
-   3     format(2i8,1x,a6,20(10i9,/,10x))
-      endif
-      if (ic.eq.0) then
-         write(6,*) 'cont: ',name6,nid
-c        read (5,*) adum
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outmat (u,m,n,name6,nid)
-      real u(m,n)
-      character*6 name6
-c
-c     return
-c
-c     Print out copies of a global matrix
-c
-      write(6,1) nid,m,n,name6
-      n8 = min(8,n)
-   1  format(3i6,'  Matrix:',2x,a6)
-      do i=1,m
-         write(6,2) i,name6,(u(i,j),j=1,n8)
-      enddo
-   2  format(i3,1x,a6,1p8e12.4)
-c  2  format(i3,1x,a6,20(1p8e12.4,/,10x))
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine dmp_confile(cell, nv, nelt, nelv, nuids)
+      subroutine dmpfile(cell, nv, nelt, nelv, nuids)
 
 #     include "SIZE"
 
@@ -1123,7 +1011,7 @@ c-----------------------------------------------------------------------
       character*1  fnam1(80)
       equivalence (fnam1,fname)
 
-      integer cell(nv,nel)
+      integer cell(nv,nelt)
 
       integer d2,e,p0
       common /arrayi2/ iwrk((1+8)*lelm)
@@ -1134,7 +1022,7 @@ c-----------------------------------------------------------------------
       data   test  / 6.54321 /
 
       version = '#v001'
-c      ifco2 = .false. ! force ASCII for debugging 
+      ifco2 = .false. ! force ASCII for debugging 
  
       len = ltrunc(session,80)
       call chcopy(fname,session,80)
@@ -1149,25 +1037,26 @@ c      ifco2 = .false. ! force ASCII for debugging
          if (ifco2) then
             call byte_open(fname,ierr)
             call blank(hdr,132)
-            write(hdr,1) version,nelt,nelv,nuids
+            write(hdr,1) version,nelt,nelv,nv
     1       format(a5,3i12)
             call byte_write(hdr,132/4,ierr)
             call byte_write(test,1,ierr) ! write the endian discriminator
          else
             open (unit=29,file=fname)
-            write(29,1) version,nelt,nelv,nuids
+            write(29,1) version,nelt,nelv,nv
         endif
       endif
 
       if (ifco2) then
          do e=1,nelv
-            call icopy(iwrk(1),cell(1,e),nv)
-            call byte_write(iwrk,nv,ierr)
+            iwrk(1) = e
+            call icopy(iwrk(2),cell(1,e),nv)
+            call byte_write(iwrk,nv+1,ierr)
          enddo
       else
          do e=1,nelv
-            write(29,2) (cell(k,e),k=1,nv)
-    2       format(8i12)
+            write(29,2) e,(cell(k,e),k=1,nv)
+    2       format(9i12)
          enddo
       endif
 
@@ -1401,119 +1290,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_outflow(no,order,mo,cell,nv,nel,nrnk,cbc,nfc
-     $                      ,ic,i0,i1,jc)
-c
-c     Order outflow nodes last
-c
-
-#     include "SIZE"
- 
-      integer cell(nv,nel),order(1)
-      character*3      cbc(6,nel)
-
-      integer ic(i0:i1),jc(1)
-
-      parameter(lpts=8*lelm)
-      common /arrayi2/ face (3*lpts) , elist(lelm) , ind  (lpts)
-      integer face,elist
-
-      integer     e,f,out_vtx,out_vtm
-      character*3 cb
-      logical     ifoutflow
-
-      integer vface(4,6)  ! symm. vertices ordered on symm. faces
-      save    vface
-      data    vface / 1,3,5,7 , 2,4,6,8 , 1,2,5,6 , 3,4,7,8
-     $              , 1,2,3,4 , 5,6,7,8 /
-
-      ifoutflow = .false.
-c
-      nvf  = nv/2
-      mvtx = nel*nv
-
-      do e=1,nel
-      do f=1,nfc
-         cb = cbc(f,e)
-c        write(6,*) cb,e,f,' cb'
-         if (cb.eq.'O  ') then
-            do i=1,nvf
-               j = vface(i,f)
-               if(cell(j,e).le.mvtx) cell(j,e) = cell(j,e) + mvtx
-            enddo
-            ifoutflow = .true.
-         endif
-      enddo
-      enddo
-
-c     Make cells consistent if you have an 'O  ' next to 'W  ' (say)
-      do j=1,nv*nel
-         i = cell(j,1)
-         if (i.gt.mvtx) then  ! Outflow node, make attached nodes same
-            ii = i - mvtx
-            k0 = ic(ii)
-            k1 = ic(ii+1)-1
-            do k=k0,k1
-               jj = jc(k)
-               cell(jj,1) = i
-            enddo
-         endif
-      enddo
-
-      mo = 0
-      no = 0
-c      write(6,*) no,mo,out_vtm,ifoutflow,' OUTFLOW'
-      if (.not. ifoutflow) return
-
-      npts             = nel*nv
-      call iranku      (cell,nrnk,npts,ind)
-      call self_chk    (cell,nv,nel,5)       ! check for not self-ptg.
-
-      out_vtm = mvtx + 1
-      do e=1,nel  ! Determine number of unique outflow pts
-      do f=1,nfc
-         cb = cbc(f,e)
-         if (cb.eq.'O  ') then
-            do i=1,nvf
-               j = vface(i,f)
-               out_vtx = cell(j,e)
-               out_vtm = min(out_vtm,out_vtx)
-            enddo
-         endif
-      enddo
-      enddo
-
-      no = nrnk - out_vtm + 1
-
-      mo = 0
-      do i=out_vtm,nrnk
-         mo = mo+1
-         order(i) = mo
-      enddo
-      write(6,*) no,mo,out_vtm,ifoutflow,' OUTFLOW'
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine assign_order(cell,nv,nel,order)
-c
-c     Order nodes by "order"
-c
-      integer cell(nv,nel),order(1)
-
-      integer     e,f
-
-      do e=1,nel
-      do k=1,nv
-         i = cell(k,e)
-         j = order(i)
-         cell(k,e) = j
-      enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine periodic_vtx
      $               (cell,nv,nel,irnk,dx,ndim,cbc,bc,nfc,iper,jmin)
 c
@@ -1722,19 +1498,19 @@ c   5          format(4i4,1p3e12.4,'  d2')
       eps = 1.e-3
       tol = eps*x0m
       if (d2min.gt.tol) then
-         call outmat(x0,4,4,'  x0  ', e)
-         call outmat(x1,4,4,'  x1  ',je)
-         call outmat(z0,4,4,'  z0  ', e)
-         call outmat(z1,4,4,'  z1  ',je)
+c         call outmat(x0,4,4,'  x0  ', e)
+c         call outmat(x1,4,4,'  x1  ',je)
+c         call outmat(z0,4,4,'  z0  ', e)
+c         call outmat(z1,4,4,'  z1  ',je)
          write(6,6) e , f,shift,eps,x0m
          write(6,6) je,jf,    i,tol,d2min
     6    format(i12,i2,i3,1p2e16.8,' abort: FACE MATCH FAIL')
          call exitt(0)
       endif
 
-      if (nel.le.100000.or.mod(icalld,1000).eq.0)
-     $   write(6,7) e,f,i,shift,d2min,icalld
-    7    format(i12,i2,2i3,1p1e16.8,i9,' shift')
+c      if (nel.le.100000.or.mod(icalld,1000).eq.0)
+c     $   write(6,7) e,f,i,shift,d2min,icalld
+c    7    format(i12,i2,2i3,1p1e16.8,i9,' shift')
 
       do i=1,nvf
 
@@ -1759,122 +1535,6 @@ c   5          format(4i4,1p3e12.4,'  d2')
       return
       end
 c-----------------------------------------------------------------------
-      subroutine out_order(order,mo,elist,cell,nv,n1,n2)
-c
-c
-c         +-----+
-c         |     |
-c         |     |
-c         +-----+
-c
-c
-c
-c
-c     Output orders for an 8x8 array of elements
-
-      integer elist(1),cell(nv,16,16),order(1)
-      integer e,v
-      character*1 a(7,4,16,16)
-
-      integer h2s(8) ! hypercube to strange ordering
-      save    h2s
-      data    h2s / 1,2,4,3,5,6,8,7 /
-
-
-      call set_a(a)
-
-      do l=1,n1+n2
-
-         e = elist(l)
-         if (l.le.n1) a(4,3,e,1) = 'X'
-         if (l.gt.n1) a(4,3,e,1) = 'O'
-
-         k=0
-         do j=0,1
-         do i=0,1
-            k = k+1
-            kstupid = h2s(k)
-            v = cell(kstupid,e,1)
-            if (i.eq.0.and.j.eq.0) write(a(1,1,e,1),1) order(v)
-            if (i.eq.1.and.j.eq.0) write(a(5,1,e,1),1) order(v)
-            if (i.eq.0.and.j.eq.1) write(a(1,4,e,1),1) order(v)
-            if (i.eq.1.and.j.eq.1) write(a(5,4,e,1),1) order(v)
-   1        format(i2)
-         enddo
-         enddo
-
-      enddo
-      write(6,*) 'n12:',n1,n2,nv
-      call out_a(a)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine out_a(a)
-      character*1 a(7,4,16,16)
-c
-      do je=8,1,-1
-      do j =4,1,-1
-         write(6,1) ((a(i,j,ie,je),i=1,7),ie=1,8)
-      enddo
-      enddo
-   1  format(56a1)
-
-      write(6,*)
-      write(6,*) 'continue ?'
-      read (5,*) dumm
-      
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_a(a)
-      character*1 a(7,4,16,16)
-c
-c         +-----+
-c         |     |
-c         |     |
-c         +-----+
-c
-      call blank(a,7*4*64)
-c
-      do je=1,8
-      do ie=1,8
-         write(a(1,1,ie,je),1)
-         write(a(1,2,ie,je),2)
-         write(a(1,3,ie,je),2)
-         write(a(1,4,ie,je),1)
-      enddo
-      enddo
-   1  format('+-----+')
-   2  format('|     |')
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outaij(ia,ja,n,name6,key)
-
-      integer ia(0:n),ja(1)
-      character*6 name6
-
-c     if ia     < 0, then already on list
-c     if ja(ia) < 0, then row is already processed
-
-      write(6,*)
-      write(6,*) ' OUT Aij ',name6,n,key
-
-      do i=1,n
-         j0 = abs(ia(i-1))
-         j1 = abs(ia(i))-1
-         m  = j1-j0 + 1
-         m  = min(16,m)
-         jm = j0 + m - 1
-         write(6,1) i,j0,j1,'aij:',(ja(j),j=j0,jm)
-      enddo
-   1  format(3i4,1x,a4,1x,16i4)
-
-      return
-      end
-c-----------------------------------------------------------------------
       function ipush(stack,val)
       integer stack(0:1),val
 
@@ -1888,7 +1548,6 @@ c-----------------------------------------------------------------------
          ipush    = -1
          write(6,*) 'ipush: negative stack count'
       endif
-c     call outmati(stack,1,n+1,'stack:',val,1)
 
       return
       end
@@ -1906,7 +1565,6 @@ c-----------------------------------------------------------------------
          ipop     = 0
 c        write(6,*) 'ipop: stack empty'
       endif
-c     call outmati(stack,1,n+1,'popst:',ipop,1)
 
       return
       end
@@ -2356,13 +2014,8 @@ c-----------------------------------------------------------------------
             if (cell(i,e).eq.cell(j,e)) then
 
                write(6,*)
-               call outmati(cell(1,e),2,4,'SELF!!',e,flag)
-
-               write(6,*)
                write(6,*) 'ABORT: SELF-CHK ',i,j,e,flag
                write(6,*) 'Try to tighten the mesh tolerance!' 
-
-c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
 
                call exitt(flag)
 
@@ -2370,41 +2023,6 @@ c              call outmatti  (cell,nv,nel,'slfchk',nel,flag)
          enddo
       enddo
       enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine mult_chk(dx,ndim,nv,nel,cell,nrnk)
-
-#     include "SIZE"
-
-      real dx(0:ndim,nv,nel)
-      integer cell(nv,nel)
-
-      parameter(lpts=8*lelm)
-
-      common /carrayw/ w1   (lpts) , w2   (lpts)
-     $               , w3   (lpts) , w4   (lpts)
-     $               , w5   (lpts)
-
-      integer e,v,emax,vmax
-
-      call rzero(w4,nrnk)
-      mult_max = 0
-      do e=1,nel                     ! Get global vertex multiplicities
-      do v=1,nv
-         i = cell(v,e)
-         if (i.gt.nrnk) then
-            write(6,1) e,v,i,nrnk,(dx(k,v,e),k=1,3)
-    1       format(i12,i3,2i12,1p3e12.4,' i>nrnk! ERROR!')
-         else
-            w4(i)=w4(i)+1.
-            mult = w4(i)
-            mult_max = max(mult_max,mult)
-         endif
-      enddo
-      enddo
-c      write(6,*) nrnk,nel,mult_max,' nrank, nel, max. multiplicity'
 
       return
       end
