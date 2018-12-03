@@ -8,7 +8,7 @@ if [ "$1" == "clean" ]; then
   exit 0
 fi
 
-if [ -f ./parRSB/lib/libparRSB.a ]; then
+if [ -f ./lib/libparRSB.a ]; then
   exit 0
 fi
 
