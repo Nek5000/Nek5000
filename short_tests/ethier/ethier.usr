@@ -1,3 +1,4 @@
+c
 c  Exact fully 3D Navier-Stokes benchmark
 c   
 c  Reference:
@@ -119,8 +120,6 @@ c-----------------------------------------------------------------------
 
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
-
-      write(6,*) nid, ifheat
 
       if (mod(istep,100).ne.0) return
 
