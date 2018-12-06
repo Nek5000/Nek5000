@@ -174,7 +174,7 @@ c      write(6,*) 'Opening output file: ',(fout1(k),k=1,len)
          len = ltrunc(fbout,80)
 c         write(6,*) 'Opening binary file: ',(fout1(k),k=1,len)
 
-         call byte_open(fbout)
+         call byte_open(fbout,ierr)
 
       endif
 
@@ -427,49 +427,38 @@ c     output remainder of mesh: .rea/.re2 format
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
     1 format('#v001',i9,i3,i9,' hdr')
-      call byte_write(hdr,20)   ! assumes byte_open() already issued
-      call byte_write(test,1)   ! write the endian discriminator
-
-c      call strg_write(hdr,20)   ! assumes byte_open() already issued
-c      call strg_write(test,1)   ! write the endian discriminator
+      call byte_write(hdr,20,ierr)   ! assumes byte_open() already issued
+      call byte_write(test,1,ierr)   ! write the endian discriminator
 
       do e=1,nel      
          if (mod(e,10000).eq.0) write(6,*) e,nel,' mesh'
 
          igroup = 0
-         call byte_write(igroup, 1)
+         call byte_write(igroup, 1, ierr)
 c         call  int_write(igroup, 1)
 
          if (ndim.eq.3) then
-            call byte_write(x(1,e),8)
-            call byte_write(y(1,e),8)
-            call byte_write(z(1,e),8)
-
-c            call real_write(x(1,e),8)
-c            call real_write(y(1,e),8)
-c            call real_write(z(1,e),8)
-
+            call byte_write(x(1,e),8,ierr)
+            call byte_write(y(1,e),8,ierr)
+            call byte_write(z(1,e),8,ierr)
          else
-            call byte_write(x(1,e),4)
-            call byte_write(y(1,e),4)
-
-c            call real_write(x(1,e),4)
-c            call real_write(y(1,e),4)
+            call byte_write(x(1,e),4,ierr)
+            call byte_write(y(1,e),4,ierr)
          endif
 
       enddo
 
       nface = 2*ndim
 
-      call byte_write(ncurve,1)
+      call byte_write(ncurve,1,ierr)
       if (ncurve.gt.0) then
          do e=1,nel      
          do f=1,nface
             if (ccurve(f,e).ne.' ') then
-               call byte_write(e     ,1)
-               call byte_write(f     ,1)
-               call byte_write(curve(1,f,e),5)
-               call byte_write(ccurve(f,e),1) ! writing 4 bytes, but ok
+               call byte_write(e     ,1,ierr)
+               call byte_write(f     ,1,ierr)
+               call byte_write(curve(1,f,e),5,ierr)
+               call byte_write(ccurve(f,e),1,ierr) ! writing 4 bytes, but ok
             
 c               call  int_write(e     ,1)
 c               call  int_write(f     ,1)
@@ -491,8 +480,7 @@ c               call strg_write(ccurve(f,e),1) ! writing 4 bytes, but ok
          enddo
 
          write(6,*) ifld,nbc,' Number of bcs'
-         call byte_write(nbc,1)
-c         call  int_write(nbc,1)
+         call byte_write(nbc,1,ierr)
 
          do e=1,nel
          do f=1,nface
@@ -503,7 +491,7 @@ c         call  int_write(nbc,1)
                call blank      (buf(8),4)
                call chcopy     (buf(8),cbc(f,e,ifld),3)
                if(nel.ge.1000000) call icopy(buf(3),ibc(f,e,ifld),1)
-               call byte_write (buf,8)
+               call byte_write (buf,8,ierr)
 c               call bdry_write (buf,8)
             endif
          enddo
@@ -518,7 +506,7 @@ c               call bdry_write (buf,8)
 
       close (unit=10)
       close (unit=11)
-      call byte_close (fbout)
+      call byte_close (fbout,ierr)
 
       return
       end

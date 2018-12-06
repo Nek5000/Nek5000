@@ -11,5 +11,5 @@ n2to3:	$(OBJS)
 clean:
 	@rm -f *.o
 
-n2to3.o          : n2to3.f		 ;  $(FC) -c $(FFLAGS) n2to3.f 
-byte.o           : byte.c      		 ;  $(CC)  -c $(CFLAGS) byte.c
+n2to3.o         : n2to3.f      		;  $(FC) -c $(FFLAGS) n2to3.f 
+byte.o          : ../../core/byte.c     ;  $(CC) -c $(CFLAGS) ../../core/byte.c
