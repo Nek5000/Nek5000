@@ -8,7 +8,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       logical ifbswap
 
@@ -23,7 +22,7 @@ c
 
       call chkParam
 
-      if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+      call mapelpr  ! read .map file, est. gllnid, etc.
 
       call read_re2_data(ifbswap)
 
@@ -39,7 +38,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       loglevel = 1
       optlevel = 1
@@ -172,7 +170,6 @@ C
       ifmoab    = .false.  
       ifcvode   = .false.
 
-      ifgtp     = .false.
       ifdg      = .false.
       ifsync    = .false.  
       ifanls    = .false.  
@@ -215,7 +212,6 @@ c     - mhd support
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
       INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
@@ -821,7 +817,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
       INCLUDE 'ADJOINT'
       INCLUDE 'CVODE'
 
@@ -879,7 +874,6 @@ C
 c set some internals 
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
-      if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
       param(1) = cpfld(1,2)
       param(2) = cpfld(1,1)
@@ -930,9 +924,6 @@ c set some internals
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
 
-      ifzper=.false.
-      ifgfdm=.false.
-
       return
       END
 c-----------------------------------------------------------------------
@@ -942,7 +933,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       neltmx=np*lelt
       nelvmx=np*lelv
@@ -1077,12 +1067,6 @@ c
      $   'ERROR: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
-
-      if (ifgfdm.and.ifsplit) call exitti
-     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
-
-      if (ifgfdm.and.lfdm.eq.0) call exitti
-     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
 
       if (ifsplit .and. ifmhd) then
          if(nid.eq.0) write(6,*) 

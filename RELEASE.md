@@ -25,15 +25,15 @@
 
 ## What you may have to change to be compatible 
 
-* Use makenek shipped with this release
 * Remove PPLIST symbol NEKNEK (not required anymore)
 * Use valint instead of ubc in userbc for neknek
 * Remove multimesh_create call from usr file (not required anymore)
 * Adjust calls to interpolation wrapper according to new interface in interp.f
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
 * Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
-* Change all user parameters to p170-p200 in rea
-* Set lfio in SIZE to match number of restart files for multi-io reader
+* Your parameters to the reserved user space param(170) - param(200) 
+* Set lelr in SIZE to number of elements per restart file (for muli-file I/O only)
+* Use planar_avg() instead of planar_average_z etc. 
 
 ## Known Bugs 
 

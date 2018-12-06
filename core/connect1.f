@@ -21,7 +21,6 @@ C
       include 'SIZE'
       include 'TOTAL'
       include 'NONCON'
-      include 'ZPER'
       include 'SCRCT'
 c
       COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
@@ -1616,7 +1615,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NONCON'
-      include 'ZPER'
 
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num

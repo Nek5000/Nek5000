@@ -83,7 +83,7 @@ C     Output the processor-element map:
       if(nio.eq.0) then
         write(6,*) ' '
         write(6,*) 'element load imbalance/min/max: ',nm-nn,nn,nm
-        if((nm-nn)/float(nn).gt.0.2) 
+        if((nm-nn)/(1.*nn).gt.0.2) 
      $    write(6,*) 'WARNING: imbalance >20% !!!'
         write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
         write(6,*) ' '
@@ -128,7 +128,6 @@ c     Distribute and assign partitions using the .map file
 c
       include 'SIZE'
       include 'TOTAL'
-      include 'ZPER'
 
       parameter(mdw=2+2**ldim)
       parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
@@ -155,7 +154,6 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      include 'ZPER'
 
       integer vertex(nlv,1)
       integer wk(mdw*ndw)
@@ -367,13 +365,12 @@ C
       include 'SOLN'
       include 'SCRCT'
       include 'TSTEP'
-      include 'ZPER'
       common /ctmp0/ iwork(lelt)
 
       REAL*8 dnekclock,t0
 
       t0 = dnekclock()
-      if (.not.ifgtp) call get_map
+      call get_map
 
 c     compute global to local map (no processor info)
       IEL=0
@@ -414,7 +411,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
-      include 'ZPER'
 
       integer vertex(nlv,1)
       integer wk(mdw,ndw)
@@ -706,7 +702,6 @@ C     element interfaces.
 C
       include 'SIZE'
       include 'INPUT'
-      include 'ZPER'
 
       call dProcmapInit()  
       call get_map() 

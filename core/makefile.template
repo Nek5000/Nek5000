@@ -41,7 +41,7 @@ plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
 map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
-genbox.o hmholtz.o subs1.o subs2.o \
+hmholtz.o subs1.o subs2.o \
 gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o interp.o \
@@ -123,17 +123,17 @@ objdir:
 usrfile:
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
 
-nek5000:	objdir $(NOBJS) usrfile
-	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
-	$(FC) $(FL2) -o ${BINNAME} $S/drive.f ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
+nek5000: lib usrfile
+	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) obj/${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
+        echo ""; \
+        echo "$(NEK_WARN)"; \
         echo ""; \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
 	size ${BINNAME}; \
 	echo ""; \
-        echo "$(NEK_WARN)"; \
 	else \
 	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
 	echo -e "\033[0m"; \
@@ -144,8 +144,8 @@ ifeq ($(MPI),0)
 endif
 
 lib:	objdir $(NOBJS)
-	$(AR) cru ${LIBNAME} $(NOBJS)
-	ranlib ${LIBNAME}
+	@$(AR) cru obj/${LIBNAME} $(NOBJS)
+	@ranlib obj/${LIBNAME}
 
 clean:
 	@echo "cleaning Nek5000 ..."
@@ -175,7 +175,6 @@ $(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/induct.o	:$S/induct.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/convect.o	:$S/convect.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/perturb.o	:$S/perturb.f;	      		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/genbox.o	:$S/genbox.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hsmg.o	:$S/hsmg.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gmres.o	:$S/gmres.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/papi.o	:$S/papi.f;			$(FC) -c $(FL2) $< -o $@
@@ -198,9 +197,6 @@ $(OBJDIR)/eigsolv.o	:$S/eigsolv.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gauss.o	:$S/gauss.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/planx.o	:$S/planx.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/ssolv.o	:$S/ssolv.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_par.o	:$S/gfdm_par.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_solve.o	:$S/gfdm_solve.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/coef.o	:$S/coef.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/plan4.o	:$S/plan4.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/plan5.o	:$S/plan5.f;			$(FC) -c $(FL2) $< -o $@

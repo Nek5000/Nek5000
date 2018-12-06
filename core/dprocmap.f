@@ -2,7 +2,7 @@
 c-----------------------------------------------------------------------
 c
 c     gllnid and gllel are stored as a distributed array ordered by 
-c     global global element index. Access is provided by the two
+c     the global element index. Access is provided by two
 c     functions gllnid() and gllel(). Each ranks holds a local cache
 c     for its local and some remote elements.
 c
@@ -17,12 +17,11 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       integer   disp_unit
-      integer*8 winsize
 
 #ifdef MPI
       disp_unit = ISIZE
-      winsize = disp_unit*size(dProcmapWin)
-      call MPI_Win_create(dProcmapWin,winsize,disp_unit,MPI_INFO_NULL,
+      call MPI_Win_create(dProcmapWin,disp_unit*size(dProcmapWin),
+     $                    disp_unit,MPI_INFO_NULL,
      $                    nekcomm,dProcmapH,ierr)
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
@@ -50,10 +49,7 @@ c-----------------------------------------------------------------------
       call dProcMapFind(iloc,nids,ieg)
       disp = 2*(iloc-1) + ioff
 
-c      write(6,*) nid, 'put:', nids, ieg, ibuf 
-
       call mpi_win_lock(MPI_LOCK_EXCLUSIVE,nids,0,dProcmapH,ierr)
-csk      call mpi_win_lock(MPI_LOCK_SHARED,nids,0,dProcmapH,ierr)
       call mpi_put(ibuf,lbuf,MPI_INTEGER,nids,disp,lbuf,MPI_INTEGER,
      $             dProcmapH,ierr)
       call mpi_win_unlock(nids,dProcmapH,ierr)
@@ -76,7 +72,7 @@ c-----------------------------------------------------------------------
       integer*8 disp
 
       ! local cache
-      parameter (lcr = 2*lelt)                    ! remote elements
+      parameter (lcr = lelt)                      ! remote elements
       parameter (lc = lelt+lcr+8-mod(lelt+lcr,8)) ! multiple of 8
       integer   cache(lc,3)
       save      cache

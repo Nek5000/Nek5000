@@ -83,8 +83,11 @@ fi
 CASEDIR=`pwd`
 CASENAME=$1
 if [ $# -eq 0 ]; then
-   NCASEFILES=`find *.usr | wc -l`
-   if [ $NCASEFILES != "1" ]; then
+   NCASEFILES=`find *.usr 2>/dev/null| wc -l`
+   if [ $NCASEFILES == "0" ]; then
+     echo "FATAL ERROR: Cannot find .usr file!"
+     exit 1
+   elif [ $NCASEFILES != "1" ]; then
      echo "FATAL ERROR: Found multiple .usr files!"
      echo "Please use makenek [.usr filename]"
      exit 1
@@ -145,7 +148,7 @@ if [ -f SIZEu ]; then
       echo "FATAL ERROR: found SIZEu and SIZE!"
       exit 1
    fi
-   NEK_WARN="WARNING: SIZEu will be deprecated in a future release. Please rename to SIZE!"
+   NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
    mv -v SIZEu SIZE
 fi
 
@@ -419,11 +422,11 @@ fi
 \rm .makefile 2>/dev/null
 
 # tweak SIZE file
-if ! cat SIZE | grep -qi 'lfio' ; then
+if ! cat SIZE | grep -qi 'lelr' ; then
    echo >>SIZE
    echo 'c automatically added by makenek' >>SIZE
-   echo '      integer lfio' >>SIZE
-   echo '      parameter (lfio=1) ! max number of I/O files' >>SIZE
+   echo '      integer lelr' >>SIZE
+   echo '      parameter (lelr=1) ! max number of elements per restart file' >>SIZE
 fi
 if ! cat SIZE | grep -qi 'ldimt_proj' ; then
      echo >>SIZE
@@ -434,7 +437,7 @@ fi
 
 # tweak leagacy SIZE file
 if ! cat SIZE | grep -q 'SIZE.inc' ; then
-
+  NEK_WARN="WARNING: Deprecated SIZE will be removed in a future release!"
   if ! cat SIZE | grep -qi 'optlevel' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE

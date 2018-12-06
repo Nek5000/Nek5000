@@ -1,9 +1,6 @@
 c
 c     Restart parameters and variables
 c
-      integer lelr
-      parameter (lelr = lelg/lfio + 3)
-
       integer         max_rst
       common /crst_i/ max_rst            ! for full restart
 

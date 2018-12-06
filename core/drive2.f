@@ -186,12 +186,17 @@ C
              NELFLD(IFIELD) = NELV
          ENDIF
  100  CONTINUE
-C
-      NMXH   = 1000
-      if (iftran) NMXH   = 100
-      NMXP   = 1000 !  (for testing) 100 !  2000
-      NMXE   = 100 !  1000
-      NMXNL  = 10  !  100
+
+      ! Maximum iteration counts for linear solver
+      NMXV   = 1000
+      if (iftran) NMXV = 200
+      NMXH   =  NMXV ! not used anymore
+      NMXP   = 1000
+      do ifield = MFIELD,nfldt+(LDIMT-1 - NPSCAL) 
+         NMXT(i-1) = 200 
+      enddo 
+      NMXE   = 100
+      NMXNL  = 10 
 C
       PARAM(86) = 0 ! No skew-symm. convection for now
 C
@@ -1777,7 +1782,7 @@ c
       call rzero    (h2,ntot1)
 c
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 C
 C     Compute velocity
@@ -1788,7 +1793,7 @@ C
 c
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 C
       return
       end
@@ -1841,7 +1846,7 @@ c
       endif
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxv)
       call ssnormd  (vxc,vyc,vzc)
 c
 c     Compute pressure  (from "incompr")
@@ -1911,7 +1916,7 @@ c     Compute pressure
       call ctolspl  (tolspl,respr)
 
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 
 C     Compute velocity
@@ -1929,7 +1934,7 @@ C     Compute velocity
 
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       if (ifexplvis) call redo_split_vis ! restore vdiff
 

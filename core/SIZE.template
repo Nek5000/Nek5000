@@ -2,11 +2,11 @@ c
 c     Include file to dimension static arrays
 c     and to set some hardwired run-time parameters
 c
-      integer ldim,lx1,lxd,lx2,lx1m,lelg,lelt,lpmin,lpmax,ldimt
+      integer ldim,lx1,lxd,lx2,lx1m,lelg,lelt,lpmin,ldimt
       integer lpelt,lbelt,toteq,lcvelt
       integer lelx,lely,lelz,mxprev,lgmres,lorder,lhis
       integer maxobj,lpert,nsessmax,lxo
-      integer lfdm,ldimt_proj,lfio
+      integer lfdm,ldimt_proj,lelr
 
       ! BASIC
       parameter (ldim=3)               ! domain dimension (2 or 3)
@@ -20,7 +20,7 @@ c
 
       ! OPTIONAL
       parameter (ldimt_proj=1)         ! max auxiliary fields residual projection
-      parameter (lfio=1)               ! max number of I/O files (irrelevant for MPIIO)
+      parameter (lelr=1)               ! max number of elements per restart file
       parameter (lhis=1)               ! max history/monitoring points
       parameter (maxobj=1)             ! max number of objects
       parameter (lpert=1)              ! max number of perturbations

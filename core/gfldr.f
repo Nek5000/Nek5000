@@ -145,7 +145,7 @@ c
       call byte_close_mpi(fldh_gfldr,ierr)
       etime_t = dnekclock_sync() - etime_t
       call fgslib_findpts_free(inth_gfldr)
-      if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
+      if(nio.eq.0) write(6,'(A,1(1g9.2),A)')
      &                   ' done :: gfldr  ', etime_t, ' sec'
 
       return

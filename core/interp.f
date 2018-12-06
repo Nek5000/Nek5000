@@ -96,7 +96,7 @@ c xp,yp,zp  ... interpolation points
 c n         ... number of points dim(xp,yp,zp)
 c iwk       ... integer working array dim(nmax,3)
 c rwk       ... real working array dim(nmax,ldim+1)
-c nmax      ... maximum number of local points
+c nmax      ... leading dimension of iwk and rwk
 c iflp      ... locate interpolation points (proc,el,r,s,t)
 c ih        ... handle
 c
@@ -185,7 +185,7 @@ c
       nn(1) = iglsum(n,1)
       nn(2) = iglsum(nfail,1)
       if(nio.eq.0) then
-        if(nfail.gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
+        if(nn(2).gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
      &         ,i12,/,' done :: intp_nfld')
       endif

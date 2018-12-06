@@ -172,8 +172,6 @@ C     Ensure that all processors have the same time as node 0.
       if (nid.ne.0) time=0.0
       time=glsum(time,1)
 
-C     Ensure that initial field is continuous!
-
       nxyz1=lx1*ly1*lz1
       ntott=nelt*nxyz1
       ntotv=nelv*nxyz1
@@ -195,77 +193,6 @@ C     Ensure that initial field is continuous!
             call exitt
          endif
       endif
-
-      vxmax = glamax(vx,ntotv)
-      vymax = glamax(vy,ntotv)
-      vzmax = glamax(vz,ntotv)
-      prmax = glamax(pr,ntot2)
-
-      ntot = nxyz1*nelfld(2)
-      ttmax = glamax(t ,ntot)
-
-      do i=1,NPSCAL
-         ntot = lx1*ly1*lz1*nelfld(i+2)
-         psmax(i) = glamax(T(1,1,1,1,i+1),ntot)
-      enddo
-    
-      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
-         ifield = 1
-         call opdssum(vx,vy,vz)
-         call opcolv (vx,vy,vz,vmult)
-         if (ifsplit) call dsavg(pr)  ! continuous pressure
-         if (ifvcor)  call ortho(pr)  ! remove any mean
-      endif
-
-c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
-      if (ifmhd) then
-         ifield = ifldmhd
-         call opdssum(bx,by,bz)
-         call opcolv (bx,by,bz,vmult)
-      endif
-
-      if (ifheat.and..not.ifdg) then  ! Don't project if using DG
-         ifield = 2
-         call dssum(t ,lx1,ly1,lz1)
-         call col2 (t ,tmult,ntott)
-         do ifield=3,nfield
-            if(gsh_fld(ifield).ge.0) then
-              call dssum(t(1,1,1,1,ifield-1),lx1,ly1,lz1)
-              if(iftmsh(ifield)) then
-                call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
-              else
-                call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
-              endif
-            endif
-         enddo
-      endif
-c
-c     if (ifpert.and..not.ifdg) then ! Still not DG
-      if (ifpert) then
-         do jp=1,npert
-            ifield = 1
-            call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
-            call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
-
-c           note... must be updated for addl pass. scal's. pff 4/26/04
-            if (.not.ifdg) then
-               do ifield=2,nfield
-                  call dssum(tp(1,ifield-1,jp),lx1,ly1,lz1)
-                  if(iftmsh(ifield)) then
-                     call col2 (tp(1,ifield-1,jp),tmult,ntott)
-                  else
-                     call col2 (tp(1,ifield-1,jp),vmult,ntotv)
-                  endif
-               enddo
-            endif
-
-            vxmax = glamax(vxp(1,jp),ntotv)
-            vymax = glamax(vyp(1,jp),ntotv)
-            if (nio.eq.0) write(6,111) jp,vxmax,vymax
-  111       format(i5,1p2e12.4,' max pert vel')
-         enddo
-      endif
-      jp = 0
 
 C print min values
       xxmax = glmin(xm1,ntott)
@@ -343,9 +270,6 @@ c print max values
          call geom_reset(1)  !  recompute geometric factors
       endif
 
-c     call outpost(vx,vy,vz,pr,t,'   ')
-c     call exitti('setic exit$',nelv)
-
       if(nio.eq.0) then
         write(6,*) 'done :: set initial conditions'
         write(6,*) ' '
@@ -353,7 +277,6 @@ c     call exitti('setic exit$',nelv)
 
       return
       end
-C            
 c-----------------------------------------------------------------------
       subroutine slogic (iffort,ifrest,ifprsl,nfiles)
 C---------------------------------------------------------------------
@@ -2055,14 +1978,6 @@ c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          endif
       endif
 
-
-c     if (if_byte_sw.and.wdsizr.eq.8) then
-c        if(nid.eq.0) 
-c    &     write(6,*) 'ABORT: byteswap for 8byte restart data ', 
-c    &                'not supported'
-c        call exitt
-c     endif
-
       if (iskip) then
          call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't use the data
@@ -2818,3 +2733,66 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine projfld_c0()
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      nxyz1=lx1*ly1*lz
+      ntott=nelt*nxyz1
+      ntotv=nelv*nxyz1
+
+      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
+         ifield = 1
+         call opdssum(vx,vy,vz)
+         call opcolv (vx,vy,vz,vmult)
+         if (ifsplit) call dsavg(pr)  ! continuous pressure
+         if (ifvcor)  call ortho(pr)  ! remove any mean
+      endif
+
+c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
+      if (ifmhd) then
+         ifield = ifldmhd
+         call opdssum(bx,by,bz)
+         call opcolv (bx,by,bz,vmult)
+      endif
+
+      if (ifheat.and..not.ifdg) then  ! Don't project if using DG
+         ifield = 2
+         call dssum(t ,lx1,ly1,lz1)
+         call col2 (t ,tmult,ntott)
+         do ifield=3,nfield
+            if(gsh_fld(ifield).ge.0) then
+              call dssum(t(1,1,1,1,ifield-1),lx1,ly1,lz1)
+              if(iftmsh(ifield)) then
+                call col2 (t(1,1,1,1,ifield-1),tmult,ntott)
+              else
+                call col2 (t(1,1,1,1,ifield-1),vmult,ntotv)
+              endif
+            endif
+         enddo
+      endif
+c
+c     if (ifpert.and..not.ifdg) then ! Still not DG
+      if (ifpert) then
+         do jp=1,npert
+            ifield = 1
+            call opdssum(vxp(1,jp),vyp(1,jp),vzp(1,jp))
+            call opcolv (vxp(1,jp),vyp(1,jp),vzp(1,jp),vmult)
+
+            if (.not.ifdg) then
+               do ifield=2,nfield
+                  call dssum(tp(1,ifield-1,jp),lx1,ly1,lz1)
+                  if(iftmsh(ifield)) then
+                     call col2 (tp(1,ifield-1,jp),tmult,ntott)
+                  else
+                     call col2 (tp(1,ifield-1,jp),vmult,ntotv)
+                  endif
+               enddo
+            endif
+         enddo
+      endif
+      jp = 0
+
+      return
+      end

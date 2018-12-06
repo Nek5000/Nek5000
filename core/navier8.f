@@ -1610,23 +1610,11 @@ c-----------------------------------------------------------------------
       subroutine get_vertex
       include 'SIZE'
       include 'TOTAL'
-      include 'ZPER'
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
       integer vertex
 
-      integer icalld
-      save    icalld
-      data    icalld  /0/
-
-      if (icalld.gt.0) return
-      icalld = 1
-
-      if (ifgtp) then
-         call gen_gtp_vertex(vertex, ncrnr)
-      else
-         call get_vert
-      endif
+      call get_vert
 
       return
       end

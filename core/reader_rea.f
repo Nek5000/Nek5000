@@ -10,7 +10,6 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       character*132 string(100)
 
@@ -308,9 +307,6 @@ C
          endif
       endif
 C
-      ifzper=.false.
-      ifgfdm=.false.
-C
 C     Do some checks
 C
       IF(ldimr.NE.LDIM)THEN
@@ -398,12 +394,6 @@ C
      $   'ABORT: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
-
-      if (ifgfdm.and.ifsplit) call exitti
-     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
-
-      if (ifgfdm.and.lfdm.eq.0) call exitti
-     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
 
 c      if (ifsplit .and. ifstrs) then
 c         if(nid.eq.0) write(6,*) 

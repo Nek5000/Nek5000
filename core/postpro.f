@@ -591,7 +591,7 @@ c-----------------------------------------------------------------------
 
       real uf(n,n,n),uc(m,m,m)
 
-      parameter (l=50)
+      parameter (l=16)
       common /cmap3d/ j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
 
       integer mo,no
@@ -1845,7 +1845,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       logical ifbswap,ifre2,parfound
       character*132 string
@@ -1926,7 +1925,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       logical ifbswap,ifre2,parfound
       character*132 string

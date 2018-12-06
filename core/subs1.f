@@ -1033,18 +1033,7 @@ c     INTLOC =      integration type
          if (intloc.eq.0) then
             call rzero (h2,ntot1)
          else
-            if (ifield.eq.1.or.param(107).eq.0) then 
-
-               call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
-
-            else   ! unsteady reaction-diffusion type equation
-
-               do i=1,ntot1
-                 h2(i) = dtbd*vtrans(i,1,1,1,ifield) + param(107)
-               enddo
-
-            endif
-
+            call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
          endif
 
 c        if (ifield.eq.1 .and. ifanls) then   ! this should be replaced
@@ -1055,11 +1044,6 @@ c        endif
       ELSE
          CALL COPY  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
          CALL RZERO (H2,NTOT1)
-         if (param(107).ne.0) then
-            write(6,*) 'SPECIAL SETHLM!!',param(107)
-c           call cfill (h2,param(107),ntot1)
-            call copy  (h2,vtrans(1,1,1,1,ifield),ntot1)
-         endif
       endif
 
       return
