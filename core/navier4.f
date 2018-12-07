@@ -1152,8 +1152,10 @@ c     ixb is pointer to xbar,  ibb is pointer to bbar := A*xbar
       return
       end
 c-----------------------------------------------------------------------
-      subroutine project2_a
-     $      (x,xbar,xx,bb,n,m,mmx,h1,h2,msk,w,ifwt,ifvec,name6)
+      subroutine project2_a(x,xbar,xx,bb,n,m,mmx,h1,h2,msk,w,ifwt,ifvec,
+     $                      name6)
+
+      include 'SIZE'
 
       real x(n),xbar(n),xx(n,1),bb(n,1),h1(n),h2(n),w(n),msk(n)
       character*6 name6

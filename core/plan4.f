@@ -76,7 +76,7 @@ C        first, compute pressure
          napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
-     $                        ,imesh,tolspl,nmxh,1
+     $                        ,imesh,tolspl,nmxp,1
      $                        ,approxp,napproxp,binvm1)
          call add2    (pr,dpr,ntot1)
          call ortho   (pr)
@@ -85,7 +85,7 @@ C        first, compute pressure
 
 C        Compute velocity
          call cresvsp (res1,res2,res3,h1,h2)
-         call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis

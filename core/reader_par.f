@@ -8,7 +8,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       logical ifbswap
 
@@ -23,7 +22,7 @@ c
 
       call chkParam
 
-      if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+      call mapelpr  ! read .map file, est. gllnid, etc.
 
       call read_re2_data(ifbswap)
 
@@ -39,7 +38,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       loglevel = 1
       optlevel = 1
@@ -51,8 +49,8 @@ C
       param(14) = 0    ! iostep
       param(15) = 0    ! iotime 
 
-      param(21) = 1e-6 ! pressure tolerance
-      param(22) = 1e-8 ! velocity tolerance
+      param(21) = 1e-5 ! pressure tolerance
+      param(22) = 1e-7 ! velocity tolerance
 
       param(26) = 0.5  ! target Courant number
       param(27) = 2    ! 2nd order in time
@@ -125,6 +123,12 @@ C
          iffilter(i+1) = .false.  
       enddo 
 
+      ifdgfld(0) = .false. 
+      ifdgfld(1) = .false. 
+      do i=1,ldimt
+         ifdgfld(i+1) = .false.  
+      enddo 
+
       ifdiff(1) = .true.  
       do i=1,ldimt
          ifdiff(i+1) = .true.  
@@ -166,7 +170,6 @@ C
       ifmoab    = .false.  
       ifcvode   = .false.
 
-      ifgtp     = .false.
       ifdg      = .false.
       ifsync    = .false.  
       ifanls    = .false.  
@@ -183,6 +186,7 @@ C
       ifreguo   = .false.   ! dump on the GLL mesh
 
       fem_amg_param(1) = 0
+      crs_param(1) = 0
 
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
@@ -208,7 +212,6 @@ c     - mhd support
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
       INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
@@ -439,10 +442,12 @@ c set parameters
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
          call capit(c_out,132)
-         if (index(c_out,'SEMG_AMG') .eq. 1) then
-            param(40) = 1
-         else if (index(c_out,'SEMG_XXT') .eq. 1) then
+         if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
+        else if (index(c_out,'SEMG_AMG_HYPRE') .eq. 1) then
+            param(40) = 2
+         else if (index(c_out,'SEMG_AMG') .eq. 1) then
+            param(40) = 1
          else if (index(c_out,'FEM_AMG_HYPRE') .eq. 1) then
             param(40) = 3
          else
@@ -812,7 +817,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
       INCLUDE 'ADJOINT'
       INCLUDE 'CVODE'
 
@@ -870,7 +874,6 @@ C
 c set some internals 
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
-      if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
 
       param(1) = cpfld(1,2)
       param(2) = cpfld(1,1)
@@ -921,22 +924,6 @@ c set some internals
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
 
-c
-c     Check here for global fast diagonalization method or z-homogeneity.
-c     This is here because it influence the mesh read, which follows.
-      nelx   = abs(param(116))   ! check for global tensor-product structure
-      nely   = abs(param(117))
-      nelz   = abs(param(118))
-      n_o    = 0
-
-      if (n_o.eq.0) then
-         ifzper=.false.
-         ifgfdm=.false.
-         if (nelz.gt.0) ifzper=.true.
-         if (nelx.gt.0) ifgfdm=.true.
-         if (nelx.gt.0) ifzper=.false.
-      endif
-
       return
       END
 c-----------------------------------------------------------------------
@@ -946,7 +933,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       neltmx=np*lelt
       nelvmx=np*lelv
@@ -1005,9 +991,9 @@ c
          call exitt
       endif
 
-      IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
+      IF (NPSCAL+1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
-           WRITE(6,22) LDIMT,NPSCL1
+           WRITE(6,22) LDIMT,NPSCAL+1
    22      FORMAT(/s,2X,'Error: Nek has been compiled'
      $             /,2X,'       for',I4,' scalars.  A MHD run'
      $             /,2X,'       requires that LDIMT be set to',I4,'.')
@@ -1081,12 +1067,6 @@ c
      $   'ERROR: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
-
-      if (ifgfdm.and.ifsplit) call exitti
-     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
-
-      if (ifgfdm.and.lfdm.eq.0) call exitti
-     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
 
       if (ifsplit .and. ifmhd) then
          if(nid.eq.0) write(6,*) 

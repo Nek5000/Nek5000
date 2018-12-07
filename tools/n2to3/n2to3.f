@@ -1,23 +1,5 @@
 c----------------------------------------------------------------------
-      program trans
-c
-c     Stretch 2d data set to 3d       Paul F. Fischer  (pff@cfm.brown.edu)  9/6/95.
-c     Updated to include circle sides                  (fischer@mcs.anl.gov) 3/29/99.
-c
-c
-c     This code takes as input a 2D nekton file, blah.rea, and an optional
-c     .fld file, blah.fld  (asci format -- param(67)=0 -- only). 
-c
-c     It generates a correpsonding translated 3D mesh of height Z-max, 
-c     with an equi-partitioned number of levels in Z, given by nlev.
-c     Both these are input by the user.
-c
-c     The code generates periodic-bc's in the Z-direction, all other bc's
-c     are preserved.
-c
-c     Run n2to3.   Enter blah,  enter out, enter nlev and zmax.
-c     
-c
+      program n2to3
 
 #     include "SIZE"
       character*80 file,fname
@@ -54,20 +36,20 @@ c     in = 7
 c1999 continue
  
 c     Get file name
-      write(6,*) 'Input old (source) file name:'      
+      write(6,*) 'Input .rea name to extrude:'      
       call blank(file,80)
       read(in,80) file
       len = ltrunc(file,80)
    80 format(a80)
  
 c     Get file name
-      write(6,*) 'Input new (output) file name:'      
+      write(6,*) 'Input .rea/.re2 output name'      
       call blank(fout,80)
       read(in,80) fout
       lou = ltrunc(fout,80)
 
 c     Get file output type
-      write(6,*) 'For ASCII output only: 0; For .rea/.re2: 1'      
+      write(6,*) 'Input 0:ASCII or 1:BINARY'      
       read(in,*) itype
  
       nlev = 1
@@ -126,9 +108,9 @@ c
       call chcopy(fout1(lou+1),'.rea',4)
       if(itype.eq.1) then
         call blank(fout2,80)
-        fout2 = fout
-        call chcopy(fout21(lou+1),'.re2' // char(0),5)
-        call byte_open(fout2)
+        call chcopy(fout21,fout1,lou)
+        call chcopy(fout21(lou+1),'.re2',4)
+        call byte_open(fout2,ierr)
       endif
       open(unit=10, file=file)
       open(unit=11, file=fout)
@@ -150,7 +132,7 @@ c     write(6,*) len,(file1(k),k=1,len+4)
 
       close (unit=10)
       close (unit=11)
-      call byte_close(fout2)
+      call byte_close(ierr)
 
       stop
  9999 continue
@@ -314,10 +296,10 @@ c
         write(11,11) -neln,ndim3,neln
 
         call blank(hdr,80)
-        write(hdr,111) neln,ndim3,neln       ! writes out header for .re2
+        write(hdr,111) neln,ndim3,neln      ! writes out header for .re2
   111   format('#v002',i9,i3,i9,' hdr')
-        call byte_write(hdr,20)              ! assumes byte_open() already issued
-        call byte_write(test,1)              ! write the endian discriminator
+        call byte_write(hdr,20,ierr)        ! assumes byte_open() already issued
+        call byte_write(test,1,ierr)        ! write the endian discriminator
 
         call rea2re2(dzi,zmin,cb5,cb6,ifflow,ifheat,ifper,ifmhd)
 
@@ -684,7 +666,7 @@ c     Read bc from .rea
          endif
          
          r_nb=nb
-         call byte_write(r_nb,2)
+         call byte_write(r_nb,2,ierr)
 
          do e = 1,nel
 c           Set bc and cbc
@@ -735,7 +717,7 @@ c           Set bc and cbc
                call blank     (buf(8),8)
                call chcopy    (buf(8),cbc(k,e),3)
                if(neln.ge.1000000) buf(3)=ibc(k,e)
-               call byte_write(buf,16)
+               call byte_write(buf,16,ierr)
             endif
             enddo
             cbc(5,e) = 'E  '
@@ -798,7 +780,7 @@ c              Periodic bc's on Z plane
                  call blank     (buf(8),8)
                  call chcopy    (buf(8),cbc(k,e),3)
                  if(neln.ge.1000000) buf(3)=ibc(k,e)
-                 call byte_write(buf,16)
+                 call byte_write(buf,16,ierr)
                  endif
                enddo
             enddo
@@ -867,7 +849,7 @@ c-----------------------------------------------------------------------
 
          do e=1,nel
             rgroup=igroup
-            call byte_write(rgroup, 2)
+            call byte_write(rgroup,2,ierr)
             if (ifcirc) then ! Sweep in circular arc
 
                call sweep_circ(xc,yc,zc,x(1,e),y(1,e),4,z0)             ! z0=theta
@@ -898,7 +880,7 @@ c-----------------------------------------------------------------------
                buf(23) = zc(3)
                buf(24) = zc(4)
 
-               call byte_write(buf,48)
+               call byte_write(buf,48,ierr)
 
             else   ! Translate data in z direction (std n2to3)
 
@@ -926,7 +908,7 @@ c-----------------------------------------------------------------------
                buf(22) = z1
                buf(23) = z1
                buf(24) = z1
-               call byte_write(buf,48)
+               call byte_write(buf,48,ierr)
 
             endif
 
@@ -1169,7 +1151,7 @@ C
      $    ,' Curved sides follow IEDGE,IEL,CURVE(I),I=1,5, CCURVE')
       else
          rcun=ncun
-         call byte_write(rcun,2)
+         call byte_write(rcun,2,ierr)
       endif
 
       ilev = 0
@@ -1221,7 +1203,7 @@ C
                  buf(14) = r4
                  buf(15) = r5
                  call chcopy(buf(16),ans,1)
-                 call byte_write(buf,32)
+                 call byte_write(buf,32,ierr)
                endif
             elseif (ans.eq.'m') then
                if(itype.eq.0) then
@@ -1256,7 +1238,7 @@ C
                  buf(14) = r4
                  buf(15) = r5
                  call chcopy(buf(16),ans,1)
-                 call byte_write(buf,32)
+                 call byte_write(buf,32,ierr)
                endif
             endif
    50      continue
@@ -1415,7 +1397,7 @@ c-----------------------------------------------------------------------
 
       elseif(ilast.eq.1.and.ipass.eq.2.and.itype.eq.1) then
           rcurve=ncurve
-          call byte_write(rcurve,2)
+          call byte_write(rcurve,2,ierr)
       endif
 
       ilast = ipass
@@ -1451,7 +1433,7 @@ c-----------------------------------------------------------------------
           buf(6) = r4
           buf(7) = r5
           call chcopy(buf(8),cc,1)
-          call byte_write(buf,16)
+          call byte_write(buf,16,ierr)
       endif
 
       return

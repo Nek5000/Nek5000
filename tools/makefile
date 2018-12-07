@@ -27,6 +27,9 @@ all:
           if [ "$$i" == "genmap" ]; then         \
              export FFLAGS+=" ${R8}" ;           \
           fi ;                                   \
+          if [ "$$i" == "gencon" ]; then         \
+             export FFLAGS+=" ${R8}" ;           \
+          fi ;                                   \
           if [ "$$i" == "genbox" ]; then         \
             export FFLAGS+=" ${R8}" ;            \
 	  fi ;                                   \
