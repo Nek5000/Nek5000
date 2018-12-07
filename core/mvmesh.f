@@ -1054,3 +1054,154 @@ C
       return
       end
 c-----------------------------------------------------------------------
+      subroutine quickmv
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+c
+      if (if3d) then
+         call quickmv3d
+      else
+         call quickmv2d
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine quickmv2d
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+c
+      integer e,ex,ey,ez,eg
+      common /surfa/ zsurf(lx1,lz1,lelx,lely)
+     $             , wsurf(lx1,lz1,lelx,lely)
+      real nxs,nys,nzs
+c
+      icount = 0
+      do ex=1,nelx
+      do ix=1,lx1
+         zsurf(ix,1,ex,1) = -1.e20
+         wsurf(ix,1,ex,1) = -1.e20
+         ey=nely
+         eg  = ex + nelx*(ey-1) 
+         mid = gllnid(eg)
+         e   = gllel (eg)
+         if (mid.eq.nid) then
+            zsurf(ix,1,ex,1) = ym1(ix,ly1,1,e)
+            vxs              = vx (ix,ly1,1,e)
+            vys              = vy (ix,ly1,1,e)
+            nxs              = unx(ix,1,3,e)          ! Face 3 is on top in 2D
+            nys              = uny(ix,1,3,e)
+            gamma_s          = (vxs*nxs + vys*nys)/(nys) 
+            wsurf(ix,1,ex,1) = gamma_s           ! vertical component of wsurf
+         endif
+         zsurf(ix,1,ex,1) = glmax(zsurf(ix,1,ex,1),1)
+         wsurf(ix,1,ex,1) = glmax(wsurf(ix,1,ex,1),1)
+         icount = icount+1
+
+c        write(6,6) ex,e,ix,xm1(ix,ly1,1,e),ym1(ix,ly1,1,e)
+c    $   ,vxs,vys,nxs,nys,gamma_s,wsurf(ix,1,ex,1),zsurf(ix,1,ex,1)
+c   6        format(3i3,1p9e12.4,' srf')
+
+      enddo
+      enddo
+      zmin = glmin(ym1,lx1*ly1*lz1*nelv)
+c
+      do ex=1,nelx
+      do ix=1,lx1
+         do ey=1,nely
+            eg  = ex + nelx*(ey-1) 
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            if (mid.eq.nid) then
+               do iy=1,ly1
+                  wy (ix,iy,1,e) = wsurf(ix,1,ex,1)
+     $               * (ym1(ix,iy,1,e)-zmin)/(zsurf(ix,1,ex,1)-zmin)
+               enddo
+            endif
+         enddo
+      enddo
+      enddo
+c
+      n = lx1*ly1*lz1*nelv
+      call rzero(wx,n)
+      call dsavg(wy)
+
+c     call opcopy(vx,vy,vz,wx,wy,wz)
+c     call outpost(vx,vy,vz,pr,t,'   ')
+c     call exitt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine quickmv3d
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+c
+      integer e,ex,ey,ez,eg
+      common /surfa/ zsurf(lx1,lz1,lelx,lely)
+     $             , wsurf(lx1,lz1,lelx,lely)
+      real nxs,nys,nzs
+c
+      icount = 0
+      do ey=1,nely
+      do ex=1,nelx
+      do iy=1,ly1
+      do ix=1,lx1
+         zsurf(ix,iy,ex,ey) = -1.e20
+         wsurf(ix,iy,ex,ey) = -1.e20
+         ez  = nelz
+         eg  = ex + nelx*(ey-1) + nelx*nely*(ez-1)
+         mid = gllnid(eg)
+         e   = gllel (eg)
+         if (mid.eq.nid) then
+            zsurf(ix,iy,ex,ey) = zm1(ix,iy,lz1,e)
+            vxs                = vx (ix,iy,lz1,e)
+            vys                = vy (ix,iy,lz1,e)
+            vzs                = vz (ix,iy,lz1,e)
+            nxs                = unx(ix,iy,6,e)     ! Face 6 is on top in 3D
+            nys                = uny(ix,iy,6,e)
+            nzs                = unz(ix,iy,6,e) 
+            gamma_s            = (vxs*nxs+vys*nys+vzs*nzs)/(nzs)
+            wsurf(ix,iy,ex,ey) = gamma_s  ! vertical component of wsurf
+         endif
+         zsurf(ix,iy,ex,ey) = glmax(zsurf(ix,iy,ex,ey),1)
+         wsurf(ix,iy,ex,ey) = glmax(wsurf(ix,iy,ex,ey),1)
+         icount = icount+1
+      enddo
+      enddo
+      enddo
+      enddo
+
+      n = lx1*ly1*lz1*nelv
+      zmin = glmin(zm1,n)
+c
+      do ey=1,nely
+      do ex=1,nelx
+      do iy=1,ly1
+      do ix=1,lx1
+         do ez=1,nelz
+            eg  = ex + nelx*(ey-1) + nelx*nely*(ez-1)
+            mid = gllnid(eg)
+            e   = gllel (eg)
+            if (mid.eq.nid) then
+               do iz=1,lz1
+                  wz (ix,iy,iz,e) = wsurf(ix,iy,ex,ey)
+     $               * (zm1(ix,iy,iz,e)-zmin)/(zsurf(ix,iy,ex,ey)-zmin)
+               enddo
+            endif
+         enddo
+      enddo
+      enddo
+      enddo
+      enddo
+c
+      n = lx1*ly1*lz1*nelv
+      call rzero(wx,n)
+      call rzero(wy,n)
+      call dsavg(wz)
+c
+      return
+      end
+c-----------------------------------------------------------------------

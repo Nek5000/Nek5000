@@ -17,15 +17,11 @@ class FsHydro(NekTestCase):
             lxd       = '18',
             lx2       = 'lx1-2',
             lelg      = '100',
-            ldimt     = '1',
             lhis      = '100',
             lelx      = '20',
             lely      = '60',
             lelz      = '1',
             lx1m      = 'lx1',
-            lbelt     = '1',
-            lpelt     = '1',
-            lcvelt    = '1',
         )
         self.build_tools(['genmap'])
         self.run_genmap(tol='0.01')
@@ -399,11 +395,16 @@ class Eddy_NeknekU(NekTestCase):
     def setUp(self):
 
         self.size_params = dict(
-            nsessmax='2',
+            ldim='2',
+            lx1='8',
+            lxd='12',
             lx2='lx1-2',
+            lelg='100',
+            nsessmax='2',
         )
 
         self.build_tools(['genmap'])
+        self.run_genmap(rea_file='inside',tol='0.2')
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
@@ -413,8 +414,8 @@ class Eddy_NeknekU(NekTestCase):
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
-        self.run_genmap(rea_file='inside',tol='0.2')
-
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
         self.build_nek()
         run_neknek(
             cwd = cwd,
@@ -436,7 +437,9 @@ class Eddy_NeknekU(NekTestCase):
         ))
 
         phrase = self.get_phrase_from_log('gs_op_ms test PASSED',logfile=logfile)
-        self.assertIsNotNullDelayed(phrase, label='gs_op_ms test PASSED')
+        self.assertAlmostEqualDelayed(phrase, label='gs_op_ms test PASSED')
+
+        self.assertDelayedFailures()
 
     def tearDown(self):
         self.move_logs()
@@ -455,7 +458,6 @@ class Eddy_Neknek(NekTestCase):
             lxd='12',
             lx2='lx1-2',
             lelg='1000',
-            lpert='1',
             nsessmax='2',
         )
 
@@ -1051,6 +1053,7 @@ class IO_Test(NekTestCase):
             lx2       = 'lx1-2',
             lelg      = '100',
             ldimt     = '3',
+            lelr      = 'lelg',
         )
 
         self.build_tools(['genmap'])
@@ -1086,7 +1089,6 @@ class InclDef(NekTestCase):
             lelg      = '100',
             ldimt     = '2',
             lhis      = '100',
-            lpert     = '1',
             toteq     = '1',
             lelx      = '1',
             lely      = '1',

@@ -124,7 +124,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
             isolver = param(40)
             if (isolver.eq.0) then      ! semg_xxt
                 if (nelgt.gt.350000) call exitti(
-     $      'problem size too large for xxt - use different preco!$',0)
+     $'problem too large for xxt - try different preconditioner!$',0)
                 call set_overlap
             else if (isolver.eq.1) then ! semg_amg
                 call set_overlap
