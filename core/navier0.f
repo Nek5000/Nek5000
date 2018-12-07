@@ -27,15 +27,14 @@ C
       neslv=icalld
       etime1=dnekclock()
 
-      if (iesolv.eq.1) then
+      if (.not. ifsplit) then
          if (param(42).eq.1) then
             CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
          else
             call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
          endif
       else
-         WRITE(6,*) 'ERROR: E-solver does not exist',iesolv
-         WRITE(6,*) 'Stop in ESOLVER'
+         WRITE(6,*) 'ERROR: E-solver does not exist PnPn'
          CALL EXITT
       ENDIF
 
