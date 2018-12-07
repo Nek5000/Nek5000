@@ -17,11 +17,15 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       integer   disp_unit
+      integer*8 wsize
 
 #ifdef MPI
       disp_unit = ISIZE
-      call MPI_Win_create(dProcmapWin,disp_unit*size(dProcmapWin),
-     $                    disp_unit,MPI_INFO_NULL,
+      wsize  = disp_unit*size(dProcmapWin)
+      call MPI_Win_create(dProcmapWin,
+     $                    wsize,
+     $                    disp_unit,
+     $                    MPI_INFO_NULL,
      $                    nekcomm,dProcmapH,ierr)
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)

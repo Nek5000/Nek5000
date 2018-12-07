@@ -688,18 +688,11 @@ class Ethier(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-#        self.size_params['lx2'] = 'lx1'
-#        self.config_size()
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
         self.mkSIZE()
         self.build_nek(opts={'PPLIST':'HYPRE'})
-
-        from re import sub
-        cls = self.__class__
-        rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
-        with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = semg_amg', l, flags=re.I) for l in f]
-        with open(rea_path, 'w') as f:
-            f.writelines(lines)
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'semg_amg'}})
 
         self.run_nek(step_limit=1000)
 
@@ -714,23 +707,19 @@ class Ethier(NekTestCase):
 
         self.assertDelayedFailures()
 
+
         # SEMG_AMG_HYPRE
-        with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = semg_amg_hypre', l, flags=re.I) for l in f]
-        with open(rea_path, 'w') as f:
-            f.writelines(lines)
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'semg_amg_hypre'}})
 
         self.run_nek(step_limit=10)
+
         gmres = self.get_value_from_log('gmres ', column=-7)
         self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
 
         self.assertDelayedFailures()
 
         # FEM_AMG_HYPRE
-        with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = fem_amg_hypre', l, flags=re.I) for l in f]
-        with open(rea_path, 'w') as f:
-            f.writelines(lines)
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'fem_amg_hypre'}})
 
         self.run_nek(step_limit=10)
         gmres = self.get_value_from_log('gmres ', column=-7)

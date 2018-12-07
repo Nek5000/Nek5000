@@ -2274,7 +2274,7 @@ c      ifgtim  = .true.  ! always get time
       endif
 
       if (nelr.gt.lelr) then
-         write(6,*) 'ERROR: increase lfio in SIZE!', lelr, nelr
+         write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
          call exitt
       endif
 
@@ -2738,9 +2738,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      nxyz1=lx1*ly1*lz
-      ntott=nelt*nxyz1
-      ntotv=nelv*nxyz1
+      nxyz1 = lx1*ly1*lz1
+      ntott = nelt*nxyz1
+      ntotv = nelv*nxyz1
 
       if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
          ifield = 1
