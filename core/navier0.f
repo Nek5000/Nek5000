@@ -27,9 +27,8 @@ C
       neslv=icalld
       etime1=dnekclock()
 
-c     write(6,*) solver_type,' solver type',iesolv
       if (iesolv.eq.1) then
-         if (param(42).eq.1.or.solver_type.eq.'pdm') then
+         if (param(42).eq.1) then
             CALL UZAWA (RES,H1,H2,H2INV,INTYPE,ICG)
          else
             call uzawa_gmres(res,h1,h2,h2inv,intype,icg)
@@ -42,51 +41,6 @@ c     write(6,*) solver_type,' solver type',iesolv
 
       teslv=teslv+(dnekclock()-etime1)
 
-      RETURN
-      END
-      SUBROUTINE ESTRAT
-C---------------------------------------------------------------------------
-C
-C     Decide strategy for E-solver
-C
-C---------------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
-C
-      IESOLV = 1
-      if (ifsplit) iesolv=0
-
-      solver_type='itr'
-      if (param(116).ne.0) solver_type='fdm'
-c     if (param(90).ne.0)  solver_type='itn'
-
-c     The following change recognizes that geometry is logically 
-c     tensor-product, but deformed:  pdm = Preconditioner is fdm
-
-      if (param(59).ne.0.and.solver_type.eq.'fdm') solver_type='pdm'
-
-      if (istep.lt.2.and.nio.eq.0) write(6,10) iesolv,solver_type
-   10 format(2X,'E-solver strategy: ',I2,1X,A)
-
-
-
-C
-      RETURN
-      END
-      SUBROUTINE EINIT
-C-----------------------------------------------------------------------------
-C
-C     Initialize E-solver
-C
-C-----------------------------------------------------------------------------
-      INCLUDE 'SIZE'
-      INCLUDE 'SOLN'
-      INCLUDE 'TSTEP'
-      INCLUDE 'ESOLV'
-      COMMON /SCRHI/  H2INV (LX1,LY1,LZ1,LELV)
-      LOGICAL IFNEWP
-C
-      CALL ESTRAT 
       RETURN
       END
 c-----------------------------------------------------------------------

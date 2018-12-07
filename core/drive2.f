@@ -395,7 +395,6 @@ C
          CALL SETINVM
          CALL SETDEF
          CALL SFASTAX
-         IF (ISTEP.GE.1) CALL EINIT
       ELSEIF (IGEOM.EQ.3) THEN
 c
 c        Take direct stiffness avg of mesh
@@ -2019,3 +2018,31 @@ c     istpp = istep+2033+1250
       return
       end
 C-----------------------------------------------------------------------
+      subroutine prinit
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      if(nio.eq.0) write(6,*) 'initialize pressure solver'
+      isolver = param(40)
+
+      if (isolver.eq.0) then      ! semg_xxt
+         if (nelgt.gt.350000)
+     $   call exitti('problem size too large for XXT solver!$',0)
+         call set_overlap
+      else if (isolver.eq.1) then ! semg_amg
+         call set_overlap
+      else if (isolver.eq.2) then ! semg_amg_hypre
+         call set_overlap
+      else if (isolver.eq.3) then ! fem_amg_hypre
+         null_space = 0
+         if (ifvcor) null_space = 1 
+         call fem_amg_setup(nx1,ny1,nz1,
+     $                      nelv,ndim,
+     $                      xm1,ym1,zm1,
+     $                      pmask,binvm1,null_space,
+     $                      gsh_fld(1),fem_amg_param)
+      endif
+
+      return 
+      end

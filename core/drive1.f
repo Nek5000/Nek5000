@@ -110,36 +110,15 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
 
-      if (fintim.ne.0.0.or.nsteps.ne.0) 
+      if (fintim.ne.0.0 .or. nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
 
       call vrdsmsh     !     Verify mesh topology
 
       call dg_setup    !     Setup DG, if dg flag is set.
 
-      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
-         if(nio.eq.0) write(6,*) 'initialize pressure solver'
-         call estrat                                       ! initialization.
-         if (iftran.and.solver_type.eq.'itr') then
-            isolver = param(40)
-            if (isolver.eq.0) then      ! semg_xxt
-                if (nelgt.gt.350000) call exitti(
-     $'problem too large for xxt - try different preconditioner!$',0)
-                call set_overlap
-            else if (isolver.eq.1) then ! semg_amg
-                call set_overlap
-            else if (isolver.eq.2) then ! semg_amg_hypre
-                call set_overlap
-            else if (isolver.eq.3) then ! fem_amg_hypre
-                null_space = 0
-                if (ifvcor) null_space = 1 
-                call fem_amg_setup(nx1,ny1,nz1,
-     $                             nelv,ndim,
-     $                             xm1,ym1,zm1,
-     $                             pmask,binvm1,null_space,
-     $                             gsh_fld(1),fem_amg_param)
-            endif
-         endif
+      if (ifflow.and.iftran) then ! Init oressure solver 
+         if (fintim.ne.0 .or. nsteps.ne.0) call prinit
       endif
 
       if(ifcvode) call cv_setsize
