@@ -105,6 +105,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
+      call mesh_metrics     ! print some metrics
 
       call setlog  ! Initalize logical flags
 
@@ -113,11 +114,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (fintim.ne.0.0 .or. nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
 
-      call vrdsmsh     !     Verify mesh topology
+      call dg_setup ! Setup DG, if dg flag is set.
 
-      call dg_setup    !     Setup DG, if dg flag is set.
-
-      if (ifflow.and.iftran) then ! Init oressure solver 
+      if (ifflow.and.iftran) then ! Init pressure solver 
          if (fintim.ne.0 .or. nsteps.ne.0) call prinit
       endif
 
@@ -129,7 +128,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
 #ifdef CMTNEK
         call nek_cmt_init
-        if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
       call setics
@@ -144,7 +142,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-      call projfld_c0   ! ensure field are contiguous
+      call projfld_c0   ! ensure fields are contiguous
+
       call setprop      ! call again because input has changed in userchk
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
@@ -169,8 +168,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         write (6,*) ' '
         if (time.ne.0.0) write (6,'(a,e14.7)') ' Initial time:',time
         write (6,'(a,g13.5,a)') 
-     &              ' Initialization successfully completed ',
-     &              tinit, ' sec'
+     &     ' Initialization successfully completed ', tinit, ' sec'
       endif
 
       return
