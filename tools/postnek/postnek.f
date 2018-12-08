@@ -776,10 +776,10 @@ c
          xxm=x(iel,j)!+ .12*(xx(1,1)-x(iel,j))**2 / xx(1,2)
          yym=y(iel,j)!+ .12*(xx(2,1)-x(iel,j))**2 / xx(2,2)
          zzm=z(iel,j)!+ .12*(xx(3,1)-x(iel,j))**2 / xx(3,2)
-         if (j.eq.5) call g3writ(xxm,yym,zzm,1.0,'5$')
-         if (j.eq.6) call g3writ(xxm,yym,zzm,1.0,'6$')
-         if (j.eq.7) call g3writ(xxm,yym,zzm,1.0,'7$')
-         if (j.eq.8) call g3writ(xxm,yym,zzm,1.0,'8$')
+c        if (j.eq.5) call g3writ(xxm,yym,zzm,1.0,'5$')
+c        if (j.eq.6) call g3writ(xxm,yym,zzm,1.0,'6$')
+c        if (j.eq.7) call g3writ(xxm,yym,zzm,1.0,'7$')
+c        if (j.eq.8) call g3writ(xxm,yym,zzm,1.0,'8$')
         enddo
       enddo
 
