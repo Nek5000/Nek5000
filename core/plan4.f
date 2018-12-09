@@ -176,7 +176,7 @@ c     add old pressure term because we solve for delta p
       call invers2 (ta1,vtrans,ntot1)
       call rzero   (ta2,ntot1)
 
-      call bcdirsc (pr)
+      call bcdirpr(pr)
 c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitti ('exit in cresps$',ifield)
 
@@ -629,3 +629,70 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      SUBROUTINE BCDIRPR(S)
+C
+C     Apply Dirichlet boundary conditions to surface of Pressure.
+C     Use IFIELD=1.
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      INCLUDE 'INPUT'
+      INCLUDE 'SOLN'
+      INCLUDE 'TOPOL'
+      INCLUDE 'CTIMER'
+C
+      DIMENSION S(LX1,LY1,LZ1,LELT)
+      COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
+     $             , TMA(LX1,LY1,LZ1,LELT)
+     $             , SMU(LX1,LY1,LZ1,LELT)
+      common  /nekcb/ cb
+      CHARACTER CB*3
+
+      if (icalld.eq.0) then
+         tusbc=0.0
+         nusbc=0
+         icalld=icalld+1
+      endif
+      nusbc=nusbc+1
+      etime1=dnekclock()
+C
+      IFLD   = 1
+      NFACES = 2*ldim
+      NXYZ   = lx1*ly1*lz1
+      NEL    = NELFLD(IFIELD)
+      NTOT   = NXYZ*NEL
+      NFLDT  = NFIELD - 1
+C
+      CALL RZERO(TMP,NTOT)
+C
+C     pressure boundary condition
+C
+      DO 2100 ISWEEP=1,2
+C
+         DO 2010 IE=1,NEL
+         DO 2010 IFACE=1,NFACES
+            CB=CBC(IFACE,IE,IFIELD)
+            BC1=BC(1,IFACE,IE,IFIELD)
+            IF (cb.EQ.'O  ' .or. cb.eq.'ON ' .or.
+     $          cb.eq.'o  ' .or. cb.eq.'on ') 
+     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,lx1,ly1,lz1)
+ 2010    CONTINUE
+C
+C        Take care of Neumann-Dirichlet shared edges...
+C
+         IF (ISWEEP.EQ.1) CALL DSOP(TMP,'MXA',lx1,ly1,lz1)
+         IF (ISWEEP.EQ.2) CALL DSOP(TMP,'MNA',lx1,ly1,lz1)
+ 2100 CONTINUE
+C
+C     Copy temporary array to temperature array.
+C
+      CALL COL2(S,PMASK,NTOT)
+      CALL ADD2(S,TMP,NTOT)
+
+      tusbc=tusbc+(dnekclock()-etime1)
+
+      RETURN
+      END
+C
+c-----------------------------------------------------------------------
