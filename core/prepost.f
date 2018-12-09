@@ -53,7 +53,7 @@ c     Check for io request in file 'ioinfo'
       save    maxstep
       data    maxstep /999999999/
 
-      if (iostep.lt.0 .or. timeio.lt.0) return
+c      if (iostep.lt.0 .or. timeio.lt.0) return
 
       ioinfodmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
