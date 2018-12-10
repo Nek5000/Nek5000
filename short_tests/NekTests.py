@@ -504,22 +504,22 @@ class Eddy_Neknek(NekTestCase):
         ))
 
         xerr_inside = self.get_value_from_log('X err  inside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_inside, target_val=7.163001E-04, delta=1E-05, label='X err  inside')
+        self.assertAlmostEqualDelayed(xerr_inside, target_val=3.796433E-07, delta=1E-05, label='X err  inside')
 
         xerr_global = self.get_value_from_log('X err   global', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_global, target_val=8.580050E-04, delta=1E-05, label='X err   global')
+        self.assertAlmostEqualDelayed(xerr_global, target_val=6.101289E-07, delta=1E-05, label='X err   global')
 
         xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.580050E-04, delta=1E-05, label='X err  outside')
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=6.101289E-07, delta=1E-05, label='X err  outside')
 
         yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_inside, target_val=9.012947E-04, delta=1E-05, label='Y err  inside')
+        self.assertAlmostEqualDelayed(yerr_inside, target_val=4.224388E-07, delta=1E-05, label='Y err  inside')
 
         yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_global, target_val=9.877146E-04, delta=1E-05, label='Y err   global')
+        self.assertAlmostEqualDelayed(yerr_global, target_val=6.520916E-07, delta=1E-05, label='Y err   global')
 
         yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_outside, target_val=9.877146E-04, delta=1E-05, label='Y err  outside')
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=6.520916E-07, delta=1E-05, label='Y err  outside')
 
         self.assertDelayedFailures()
 
@@ -564,22 +564,22 @@ class Eddy_Neknek(NekTestCase):
         ))
 
         xerr_inside = self.get_value_from_log('X err  inside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_inside, target_val=7.431657E-04, delta=1E-04, label='X err  inside')
+        self.assertAlmostEqualDelayed(xerr_inside, target_val=5.412758E-05, delta=1E-04, label='X err  inside')
 
         xerr_global = self.get_value_from_log('X err   global', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_global, target_val=8.696332E-04, delta=1E-04, label='X err   global')
+        self.assertAlmostEqualDelayed(xerr_global, target_val=7.256805E-05, delta=1E-04, label='X err   global')
 
         xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.696332E-04, delta=1E-05, label='X err  outside')
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=7.256805E-05, delta=1E-05, label='X err  outside')
 
         yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_inside, target_val=9.250194E-04, delta=1E-04, label='Y err  inside')
+        self.assertAlmostEqualDelayed(yerr_inside, target_val=6.883678E-05, delta=1E-04, label='Y err  inside')
 
         yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_global, target_val=9.878329E-04, delta=1E-04, label='Y err   global')
+        self.assertAlmostEqualDelayed(yerr_global, target_val=7.788840E-05, delta=1E-04, label='Y err   global')
 
         yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_outside, target_val=9.878329E-04, delta=1E-05, label='Y err  outside')
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=7.788840E-05, delta=1E-05, label='Y err  outside')
 
         self.assertDelayedFailures()
 
