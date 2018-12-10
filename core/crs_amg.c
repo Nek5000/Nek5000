@@ -31,7 +31,7 @@
 #  define AMG_MAX_ROWS 12000 
 #endif
 
-#include "amg_io.h"
+#include "crs_amg_io.h"
 
 static double get_time(void)
 {

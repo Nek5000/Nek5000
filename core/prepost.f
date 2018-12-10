@@ -1377,7 +1377,6 @@ c                                      ! is the only form used for restart
 c     if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
 c  8  format(i8,' prefix ',a3,5i5)
 
-      if_full_pres = .false.
       return
       end
 c-----------------------------------------------------------------------

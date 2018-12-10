@@ -160,8 +160,17 @@ if [ $? -eq 0 ]; then
 fi
 \rm test_underscore.* 2>/dev/null
 
-if [[ $OSTYPE == darwin* ]]; then
-  BIGMEM="" 
+# Test BIGMEM support
+cat > _test.f << _ACEOF
+      program test
+      end
+_ACEOF
+$FC $BIGMEM -o _test _test.f >/dev/null 2>&1 || true
+\rm _test.f 2>/dev/null
+if [ -f _test ]; then
+  \rm _test 2>/dev/null
+else
+ BIGMEM=""
 fi
 
 FFLAGS+=" -DMAXNEL=$MAXNEL"

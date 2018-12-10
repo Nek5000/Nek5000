@@ -38,6 +38,8 @@ c-------------------------------------------------------------
       integer nfld_neknek
       common /inbc/ nfld_neknek
 
+      if (nid.eq.0) write(6,*) 'setup neknek'
+
       call neknekgsync()
 c     Do some sanity checks - just once at setup
 c     Set interpolation flag: points with bc = 'int' get intflag=1. 
@@ -48,16 +50,22 @@ c     Boundary conditions are changed back to 'v' or 't'.
 
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
-         call nekneksanchk(1)
+         call nekneksanchk
          call set_intflag
-         call neknekmv()
+         call neknekmv
          icalld = icalld + 1
       endif
 
+      if (nid.eq.0) write(6,*) 'ext order=', ninter
+      if (nid.eq.0) write(6,*) 'nfld_neknek=', nfld_neknek
+
       nfld_min = iglmin_ms(nfld_neknek,1)
       nfld_max = iglmax_ms(nfld_neknek,1)
-      if (nfld_min .ne. nfld_max)
-     $   call exitti('nfld_neknek does not match across sessions!$',1)
+      if (nfld_min .ne. nfld_max) then
+         nfld_neknek = nfld_min 
+         if (nid.eq.0) write(6,*)
+     $      'WARNING: reset nfld_neknek to ', nfld_neknek
+      endif
  
       call neknekgsync()
 
@@ -67,6 +75,8 @@ c     Figure out the displacement for the first mesh
 c     exchange_points finds the processor and element number at
 c     comm_world level and displaces the 1st mesh back
       call exchange_points(dxf,dyf,dzf)
+
+      if(nio.eq.0) write(6,'(A,/)') ' done :: setup neknek'
 
       return
       end
@@ -87,7 +97,6 @@ c     Boundary conditions are changed back to 'v' or 't'.
 
       ifield = 1
       if (ifheat) ifield = 2
-
 
       nfaces = 2*ldim
       nel    = nelfld(ifield)
@@ -166,35 +175,6 @@ c     ngeom to ngeom=3-5 for scheme to be stable.
       return
       end
 c---------------------------------------------------------------------
-      subroutine chk_outflow_short ! Assign neighbor velocity to outflow
-c
-c     This is just an experimental routine for PnPn only...
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-      include 'NEKNEK'
-      integer e,eg,f
-
-      n = lx1*ly1*lz1*nelt
-      ipfld=ldim
-c     if (ifsplit) ipfld=ldim+1
-      ipfld=ldim+1                ! Now for both split and nonsplit (12/14/15)
-      itfld=ipfld+1
-
-      do i=1,n ! The below has not been checked for ifheat=.true., pff 6/27/15
-         if (imask(i,1,1,1).eq.1) then
-            vx(i,1,1,1) = valint(i,1,1,1,1)
-            vy(i,1,1,1) = valint(i,1,1,1,2)
-            if (if3d)    vz(i,1,1,1)  = valint(i,1,1,1,3)
-            if (ifsplit) pr(i,1,1,1)  = valint(i,1,1,1,ipfld)
-            if (ifheat)  t(i,1,1,1,1) = valint(i,1,1,1,itfld)
-         endif
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine chk_outflow ! Assign neighbor velocity to outflow if
                              ! characteristics are going the wrong way.
 
@@ -293,7 +273,7 @@ c     Displace MESH 1
 
 c     Setup findpts    
       tol     = 5e-13
-      npt_max = 256
+      npt_max = 128
       nxf     = 2*lx1 ! fine mesh for bb-test
       nyf     = 2*ly1
       nzf     = 2*lz1
@@ -445,7 +425,7 @@ c     Make sure rcode_all is fine
       return
       end
 c-----------------------------------------------------------------------
-      subroutine xfer_bcs_neknek
+      subroutine neknek_exchange
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
@@ -457,6 +437,9 @@ c-----------------------------------------------------------------------
       real fieldout(nmaxl_nn,nfldmax_nn)
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
+
+      if (nio.eq.0) write(6,*) 
+     $   ' Multidomain data exchange ... ', nfld_neknek
 
       etime0 = dnekclock_sync()
       call neknekgsync()
@@ -491,7 +474,7 @@ c     the information will go to the boundary points
       tsync = etime1 - etime0
 
       if (nio.eq.0) write(6,99) istep,
-     $              '  Multidomain data exchange done',
+     $              '  done :: Multidomain data exchange',
      $              etime, etime+tsync
  99   format(i11,a,1p2e13.4)
 
@@ -517,15 +500,10 @@ c     Used for findpts_eval of various fields
       return
       end
 c--------------------------------------------------------------------------
-      subroutine nekneksanchk(flag)
+      subroutine nekneksanchk
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      integer flag,nintvh(2),nintv,ninth,e,f,i,j,k
-      character*3 cb
-      character*2 cb2
-      equivalence (cb2,cb)
-c     Some sanity checks for neknek 
 
       if (nfld_neknek.gt.nfldmax_nn) then
         call exitti('Error: nfld_neknek > nfldmax:$',idsess)
@@ -533,54 +511,6 @@ c     Some sanity checks for neknek
 
       if (nfld_neknek.eq.0)
      $ call exitti('Error: set nfld_neknek in usrdat. Session:$',idsess)
-
-      if (nfld_neknek.lt.ldim) then
-        if (nid.eq.0) write(6,*) 'Warning: Not all velocities are 
-     $      being interpolated between sessions'
-      endif       
-
-      if (ifsplit) then
-       if (nfld_neknek.lt.ldim+1) then
-        if (nid.eq.0) write(6,*) 'Warning: Pressure is not being 
-     $ interpolated.'
-       endif       
-      endif
-
-      call izero(nintvh,2)
-      ifield = 1
-      if (ifheat) ifield = 2
-
-      do i=1,ifield
-      do e=1,nelt
-      do f=1,2*ldim
-         cb=cbc(f,e,i)
-         if (cb2.eq.'in') then
-           nintvh(i) = nintvh(i)+1
-         endif
-      enddo
-      enddo
-      enddo
-
-      nintv = iglsum(nintvh(1),1)
-      ninth = iglsum(nintvh(2),1)
-
-      if (ifield.eq.2) then
-      if (nfld_neknek.lt.ldim+2) then
-      if (nid.eq.0) then
-      write(6,*) 'Warning: Temperature might not be
-     $ interpolated during the run. Check nfld_neknek in usrdat'
-      if (nintv.eq.ninth) write(6,*) 'set nfld_neknek to atleast ldim+2'
-      if (nintv.eq.ninth) call exitt
-      endif
-      endif
-      endif
-
-      call neknekgsync()
-
-      if (nid.eq.0) write(6,105) idsess,ngeom,ninter,
-     $   nfld_neknek,nfldmax_nn,
-     $  ifflow,ifheat
-  105    format(5i5,L3,L3,' NekNek-par')
 
       return
       end
@@ -593,11 +523,8 @@ C--------------------------------------------------------------------------
       real u(1),ui(1)
       integer nv,nt
 
-cccc  Exchanges field u between the two neknek sessions and copies it 
-cccc  to ui
-c     Interpolate using findpts_eval
       call field_eval(fieldout(1,1),1,u)
-cccc
+
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
        do i=1,npoints_nn

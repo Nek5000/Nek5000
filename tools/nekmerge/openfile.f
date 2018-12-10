@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
       call chcopy(fbout1(lou+1),'.re2\0',5)
 
       open(unit=11, file=fout)
-      call byte_open(fbout)
+      call byte_open(fbout,ierr)
 
       return
       end

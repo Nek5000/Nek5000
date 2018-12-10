@@ -12,7 +12,7 @@ c
 c
       etime0 = dnekclock_sync()
 
-      if(nio.eq.0) write(6,'(A)') ' mapping elements to processors'
+      if(nio.eq.0) write(6,'(A)') ' partioning elements to processors'
 
       MFIELD=2
       IF (IFFLOW) MFIELD=1
@@ -27,11 +27,12 @@ c     Distributed memory processor mapping
          IF(NID.EQ.0) THEN
            WRITE(6,1000) NP,NELGT
  1000      FORMAT(2X,'ABORT: Too many processors (',I8
-     $          ,') for to few elements (',I8,').'
+     $          ,') for to few elements (',I12,').'
      $          ,/,2X,'ABORTING IN MAPELPR.')
          ENDIF
          call exitt
       ENDIF
+
       call set_proc_map()
 
       if (nelt.gt.lelt) then
@@ -47,8 +48,7 @@ c     Distributed memory processor mapping
  1200 CONTINUE
 
 C     Output the processor-element map:
-      ifverbm=.true.
-      if (np.gt.2000.or.nelgt.gt.40000) ifverbm=.false.
+      ifverbm=.false.
       if (loglevel .gt. 2) ifverbm=.true.
 
       if(ifverbm) then
@@ -59,7 +59,7 @@ C     Output the processor-element map:
            if (NELT.GT.8) write(6 ,1315) (lglel(ie),ie=9,NELT)
            DO inid=1,NP-1
               mtype = inid
-              call csend(mtype,idum,4,inid,0)            ! handshake
+              call csend(mtype,idum,4,inid,0)         ! handshake
               call crecv(mtype,inelt,4)               ! nelt of other cpus
               N8 = min(8,inelt)
            ENDDO
@@ -77,300 +77,23 @@ C     Output the processor-element map:
         endif
       endif
 
-C     Check elemental distribution
-C
-C      IF (IPASS.EQ.2.AND.PARAM(156).eq.9) THEN
-C         NXYZ=lx1*ly1*lz1
-C         DO 1400 IE=1,NELT
-C            VTMP1=NODE
-c            VTMP2=IE
-C            CALL CFILL(VX(1,1,1,IE) ,VTMP1,NXYZ)
-C            CALL CFILL(VY(1,1,1,IE) ,VTMP2,NXYZ)
-C            CALL CFILL(T(1,1,1,IE,1),VTMP1,NXYZ)
-C 1400    CONTINUE
-C         call prepost(.true.,'   ')
-C      ENDIF
-
       nn = iglmin(nelt,1)
       nm = iglmax(nelt,1)
-      dt = dnekclock() - etime0
+      dtmp = dnekclock() - etime0
       if(nio.eq.0) then
         write(6,*) ' '
-        write(6,*) 'element load imbalance: ',nm-nn,nn,nm
-        if((nm-nn)/float(nn).gt.0.2) 
+        write(6,*) 'element load imbalance/min/max: ',nm-nn,nn,nm
+        if((nm-nn)/(1.*nn).gt.0.2) 
      $    write(6,*) 'WARNING: imbalance >20% !!!'
-        write(6,'(A,g13.5,A,/)')  ' done :: mapping ',dt,' sec'
+        write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
         write(6,*) ' '
       endif
 
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_proc_map()
-C
-C     Compute element to processor distribution according to (weighted) 
-C     physical distribution in an attempt to minimize exposed number of
-C     element interfaces.
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'SOLN'
-      include 'SCRCT'
-      include 'TSTEP'
-      include 'ZPER'
-      common /ctmp0/ iwork(lelt)
-c
-      REAL*8 dnekclock,t0
-c
-      t0 = dnekclock()
-c     if (.not.(ifgtp.or.ifgfdm)) then
-      if (.not.ifgtp) then
-c
-c        rsb element to processor mapping 
-c
-         if (ifgfdm)       call gfdm_elm_to_proc(gllnid,np) ! gfdm w/ .map
-
-         call get_map
-
-      endif
-
-      if(ifzper.or.ifgtp) call gfdm_elm_to_proc(gllnid,np) ! special processor map
-
-c     compute global to local map (no processor info)
-c
-      IEL=0
-      CALL IZERO(GLLEL,NELGT)
-      DO IEG=1,NELGT
-         IF (GLLNID(IEG).EQ.NID) THEN
-            IEL = IEL + 1
-            GLLEL(IEG)=IEL
-            NELT = IEL
-            if (ieg.le.nelgv) NELV = IEL
-         ENDIF
-c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
-      ENDDO
-c
-c     dist. global to local map to all processors
-c
-      npass = 1 + nelgt/lelt
-      k=1
-      do ipass = 1,npass
-         m = nelgt - k + 1
-         m = min(m,lelt)
-         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
-         k = k+m
-      enddo
-c
-c     compute local to global map
-c     (i.e. returns global element number given local index and proc id)
-c
-      do ieg=1,nelgt
-         mid  =gllnid(ieg)
-         ie   =gllel (ieg)
-         if (mid.eq.nid) lglel(ie)=ieg
-      enddo
-c
-c     All Done.
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gfdm_elm_to_proc(gllnid,np)
-c
-c
-      include 'SIZE'
-      include 'ZPER'
-c
-      integer gllnid(1)
-c
-      common /ctmp1/  map_st(lelg_sm)
-      common /vptsol/ iwork(0:lp)
-      integer nelbox(3),nstride_box(3)
-c
-      call gfdm_set_pst(ip,is,it,nelbox,nstride_box,lx2,ly2,lz2)
-c
-      nep = nelbox(ip)
-      nes = nelbox(is)
-     
-      if(nelbox(it).eq.0) nelbox(it)=1
-      net = nelbox(it)
-c
-      nst = nes*net
-      if (nst.lt.np) then
-         if (nid.eq.0) 
-     $   write(6,*) 'ERROR, number of elements in plane must be > np'
-     $   ,nst,np,nep,nes,net
-         call exitt
-      endif
-c
-c
-      call gfdm_map_2d(map_st,nes,net,iwork,np)
-      call gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gfdm_map_2d(map_st,nes,net,num_el,np)
-c
-c     Set up a 2D processor decomposition of an NES x NET array.
-c
-      integer map_st(nes,net),num_el(0:np)
-c
-c     First a stupid dealing algorithm to determine how many
-c     elements on each processor
-
-      do i=0,np
-         num_el(i) = 0
-      enddo
-c
-      k = np-1
-      do i=1,nes*net
-         num_el(k) = num_el(k)+1
-         k=k-1
-         if (k.lt.0) k = np-1
-      enddo
-c
-      jnid = 0
-      nel_cnt = 0
-      nel_cur = num_el(jnid)
-      do j=1,net,2
-         do i=1,nes                 ! Count down
-            nel_cnt = nel_cnt + 1
-            if (nel_cnt.gt.nel_cur) then
-               jnid=jnid+1
-               nel_cur = num_el(jnid)
-               nel_cnt = 1
-            endif
-            map_st(i,j) = jnid
-         enddo
-c
-         j1 = j+1
-         if (j1.le.net) then
-            do i=nes,1,-1                ! Count up
-               nel_cnt = nel_cnt + 1
-               if (nel_cnt.gt.nel_cur) then
-                  jnid=jnid+1
-                  nel_cur = num_el(jnid)
-                  nel_cnt = 1
-               endif
-               map_st(i,j1) = jnid
-            enddo
-         endif
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gfdm_set_pst(ip,is,it,nelbox,nstride_box,nxp,nyp,nzp)
-c
-      include 'SIZE'
-      include 'INPUT'
-      include 'ZPER'
-c
-      integer nelbox(3),nstride_box(3)
-c
-      if (if3d) then
-         if (param(118).lt.0) then
-            ip = 3
-            is = 1
-            it = 2
-         elseif (param(117).lt.0) then
-            ip = 2
-            is = 3
-            it = 1
-         else
-            ip = 1
-            is = 2
-            it = 3
-         endif
-      else
-         if (param(117).lt.0) then
-            ip = 2
-            is = 1
-            it = 3
-         else
-            ip = 1
-            is = 2
-            it = 3
-         endif
-      endif
-c
-      pst2lex(1)=ip       ! identify x-, y- or z with primary direction
-      pst2lex(2)=is
-      pst2lex(3)=it
-c
-      lex2pst(ip)=1
-      lex2pst(is)=2
-      lex2pst(it)=3
-c
-      nelbox(1) = nelx
-      nelbox(2) = nely
-      nelbox(3) = nelz
-c
-      nstride_box(1) = 1
-      nstride_box(2) = nelx
-      nstride_box(3) = nelx*nely
-c
-      ngfdm_p(1) = nelx*nxp
-      ngfdm_p(2) = nely*nyp
-      ngfdm_p(3) = nelz*nzp
-      write(6,*) 'ngfdm:',(ngfdm_p(k),k=1,3)
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine gfdm_build_global_el_map (gllnid,map_st,nes,net
-     $                                     ,nelbox,nstride_box,ip,is,it)
-c
-      include 'SIZE'
-      integer gllnid(1)
-      integer map_st(nes,net)
-      integer nelbox(3),nstride_box(3)
-c
-      integer proc
-c
-      do jt=1,nelbox(it)
-      do js=1,nelbox(is)
-         proc = map_st(js,jt)
-         do jp=1,nelbox(ip)
-            ieg = 1 + nstride_box(ip)*(jp-1)  ! nstride_p=nes*net
-     $              + nstride_box(is)*(js-1)
-     $              + nstride_box(it)*(jt-1)
-            gllnid(ieg) = proc
-         enddo
-      enddo
-      enddo
-c
       return
       end
 c-----------------------------------------------------------------------
       subroutine outmati(u,m,n,name6)
       integer u(m,n)
-      character*6 name6
-      common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
-c
-c     Print out copies of a global matrix
-c
-      do mid=0,np-1
-        call nekgsync
-        if (mid.eq.nid) then
-         n20 = min(n,20)
-         write(6,1) nid,m,n,name6
-   1     format(//,3i6,'  Matrix:',2x,a6,/)
-         do i=1,m
-            write(6,2) nid,name6,(u(i,j),j=1,n20)
-         enddo
-   2     format(i3,1x,a6,20i6)
-        endif
-        call nekgsync
-      enddo
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine outmati8(u,m,n,name6)
-      integer*8 u(m,n)
       character*6 name6
       common /nekmpi/ nid,np,nekcomm,nekgroup,nekreal
 c
@@ -405,7 +128,6 @@ c     Distribute and assign partitions using the .map file
 c
       include 'SIZE'
       include 'TOTAL'
-      include 'ZPER'
 
       parameter(mdw=2+2**ldim)
       parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
@@ -422,13 +144,269 @@ c
       if (icalld.gt.0) return
       icalld = 1
 
-      ncrnr = 2**ldim
-      call get_vert_map(vertex,ncrnr,wk,mdw,ndw,ifgfdm)
+      nv = 2**ldim
+      call get_vert_map(vertex,nv,wk,mdw,ndw)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw,ifgfdm)
+      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer vertex(nlv,1)
+      integer wk(mdw*ndw)
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      logical ifparrsb
+      integer ibuf(2)
+
+      integer hrsb
+
+      integer*8 eid8(lelt), vtx8(8 * lelt)
+      integer iwork(lelt)
+      common /ctmp0/ eid8, vtx8, iwork
+
+#ifdef PARRSB
+
+      call read_con(wk,size(wk),neli,nvi,nelgti,nelgvi)
+      if (nvi .ne. nlv)
+     $   call exitti('Number of vertices do not match!$',nv)
+      if (nelgti .ne. nelgt)
+     $   call exitti('nelgt for mesh/con differs!$',0)
+      if (nelgvi .ne. nelgv)
+     $   call exitti('nelgt for mesh/con differs!$',0)
+      if (nelgt .ne. nelgv)
+     $   call exitti('parRSB does not support CHT yet!$',0)
+      if (neli .gt. lelt)
+     $   call exitti('neli > lelt!$',neli)
+
+      ii = 0
+      do i = 1,neli
+         eid8(i) = wk(ii+1)
+         call icopy48(vtx8((i-1)*nlv+1),wk(ii+2),nlv)
+         ii = ii + (nlv+1)
+      enddo
+
+      nelv = lelv
+      call fparRSB_partMesh(eid8,vtx8,nelv,
+     $                      eid8,vtx8,neli,
+     $                      nlv,nekcomm,ierr)
+      call err_chk(ierr,'parRSB failed!$')
+
+      nelt = nelv
+      if (nelt .gt. lelt) call exitti('nelt > lelt!$',nelt)
+
+      do i = 1,nelv
+         lglel(i) = eid8(i)
+      enddo
+      call isort(lglel,iwork,nelt)
+      do i = 1,nelt
+         call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
+      enddo
+#ifdef DPROCMAP
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt) 
+     $      call exitti('invalid ieg!$',ieg)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+      enddo
+#else
+      call izero(gllnid,nelgt)
+      do i = 1,nelt
+         ieg = lglel(i)
+         gllnid(ieg) = nid
+      enddo
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif 
+
+
+#else
+
+
+#ifdef DPROCMAP
+      call exitti('DPROCMAP requires PARRSB!$',0)
+#else
+      call read_map(vertex,nlv,wk,mdw,ndw)
+#endif
+
+
+#endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_con(wk,nwk,nelr,nv,nelgti,nelgvi)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+
+      integer wk(nwk)
+
+      logical ifbswap,if_byte_swap_test
+      logical ifco2, ifcon
+
+      character*132 confle
+      character*1   confle1(132)
+      equivalence  (confle,confle1)
+
+      character*132 hdr
+      character*5   version
+      real*4        test
+
+      integer*8 offs, offs0
+
+      ierr = 0
+      ifco2 = .false.
+      ifmpiio = .true.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+
+      if (nid.eq.0) then
+         lfname = ltrunc(reafle,132) - 4
+         call blank (confle,132)
+         call chcopy(confle,reafle,lfname)
+         call chcopy(confle1(lfname+1),'.con',4)
+         inquire(file=confle, exist=ifcon)
+
+         if (.not.ifcon) then
+            call chcopy(confle1(lfname+1),'.co2',4)
+            inquire(file=confle, exist=ifco2)
+         endif
+
+        if(.not.ifcon .and. .not.ifco2) ierr = 1
+      endif
+      call bcast(confle,sizeof(confle))
+      if(nid.eq.0) write(6,'(A,A)') ' Reading ', confle
+      call err_chk(ierr,' Cannot find con file!$')
+      call bcast(ifco2,lsize)
+      ierr = 0
+
+      ! read header
+      if (nid.eq.0) then
+         if (ifco2) then
+            call byte_open(confle,ierr)
+            if(ierr.ne.0) goto 100
+
+            call blank(hdr,sizeof(hdr))
+            call byte_read(hdr,sizeof(hdr)/4,ierr)
+            if(ierr.ne.0) goto 100
+
+            read (hdr,*) version,nelgti,nelgvi,nv
+c    1       format(a5,2i12,i2)
+
+            call byte_read(test,1,ierr)
+            if(ierr.ne.0) goto 100
+            ifbswap = if_byte_swap_test(test,ierr)
+            if(ierr.ne.0) goto 100
+         endif
+      endif
+      call bcast(nelgti,sizeof(nelgti))
+      call bcast(nelgvi,sizeof(nelgvi))
+      call bcast(nv,sizeof(nv))
+      call bcast(ifbswap,sizeof(ifbswap))
+
+      if (ifco2 .and. ifmpiio) then
+         if (nid.eq.0) call byte_close(ierr)
+         call byte_open_mpi(confle,ifh,.true.,ierr)
+         offs0 = sizeof(hdr) + sizeof(test)
+
+         nelr = nelgti/np
+         do i = 1,mod(nelgti,np)
+            if (np-i.eq.nid) nelr = nelr + 1
+         enddo
+         call lim_chk(nelr*(nv+1),nwk,'nelr ','nwk   ','read_con  ')
+
+         nelBr = igl_running_sum(nelr) - nelr
+         offs  = offs0 + int(nelBr,8)*(nv+1)*ISIZE
+
+         call byte_set_view(offs,ifh)
+         call byte_read_mpi(wk,(nv+1)*nelr,-1,ifh,ierr)
+         call byte_close_mpi(ifh,ierr)
+         if (ifbswap) call byte_reverse(wk,(nv+1)*nelr,ierr)
+      else
+         call exitti('reader only support co2 for now$',0)
+      endif
+
+      return
+
+ 100  continue
+      call err_chk(ierr,'Error opening or reading con header$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+#ifndef DPROCMAP
+
+c-----------------------------------------------------------------------
+      subroutine set_proc_map()
+C
+C     Compute element to processor distribution according to (weighted) 
+C     physical distribution in an attempt to minimize exposed number of
+C     element interfaces.
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'SCRCT'
+      include 'TSTEP'
+      common /ctmp0/ iwork(lelt)
+
+      REAL*8 dnekclock,t0
+
+      t0 = dnekclock()
+      call get_map
+
+c     compute global to local map (no processor info)
+      IEL=0
+      CALL IZERO(GLLEL,NELGT)
+      DO IEG=1,NELGT
+         IF (GLLNID(IEG).EQ.NID) THEN
+            IEL = IEL + 1
+            GLLEL(IEG)=IEL
+            NELT = IEL
+            if (ieg.le.nelgv) NELV = IEL
+         ENDIF
+c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
+      ENDDO
+
+c     dist. global to local map to all processors
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+
+c     compute local to global map
+c     (i.e. returns global element number given local index and proc id)
+      do ieg=1,nelgt
+         mid  =gllnid(ieg)
+         ie   =gllel (ieg)
+         if (mid.eq.nid) lglel(ie)=ieg
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_map(vertex,nlv,wk,mdw,ndw)
 
       include 'SIZE'
       include 'INPUT'
@@ -436,17 +414,12 @@ c-----------------------------------------------------------------------
 
       integer vertex(nlv,1)
       integer wk(mdw,ndw)
-      logical ifgfdm
 
       logical ifbswap,if_byte_swap_test
 
       character*132 mapfle
       character*1   mapfle1(132)
       equivalence  (mapfle,mapfle1)
-
-      character*4   suffix
-      character*1   suffix1(4)
-      equivalence  (suffix,suffix1)
 
       character*132 hdr
       character*5   version
@@ -456,28 +429,27 @@ c-----------------------------------------------------------------------
       integer e,eg,eg0,eg1
       integer itmp20(20)
 
-      ierr   = 0
-      ifma2  = .false.
-      suffix = '.map'
+      ierr = 0
+      ifma2 = .false.
 
       if (nid.eq.0) then
          lfname = ltrunc(reafle,132) - 4
          call blank (mapfle,132)
          call chcopy(mapfle,reafle,lfname)
-         call chcopy(mapfle1(lfname+1),suffix,4)
+         call chcopy(mapfle1(lfname+1),'.map',4)
          inquire(file=mapfle, exist=ifmap)
 
          if (.not.ifmap) then
-            suffix = '.ma2'
-            call chcopy(mapfle1(lfname+1),suffix,4)
+            call chcopy(mapfle1(lfname+1),'.ma2',4)
             inquire(file=mapfle, exist=ifma2)
          endif
 
-        if(.not.ifmap .and. .not.ifma2) ierr=1 
+        if(.not.ifmap .and. .not.ifma2) ierr = 1 
       endif
       if(nid.eq.0) write(6,'(A,A)') ' Reading ', mapfle
       call err_chk(ierr,' Cannot find map file!$')
       call bcast(ifma2,lsize)
+      ierr = 0
 
       if (nid.eq.0) then
          if (ifma2) then         
@@ -542,7 +514,7 @@ c-----------------------------------------------------------------------
             m = 0
             do eg=eg0+1,eg1
                m = m + 1
-               if (.not.ifgfdm) gllnid(eg) = wk(1,m)  ! must still be divided
+               gllnid(eg) = wk(1,m)  ! must still be divided
                wk(mdw,m) = eg
             enddo
     
@@ -557,23 +529,16 @@ c-----------------------------------------------------------------------
          else
             close(80)
          endif
-
       elseif (nid.lt.npass) then
-
          call msgwait(msg_id)
          ntuple = ndw
-
       else
-
          ntuple = 0
-
       endif
 
-      if (.not.ifgfdm) then ! gllnid is already assigned for gfdm
-        lng = isize*neli
-        call bcast(gllnid,lng)
-        call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
-      endif
+      lng = isize*neli
+      call bcast(gllnid,lng)
+      call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) ! gllel is used as scratch
 
       nelt=0 !     Count number of elements on this processor
       nelv=0
@@ -602,11 +567,9 @@ c     NOW: crystal route vertex by processor id
       key = 1  ! processor id is in wk(1,:)
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
-      if (.not.ifgfdm) then            ! no sorting for gfdm?
-         key = mdw  ! Sort tuple list by eg
-         nkey = 1
-         call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
-      endif
+      key = mdw  ! Sort tuple list by eg
+      nkey = 1
+      call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
 
       iflag = 0
       if (ntuple.ne.nelt) then
@@ -726,3 +689,25 @@ c  where i = np-mod(nelgt,np) ... np
 
       return
       end
+c-----------------------------------------------------------------------
+
+#else
+
+c-----------------------------------------------------------------------
+      subroutine set_proc_map()
+C
+C     Compute element to processor distribution according to (weighted) 
+C     physical distribution in an attempt to minimize exposed number of
+C     element interfaces.
+C
+      include 'SIZE'
+      include 'INPUT'
+
+      call dProcmapInit()  
+      call get_map() 
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+#endif

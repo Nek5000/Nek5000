@@ -34,7 +34,7 @@ C
          call sethlm  (h1,h2,intype)
          call cresvif (resv1,resv2,resv3,h1,h2)
 
-         call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+         call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 c
          call incomprn(vx,vy,vz,pr)

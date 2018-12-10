@@ -23,14 +23,14 @@ c
       integer ifield,imesh,istep,nsteps,iostep,lastep,iocomm
      $       ,instep
      $       ,nab,nabmsh,nbd,nbdinp,ntaubd 
-     $       ,nmxh,nmxp,nmxe,nmxnl,ninter
+     $       ,nmxt(ldimt),nmxh,nmxv,nmxp,nmxe,nmxnl,ninter
      $       ,nelfld(0:ldimt1)
      $       ,nconv,nconv_max
      $       ,ioinfodmp
       common /istep2/ ifield,imesh,istep,nsteps,iostep,lastep,iocomm
      $               ,instep
      $               ,nab,nabmsh,nbd,nbdinp,ntaubd 
-     $               ,nmxh,nmxp,nmxe,nmxnl,ninter
+     $               ,nmxt,nmxh,nmxv,nmxp,nmxe,nmxnl,ninter
      $               ,nelfld
      $               ,nconv,nconv_max
      $               ,ioinfodmp
