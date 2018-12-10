@@ -280,7 +280,7 @@ c-----------------------------------------------------------------------
 
          if (ifneknekc .and. igeom.gt.2) then
             if (ifneknekm.and.igeom.eq.3) call multimesh_create
-            call xfer_bcs_neknek
+            call neknek_exchange
          endif
 
          ! call here before we overwrite wx 
@@ -312,7 +312,7 @@ c-----------------------------------------------------------------------
 
             if (ifneknekc .and. igeom.gt.2) then
               if (ifneknekm.and.igeom.eq.3) call multimesh_create
-              call xfer_bcs_neknek
+              call neknek_exchange
             endif
 
             ! call here before we overwrite wx 
