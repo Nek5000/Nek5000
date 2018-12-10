@@ -151,11 +151,11 @@ c     higher-order interface extrapolation schemes, you need to increase
 c     ngeom to ngeom=3-5 for scheme to be stable.
 
 
-      if (NINTER.eq.1.or.istep.eq.0) then
+      if (NINTER.eq.1.or.istep.eq.1) then
        c0=1.
        c1=0.
        c2=0.
-       else if (NINTER.eq.2.or.istep.eq.1) then
+       else if (NINTER.eq.2.or.istep.eq.2) then
          c0=2.
          c1=-1.
          c2=0.

@@ -319,8 +319,8 @@ c-----------------------------------------------------------------------
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
             if (ifgeom) then
-              if (.not.ifrich) call gengeom (igeom)
-              call geneig  (igeom)
+               if (.not.ifrich) call gengeom (igeom)
+               call geneig  (igeom)
             endif
 
             if (ifmhd) then
@@ -373,7 +373,7 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) then 
+         if (ifneknekc) then 
             call neknek_exchange
             call bcopy
             call chk_outflow
