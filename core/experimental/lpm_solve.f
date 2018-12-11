@@ -372,8 +372,8 @@ c     lpm_npart_gp = 0
          ralph2   = ralph**2
          rbexpi   = 1./(-2.*rsig**2)
 
-         if (.not. if3d) 
-     >          multfci = multfci/lpm_cp_map(lpm_jdp,ip)
+c        if (.not. if3d) 
+c    >          multfci = multfci/lpm_cp_map(lpm_jdp,ip)
 
          rproj(1 ,ip) = rbexpi
          rproj(2 ,ip) = lpm_cp_map(lpm_jxgp,ip)
@@ -401,8 +401,8 @@ c     lpm_npart_gp = 0
          ralph2   = ralph**2
          rbexpi   = 1./(-2.*rsig**2)
 
-         if (.not. if3d) 
-     >          multfci = multfci/lpm_rprop_gp(lpm_jdp,ip)
+c        if (.not. if3d) 
+c    >          multfci = multfci/lpm_rprop_gp(lpm_jdp,ip)
 
          rproj(1 ,ip+lpm_npart) = rbexpi
          rproj(2 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jxgp,ip)
