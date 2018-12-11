@@ -2742,7 +2742,8 @@ c-----------------------------------------------------------------------
       ntott = nelt*nxyz1
       ntotv = nelv*nxyz1
 
-      if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
+c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
+      if (ifflow)  then
          ifield = 1
          call opdssum(vx,vy,vz)
          call opcolv (vx,vy,vz,vmult)
@@ -2772,7 +2773,7 @@ c     if (ifmhd.and..not.ifdg) then   ! Current dg is for scalars only
             endif
          enddo
       endif
-c
+
 c     if (ifpert.and..not.ifdg) then ! Still not DG
       if (ifpert) then
          do jp=1,npert

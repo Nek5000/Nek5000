@@ -549,7 +549,7 @@ c-----------------------------------------------------------------------
          endif
       enddo
 
-      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
+c      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
 
 c     NOW: crystal route vertex by processor id
 
