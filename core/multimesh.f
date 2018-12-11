@@ -38,7 +38,7 @@ c-------------------------------------------------------------
       integer nfld_neknek
       common /inbc/ nfld_neknek
 
-      if (nid.eq.0) write(6,*) 'setup neknek'
+      if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
       call neknekgsync()
 c     Do some sanity checks - just once at setup
@@ -53,11 +53,9 @@ c     Boundary conditions are changed back to 'v' or 't'.
          call nekneksanchk
          call set_intflag
          call neknekmv
-         icalld = icalld + 1
+         if (nid.eq.0) write(6,*) 'ext order=', ninter
+         if (nid.eq.0) write(6,*) 'nfld_neknek=', nfld_neknek
       endif
-
-      if (nid.eq.0) write(6,*) 'ext order=', ninter
-      if (nid.eq.0) write(6,*) 'nfld_neknek=', nfld_neknek
 
       nfld_min = iglmin_ms(nfld_neknek,1)
       nfld_max = iglmax_ms(nfld_neknek,1)
@@ -76,7 +74,10 @@ c     exchange_points finds the processor and element number at
 c     comm_world level and displaces the 1st mesh back
       call exchange_points(dxf,dyf,dzf)
 
-      if(nio.eq.0) write(6,'(A,/)') ' done :: setup neknek'
+      if (icalld.eq.0) then
+        if(nio.eq.0) write(6,'(A,/)') ' done :: setup neknek'
+        icalld = 1
+      endif
 
       return
       end
@@ -414,7 +415,7 @@ c     Make sure rcode_all is fine
       ipg = iglsum(ip,1)
       nbpg = iglsum(nbp,1)
       if (nid.eq.0) write(6,*) 
-     $      idsess,ipg,nbpg,'int pts bcs found findpt'
+     $      idsess,ipg,nbpg,'Neknek interface points'
       npoints_nn = ip
 
       ierror = iglmax_ms(ierror,1)
