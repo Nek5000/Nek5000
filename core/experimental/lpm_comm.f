@@ -7,7 +7,7 @@
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      call interp_setup(0.0,idum,i_fp_hndl)
+      call interp_setup(i_fp_hndl,0.0,idum,nelt)
       call fgslib_crystal_setup(i_cr_hndl,nekcomm,np)
 
       return
