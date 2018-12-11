@@ -20,7 +20,7 @@ env:
 
     - TEST_CASE=Ethier::test_PnPn_Parallel
     - TEST_CASE=Ethier::test_PnPn2_Parallel
-    - TEST_CASE=Ethier::test_PnPn2_Parallel PARALLEL_PROCS=3 
+#    - TEST_CASE=Ethier::test_PnPn2_Parallel PPLIST="PARRSB DPROCMAP" PARALLEL_PROCS=3 
 
     - TEST_CASE=KovStokes::test_PnPn2_Parallel
     - TEST_CASE=KovStokes::test_PnPn_Parallel
@@ -35,7 +35,7 @@ env:
 
     - TEST_CASE=Eddy_Neknek::test_PnPn_Parallel
     - TEST_CASE=Eddy_Neknek::test_PnPn2_Parallel
-    - TEST_CASE=Eddy_NeknekU::test_PnPn2_Parallel
+#    - TEST_CASE=Eddy_NeknekU::test_PnPn2_Parallel
 
     - TEST_CASE=IO_Test::test_PnPn2_Parallel
 
@@ -44,7 +44,7 @@ env:
 before_install: 
   - export ROOT_DIR=`pwd`
 
-  - export SOURCE_ROOT=$ROOT_DIR
+  - export NEK_SOURCE_ROOT=$ROOT_DIR
   - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
   - export VERBOSE_TESTS=true
   - export PARALLEL_PROCS=2

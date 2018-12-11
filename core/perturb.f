@@ -61,7 +61,7 @@ c
          intype = -1
          call sethlm   (h1,h2,intype)
          call cresvipp (resv1,resv2,resv3,h1,h2)
-         call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+         call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
          call opadd2   (vxp(1,jp),vyp(1,jp),vzp(1,jp),dv1,dv2,dv3)
          call incomprp (vxp(1,jp),vyp(1,jp),vzp(1,jp),prp(1,jp))
 c
@@ -637,13 +637,7 @@ c
          CALL HMHOLTZ (name4t,TA,TB,H1,H2
      $                 ,TMASK(1,1,1,1,IFIELD-1)
      $                 ,TMULT(1,1,1,1,IFIELD-1)
-     $                 ,IMESH,TOLHT(IFIELD),NMXH,1)
-c
-c        call hsolve  (name4t,TA,TB,H1,H2 
-c    $                 ,TMASK(1,1,1,1,IFIELD-1)
-c    $                 ,TMULT(1,1,1,1,IFIELD-1)
-c    $                 ,IMESH,TOLHT(IFIELD),NMXH,1
-c    $                 ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
+     $                 ,IMESH,TOLHT(IFIELD),NMXT(ifield-1),1)
 c
          CALL ADD2    (TP(1,IFIELD-1,jp),TA,NTOT)
 C

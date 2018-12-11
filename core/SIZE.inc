@@ -18,9 +18,6 @@ c - - SIZE internals
       parameter(ly1m=lx1m)
       parameter(lz1m=1 + (ldim-2)*(lx1m-1))
 
-      integer lp
-      parameter (lp=lpmax)
-
       ! Averaging
       integer ax1,ay1,az1
       parameter (ax1=lx1)

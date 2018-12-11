@@ -13,5 +13,5 @@ clean:
 nekmerge.o	: nekmerge.f    ; $(FC) -c $(FFLAGS)  nekmerge.f 
 reader.o  	: reader.f	; $(FC) -c $(FFLAGS)  reader.f 
 tsort.o  	: tsort.f	; $(FC) -c $(FFLAGS)  tsort.f 
-strings.o  	: strings.f	; $(FC) -c $(FFLAGS)  strings.f 
-byte.o		: byte.c	; $(CC) -c $(CFLAGS)  byte.c
+strings.o  	: strings.f	; $(FC) -c $(FFLAGS)  strings.f
+byte.o		: ../../core/byte.c	;  $(CC) -c $(CFLAGS) ../../core/byte.c

@@ -892,7 +892,7 @@ c
       ifield = 1
       call sethlm   (h1,h2,intype)
 
-      call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
@@ -906,7 +906,7 @@ c
       ifield = ifldmhd
       call sethlm   (h1,h2,intype)
 
-      call ophinv   (dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxv)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
 
       call incomprn (bx,by,bz,pm) ! project B onto div-free space

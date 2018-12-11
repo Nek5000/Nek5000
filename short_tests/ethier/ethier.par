@@ -5,7 +5,7 @@
 polynomialOrder = 7
 PnPnFormulation = yes
 minNumProcesses = 1
-maxNumProcesses = 4
+maxNumHistoryPoints = 1000
 
 #extrapolation = OIFS
 numSteps = 1000

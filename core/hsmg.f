@@ -1,22 +1,5 @@
 c-----------------------------------------------------------------------
 c
-c  To do:
-c
-c  1)  Why does hsmg_schwarz_toext2d not zero out a, whereas 3d does??  DONE
-c  2)  Convert all nelv refs to nelfld(ifield) or (nelmg?)  DONE
-c  3)  Define mg_schwarz_wt for up to and including mg_h1_lmax   DONE
-c  4)  MAKE CERTAIN common /hsmgw/ is LARGE enough in hsmg_tnsr and  DONE
-c      elsewhere!
-c  5)  Devise and implement UNIT tests, now, so that you can test
-c      pieces of the setup code in stages.
-c  6)  Start developing and testing, in a linear fashion, the SETUP driver.
-c  7)  Make certain dssum flags declared for all levels  DONE
-c  8)  Need TWO masks for each level:  one for A*x, and one for Schwarz!
-c      NO -- one is fine.
-c  9)  Modify axml so addition comes after dssum.  DONE
-c
-c-----------------------------------------------------------------------
-c
 c Some relevant parameters
 c
 c param(41):
@@ -1363,11 +1346,9 @@ c
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
 
-
       call fgslib_crs_solve(xxth(ifield),e,r)
 
       tcrsl=tcrsl+dnekclock()-etime1
-
 
       return
       end
@@ -2625,6 +2606,7 @@ c-----------------------------------------------------------------------
       include 'HSMG'
 
       real uf(nxf,nyf,nzf),uc(nxc,nyc,nzc),w(1)
+      integer e
 
       if (if3d) then
 
@@ -2676,6 +2658,7 @@ c-----------------------------------------------------------------------
       include 'HSMG'
 
       real gf(ng,nxf,nyf,nzf),gc(ng,nxc,nyc,nzc),w(1)
+      integer e
 
 
       if (if3d) then

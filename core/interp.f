@@ -1,11 +1,12 @@
 #define INTP_HMAX 20
 
 c-----------------------------------------------------------------------
-      subroutine interp_setup(tolin,nmsh,ih)
+      subroutine interp_setup(ih,tolin,nmsh,nelm)
 c
 c input:
 c tolin ... tolerance newton solve (use 0 for default)
 c nmsh  ... polynomial order for mesh (use 0 to fallback to lx1-1)
+c nelm  ... number of local mesh elements (typically nelt) 
 c 
 c output:
 c ih    ... handle
@@ -31,27 +32,19 @@ c
       real w(2*lx1**3)
 
       tol = max(5e-13,tolin)
-      npt_max = 256
+      npt_max = 128
       bb_t    = 0.01
 
       if (nio.eq.0) 
      $   write(6,*) 'call intp_setup ','tol=', tol
 
-      ! setup handle for interpolation
-      call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
-     &                          xm1,ym1,zm1,nx1,ny1,nz1,
-     &                          nelt,nx1,ny1,nz1,bb_t,nelt+2,nelt+2,
-     &                          npt_max,tol)
-
-      ! setup handle for findpts
-      if (nmsh.gt.1 .and. nmsh.lt.lx1-1) then
+      if (nmsh.ge.1 .and. nmsh.lt.lx1-1) then
          if (nio.eq.0) write(6,*) 'Nmsh for findpts:',nmsh
          nxi = nmsh+1
          nyi = nxi
          nzi = 1
          if (if3d) nzi = nxi
-         n   = nelt*nxi*nyi*nzi 
-         do ie = 1,nelt
+         do ie = 1,nelm
            call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
      $                     ,lx1,if3d,w,size(w))
            call map_m_to_n(ymi((ie-1)*nxi*nyi*nzi + 1),nyi,ym1(1,1,1,ie)
@@ -60,12 +53,23 @@ c
      $     call map_m_to_n(zmi((ie-1)*nxi*nyi*nzi + 1),nzi,zm1(1,1,1,ie)
      $                     ,lz1,if3d,w,size(w))
          enddo
-  
+
+         n = nelm*nxi*nyi*nzi 
+         call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
+     &                             xm1,ym1,zm1,nx1,ny1,nz1,
+     &                             nelm,nx1,ny1,nz1,bb_t,nelm+2,nelm+2,
+     &                             npt_max,tol)
+
          call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
      $                             xmi,ymi,zmi,nxi,nyi,nzi,
-     $                             nelt,2*nxi,2*nyi,2*nzi,bb_t,n,n,
+     $                             nelm,2*nxi,2*nyi,2*nzi,bb_t,n,n,
      $                             npt_max,tol)
       else
+         n = nelm*nx1*ny1*nz1
+         call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
+     &                             xm1,ym1,zm1,nx1,ny1,nz1,
+     &                             nelm,2*nx1,2*ny1,2*nz1,bb_t,n,n,
+     &                             npt_max,tol)
          ih_intp2 = ih_intp1
       endif
 
@@ -92,7 +96,7 @@ c xp,yp,zp  ... interpolation points
 c n         ... number of points dim(xp,yp,zp)
 c iwk       ... integer working array dim(nmax,3)
 c rwk       ... real working array dim(nmax,ldim+1)
-c nmax      ... maximum number of local points
+c nmax      ... leading dimension of iwk and rwk
 c iflp      ... locate interpolation points (proc,el,r,s,t)
 c ih        ... handle
 c
@@ -181,7 +185,7 @@ c
       nn(1) = iglsum(n,1)
       nn(2) = iglsum(nfail,1)
       if(nio.eq.0) then
-        if(nfail.gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
+        if(nn(2).gt.0 .or. loglevel.gt.2) write(6,1) nn(1),nn(2)
   1     format('   total number of points = ',i12,/,'   failed = '
      &         ,i12,/,' done :: intp_nfld')
       endif
