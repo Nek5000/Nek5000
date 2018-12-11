@@ -33,7 +33,8 @@ if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] |
 
   cd seacas-exodus 
   sed -e "s:^NETCDF_PATH=.*:NETCDF_PATH=${NETCDFPATH} \\\:" \
-      -e "s:CC=.*: CC=${CC}:" cmake-exodus > cmake-exo
+      -e "s:CC=.*: CC=${CC}:" \
+      -e "s:FC=.*: FC=${FC}:" cmake-exodus > cmake-exo
   chmod 755 cmake-exo
   rm -rf build  
   mkdir build; cd ./build
