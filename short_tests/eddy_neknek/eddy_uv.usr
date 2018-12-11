@@ -308,13 +308,13 @@ c-----------------------------------------------------------------------
 c     ngeom - parameter controlling the number of iterations,
 c     set to ngeom=2 by default (no iterations) 
 c     One could change the number of iterations as
-      ngeom = 3
+      ngeom = 2
 
 c     ninter - parameter controlling the order of interface extrapolation 
 c     for neknek,
 c     set to ninter=1 by default
 c     One could change it as
-      ninter = 3
+      ninter = 1
 c     Caution: if ninter greater than 1 is chosen, ngeom greater than 2 
 c     should be used for stability
 
