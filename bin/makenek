@@ -4,7 +4,7 @@
 #-------------------------------------------------------------------------------
 
 # source path 
-#SOURCE_ROOT="$HOME/Nek5000" 
+#NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
@@ -50,10 +50,10 @@
 set -e
 
 # assign version tag
-mver=17.0.4
+mver=18.0.0
 
 # set defaults
-: ${SOURCE_ROOT:="$HOME/Nek5000"}
+: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
 : ${MPI:=1}
@@ -63,17 +63,19 @@ mver=17.0.4
 
 # overwrite source path with optional 2nd argument
 if [ -d $2 ] && [ $# -eq 2 ]; then
-  SOURCE_ROOT="$2"
-  echo "change source code directory to: ", $SOURCE_ROOT
+  NEK_SOURCE_ROOT="$2"
 fi
 
-# create makefile
-source $SOURCE_ROOT/core/makenek.inc
+NEK_SOURCE_ROOT=`cd $NEK_SOURCE_ROOT; pwd`
+echo 'using source path:' $NEK_SOURCE_ROOT
 
+# create makefile
+source $NEK_SOURCE_ROOT/core/makenek.inc
+
+set -o pipefail
 # compile 3rd_party code
 make_3rd_party 2>&1 | tee -a compiler.out
-
-# compile nek
 make -j4 -f makefile 2>&1 | tee -a compiler.out
+set +o pipefail
 
 exit 0

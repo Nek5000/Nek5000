@@ -44,14 +44,14 @@ c     for workstation:
       in = 5
  
 c     Get file name
-      write(6,*) 'Input old .rea and .re2 (source) file name:'      
+      write(6,*) 'Input .rea & .re2 name:'      
       call blank(fin,80)
       read(in,80) fin
       len = ltrunc(fin,80)
    80 format(a80)
  
 c     Get file name
-      write(6,*) 'Input new .rea (output) file name:'      
+      write(6,*) 'Input .rea output name:'      
       call blank(fout,80)
       read(in,80) fout
       lou = ltrunc(fout,80)
@@ -63,7 +63,7 @@ c     Get file name
  
       open(unit=10, file=fin)
       open(unit=11, file=fout)
-      call byte_open(fbin)
+      call byte_open(fbin,ierr)
 
       npscal = 0
       call scanout(sstring,'PARAMETERS FOLL',15,10,11)
@@ -91,7 +91,7 @@ c     Get file name
             
 
       call blank(hdr,80)
-      call byte_read(hdr,20)
+      call byte_read(hdr,20,ierr)
       read (hdr,1) version,nelv,ndim,nel
  
       wdsizi = 4
@@ -107,7 +107,7 @@ c     Get file name
 
  1    format(a5,i9,i3,i9)
 
-      call byte_read(test,1)
+      call byte_read(test,1,ierr)
       ifbswap=if_byte_swap_test(test)
 
       print *, nel, ndim, nelv
@@ -118,7 +118,7 @@ c mesh
       do ie=1,nel      
 
          nwds = (1 + ndim*(2**ndim))*(wdsizi/4)
-         call byte_read(buf,nwds)
+         call byte_read(buf,nwds,ierr)
          call buf_to_xyz(buf,x,y,z,ifbswap,ndim,wdsizi)
 
          if(nel.lt.100000) then
@@ -146,12 +146,12 @@ c mesh
 c curved sides
 
       if(wdsizi.eq.8) then
-         call byte_read(rcurve,2)
-         if(ifbswap) call byte_reverse8(rcurve,2)
+         call byte_read(rcurve,2,ierr)
+         if(ifbswap) call byte_reverse8(rcurve,2,ierr)
          ncurve=rcurve
       else
-         call byte_read(ncurve,1)
-         if(ifbswap) call byte_reverse(ncurve,nwds)
+         call byte_read(ncurve,1,ierr)
+         if(ifbswap) call byte_reverse(ncurve,nwds,ierr)
       endif
       write(6,*) 'number of curved sides', ncurve
 
@@ -166,8 +166,8 @@ c curved sides
 
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
-            call byte_read(buf,nwds)
-            call buf_to_curve(buf,ifbswap,wdsizi)
+            call byte_read(buf,nwds,ierr)
+            call buf_to_curve(buf,nel,ifbswap,wdsizi)
  50      CONTINUE
       endif
 
@@ -203,18 +203,18 @@ c boundary conditions
          enddo
 
          if(wdsizi.eq.8) then
-           call byte_read(rbc,2)
-           if (ifbswap) call byte_reverse8(rbc,2) 
+           call byte_read(rbc,2,ierr)
+           if (ifbswap) call byte_reverse8(rbc,2,ierr) 
            nbc = rbc
          else
-           call byte_read(nbc,1)
-           if (ifbswap) call byte_reverse(nbc,1)
+           call byte_read(nbc,1,ierr)
+           if (ifbswap) call byte_reverse(nbc,1,ierr)
          endif
 
          write(6,*) ifld, nbc, 'number of bc'
 
          do ie = 1,nbc
-            call byte_read(buf,nwds)
+            call byte_read(buf,nwds,ierr)
             call buf_to_bc(cbc,bc,buf,nelm,ifbswap,wdsizi)
          enddo
 
@@ -249,7 +249,7 @@ c boundary conditions
 
       close (unit=10)
       close (unit=11)
-      call byte_close (fbin)
+      call byte_close (fbin,ierr)
 
   999 continue
       stop
@@ -278,7 +278,7 @@ c-----------------------------------------------------------------------
       if (etest.le.eps) if_byte_swap_test = .false.
 
       test2 = bytetest
-      call byte_reverse(test2,1)
+      call byte_reverse(test2,1,ierr)
       write(6,*) 'byte swap:',if_byte_swap_test,bytetest,test2
       return
       end
@@ -292,9 +292,9 @@ c-----------------------------------------------------------------------
       nwds = (1 + ndim*(2**ndim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 
       if     (ifbswap.and.wdsizi.eq.8) then
-          call byte_reverse8(buf,nwds)
+          call byte_reverse8(buf,nwds,ierr)
       elseif (ifbswap.and.wdsizi.eq.4) then
-          call byte_reverse (buf,nwds)
+          call byte_reverse (buf,nwds,ierr)
       endif
 
 
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
       end
 
 c-----------------------------------------------------------------------
-      subroutine buf_to_curve(buf,ifbswap,wdsizi)
+      subroutine buf_to_curve(buf,nel,ifbswap,wdsizi)
 
       integer e,f,wdsizi,buf(30)
       logical ifbswap
@@ -334,9 +334,9 @@ c-----------------------------------------------------------------------
       nwds = (2 + 1 + 5)*(wdsizi/4) 
 
       if     (ifbswap.and.wdsizi.eq.8) then
-          call byte_reverse8(buf,nwds-2)
+          call byte_reverse8(buf,nwds-2,ierr)
       elseif (ifbswap.and.wdsizi.eq.4) then
-          call byte_reverse (buf,nwds-1)
+          call byte_reverse (buf,nwds-1,ierr)
       endif
 
       if(wdsizi.eq.8) then
@@ -385,9 +385,9 @@ c-----------------------------------------------------------------------
 
       nwds = (2 + 1 + 5)*(wdsizi/4)      
       if     (ifbswap.and.wdsizi.eq.8) then
-          call byte_reverse8(buf,nwds-2)
+          call byte_reverse8(buf,nwds-2,ierr)
       elseif (ifbswap.and.wdsizi.eq.4) then
-          call byte_reverse (buf,nwds-1)
+          call byte_reverse (buf,nwds-1,ierr)
       endif
 
       if(wdsizi.eq.8) then

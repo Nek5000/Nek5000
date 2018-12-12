@@ -1,10 +1,6 @@
 c
 c     Restart parameters and variables
 c
-      integer lelr
-c     parameter (lelr=max(lelt,lelg/16)) ! THIS IS THE MEMORY conservative VERSION
-      parameter (lelr=lelg)              ! THIS IS THE MEMORY INTENSIVE VERSION
-
       integer         max_rst
       common /crst_i/ max_rst            ! for full restart
 

@@ -38,12 +38,6 @@ c   6)  Output the results
 c   
 c-----------------------------------------------------------------------
 c
-c  This code no longer relies on Metis to do the partitioning.
-c
-c  For large problems ( nel > 1e6 ), compile with -mcmodel=medium and
-c  change parameter lelm (maximum number of elements)
-c
-c
 c  genmap() uses the symmetric vertex ordering
 c
 c      3 ----- 4
@@ -54,19 +48,6 @@ c      1 ----- 2
 c
 c  which can be extended to an arbitrary number of space dimensions
 c  (like 3).
-c
-c
-c
-c  7/27/07 -- add self-connected check
-c  7/27/07 -- verify that don't double-check periodic faces
-c
-c  1/13/09 -- added support for conjugate heat transfer;
-c             Main features:
-c
-c             .recursive bisection only on fluid graph
-c             .remaining solid elements distributed round-robin/greedy
-c
-c             Will need to later modify for case nel_mhd > nelv.
 c
 c-----------------------------------------------------------------------
       program genmap
@@ -123,7 +104,7 @@ c                                    irnk is # unique points
             endif
          enddo 
          write(6,*) "WARNING:Missing Face Connection Not Resolved"
-         call exit
+         call exitt(1) 
       endif
   15  continue
 
@@ -236,8 +217,9 @@ c     read nekton .rea file and make a mesh
       call getreafile('Input .rea / .re2 name:$',ifbinary,io,ierr)
       if (ierr.gt.0) then 
          write(6,'(A)') 'Error no .rea / .re2 file found!'
-         call linearmsh(cell,nelv,nelt,ndim)
-         return
+c         call linearmsh(cell,nelv,nelt,ndim)
+c         return
+         call exitt(1) 
       endif
 
       write(6,'(A)') 'Input mesh tolerance (default 0.2):'
@@ -352,18 +334,12 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine exitti(name,ie)
       character*40 name
-      write(6,*) name
-      write(6,*) ie,' quit'
-c     ke = 2*ie
-c     ff = 1./(ke-ie-ie)
+      write(6,*) name, ie
       stop
       end
 c-----------------------------------------------------------------------
       subroutine exitt(ie)
-      write(6,*)
-      write(6,*) ie,' quit'
-c     ke = 2*ie
-c     ff = 1./(ke-ie-ie)
+      write(6,*) 'exit status', ie
       stop
       end
 c-----------------------------------------------------------------------
@@ -411,8 +387,9 @@ c
 
 c      write(6,*) nelt,ndim,nelv,ifbinary, ' nelt,ndim,nelv,ifre2 '
 
-      if (nelt.gt.lelm) then 
-        write(6,*) 'ABORT: NELT>LELM, modify LELM in SIZE and recompile'
+      if (nelt.gt.lelm) then
+        write(6,*) 'Abort: number of elements too large', nelt
+        write(6,*) 'change MAXNEL and recompile' 
         call exitt(1)
       endif
 

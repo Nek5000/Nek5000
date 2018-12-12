@@ -258,6 +258,15 @@ class NekTestCase(unittest.TestCase):
 
         config_size(params=params, infile=infile, outfile=outfile)
 
+    def mkSIZE(self, case=None):
+        cls = self.__class__
+
+        if not case:
+            case = cls.case_name
+
+        workdir = os.path.join(self.examples_root, cls.example_subdir)
+        os.system('cd ' + workdir + ' ; ' + self.source_root + '/bin/mkSIZE ' + case)
+
     def config_parfile(self, opts=None, infile=None, outfile=None):
         from lib.nekFileConfig import config_parfile
         cls = self.__class__

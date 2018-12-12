@@ -1,6 +1,6 @@
-if [ $# -eq 0 ]; then
+if [ $# -eq 0 ] || [ $# -lt 3 ]; then
   echo ""
-  echo "usage: neknek_mpdmpd [case 1] [case 2] [np 1] [np 2] "
+  echo "usage: neknekb_mpmd case1 case2 np1 np 2 [uncoupled]"
   echo ""
   exit 1
 fi
@@ -13,27 +13,25 @@ CASEDIR2=`pwd`'/'$CASENAME2
 NP1=$3
 NP2=$4
 
-rm -f $CASEDIR1/logfile
-rm -f $CASEDIR2/logfile
+COUPLED="T"
+if [ "$5" == "uncoupled" ]; then COUPLED="F"; fi
 
-rm -f $CASEDIR1/ioinfo
-rm -f $CASEDIR2/ioinfo
-
-mv $CASEDIR1/$1.log.$3 $CASEDIR1/$1.log1.$3 2>/dev/null
-mv $CASEDIR2/$2.log.$4 $CASEDIR1/$2.log1.$4 2>/dev/null
-
-rm -rf SESSION.NAME >/dev/null
-echo  2          >>   SESSION.NAME                        
+echo  2           >   SESSION.NAME                        
+echo  $COUPLED   >>   SESSION.NAME                        
 echo  $CASENAME1 >>   SESSION.NAME                     
 echo  $CASEDIR1  >>   SESSION.NAME                         
 echo  $NP1       >>   SESSION.NAME                      
 echo  $CASENAME2 >>   SESSION.NAME                      
 echo  $CASEDIR2  >>   SESSION.NAME                        
 echo  $NP2       >>   SESSION.NAME                       
-rm -rf ioinfo
-mpiexec -x NEK_LOGFILE=$CASEDIR1/$1.log.$3 -np $NP1 $CASEDIR1/nek5000 : -x NEK_LOGFILE=$CASEDIR2/$2.log.$4 -np $NP2 $CASEDIR2/nek5000 &
 
-sleep 2
-ln $CASEDIR1/$1.log.$3 $CASEDIR1/logfile
-ln $CASEDIR2/$2.log.$4 $CASEDIR2/logfile
+rm -f ioinfo
 
+export NEK_LOGFILE=logfile
+cp -f $1.logfile $1.logfile1 2>/dev/null
+cp -f $2.logfile $2.logfile1 2>/dev/null
+rm -f s00000_"$NEK_LOGFILE" s00001_"$NEK_LOGFILE"
+ln -sf s00000_"$NEK_LOGFILE" $1.logfile
+ln -sf s00001_"$NEK_LOGFILE" $2.logfile
+
+mpiexec -np $NP1 $CASEDIR1/nek5000 : -np $NP2 $CASEDIR2/nek5000 & 

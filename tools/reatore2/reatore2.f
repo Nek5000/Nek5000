@@ -34,14 +34,14 @@ c     an ascii rea file for just the parameters
       integer ibc(6,lelt)
       real*8  bc8(5)
 
-      write(6,*) 'Input old (source) file name:'      
+      write(6,*) 'Input .rea name:'      
       call blank(file,80)
       read(5,80) file
       len = ltrunc(file,80)
    80 format(a80)
    81 format(80a1)
 
-      write(6,*) 'Input new (output) file name:'      
+      write(6,*) 'Input .rea/.re2 output name:'      
       call blank(fout,80)
       read(5,80) fout
       fbout = fout
@@ -57,7 +57,7 @@ c     an ascii rea file for just the parameters
 
       open(unit=10, file=file)
       open(unit=11, file=fout)
-      call byte_open(fbout)
+      call byte_open(fbout,ierr)
 
       call scanout(string,'MESH DATA',9,10,11)
       call lineout(11,string,80)
@@ -68,17 +68,16 @@ c     an ascii rea file for just the parameters
    11 format(i12,2x,i1,2x,i12,5x,'NELT,NDIM,NELV')
    
       if(nel.ge.lelt) then
-        write(6,*) 'Abort: number of elements too large'
-        write(6,*) 'maximum number of elements ',lelt
-        write(6,*) 'change lelt and recompile'
+        write(6,*) 'Abort: number of elements too large',nel
+        write(6,*) 'change MAXNEL and recompile'
         stop
       endif
 
       call blank(hdr,80)
       write(hdr,1) nel,ndim,nelv
     1 format('#v002',i9,i3,i9,' this is the hdr')
-      call byte_write(hdr,20)   ! assumes byte_open() already issued
-      call byte_write(test,1)   ! write the endian discriminator
+      call byte_write(hdr,20,ierr)   ! assumes byte_open() already issued
+      call byte_write(test,1,ierr)   ! write the endian discriminator
 
 
 C MESH
@@ -86,7 +85,7 @@ C MESH
       do ie=1,nel      
          read(10,*) ! for now skip igroup (not used at the moment)
          rgroup=igroup
-         call byte_write(rgroup, 2)
+         call byte_write(rgroup,2,ierr)
 
          if (ndim.eq.3) then
             read (10,*)   (x(k),k=1,4)
@@ -99,17 +98,17 @@ C MESH
             call copy48(buf2(1) ,x,8)
             call copy48(buf2(9) ,y,8)
             call copy48(buf2(17),z,8)
-            call byte_write(buf2(1) ,16)
-            call byte_write(buf2(9) ,16)
-            call byte_write(buf2(17),16)
+            call byte_write(buf2(1) ,16,ierr)
+            call byte_write(buf2(9) ,16,ierr)
+            call byte_write(buf2(17),16,ierr)
          else
             read (10,*)   (x(k),k=1,4)
             read (10,*)   (y(k),k=1,4)
            
             call copy48(buf2(1) ,x,4)
             call copy48(buf2(5) ,y,4)
-            call byte_write(buf2(1),8)
-            call byte_write(buf2(5),8)
+            call byte_write(buf2(1),8,ierr)
+            call byte_write(buf2(5),8,ierr)
          endif
       enddo
       write(6,'(i12,1x,i12,1x,i1,A)') nel,nelv,ndim, 
@@ -120,7 +119,7 @@ c CURVED SIDES
       write(6,'(A,A)') 'read: ',string
       read(10,*) ncurve
       rcurve=ncurve
-      call byte_write(rcurve,2)
+      call byte_write(rcurve,2,ierr)
 
       call blank(ccurve,4)
       if (ncurve.gt.0) then
@@ -138,7 +137,7 @@ c           if (mod(icurve,10000).eq.0) write(6,*) icurve,' curve'
             call copy48(buf2(3),buf(1),5)
             call blank(buf2(8),8)
             call chcopy(buf2(8),ccurve,1)
-            call byte_write(buf2,16)
+            call byte_write(buf2,16,ierr)
          enddo
    60    format(i3,i3 ,5g14.6,1x,a1)
    61    format(i2,i6 ,5g14.6,1x,a1)
@@ -179,7 +178,7 @@ C BOUNDARY CONDITIONS
 
                write(6,*) kpass,nbc,' Number of bcs'
                rbc=nbc
-               call byte_write(rbc,2)
+               call byte_write(rbc,2,ierr)
 
                do e=1,nelb
                do f=1,nface
@@ -190,7 +189,7 @@ C BOUNDARY CONDITIONS
                      call blank      (buf2(8),8)
                      call chcopy     (buf2(8),cbc(f,e),3)
                      if(nelb.ge.1000000) buf2(3)=ibc(f,e)
-                     call byte_write (buf2,16)
+                     call byte_write (buf2,16,ierr)
                   endif
                enddo
                enddo
@@ -211,7 +210,7 @@ c     write(6 ,81) (string1(k),k=1,len)
 
       close (unit=10)
       close (unit=11)
-      call byte_close (fbout)
+      call byte_close (fbout,ierr)
 
   999 continue
       write(6,*) 'done'
