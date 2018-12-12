@@ -629,7 +629,7 @@ class Eddy_Neknek_mv(NekTestCase):
             cwd = cwd,
             inside = 'insidemv',
             outside = 'outside',
-            np_insidemv = 1,
+            np_inside = 1,
             np_outside = 1,
             step_limit = 500,
             coupled = True,
@@ -638,7 +638,7 @@ class Eddy_Neknek_mv(NekTestCase):
         )
 
         logfile  = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
-            insidemv = 'insidemv',
+            inside = 'insidemv',
             outside = 'outside',
             np_in = 1,
             np_out = 1,
@@ -689,7 +689,7 @@ class Eddy_Neknek_mv(NekTestCase):
             cwd = cwd,
             inside = 'insidemv',
             outside = 'outside',
-            np_insidemv = 1,
+            np_inside = 1,
             np_outside = 1,
             step_limit = 1000,
             coupled = True,
@@ -698,7 +698,7 @@ class Eddy_Neknek_mv(NekTestCase):
         )
 
         logfile  = os.path.join(cwd, '{insidemv}{np_in}.{outside}{np_out}.log{sfx}'.format(
-            insidemv = 'insidemv',
+            inside = 'insidemv',
             outside = 'outside',
             np_in = 1,
             np_out = 1,
