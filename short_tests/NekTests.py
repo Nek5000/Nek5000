@@ -614,7 +614,7 @@ class Eddy_Neknek_mv(NekTestCase):
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
         # Tweak the .rea files and run genmap
-        for rea_file in ('insidemv', 'outside'):
+        for rea_file in ('inside', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
             with open(rea_path, 'r') as f:
                 lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-06     p21 DIVERGENCE', l) for l in f]
@@ -674,7 +674,7 @@ class Eddy_Neknek_mv(NekTestCase):
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
         # Tweak the .rea files and run genmap
-        for rea_file in ('insidemv', 'outside'):
+        for rea_file in ('inside', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
             with open(rea_path, 'r') as f:
                 lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-11     p21 DIVERGENCE', l) for l in f]
