@@ -627,7 +627,7 @@ class Eddy_Neknek_mv(NekTestCase):
         self.build_nek()
         run_neknek(
             cwd = cwd,
-            insidemv = 'insidemv',
+            inside = 'insidemv',
             outside = 'outside',
             np_insidemv = 1,
             np_outside = 1,
@@ -637,7 +637,7 @@ class Eddy_Neknek_mv(NekTestCase):
             verbose = self.verbose,
         )
 
-        logfile  = os.path.join(cwd, '{insidemv}{np_in}.{outside}{np_out}.log{sfx}'.format(
+        logfile  = os.path.join(cwd, '{inside}{np_in}.{outside}{np_out}.log{sfx}'.format(
             insidemv = 'insidemv',
             outside = 'outside',
             np_in = 1,
@@ -687,7 +687,7 @@ class Eddy_Neknek_mv(NekTestCase):
         self.build_nek()
         run_neknek(
             cwd = cwd,
-            insidemv = 'insidemv',
+            inside = 'insidemv',
             outside = 'outside',
             np_insidemv = 1,
             np_outside = 1,
