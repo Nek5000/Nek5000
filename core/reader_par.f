@@ -923,6 +923,9 @@ c set some internals
          endif
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
+      if (ifcvode.and.ifneknekc) then
+        call exitti('Neknek is not yet supported with CVODE$',0)
+      endif
 
       return
       END
