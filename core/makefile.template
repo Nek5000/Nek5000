@@ -6,20 +6,28 @@ S=
 SCMT=
 OPT_INCDIR=./
 OBJDIR=obj
-MPI=0 
-CMT=0 
-NEKNEK=
+
 FC=
 CC=
 FFLAGS=
 CFLAGS=
+LDFLAGS=
+
 PPPO=
 PPS=
+
 USR=
 USR_LFLAGS=
+
+MPI=0 
+CMT=0 
+DPROCMAP=0
 VISIT=0
+
 VISIT_IFLAGS=
 VISIT_LFLAGS=
+HYPRE_IFLAGS=
+GSLIB_IFLAGS=
 
 ################################################################################
 
@@ -27,35 +35,30 @@ PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
 PPS_C = $(patsubst %,-D%,$(PPS))
 
 # CORE##########################################################################
-CORE = drive.o drive1.o drive2.o \
+CORE = drive1.o drive2.o \
 plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
 map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
-hmholtz.o gfdm_par.o  gfdm_op.o gfdm_solve.o subs1.o subs2.o \
-genbox.o gmres.o hsmg.o convect.o induct.o perturb.o \
+hmholtz.o subs1.o subs2.o \
+gmres.o hsmg.o convect.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
-byte.o chelpers.o byte_mpi.o postpro.o intp_usr.o \
-cvode_driver.o nek_comm.o \
+byte.o chelpers.o byte_mpi.o postpro.o interp.o \
+cvode_driver.o nek_comm.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
 finiparser.o iniparser.o dictionary.o \
-hpf.o
+hpf.o \
+sparse_cholesky.o fcrs.o crs_xxt.o crs_amg.o \
+fem_amg_preco.o crs_hypre.o 
 ################################################################################
 # MXM 
 MXM =  
 ################################################################################
 # BLAS
 BLAS = 
-
-# YP NEKNEK SOLVER
-ifeq ($(NEKNEK),0)
-NEKNEKO := singlmesh.o
-else
-NEKNEKO := multimesh.o
-endif
 
 COMM_MPI := comm_mpi.o
 ifeq ($(MPI),0)
@@ -71,7 +74,13 @@ else
    bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
    filters_cmt.o diagnostics.o artvisc.o
 endif
-# VISIT ########################################################################
+
+DUMMY:= $(shell cp $S/PARALLEL_ $S/PARALLEL)
+ifeq ($(DPROCMAP),1)
+	CORE := ${CORE} dprocmap.o
+	DUMMY:= $(shell cd $S; patch < PARALLEL.patch)
+endif
+
 ifneq ($(VISIT),0)
   VISITNEK_INCLUDES:=-I$S/3rd_party
   VISITO := visit.o 
@@ -84,7 +93,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(NEKNEKO) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO) $(BLAS)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
@@ -101,9 +110,9 @@ FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) $(CFLAGS) $(PPS_C)
-cFL2   = $(L2) $(CFLAGS) $(PPS_C)
-cFL3   = $(L3) $(CFLAGS) $(PPS_C)
+cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S
+cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S
+cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S
 
 ################################################################################
 all : nek5000
@@ -114,28 +123,29 @@ objdir:
 usrfile:
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
 
-nek5000:	objdir $(NOBJS) usrfile
-	$(FC) -c $(FL2) $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) -o ${OBJDIR}/${CASENAME}.o 
-	$(FC) $(FL2) -o ${BINNAME} ${OBJDIR}/${CASENAME}.o $(NOBJS) $(USR_LFLAGS) $(LDFLAGS)
+nek5000: lib usrfile
+	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) obj/${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
+        echo ""; \
+        echo "$(NEK_WARN)"; \
         echo ""; \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
 	size ${BINNAME}; \
 	echo ""; \
-        echo "$(NEK_WARN)"; \
 	else \
 	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
 	echo -e "\033[0m"; \
 	fi
+	@rm -f *.i
 ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
 endif
 
 lib:	objdir $(NOBJS)
-	$(AR) cru ${LIBNAME} $(NOBJS)
-	ranlib ${LIBNAME}
+	@$(AR) cru obj/${LIBNAME} $(NOBJS)
+	@ranlib obj/${LIBNAME}
 
 clean:
 	@echo "cleaning Nek5000 ..."
@@ -147,12 +157,10 @@ endif
 $(NOBJS) : ./SIZE
 
 # NEK CORE     ##################################################################
-$(OBJDIR)/drive.o	:$S/drive.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/drive1.o	:$S/drive1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/drive2.o	:$S/drive2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/prepost.o	:$S/prepost.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/postpro.o	:$S/postpro.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/intp_usr.o	:$S/intp_usr.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gfldr.o	:$S/gfldr.f $S/GFLDR;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect1.o	:$S/connect1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect2.o	:$S/connect2.f;			$(FC) -c $(FL2) $< -o $@
@@ -161,11 +169,12 @@ $(OBJDIR)/genxyz.o	:$S/genxyz.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs1.o	:$S/subs1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs2.o	:$S/subs2.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/map2.o	:$S/map2.f;			$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/dprocmap.o    :$S/dprocmap.f $S/DPROCMAP;     $(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/interp.o      :$S/interp.f;                   $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/induct.o	:$S/induct.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/convect.o	:$S/convect.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/perturb.o	:$S/perturb.f;	      		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/genbox.o	:$S/genbox.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hsmg.o	:$S/hsmg.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gmres.o	:$S/gmres.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/papi.o	:$S/papi.f;			$(FC) -c $(FL2) $< -o $@
@@ -188,9 +197,6 @@ $(OBJDIR)/eigsolv.o	:$S/eigsolv.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gauss.o	:$S/gauss.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/planx.o	:$S/planx.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/ssolv.o	:$S/ssolv.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_par.o	:$S/gfdm_par.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_solve.o	:$S/gfdm_solve.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gfdm_op.o	:$S/gfdm_op.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/coef.o	:$S/coef.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/plan4.o	:$S/plan4.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/plan5.o	:$S/plan5.f;			$(FC) -c $(FL2) $< -o $@
@@ -206,12 +212,11 @@ $(OBJDIR)/mpi_dummy.o	:$S/mpi_dummy.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/byte_mpi.o	:$S/byte_mpi.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/math.o	:$S/math.f;			$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/multimesh.o	:$S/multimesh.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/singlmesh.o	:$S/singlmesh.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/lb_setqvol.o	:$S/lb_setqvol.f;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_rea.o	:$S/reader_rea.f;	 	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/reader_par.f $S/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/reader_re2.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(F77) -c $(FL2) $< -o $@
+$(OBJDIR)/hpf.o	       	:$S/hpf.f;         		$(FC) -c $(FL2) $< -o $@
 
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
@@ -240,9 +245,15 @@ $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(FC) -c $(FL3) $< -o $@
 
 # C Files ##################################################################################
-$(OBJDIR)/nek_comm.o             :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
-$(OBJDIR)/byte.o                 :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
-$(OBJDIR)/chelpers.o             :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/nek_comm.o         :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/byte.o             :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/chelpers.o         :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
+$(OBJDIR)/fcrs.o             :$S/fcrs.c;              $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
+$(OBJDIR)/crs_xxt.o          :$S/crs_xxt.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/sparse_cholesky.o  :$S/sparse_cholesky.c;   $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/crs_amg.o          :$S/crs_amg.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/fem_amg_preco.o    :$S/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
+$(OBJDIR)/crs_hypre.o        :$S/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@

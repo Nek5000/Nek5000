@@ -70,22 +70,17 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          call bcneusc (ta,1)
          call add2    (tb,ta,n)
 
-c        call hmholtz (name4t,ta,tb,h1,h2
-c    $                 ,tmask(1,1,1,1,ifield-1)
-c    $                 ,tmult(1,1,1,1,ifield-1)
-c    $                 ,imesh,tolht(ifield),nmxh,isd)
-
          if(iftmsh(ifield)) then
            call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
-     $                   ,imesh,tolht(ifield),nmxh,1
+     $                   ,imesh,tolht(ifield),nmxt(ifield-1),1
      $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),bintm1)
          else
            call hsolve  (name4t,TA,TB,H1,H2 
      $                   ,tmask(1,1,1,1,ifield-1)
      $                   ,tmult(1,1,1,1,ifield-1)
-     $                   ,imesh,tolht(ifield),nmxh,1
+     $                   ,imesh,tolht(ifield),nmxt(ifield-1),1
      $                   ,approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
          endif 
 
@@ -656,7 +651,7 @@ c        call add2    (h2,ta,n)   !! Not Yet supported for DG
 
          call hmholtz_dg(name4t,t(1,1,1,1,ifield-1),tb,h1,h2 
      $                   ,tmask(1,1,1,1,ifield-1)
-     $                   ,tolht(ifield),nmxh)
+     $                   ,tolht(ifield),nmxt(ifield-1))
 
       endif  ! End of IGEOM branch.
 

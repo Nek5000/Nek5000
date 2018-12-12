@@ -186,12 +186,17 @@ C
              NELFLD(IFIELD) = NELV
          ENDIF
  100  CONTINUE
-C
-      NMXH   = 1000
-      if (iftran) NMXH   = 100
-      NMXP   = 1000 !  (for testing) 100 !  2000
-      NMXE   = 100 !  1000
-      NMXNL  = 10  !  100
+
+      ! Maximum iteration counts for linear solver
+      NMXV   = 1000
+      if (iftran) NMXV = 200
+      NMXH   =  NMXV ! not used anymore
+      NMXP   = 1000
+      do ifield = 2,ldimt+1
+         NMXT(ifield-1) = 200 
+      enddo 
+      NMXE   = 100
+      NMXNL  = 10 
 C
       PARAM(86) = 0 ! No skew-symm. convection for now
 C
@@ -390,34 +395,12 @@ C
          CALL SETINVM
          CALL SETDEF
          CALL SFASTAX
-         IF (ISTEP.GE.1) CALL EINIT
       ELSEIF (IGEOM.EQ.3) THEN
 c
 c        Take direct stiffness avg of mesh
 c
          ifieldo = ifield
          if (.not.ifneknekm) CALL GENCOOR (XM3,YM3,ZM3)
-         if (ifheat) then
-            ifield = 2
-            CALL dssum(xm3,lx3,ly3,lz3)
-            call col2 (xm3,tmult,ntot3)
-            CALL dssum(ym3,lx3,ly3,lz3)
-            call col2 (ym3,tmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,lx3,ly3,lz3)
-               call col2 (xm3,tmult,ntot3)
-            endif
-         else
-            ifield = 1
-            CALL dssum(xm3,lx3,ly3,lz3)
-            call col2 (xm3,vmult,ntot3)
-            CALL dssum(ym3,lx3,ly3,lz3)
-            call col2 (ym3,vmult,ntot3)
-            if (if3d) then
-               CALL dssum(xm3,lx3,ly3,lz3)
-               call col2 (xm3,vmult,ntot3)
-            endif
-         endif
          CALL GEOM1 (XM3,YM3,ZM3)
          CALL GEOM2
          CALL UPDMSYS (1)
@@ -1114,6 +1097,9 @@ c
       ttime=0.0
       tcvf =0.0
       tproj=0.0
+      tuchk=0.0
+      tmakf=0.0
+      tmakq=0.0
 C
       return
       end
@@ -1255,6 +1241,7 @@ c
 c
       tttstp = tttstp + 1e-7
       if (nio.eq.0) then
+         write(6,*) ''
          write(6,'(A)') 'runtime statistics:'
 
          pinit=tinit/tttstp
@@ -1281,13 +1268,21 @@ c        E solver timings
          peslv=teslv/tttstp 
          write(6,*) 'eslv time',neslv,teslv,peslv
 
+c        makef timings
+         pmakf=tmakf/tttstp 
+         write(6,*) 'makf time',tmakf,pmakf
+
+c        makeq timings
+         pmakq=tmakq/tttstp 
+         write(6,*) 'makq time',tmakq,pmakq
+
 c        CVODE RHS timings
          pcvf=tcvf/tttstp
          if(ifcvode) write(6,*) 'cfun time',ncvf,tcvf,pcvf
 
 c        Resiual projection timings
          pproj=tproj/tttstp
-         write(6,*) 'proj time',0,tproj,pproj
+         write(6,*) 'proj time',tproj,pproj
 
 c        Variable properties timings
          pspro=tspro/tttstp
@@ -1303,6 +1298,10 @@ c        USERBC timings
          write(6,*) 'usbc min ',min_usbc 
          write(6,*) 'usbc max ',max_usbc 
          write(6,*) 'usb  avg ',avg_usbc 
+
+c        User check timings
+         puchk=tuchk/tttstp
+         write(6,*) 'uchk time',tuchk,puchk
 
 c        Operator timings
          pmltd=tmltd/tttstp
@@ -1409,17 +1408,20 @@ c        MPI_Allreduce(sync) timings
          write(6,*) 'allreduce_sync  max ',max_gop_sync 
          write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
 #endif
+         write(6,*) ''
       endif
 
-      if (nio.eq.0)  ! header for timing
-     $ write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',' tgop',ifsync
-    1 format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
+      if (lastep.eq.1) then
+        if (nio.eq.0)  ! header for timing
+     $    write(6,1) 'tusbc','tdadd','tcrsl','tvdss','tdsum',
+     $               ' tgop',ifsync
+    1     format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
-      call blank(s132,132)
-      write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
-  132 format(i12,1p6e12.4,' qqq')
-      call pprint_all(s132,132,6)
-
+        call blank(s132,132)
+        write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
+  132   format(i12,1p6e12.4,' qqq')
+        call pprint_all(s132,132,6)
+      endif
 #endif
 
       return
@@ -1663,8 +1665,8 @@ c     in userf then the true FFX is given by ffx_userf + scale.
       scale = delta_flow/base_flow
       scale_vf(icvflow) = scale
       if (nio.eq.0) write(6,1) istep,chv(icvflow)
-     $   ,scale,delta_flow,current_flow,flow_rate
-    1    format(i11,'  volflow ',a1,11x,1p4e13.4)
+     $   ,time,scale,delta_flow,current_flow,flow_rate
+    1    format(i11,'  Volflow ',a1,11x,1p5e13.4)
 
       call add2s2(vx,vxc,scale,ntot1)
       call add2s2(vy,vyc,scale,ntot1)
@@ -1779,7 +1781,7 @@ c
       call rzero    (h2,ntot1)
 c
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 C
 C     Compute velocity
@@ -1790,7 +1792,7 @@ C
 c
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 C
       return
       end
@@ -1843,7 +1845,7 @@ c
       endif
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxv)
       call ssnormd  (vxc,vyc,vzc)
 c
 c     Compute pressure  (from "incompr")
@@ -1913,7 +1915,7 @@ c     Compute pressure
       call ctolspl  (tolspl,respr)
 
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 
 C     Compute velocity
@@ -1931,7 +1933,7 @@ C     Compute velocity
 
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       if (ifexplvis) call redo_split_vis ! restore vdiff
 
@@ -2016,3 +2018,31 @@ c     istpp = istep+2033+1250
       return
       end
 C-----------------------------------------------------------------------
+      subroutine prinit
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      if(nio.eq.0) write(6,*) 'initialize pressure solver'
+      isolver = param(40)
+
+      if (isolver.eq.0) then      ! semg_xxt
+         if (nelgt.gt.350000)
+     $   call exitti('problem size too large for XXT solver!$',0)
+         call set_overlap
+      else if (isolver.eq.1) then ! semg_amg
+         call set_overlap
+      else if (isolver.eq.2) then ! semg_amg_hypre
+         call set_overlap
+      else if (isolver.eq.3) then ! fem_amg_hypre
+         null_space = 0
+         if (ifvcor) null_space = 1 
+         call fem_amg_setup(nx1,ny1,nz1,
+     $                      nelv,ndim,
+     $                      xm1,ym1,zm1,
+     $                      pmask,binvm1,null_space,
+     $                      gsh_fld(1),fem_amg_param)
+      endif
+
+      return 
+      end

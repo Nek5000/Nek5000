@@ -3,6 +3,5 @@ echo `pwd`'/' >>  SESSION.NAME
 rm -f ioinfo
 rm -f logfile
 mv -f $1.log $1.log1 2>/dev/null
-nohup time ./nek5000 > $1.log &
-sleep 2
-ln $1.log logfile
+./nek5000 > $1.log &
+ln -sf $1.log logfile

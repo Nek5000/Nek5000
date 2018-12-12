@@ -23,7 +23,7 @@ c
 
       integer*8 dtmp8
 
-      logical ifbswp, if_byte_swap_test
+      logical if_byte_swap_test
       real*4 bytetest
 
       etime_t = dnekclock_sync()
@@ -89,7 +89,7 @@ c
       ifldpos = 0
       if(ifgetxr) then
         ! read source mesh coordinates
-        call gfldr_getxyz(xm1s,ym1s,zm1s,ifbswp)
+        call gfldr_getxyz(xm1s,ym1s,zm1s)
         ifldpos = ldim
       else
         call exitti('source does not contain a mesh!$',0)
@@ -99,16 +99,12 @@ c
         call exitti('no support for if_full_pres!$',0)
       endif
 
-      if(nelt.ne.nelv) then
-        call exitti('no support for conj/HT!$',0)
-      endif
-
       ! initialize interpolation tool using source mesh
       nxf   = 2*nxs
       nyf   = 2*nys
       nzf   = 2*nzs
-      nhash = nxs*nys*nzs 
-      nmax  = 256
+      nhash = nels*nxs*nys*nzs 
+      nmax  = 128
 
       call fgslib_findpts_setup(inth_gfldr,nekcomm,np,ldim,
      &                          xm1s,ym1s,zm1s,nxs,nys,nzs,
@@ -118,41 +114,44 @@ c
       ! read source fields and interpolate
       if(ifgetur) then
         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
-        call gfldr_getfld(vx,vy,vz,ldim,ifldpos+1,ifbswp)
+        ntot = nx1*ny1*nz1*nelv 
+        call gfldr_getfld(vx,vy,vz,ntot,ldim,ifldpos+1)
         ifldpos = ifldpos + ldim
       endif
       if(ifgetpr) then
         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
-        call gfldr_getfld(pm1,dum,dum,1,ifldpos+1,ifbswp)
+        ntot = nx1*ny1*nz1*nelv 
+        call gfldr_getfld(pm1,dum,dum,ntot,1,ifldpos+1)
         ifldpos = ifldpos + 1
         if (ifaxis) call axis_interp_ic(pm1)
         call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
-        call gfldr_getfld(t(1,1,1,1,1),dum,dum,1,ifldpos+1,ifbswp)
+        ntot = nx1*ny1*nz1*nelfld(2) 
+        call gfldr_getfld(t(1,1,1,1,1),dum,dum,ntot,1,ifldpos+1)
         ifldpos = ifldpos + 1
       endif
       do i = 1,ldimt-1
          if(ifgtpsr(i)) then
            if(nid.eq.0 .and. loglevel.gt.2) 
      $       write(6,*) 'reading scalar',i
-           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,1,ifldpos+1,ifbswp) 
+           ntot = nx1*ny1*nz1*nelfld(i+2) 
+           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,ntot,1,ifldpos+1) 
            ifldpos = ifldpos + 1
          endif
       enddo
 
       call byte_close_mpi(fldh_gfldr,ierr)
-      call fgslib_findpts_free(inth_gfldr)
-
       etime_t = dnekclock_sync() - etime_t
-      if(nio.eq.0) write(6,'(A,1(1g8.2),A)')
+      call fgslib_findpts_free(inth_gfldr)
+      if(nio.eq.0) write(6,'(A,1(1g9.2),A)')
      &                   ' done :: gfldr  ', etime_t, ' sec'
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_getxyz(xout,yout,zout,ifbswp)
+      subroutine gfldr_getxyz(xout,yout,zout)
 
       include 'SIZE'
       include 'GFLDR'
@@ -161,7 +160,6 @@ c-----------------------------------------------------------------------
       real xout(*)
       real yout(*)
       real zout(*)
-      logical ifbswp
 
       integer*8 ioff_b
 
@@ -184,7 +182,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_getfld(out1,out2,out3,nldim,ifldpos,ifbswp)
+      subroutine gfldr_getfld(out1,out2,out3,nout,nldim,ifldpos)
 
       include 'SIZE'
       include 'GEOM'
@@ -194,7 +192,6 @@ c-----------------------------------------------------------------------
       real out1(*)
       real out2(*)
       real out3(*)
-      logical ifbswp
 
       integer*8 ioff_b
 
@@ -223,18 +220,17 @@ c-----------------------------------------------------------------------
       endif
 
       ! interpolate onto current mesh
-      ntot = lx1*ly1*lz1*nelt
       call gfldr_buf2vi  (buffld,1,bufr,nldim,wdsizr,nels,nxyzs)
-      call gfldr_intp    (out1,buffld,ifpts)
+      call gfldr_intp    (out1,nout,buffld,ifpts)
       if(nldim.eq.1) return
 
       call gfldr_buf2vi  (buffld,2,bufr,nldim,wdsizr,nels,nxyzs)
-      call gfldr_intp    (out2,buffld,.false.)
+      call gfldr_intp    (out2,nout,buffld,.false.)
       if(nldim.eq.2) return
 
       if(nldim.eq.3) then
         call gfldr_buf2vi(buffld,3,bufr,nldim,wdsizr,nels,nxyzs)
-        call gfldr_intp  (out3,buffld,.false.)
+        call gfldr_intp  (out3,nout,buffld,.false.)
       endif
 
       return
@@ -261,27 +257,25 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine gfldr_intp(fieldout,fieldin,iffpts)
+      subroutine gfldr_intp(fieldout,nout,fieldin,iffpts)
 
       include 'SIZE'
       include 'RESTART'
       include 'GEOM'
       include 'GFLDR'
 
-      real    fieldout(*),fieldin(*)
+      real    fieldout(nout)
+      real    fieldin (*)
       logical iffpts
 
       integer*8 i8glsum,nfail,nfail_sum
 
-
-      nfail = 0
-      ntot  = lx1*ly1*lz1*nelt
-
-      toldist = 5e-6
-      if(wdsizr.eq.8) toldist = 5e-14
-
       if(iffpts) then ! locate points (iel,iproc,r,s,t)
+        nfail = 0
+        toldist = 5e-6
+        if(wdsizr.eq.8) toldist = 5e-14
 
+        ntot  = lx1*ly1*lz1*nelt
         call fgslib_findpts(inth_gfldr,
      &                      grcode,1,
      &                      gproc,1,
@@ -304,16 +298,16 @@ c-----------------------------------------------------------------------
      &      ' WARNING: Unable to find all mesh points in source fld ',
      &      nfail_sum
         endif
-
       endif
 
       ! evaluate inut field at given points
+      npt = nout
       call fgslib_findpts_eval(inth_gfldr,
      &                         fieldout,1,
      &                         grcode,1,
      &                         gproc,1,
      &                         gelid,1,
-     &                         grst,ldim,ntot,
+     &                         grst,ldim,npt,
      &                         fieldin)
 
       return

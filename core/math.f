@@ -1,4 +1,20 @@
 c-----------------------------------------------------------------------
+      subroutine icopy48(a,b,n)
+      integer*8 a(1)
+      integer*4 b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine icopy84(a,b,n)
+      integer*4 a(1)
+      integer*8 b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
       CHARACTER*1 A(1)
       CHARACTER*1 BLNK
@@ -204,16 +220,23 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ione(a,n)
-      INTEGER   A(1)
+      INTEGER  A(1)
       DO 100 I = 1, N
  100     A(I ) = 1
       return
       END
 c-----------------------------------------------------------------------
       subroutine rone(a,n)
-      DIMENSION  A(1)
+      DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I ) = 1.0
+      return
+      END
+c-----------------------------------------------------------------------
+      subroutine ltrue(a,n)
+      LOGICAL A(1)
+      DO 100 I = 1, N
+ 100     A(I ) = .TRUE.
       return
       END
 c-----------------------------------------------------------------------
@@ -1600,6 +1623,128 @@ c-----------------------------------------------------------------------
          d    = max(d,diff)
       enddo
       difmax = glamax(d,1)
+
+      return
+      end
+c-----------------------------------------------------------------------
+ccc Nek-Nek routines
+c-----------------------------------------------------------------------
+      function glmin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glmin_ms = glmin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glamin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glamin_ms = glamin(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glmax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glmax_ms = glmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function glamax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glamax_ms = glamax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c------------------------------------------------------------------------
+      function glsum_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1)
+
+      call setnekcomm(iglobalcomm)
+      glsum_ms = glsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglsum_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1),n
+
+      call setnekcomm(iglobalcomm)
+      iglsum_ms = iglsum(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc3_ms(a,b,c,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1),c(1)
+
+      call setnekcomm(iglobalcomm)
+      glsc3_ms = glsc3(a,b,c,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function glsc2_ms(a,b,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      real a(1),b(1)
+
+      call setnekcomm(iglobalcomm)
+      glsc2_ms = glsc2(a,b,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglmax_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call setnekcomm(iglobalcomm)
+      iglmax_ms = iglmax(a,n)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function iglmin_ms(a,n)
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(1)
+
+      call setnekcomm(iglobalcomm)
+      iglmin_ms = iglmin(a,n)
+      call setnekcomm(intracomm)
 
       return
       end

@@ -459,9 +459,9 @@ c           write(998,*) (y(i,1),i=0,nely)
 
 
       if(nel.gt.maxel) then
-        write(6,*)
-     $       'ABORT: increase maxel and recompile!',nel,maxel
-             call exitt
+        write(6,*) 'Abort: number of elements too large',nel
+        write(6,*) 'change MAXNEL and recompile'
+        call exitt
       elseif (nelx.gt.maxx.or.nely.gt.maxx.or.nelz.gt.maxx) then
         write(6,*) 'ABORT, increase maxx and recompile',
      $       nelx,nely,nelz,maxx
@@ -1466,6 +1466,9 @@ c       Scan through and output .rea file until end of file
       else
         call byte_close()
       endif
+c
+      open(unit=99,file='box.tmp')
+      close(unit=99,status='delete')
 
       end
 c-----------------------------------------------------------------------

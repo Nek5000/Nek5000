@@ -1,51 +1,47 @@
-# Release v17.0-rc1
+# Release v18.0-4
 
-## Major Features and Improvements
+## What is new? 
 
-* New paramater file `.par` (replacing .rea)
-* Added `OIFS` for `moving mesh`
-* Added `Moving mesh` for `PN/PN`
-* Improved stability for varying visosity and `PN/PN`
-* Added support for mixed `Helmholtz/CVODE` solves
-* New fast `AMG setup` tool based on HYPRE
-* New `EXODUSII` mesh converter
-* New interface to `libxsmm` (fast MATMUL library).
-* Extended `lowMach` solver for time varying thermodynamic pressure
-* Added DG for scalars
-* Added support for `implicit none` in .usr file
-* Reduced solver initilization time (parallel binary reader for re2, ma2 and AMG files)
-* Restart from arbitrary `fld-file` (multiple files not supported) using interpolation
-* Optional new user friendly `SIZE` file format (see SIZE.template)
-* Refactored `NEKNEK`
-* Added high-pass filter relaxation (alternative to explicit filter)
-* Refactored build system
-* Refactored residual projection including support for scalars and coupled Helmholtz solves
+* Uncoupled multisession (neknek) simulations
+* Gather scatter operations across sessions
+* Gather scatter options across gtp-planes
+* par file support for postnek
+* mkSIZE to automatically create SIZE file
+* Object and boundary handling
+* RANS k-Omega and k-Omega-SST (experimental) 
+* Online mesh-smoother (experimental)
+* ElapsedTime option for writeControl (in par)
+* Print runtime-statistics every 100 steps
+* Support for GNU 8.x compilers
+* Support for Cray compilers
+* Support for ARM compilers
+* FEM_AMG precoditioner (experimental) p40=3
+* SEMG_AMG_HYPRE precoditioner (experimental) p40=2
+* CHT support for generic fld reader
+* Overwrite core routines in usr
+* Fully scaleable memory footprint PPLIST=DPROCMAP (experimental)
+* Online genmap PPLIST=PARRSB (experimental) 
+* Various bug fixes
 
-## Backwards-Incompatible Changes 
+## What you may have to change to be compatible 
 
-* Replaced usr interpolation wrapper `intpts()` by `intp()` with a different interface
-* Replaced `g2gi()` by new generic fld reader `gfldr()`
-* Moved `makenek` from `core` to `bin` folder
-* Removed `MOAB` support 
-* Replaced `hpts.in/hpts.out` by `<casename>.his` 
-* Eliminated PPLIST symbol `MPIIO` as it is enabled by default now (only active if p65=1 or nfiler=1)
-* NENEK requires latest SIZE file format
-* Eliminated PPLIST symbol `AMG_DUMP` as we dump the files automatically if they don't exist
-* Eliminated PPLIST symbol `AMG` as it is a runtime parameter now (rea:p40 or par:preconditoner=semg_amg in PRESSURE section) 
-* Changed various key/values for `.par`
-* Changed meaning of param(26) to be the targetCFL instead of OIFS substeps
+* Remove PPLIST symbol NEKNEK (not required anymore)
+* Use valint instead of ubc in userbc for neknek
+* Remove multimesh_create call from usr file (not required anymore)
+* Adjust calls to interpolation wrapper according to new interface in interp.f
+* Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
+* Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
+* Your parameters to the reserved user space param(170) - param(200) 
+* Set lelr in SIZE to number of elements per restart file (for muli-file I/O only)
+* Use planar_avg() instead of planar_average_z etc. 
 
 ## Known Bugs 
 
-[65](https://github.com/Nek5000/Nek5000/issues/65),
+[507](https://github.com/Nek5000/Nek5000/issues/507),
+[474](https://github.com/Nek5000/Nek5000/issues/474),
 [407](https://github.com/Nek5000/Nek5000/issues/407),
-[430](https://github.com/Nek5000/Nek5000/issues/430),
-[457](https://github.com/Nek5000/Nek5000/issues/457),
+[65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors
-This release contains contributions from the Nek5000 core developers, as well as:
 
-@ggiannako, @nicooff, @kmittal2, @RonRahaman, @cliosaglietti, @EvelynOtero, @mattiabr, @maxhutch, @hackljf, @negips, @kentO, @nchristensen, @spatel7286
-
-
-We are also grateful to all who filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.
+We are grateful to all who added new features, filed issues or helped resolve them, asked and answered questions, and were part of inspiring discussions.

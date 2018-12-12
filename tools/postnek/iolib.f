@@ -566,7 +566,23 @@ C
  13   CALL PRS('Error reading input.  Enter 4 Real Values$')
       GO TO 1
       END
-C
+
+      subroutine rel(l)
+c     Read Logical
+      logical l
+      character*80 s
+ 1    call res(s,80)
+      rewind(13)
+      write (13,'(a80)')s
+      rewind(13)
+      read(13,*,err=13,end=13) l
+      write (6,*) l
+      rewind(13)
+      return
+ 13   call prs('Error reading input.  Enter Logical Value$')
+      go to 1
+      end
+
       SUBROUTINE PUTSOLD(S,NCHARS)
 C     PUTS is the one device-dependent output subroutine.
 C     It Goes in Tekplot.f (Or Xinterface.f)  This is the Tek version
@@ -591,6 +607,183 @@ c-----------------------------------------------------------------------
       subroutine setgraph(ifgraf)
       logical ifgraf
       ifgraf = .true.
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine par_read(ierr)
+c
+c     parse .par file and set run parameters
+c
+c     todo:
+c     - check for invalid values for a given key
+c     - print default value to screen
+c     - separate settings for tol, proj, dealiasing for ps
+c     - mhd support
+
+
+#     include "basics.inc"
+      include 'basicsp.inc'
+
+      character*132 c_out,txt
+
+      call finiparser_load(parfle,ierr)
+      if(ierr .ne. 0) return
+
+      call par_verify(ierr)
+      if(ierr .ne. 0) return
+
+      call finiparser_getDbl(d_out,'velocity:density',ifnd)
+      if(ifnd .eq. 1) param(1) = d_out
+
+      call finiparser_getDbl(d_out,'velocity:viscosity',ifnd)
+      if(ifnd .eq. 1) param(2) = d_out
+      if (param(2) .lt.0.0) param(2)  = -1.0/param(2)
+
+      call finiparser_getDbl(d_out,'temperature:rhoCp',ifnd)
+      if(ifnd .eq. 1) param(7) = d_out
+
+      call finiparser_getDbl(d_out,'temperature:conductivity',ifnd)
+      if(ifnd .eq. 1) param(8) = d_out
+      if (param(8) .lt.0.0) param(8)  = -1.0/param(8)
+
+      call finiparser_getString(c_out,'general:stopAt',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'ENDTIME') .gt. 0) then
+         call finiparser_getDbl(d_out,'general:endTime',ifnd)
+         if(ifnd .eq. 1) param(10) = d_out
+      endif
+
+      call finiparser_getDbl(d_out,'general:numSteps',ifnd)
+      if(ifnd .eq. 1) param(11) = d_out
+
+      call finiparser_getDbl(d_out,'general:dt',ifnd)
+      if(ifnd .eq. 1) param(12) = d_out
+
+      call finiparser_getDbl(d_out,'general:writeInterval',ifnd)
+      if(ifnd .eq. 1) param(15) = d_out
+
+      ! counts number of scalars
+      j = 0
+      do i = 1,mpscal-1
+         write(txt,"('scalar',i2.2)") i
+         call finiparser_find(i_out,txt,ifnd)
+         if (ifnd .eq. 1) then
+            j = j + 1
+            ifpsco(i) = .true.
+         endif
+      enddo
+      param(23) = j
+
+c set parameters
+      d_out = param(15)
+      call finiparser_getString(c_out,'general:writeControl',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'RUNTIME') .gt. 0) then
+         param(14) = d_out
+      else
+         param(14) = 0
+         param(15) = d_out
+      endif
+
+      call finiparser_find(i_out,'temperature',ifnd)
+      if(ifnd .eq. 1) then
+        ifheat = .true.
+        ifto   = .true.
+      endif
+
+      call finiparser_getBool(i_out,'general:write8Byte',ifnd)
+      if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1
+
+      call finiparser_getDbl(d_out,'general:writeNParallelFiles',ifnd)
+      if(ifnd .eq. 1) param(65) = int(d_out)
+
+c set logical flags
+      call finiparser_getString(c_out,'general:timeStepper',ifnd)
+      call capit(c_out,132)
+
+      if (index(c_out,'CHAR') .gt. 0) then
+         ifchar = .true.
+      else if (index(c_out,'STEADY') .gt. 0) then
+         iftran = .false.
+      endif
+
+      call finiparser_find(i_out,'velocity',ifnd)
+      if(ifnd .eq. 1) then
+        ifflow = .true.
+        ifvo   = .true.
+        ifpo   = .true.
+      endif
+
+      call finiparser_getBool(i_out,'problemType:axiSymmetry',ifnd)
+      if(ifnd .eq. 1) then
+        ifaxis = .false.
+        if(i_out .eq. 1) ifaxis = .true.
+      endif
+
+c set advection
+      call finiparser_getBool(i_out,'velocity:advection',ifnd)
+      if(ifnd .eq. 1) then
+        ifadvc(1) = .false.
+        if(i_out .eq. 1) ifadvc(1) = .true.
+      endif
+
+c set mesh-field mapping
+      call finiparser_getBool(i_out,'temperature:conjugateHeatTransfer',
+     &                        ifnd)
+      if(ifnd .eq. 1) then
+        iftmsh(2) = .false.
+        if(i_out .eq. 1) iftmsh(2) = .true.
+      endif
+
+      do i = 1,mpscal-1
+         write(txt,"('scalar',i2.2,a)") i,':writeToFieldFile'
+         call finiparser_getBool(i_out,txt,ifnd)
+         if(ifnd .eq. 1) then
+           ifpsco(i) = .false.
+           if(i_out .eq. 1) ifpsco(i) = .true.
+         endif
+      enddo
+
+      call finiparser_dump()
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine par_verify(ierr)
+
+      include 'PARDICT'
+
+      character*132  key
+      character*1024 val
+
+      character*132 txt
+      character*1   tx1(132)
+      equivalence   (tx1,txt)
+
+      ierr = 0
+
+      call finiparser_getDictEntries(n)
+      do i = 1,n
+         call finiparser_getPair(key,val,i,ifnd)
+         call capit(key,132)
+
+         is = index(key,'_') ! ignore user keys
+         if (is.eq.1) goto 10
+
+         do j = 1,PARDICT_NKEYS ! do we find the key in the par-dictionary
+            if(index(pardictkey(j),key).eq.1) goto 10
+
+            is = index(key,'SCALAR')
+            if(is .eq. 1) then
+              call chcopy(txt,key,132)
+              call chcopy(tx1(is+6),'%%',2)
+              if(index(pardictkey(j),txt).eq.1) goto 10
+            endif
+         enddo
+         write(6,*) 'ERROR: Par file contains unknown key ', key
+         ierr = ierr + 1
+   10 enddo
+
       return
       end
 c-----------------------------------------------------------------------
