@@ -129,9 +129,8 @@ c-----------------------------------------------------------------------
       enddo
 
       tolhv = abs(param(22))
-      nmxh  = 100
-      call ophinv_pr(dv1,dv2,dv3
-     $   ,resv(1,1),resv(1,2),resv(1,3),h1,h2,tolhv,nmxh)
+      call ophinv(dv1,dv2,dv3
+     $   ,resv(1,1),resv(1,2),resv(1,3),h1,h2,tolhv,nmxv)
 
       call opadd2(ux,uy,uz,dv1,dv2,dv3)
 

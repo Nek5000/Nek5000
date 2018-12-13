@@ -62,18 +62,13 @@ C
          if (iftran)  call invers2 (h2inv,h2,ntot1)
          call makeg   (   g1,g2,g3,h1,h2,intype)
          call crespuz (wp,g1,g2,g3,h1,h2,h2inv,intype)
-         if (solver_type.eq.'fdm') then
-            call gfdm_pres_solv(dv1,wp,dv2,dv3,.true.,0.0)
-            call copy (wp,dv1,ntot2)
-         else
-            call uzawa   (wp,h1,h2,h2inv,intype,icg)
-         endif
+         call uzawa   (wp,h1,h2,h2inv,intype,icg)
          if (icg.gt.0) call add2 (pr,wp,ntot2)
 
 C        .... then, compute velocity:
 
          call cresvuz (resv1,resv2,resv3)
-         call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+         call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
          call opadd2  (vx,vy,vz,dv1,dv2,dv3)
 
       endif
@@ -102,7 +97,7 @@ c     Compute start-residual/right-hand-side in the pressure equation
      $ ,             VBDRY3 (LX1,LY1,LZ1,LELV)
 
       if ((intype.eq.0).or.(intype.eq.-1)) then
-         call ophinv (ta1,ta2,ta3,g1,g2,g3,h1,h2,tolhr,nmxh)
+         call ophinv (ta1,ta2,ta3,g1,g2,g3,h1,h2,tolhr,nmxp)
       else
          call opbinv (ta1,ta2,ta3,g1,g2,g3,h2inv)
       endif
@@ -284,7 +279,7 @@ C
       call opgradt (ta1,ta2,ta3,wp)
       if ((intype.eq.0).or.(intype.eq.-1)) then
          tolhin=tolhs
-         call ophinv (tb1,tb2,tb3,ta1,ta2,ta3,h1,h2,tolhin,nmxh)
+         call ophinv (tb1,tb2,tb3,ta1,ta2,ta3,h1,h2,tolhin,nmxv)
       else
          if (ifanls) then
             dtbdi = dt/bd(1)   ! scale by dt*backwd-diff coefficient
@@ -744,65 +739,6 @@ C
       return
       END
 c-----------------------------------------------------------------------
-      subroutine ophinv (out1,out2,out3,inp1,inp2,inp3,h1,h2,tolh,nmxi)
-
-c     OUT = (H1*A+H2*B)-1 * INP  (implicit)
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'SOLN'
-      include 'TSTEP'
-
-      real out1(1),out2(1),out3(1),inp1(1),inp2(1),inp3(1),h1(1),h2(1)
-
-      imesh = 1
-
-
-      if (ifstrs) then
-         matmod = 0
-         if (ifield.eq.ifldmhd) then
-            call hmhzsf  ('NOMG',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     b1mask,b2mask,b3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         else
-            call hmhzsf  ('NOMG',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     v1mask,v2mask,v3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         endif
-      elseif (ifcyclic) then
-         matmod = 0
-         if (ifield.eq.ifldmhd) then
-            call hmhzsf  ('BXYZ',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     b1mask,b2mask,b3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         else
-            call hmhzsf  ('VXYZ',out1,out2,out3,inp1,inp2,inp3,h1,h2,
-     $                     v1mask,v2mask,v3mask,vmult,
-     $                     tolh,nmxi,matmod)
-         endif
-      else
-         if (ifield.eq.ifldmhd) then
-            call hmholtz ('BX  ',out1,inp1,h1,h2,b1mask,vmult,
-     $                                      imesh,tolh,nmxi,1)
-            call hmholtz ('BY  ',out2,inp2,h1,h2,b2mask,vmult,
-     $                                      imesh,tolh,nmxi,2)
-            if (ldim.eq.3) 
-     $      call hmholtz ('BZ  ',out3,inp3,h1,h2,b3mask,vmult,
-     $                                      imesh,tolh,nmxi,3)
-         else
-            call hmholtz ('VELX',out1,inp1,h1,h2,v1mask,vmult,
-     $                                      imesh,tolh,nmxi,1)
-            call hmholtz ('VELY',out2,inp2,h1,h2,v2mask,vmult,
-     $                                      imesh,tolh,nmxi,2)
-            if (ldim.eq.3) 
-     $      call hmholtz ('VELZ',out3,inp3,h1,h2,v3mask,vmult,
-     $                                      imesh,tolh,nmxi,3)
-         endif
-      endif
-C
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine ophx (out1,out2,out3,inp1,inp2,inp3,h1,h2)
 C----------------------------------------------------------------------
 C
@@ -986,12 +922,6 @@ C
 c
       integer*8 ntotg,nxyz2
 c
-c
-      if (solver_type.eq.'pdm') then
-         call gfdm_pres_solv(rpcg,rcg,h1m2,h2m2,.true.,0.0)
-         return
-      endif
-c
       NTOT2 = lx2*ly2*lz2*NELV
       if (istep.ne.kstep .and. .not.ifanls) then
          kstep=istep
@@ -1095,7 +1025,7 @@ C
       CALL RONE    (H1,NTOT1)
       CALL RZERO   (H2,NTOT1)
       IFHZPC = .TRUE.
-      CALL HMHOLTZ ('PREC',X1,R1,H1,H2,PMASK,VMULT,IMESH,TOL,NMXH,1)
+      CALL HMHOLTZ ('PREC',X1,R1,H1,H2,PMASK,VMULT,IMESH,TOL,NMXP,1)
       IFHZPC = .FALSE.
 C
       DO 200 IEL=1,NELV
@@ -1508,9 +1438,10 @@ C----------------------------------------------------------------------
       include 'MASS'
       include 'INPUT'
       include 'TSTEP'
-
+      include 'CTIMER'
       include 'MVGEOM'
 
+      etime1 = dnekclock()
                                                 call makeuf
       if (filterType.eq.2)                      call make_hpf
       if (ifexplvis.and.ifsplit)                call makevis
@@ -1523,6 +1454,8 @@ C----------------------------------------------------------------------
 
 c     Adding this call allows prescribed pressure bc for PnPn-2
 c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
+      
+      tmakf=tmakf+(dnekclock()-etime1)
 
       return
       end
@@ -3256,10 +3189,10 @@ C
          goto 100
       endif
 
-      if (.not. ifdeal(ifield)) goto 101
-     
-      if (param(99).eq.2.or.param(99).eq.3) then  
-         call conv1d(conv,fi)  !    use dealiased form
+      if (.not. ifdeal(ifield)) then
+         call conv1 (conv,fi)
+      elseif (param(99).eq.2.or.param(99).eq.3) then  
+         call conv1d(conv,fi)
       elseif (param(99).eq.4) then
          if (ifpert) then
            call convect_new (conv,fi,.false.,vx,vy,vz,.false.)
@@ -3271,7 +3204,7 @@ C
          call convect_cons(conv,fi,.false.,vx,vy,vz,.false.)
          call invcol2     (conv,bm1,ntot1)  ! local mass inverse
       else
- 101     call conv1 (conv,fi)  !    use the convective form
+         call conv1 (conv,fi)
       endif
 
  100  continue

@@ -8,7 +8,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       logical ifbswap
 
@@ -23,7 +22,7 @@ c
 
       call chkParam
 
-      if (.not.ifgtp) call mapelpr  ! read .map file, est. gllnid, etc.
+      call mapelpr  ! read .map file, est. gllnid, etc.
 
       call read_re2_data(ifbswap)
 
@@ -39,7 +38,6 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       loglevel = 1
       optlevel = 1
@@ -51,8 +49,8 @@ C
       param(14) = 0    ! iostep
       param(15) = 0    ! iotime 
 
-      param(21) = 1e-6 ! pressure tolerance
-      param(22) = 1e-8 ! velocity tolerance
+      param(21) = 1e-5 ! pressure tolerance
+      param(22) = 1e-7 ! velocity tolerance
 
       param(26) = 0.5  ! target Courant number
       param(27) = 2    ! 2nd order in time
@@ -120,6 +118,17 @@ C
          ifadvc(i+1) = .true.  
       enddo 
 
+      iffilter(1) = .false.  
+      do i=1,ldimt
+         iffilter(i+1) = .false.  
+      enddo 
+
+      ifdgfld(0) = .false. 
+      ifdgfld(1) = .false. 
+      do i=1,ldimt
+         ifdgfld(i+1) = .false.  
+      enddo 
+
       ifdiff(1) = .true.  
       do i=1,ldimt
          ifdiff(i+1) = .true.  
@@ -152,7 +161,7 @@ C
       ifuservp  = .false.  
       ifcyclic  = .false.
       ifusermv  = .false.
-      ifmgrid   = .false.
+      ifmgrid   = .true.
       ifessr    = .false.
       ifreguo   = .false.
       ifbase    = .true.   
@@ -161,7 +170,6 @@ C
       ifmoab    = .false.  
       ifcvode   = .false.
 
-      ifgtp     = .false.
       ifdg      = .false.
       ifsync    = .false.  
       ifanls    = .false.  
@@ -177,15 +185,13 @@ C
       ifdp0dt   = .false.
       ifreguo   = .false.   ! dump on the GLL mesh
 
+      fem_amg_param(1) = 0
+      crs_param(1) = 0
+
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 
-      call blank (hcode ,11*lhis)
-      call izero (lochis, 4*lhis)
-
       call blank (initc,15*132)
-
-      nhis = 0
 
       return
       end
@@ -206,10 +212,7 @@ c     - mhd support
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
-#ifdef LPM
-      INCLUDE 'LPM'
-#endif
+      INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
 
@@ -294,6 +297,10 @@ c set parameters
          else if (index(c_out,'TIMESTEP') .eq. 1) then
             param(14) = 0
             param(15) = d_out
+         else if (index(c_out,'ELAPSEDTIME') .eq. 1) then
+            param(14) = d_out
+            param(15) = 0
+            timeioe = 1
          else
             write(6,*) 'value: ',trim(c_out)
             write(6,*) 'is invalid for general:writeControl!'
@@ -317,6 +324,17 @@ c set parameters
       endif
 
       j = 0
+      do i = 1,99
+         write(txt,"('scalar',i2.2)") i
+         call finiparser_find(i_out,txt,ifnd)
+         if (ifnd .eq. 1) j = j + 1
+      enddo
+      if (j.gt.ldimt-1) then
+         write(6,*) 'found more scalars than specified in SIZE!' 
+         goto 999
+      endif
+
+      j = 0
       do i = 1,ldimt-1
          write(txt,"('scalar',i2.2)") i
          call finiparser_find(i_out,txt,ifnd)
@@ -327,13 +345,14 @@ c set parameters
          endif
       enddo
       param(23) = j ! number of scalars 
-
       n = param(23)
-      if (ifheat) n = n+1 
-       
-      do i = 1,n
+ 
+      is = 2
+      if (ifheat) is = 1 
 
-      if (ifheat .and. i.eq.1) then
+      do i = is,n+1
+
+      if (i.eq.1) then
         txt = 'temperature'
       else
         write(txt,"('scalar',i2.2)") i-1
@@ -423,10 +442,14 @@ c set parameters
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
          call capit(c_out,132)
-         if (index(c_out,'SEMG_AMG') .eq. 1) then
-            param(40) = 1
-         else if (index(c_out,'SEMG_XXT') .eq. 1) then
+         if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
+        else if (index(c_out,'SEMG_AMG_HYPRE') .eq. 1) then
+            param(40) = 2
+         else if (index(c_out,'SEMG_AMG') .eq. 1) then
+            param(40) = 1
+         else if (index(c_out,'FEM_AMG_HYPRE') .eq. 1) then
+            param(40) = 3
          else
            write(6,*) 'value: ',trim(c_out)
            write(6,*) 'is invalid for pressure:preconditioner!'
@@ -465,8 +488,10 @@ c        stabilization type: none, explicit or hpfrt
             goto 101
          else if (index(c_out,'EXPLICIT') .eq. 1) then
             filterType = 1
+            call ltrue(iffilter,size(iffilter))
          else if (index(c_out,'HPFRT') .eq. 1) then
             filterType = 2
+            call ltrue(iffilter,size(iffilter))
          else
            write(6,*) 'value: ',c_out
            write(6,*) 'is invalid for general:filtering!'
@@ -771,201 +796,6 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
-c set particle options
-#ifdef LPM
-      call lpm_input_defaults
-
-      call finiparser_getDbl(d_out,'particle:npart',ifnd)
-      if(ifnd .eq. 1) then
-         nw = int(d_out)
-      endif
-      call finiparser_getDbl(d_out,'particle:temperature',ifnd)
-      if(ifnd .eq. 1) tp_0 = d_out
-      call finiparser_getDbl(d_out,'particle:density',ifnd)
-      if(ifnd .eq. 1) rho_p = d_out
-      call finiparser_getDbl(d_out,'particle:specificheat',ifnd)
-      if(ifnd .eq. 1) cp_p = d_out
-      call finiparser_getDbl(d_out,'particle:forceqs',ifnd)
-      if(ifnd .eq. 1) part_force(1) = int(d_out)
-      call finiparser_getDbl(d_out,'particle:forceun',ifnd)
-      if(ifnd .eq. 1) part_force(2) = int(d_out)
-      call finiparser_getDbl(d_out,'particle:forceiu',ifnd)
-      if(ifnd .eq. 1) part_force(3) = int(d_out)
-      call finiparser_getDbl(d_out,'particle:heatqs',ifnd)
-      if(ifnd .eq. 1) part_force(4) = int(d_out)
-      call finiparser_getDbl(d_out,'particle:heatun',ifnd)
-      if(ifnd .eq. 1) part_force(5) = int(d_out)
-      call finiparser_getDbl(d_out,'particle:io',ifnd)
-      if(ifnd .eq. 1) npio_method = int(d_out)
-      call finiparser_getDbl(d_out,'particle:injectionstep',ifnd)
-      if(ifnd .eq. 1) inject_rate = int(d_out)
-      call finiparser_getDbl(d_out,'particle:delaystep',ifnd)
-      if(ifnd .eq. 1) time_delay = int(d_out)
-      call finiparser_getDbl(d_out,'particle:seed',ifnd)
-      if(ifnd .eq. 1) nrandseed = int(d_out)
-      call finiparser_getDbl(d_out,'particle:coarsegrain',ifnd)
-      if(ifnd .eq. 1) rspl = d_out
-      call finiparser_getDbl(d_out,'particle:filter',ifnd)
-      if(ifnd .eq. 1) dfilt = d_out
-      call finiparser_getDbl(d_out,'particle:alpha',ifnd)
-      if(ifnd .eq. 1) ralphdecay = d_out
-      call finiparser_getDbl(d_out,'particle:restartstep',ifnd)
-      if(ifnd .eq. 1) ipart_restartr = int(d_out)
-      call finiparser_getDbl(d_out,'particle:spring',ifnd)
-      if(ifnd .eq. 1) then
-         ksp      = d_out
-         ksp_wall = d_out
-      endif
-      call finiparser_getDbl(d_out,'particle:springwall',ifnd)
-      if(ifnd .eq. 1) ksp_wall = d_out
-      call finiparser_getDbl(d_out,'particle:restitution',ifnd)
-      if(ifnd .eq. 1) then
-         e_rest      = d_out
-         e_rest_wall = d_out
-      endif
-      call finiparser_getDbl(d_out,'particle:restitutionwall',ifnd)
-      if(ifnd .eq. 1) e_rest_wall = d_out
-      call finiparser_getDbl(d_out,'particle:nwallplane',ifnd)
-      if(ifnd .eq. 1) np_walls = int(d_out)
-      call finiparser_getDbl(d_out,'particle:nwallcyl',ifnd)
-      if(ifnd .eq. 1) nc_walls = int(d_out)
-      call finiparser_getDbl(d_out,'particle:timestepper',ifnd)
-      if(ifnd .eq. 1) time_integ = int(d_out)
-      call finiparser_getDbl(d_out,'particle:coupling',ifnd)
-      if(ifnd .eq. 1) two_way = int(d_out)
-
-      call finiparser_findTokens('particle:distributebox',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         if (i.eq.1) rxbo(1,1) = d_out
-         if (i.eq.2) rxbo(2,1) = d_out
-         if (i.eq.3) rxbo(1,2) = d_out
-         if (i.eq.4) rxbo(2,2) = d_out
-         if (i.eq.5) rxbo(1,3) = d_out
-         if (i.eq.6) rxbo(2,3) = d_out
-      enddo
-      call finiparser_findTokens('particle:distributecylinder',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         rxco(i) = d_out
-      enddo
-      call finiparser_findTokens('particle:distributesphere',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         rxco(i) = d_out
-      enddo
-      call finiparser_findTokens('particle:binb',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         binb(i) = d_out
-      enddo
-
-      call finiparser_getDbl(d_out,'particle:diameter',ifnd)
-      if(ifnd .eq. 1) then
-         dp(1) = d_out
-         dp(2) = d_out
-      endif
-      call finiparser_findTokens('particle:diameteruniform',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         if (i.eq.1) dp(1) = d_out
-         if (i.eq.2) dp(2) = d_out
-      enddo
-      call finiparser_findTokens('particle:diametergaussian',',',ifnd)
-      do i = 1,min(ifnd,15)
-         call finiparser_getToken(initc(i),i)
-         read(initc(i),*) d_out
-         if (i.eq.1) then
-            dp(1) = d_out
-            dp(2) = d_out
-         endif
-         if (i.eq.2) dp_std = d_out
-      enddo
-
-      call finiparser_getBool(i_out,'particle:rectp',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-            ifrectp = 1
-        elseif(i_out .eq. 0) then 
-            ifrectp = 0
-        endif
-      endif
-      call finiparser_getBool(i_out,'particle:interpolation',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-           red_interp = 1
-        elseif(i_out .eq. 0) then 
-           red_interp = 0
-        endif
-      endif
-      call finiparser_getBool(i_out,'particle:projection',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-           npro_method = 1
-        elseif(i_out .eq. 0) then 
-           npro_method = 0
-        endif
-      endif
-      call finiparser_getBool(i_out,'particle:bigendian',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-           lpm_endian = 1
-        elseif(i_out .eq. 0) then 
-           lpm_endian = 0
-        endif
-      endif
-
-      call finiparser_getBool(i_out,'particle:periodicx',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-            bc_part(1) = 0
-            bc_part(2) = 0
-        endif
-      endif
-      call finiparser_getBool(i_out,'particle:periodicy',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-            bc_part(3) = 0
-            bc_part(4) = 0
-        endif
-      endif
-      call finiparser_getBool(i_out,'particle:periodicz',ifnd)
-      if(ifnd .eq. 1) then
-        if(i_out .eq. 1) then
-            bc_part(5) = 0
-            bc_part(6) = 0
-        endif
-      endif
-
-      do j=1,np_walls
-         write(mystringpart,'(A14,I2.2)') 'particle:wallp',j
-         call finiparser_findTokens(mystringpart,',',ifnd)
-         do i = 1,min(ifnd,15)
-            call finiparser_getToken(initc(i),i)
-            read(initc(i),*) d_out
-            plane_wall_coords(i,j) = d_out
-         enddo
-      enddo
-      do j=1,nc_walls
-         write(mystringpart,'(A14,I2.2)') 'particle:wallc',j
-         call finiparser_findTokens(mystringpart,',',ifnd)
-         do i = 1,min(ifnd,15)
-            call finiparser_getToken(initc(i),i)
-            read(initc(i),*) d_out
-            cyl_wall_coords(i,j) = d_out
-         enddo
-      enddo
-
-      do i=1,15
-         call blank(initc(i),132)
-      enddo
-#endif
-
 
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -983,15 +813,12 @@ C     Broadcast run parameters to all processors
 C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
+      INCLUDE 'TSTEP'
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
       INCLUDE 'ADJOINT'
       INCLUDE 'CVODE'
-#ifdef LPM
-      INCLUDE 'LPM'
-#endif
 
       call bcast(loglevel, isize)
       call bcast(optlevel, isize)
@@ -1026,6 +853,7 @@ C
       call bcast(ifadvc ,  ldimt1*lsize)
       call bcast(ifdiff ,  ldimt1*lsize)
       call bcast(ifdeal ,  ldimt1*lsize)
+      call bcast(iffilter, ldimt1*lsize)
 
       call bcast(idpss    ,  ldimt*isize)
       call bcast(iftmsh   , (ldimt1+1)*lsize)
@@ -1040,48 +868,12 @@ C
       call bcast(ifpsco, ldimt1*lsize)
 
       call bcast(initc, 15*132*csize) 
-#ifdef LPM
-      call bcast(rxbo , 6*wdsize)
-      call bcast(rxco , 9*wdsize)
-      call bcast(binb , 6*wdsize)
-      call bcast(dp , 2*wdsize)
-      call bcast(dp_std , wdsize)
-      call bcast(tp_0 , wdsize)
-      call bcast(rho_p , wdsize)
-      call bcast(cp_p , wdsize)
-      call bcast(rspl , wdsize)
-      call bcast(dfilt , wdsize)
-      call bcast(ralphdecay , wdsize)
-      call bcast(ksp, wdsize)
-      call bcast(ksp_wall, wdsize)
-      call bcast(e_rest, wdsize)
-      call bcast(e_rest_wall, wdsize)
-      call bcast(plane_wall_coords, 6*n_walls*wdsize)
-      call bcast(cyl_wall_coords, 7*n_walls*wdsize)
 
-      call bcast(nw, isize)
-      call bcast(part_force , 5*isize)
-      call bcast(time_integ , isize)
-      call bcast(ifrectp , isize)
-      call bcast(two_way , isize)
-      call bcast(red_interp , isize)
-      call bcast(npio_method , isize)
-      call bcast(inject_rate, isize)
-      call bcast(time_delay, isize)
-      call bcast(nrandseed, isize)
-      call bcast(lpm_endian, isize)
-      call bcast(npro_method, isize)
-      call bcast(bc_part, 6*isize)
-      call bcast(ipart_restartr, isize)
-      call bcast(np_walls, isize)
-      call bcast(nc_walls, isize)
-#endif
+      call bcast(timeioe,sizeof(timeioe))
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.
       if (ldim.ne.3) if3d=.false.
-      if (ldim.lt.0) ifgtp = .true.     ! domain is a global tensor product
-      if (ifsplit) ifmgrid   = .true.
 
       param(1) = cpfld(1,2)
       param(2) = cpfld(1,1)
@@ -1131,21 +923,6 @@ c set some internals
          endif
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
-c
-c     Check here for global fast diagonalization method or z-homogeneity.
-c     This is here because it influence the mesh read, which follows.
-      nelx   = abs(param(116))   ! check for global tensor-product structure
-      nely   = abs(param(117))
-      nelz   = abs(param(118))
-      n_o    = 0
-
-      if (n_o.eq.0) then
-         ifzper=.false.
-         ifgfdm=.false.
-         if (nelz.gt.0) ifzper=.true.
-         if (nelx.gt.0) ifgfdm=.true.
-         if (nelx.gt.0) ifzper=.false.
-      endif
 
       return
       END
@@ -1156,7 +933,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'RESTART'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 c
       neltmx=np*lelt
       nelvmx=np*lelv
@@ -1189,8 +965,6 @@ c
      $         ,/,2X,'This run requires:'
      $         ,/,2X,'   lelt >= ',i12,'  for np = ',i12
      $         ,/,2X,'   lelg >= ',i12,/)
-c           write(6,*)'help:',lp,np,nelvmx,nelgv,neltmx,nelgt
-c           write(6,*)'help:',lelt,lelv,lelgv
          endif
          call exitt
       endif
@@ -1217,9 +991,9 @@ c           write(6,*)'help:',lelt,lelv,lelgv
          call exitt
       endif
 
-      IF (NPSCL1.GT.LDIMT .AND. IFMHD) THEN
+      IF (NPSCAL+1.GT.LDIMT .AND. IFMHD) THEN
          if(nid.eq.0) then
-           WRITE(6,22) LDIMT,NPSCL1
+           WRITE(6,22) LDIMT,NPSCAL+1
    22      FORMAT(/s,2X,'Error: Nek has been compiled'
      $             /,2X,'       for',I4,' scalars.  A MHD run'
      $             /,2X,'       requires that LDIMT be set to',I4,'.')
@@ -1256,7 +1030,6 @@ c           write(6,*)'help:',lelt,lelv,lelgv
      $   'WARNING: lgmres might be too low!'
       endif
 
-
       if (ifsplit) then
          if (lx1.ne.lx2) then
             if (nid.eq.0) write(6,43) lx1,lx2
@@ -1264,16 +1037,27 @@ c           write(6,*)'help:',lelt,lelv,lelgv
             call exitt
          endif
       else
-         if (lx2.lt.lx1-2) then
+         if (lx2.ne.lx1-2) then
             if (nid.eq.0) write(6,44) lx1,lx2
    44    format('ERROR: lx1,lx2:',2i4,' lx2 must be lx-2 for IFSPLIT=F')
            call exitt
          endif
       endif
 
-      if (ifsplit .and. ifuservp) then
+      if (param(40).eq.3 .and. .not.ifsplit) then
+         call exitti
+     $    ('ERROR: Selected preconditioner requires lx2=lx1$',lx2)
+      endif
+
+      if (ifsplit .and. ifuservp .and. .not.ifstrs) then
          if(nid.eq.0) write(6,*) 
-     $   'Switch on stress formulation to support PN/PN and IFUSERVP=T' 
+     $   'Enable stress formulation to support PN/PN and IFUSERVP=T' 
+         ifstrs = .true.
+      endif
+
+      if (ifcyclic .and. .not.ifstrs) then
+         if(nid.eq.0) write(6,*) 
+     $   'Enable stress formulation to support cyclic BC' 
          ifstrs = .true.
       endif
 
@@ -1283,12 +1067,6 @@ c           write(6,*)'help:',lelt,lelv,lelgv
      $   'ERROR: Stress formulation requires lx1m=lx1, etc. in SIZE'
          call exitt
       endif
-
-      if (ifgfdm.and.ifsplit) call exitti
-     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
-
-      if (ifgfdm.and.lfdm.eq.0) call exitti
-     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
 
       if (ifsplit .and. ifmhd) then
          if(nid.eq.0) write(6,*) 

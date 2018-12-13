@@ -6,12 +6,15 @@ C     !! NOTE: Do not change the content of the array BQ until the current
 
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
 
       logical  if_conv_std
       common /SCRUZ/ w1(lx1,ly1,lz1,lelt)
 
       nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
+
+      etime0 = dnekclock()      
 
       if (nio.eq.0.and.loglevel.gt.2)
      $   write(6,*) 'makeq', ifield
@@ -69,6 +72,8 @@ C     !! NOTE: Do not change the content of the array BQ until the current
          endif
 
       endif
+
+      tmakq=tmakq+(dnekclock()-etime0)
 
       return
       end

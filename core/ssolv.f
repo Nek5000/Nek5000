@@ -761,8 +761,7 @@ C
          NTAUBD = ICT
          DCT    = CTARG - ICT*MAX_CFL_RK4
          IF (DCT.GT.0.1) NTAUBD = NTAUBD+1
-         IF (NIO.EQ.0 .AND. LOGLEVEL.GT.2) 
-     $      write(6,*) 'RK4 substeps:', ntaubd
+         IF (NIO.EQ.0) write(6,*) 'RK4 substeps:', ntaubd 
       ELSE
          NTAUBD = 0
          IF (CTARG.GT.0.5) THEN

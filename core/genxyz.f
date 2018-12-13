@@ -1433,3 +1433,84 @@ c     it too should be updated.
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mesh_metrics
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nedge = 4 + 8*(ldim-2))
+      real ledg(nedge)
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelt
+
+      ! aspect ratio
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         ledg(1) = dist_xyzc(1,2,ie)
+         ledg(2) = dist_xyzc(1,4,ie)
+         ledg(3) = dist_xyzc(2,3,ie)
+         ledg(4) = dist_xyzc(4,3,ie)
+         if (ndim.eq.3) then
+            ledg(5)  = dist_xyzc(1,5,ie)
+            ledg(6)  = dist_xyzc(2,6,ie)
+            ledg(7)  = dist_xyzc(4,8,ie)
+            ledg(8)  = dist_xyzc(3,7,ie)
+
+            ledg(9)  = dist_xyzc(5,6,ie)
+            ledg(10) = dist_xyzc(5,8,ie)
+            ledg(11) = dist_xyzc(8,7,ie)
+            ledg(12) = dist_xyzc(6,7,ie)
+         endif
+
+         dratio = vlmax(ledg,nedge)/vlmin(ledg,nedge)
+         ddmin  = min(ddmin,dratio)
+         ddmax  = max(ddmax,dratio)
+         ddavg  = ddavg + dratio 
+      enddo 
+      darmin = glmin(ddmin,1)
+      darmax = glmax(ddmax,1)
+      daravg = glsum(ddavg,1)/nelgt
+
+      ! scaled Jac
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         dratio = vlmin(JACM1(1,1,1,ie),nxyz)/
+     $            vlmax(JACM1(1,1,1,ie),nxyz)
+         ddmin = min(ddmin,dratio)
+         ddmax = max(ddmax,dratio)
+         ddavg = ddavg + dratio 
+      enddo 
+      dsjmin = glmin(ddmin,1)
+      dsjmax = glmax(ddmax,1)
+      dsjavg = glsum(ddavg,1)/nelgt 
+
+      if (nid.eq.0) then
+         write(6,*) 'mesh metrics:'
+         write(6,'(A,1p3E9.2)') ' scaled Jacobian min/max/avg:',
+     $   dsjmin,dsjmax,dsjavg
+         write(6,'(A,1p3E9.2)') ' aspect ratio    min/max/avg:',
+     $   darmin,darmax,daravg
+         write(6,*)
+      endif
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      real function dist_xyzc(i,j,ie)
+c
+c     distance betwen two element corner points
+c     
+      include 'SIZE'
+      include 'INPUT'
+
+      dist_xyzc = (xc(i,ie) - xc(j,ie))**2
+      dist_xyzc = dist_xyzc + (yc(i,ie) - yc(j,ie))**2
+      if(ndim.eq.3) dist_xyzc = dist_xyzc + (zc(i,ie) - zc(j,ie))**2
+      dist_xyzc = sqrt(dist_xyzc)
+
+      return
+      end 

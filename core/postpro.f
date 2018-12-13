@@ -591,7 +591,7 @@ c-----------------------------------------------------------------------
 
       real uf(n,n,n),uc(m,m,m)
 
-      parameter (l=50)
+      parameter (l=16)
       common /cmap3d/ j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
 
       integer mo,no
@@ -1552,7 +1552,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
 
         tol     = 5e-13
         n       = lx1*ly1*lz1*lelt
-        npt_max = 256
+        npt_max = 128
         nxf     = 2*lx1 ! fine mesh for bb-test
         nyf     = 2*ly1
         nzf     = 2*lz1
@@ -1845,7 +1845,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       logical ifbswap,ifre2,parfound
       character*132 string
@@ -1926,7 +1925,6 @@ c-----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       logical ifbswap,ifre2,parfound
       character*132 string

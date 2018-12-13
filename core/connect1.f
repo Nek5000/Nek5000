@@ -21,7 +21,6 @@ C
       include 'SIZE'
       include 'TOTAL'
       include 'NONCON'
-      include 'ZPER'
       include 'SCRCT'
 c
       COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
@@ -76,11 +75,7 @@ C
       ncrnr = 2**ldim
 
       if (nelgv.eq.nelgt) then
-         if (ifgtp) then
-            call gen_gtp_vertex    (vertex, ncrnr)
-         else
-            call get_vert
-         endif
+         call get_vert
          call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
 
@@ -979,8 +974,8 @@ C
 C
  2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
      $      ,' in routine VERRHE.')
- 2002 FORMAT('   Right-handed check complete for',I8,' elements. OK.')
- 2003 FORMAT('   Right-handed check failed for',I8,' elements.'
+ 2002 FORMAT('   Right-handed check complete for',I12,' elements. OK.')
+ 2003 FORMAT('   Right-handed check failed for',I12,' elements.'
      $      ,'   Exiting in routine VERRHE.')
       RETURN
       END
@@ -1620,7 +1615,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NONCON'
-      include 'ZPER'
 
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num

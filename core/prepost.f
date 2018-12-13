@@ -6,6 +6,7 @@ c     and set ifoutfld accordingly
 
       include 'SIZE'
       include 'TOTAL'
+      include 'CTIMER'
 
       common /rdump/ ntdump
 
@@ -17,6 +18,11 @@ c      if (istep.ge.nsteps) lastep=1
 
       if (iostep.gt.0) then
          if(mod(istep,iostep).eq.0) ifoutfld=.true.
+      else if (timeioe.ne.0.0) then
+         if (dnekclock_sync()-etimes .ge. (ntdump + 1)*timeio) then
+            ntdump=ntdump+1
+            ifoutfld=.true.
+         endif 
       else if (timeio.ne.0.0) then
          if (time.ge.(ntdump + 1)*timeio) then
             ntdump=ntdump+1
@@ -47,7 +53,7 @@ c     Check for io request in file 'ioinfo'
       save    maxstep
       data    maxstep /999999999/
 
-      if (iostep.lt.0 .or. timeio.lt.0) return
+c      if (iostep.lt.0 .or. timeio.lt.0) return
 
       ioinfodmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
@@ -1371,7 +1377,6 @@ c                                      ! is the only form used for restart
 c     if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
 c  8  format(i8,' prefix ',a3,5i5)
 
-      if_full_pres = .false.
       return
       end
 c-----------------------------------------------------------------------

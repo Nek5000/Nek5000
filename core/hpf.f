@@ -49,6 +49,7 @@ c      implicit none
       save hpf_op
 
 c---------------------------------------- 
+      if(.not. iffilter(ifield)) return
 
       hpf_kut = int(param(101))+1
       hpf_chi = -1.0*abs(param(103))
