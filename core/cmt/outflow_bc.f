@@ -55,8 +55,9 @@ C> @file outflow_bc.f Dirichlet states for outflow boundary conditions
          pl= facew(l,f,e,ipr) ! P- here
          wbc(l,f,e,icpf)=facew(l,f,e,icpf)
          wbc(l,f,e,icvf)=facew(l,f,e,icvf)
-         cp=facew(l,f,e,icpf)/rho
          cv=facew(l,f,e,icvf)/rho
+! JH080118 FIX THIS fOR NEW JWL CODE
+         cp=cpgref
 c        fs = 0.0
          if(outflsub)then
             pres= pinfty

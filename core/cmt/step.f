@@ -29,30 +29,43 @@ C> @file step.f time stepping and mesh spacing routines
       real strof
       data strof /1.0e-8/
 
+      dt=abs(param(12))
+
       NTOT   = lx1*ly1*lz1*NELV
       do i=1,ntot
          utmp(i,1,1,1) = abs(vx(i,1,1,1))+csound(i,1,1,1)
          vtmp(i,1,1,1) = abs(vy(i,1,1,1))+csound(i,1,1,1)
          wtmp(i,1,1,1) = abs(vz(i,1,1,1))+csound(i,1,1,1)
       enddo
-      if (ctarg .gt.0.0) then
+
+! JH091118 DefaultParameters means we don't have direct control over
+!          this variable anymore. If it's lower than its default value,
+!          we trust it to set the time step
+!     if (ctarg .gt.0.0) then
+      if (ctarg .lt.0.5) then
          call compute_cfl (umax,utmp,vtmp,wtmp,1.0)
          dt_cfl=ctarg/umax
          call glsqinvcolmin(dt1,vdiff(1,1,1,1,imu ),gridh,ntot,ctarg)
          call glsqinvcolmin(dt2,vdiff(1,1,1,1,iknd),gridh,ntot,ctarg)
          call glsqinvcolmin(dt3,vdiff(1,1,1,1,inus),gridh,ntot,ctarg)
-         dt_cmt=min(dt_cfl,dt1,dt2,dt3)
-         if (dt_cmt .gt. 10.0) then
+         dt=min(dt_cfl,dt1,dt2,dt3)
+         if (dt .gt. 10.0) then
             if (nio.eq.0) write(6,*) 'dt huge. crashing ',istep,stage,
-     >         dt_cmt
+     >         dt
             call exitt
          endif
       else
-         dt_cmt=dt
+         dt = abs(param(12))
       endif
+      dt_ptcle = dt  
+#ifdef LPM
+      call lpm_set_dt(dt_ptcle) ! particle time step
+      dt=min(dt,dt_ptcle)
+#endif
+
       if (timeio .gt. 0.0) then ! adjust dt for timeio. 
          zetime1=time_cmt
-         zetime2=time_cmt+dt_cmt
+         zetime2=time_cmt+dt
          it1=zetime1/timeio
          it2=zetime2/timeio
          ita=it1
@@ -63,21 +76,24 @@ C> @file step.f time stepping and mesh spacing routines
          if (abs(zetime2-itb*timeio).le.strof) it2=itb
          if (it2.gt.it1) then
             ifoutfld=.true.
-            dt_cmt=(it2*timeio)-time_cmt
+            dt=(it2*timeio)-time_cmt
          endif
       endif
-      call compute_cfl (courno,utmp,vtmp,wtmp,dt_cmt) ! sanity?
-      dt=dt_cmt
+
+      param(12)=-dt
+
+      call compute_cfl (courno,utmp,vtmp,wtmp,dt) ! sanity?
 
 ! diffusion number based on viscosity.
 
 !     call mindr(mdr,diffno2)
-      call glinvcol2max(diffno1,vdiff(1,1,1,1,imu), gridh,ntot,dt_cmt)
-      call glinvcol2max(diffno2,vdiff(1,1,1,1,iknd),gridh,ntot,dt_cmt)
-      call glinvcol2max(diffno3,vdiff(1,1,1,1,inus),gridh,ntot,dt_cmt)
+      call glinvcol2max(diffno1,vdiff(1,1,1,1,imu), gridh,ntot,dt)
+      call glinvcol2max(diffno2,vdiff(1,1,1,1,iknd),gridh,ntot,dt)
+      call glinvcol2max(diffno3,vdiff(1,1,1,1,inus),gridh,ntot,dt)
 !     diffno=max(diffno1,diffno2,diffno3)
-      time_cmt=time_cmt+dt_cmt
-      if (nio.eq.0) WRITE(6,100)ISTEP,TIME_CMT,DT_CMT,COURNO,
+      time_cmt= time_cmt+dt
+      time    = time_cmt
+      if (nio.eq.0) WRITE(6,100)ISTEP,TIME_CMT,DT,COURNO,
      >   diffno1,diffno2,diffno3
  100  FORMAT('CMT ',I7,', t=',1pE14.7,', DT=',1pE14.7
      $,', C=',1pE12.5,', Dmu,knd,art=',3(1pE11.4))
