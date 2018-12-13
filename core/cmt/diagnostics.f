@@ -265,17 +265,6 @@ c
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 c
-      common /ctorq/ dragx(0:maxobj),dragpx(0:maxobj),dragvx(0:maxobj)
-     $             , dragy(0:maxobj),dragpy(0:maxobj),dragvy(0:maxobj)
-     $             , dragz(0:maxobj),dragpz(0:maxobj),dragvz(0:maxobj)
-c
-     $             , torqx(0:maxobj),torqpx(0:maxobj),torqvx(0:maxobj)
-     $             , torqy(0:maxobj),torqpy(0:maxobj),torqvy(0:maxobj)
-     $             , torqz(0:maxobj),torqpz(0:maxobj),torqvz(0:maxobj)
-c
-     $             , dpdx_mean,dpdy_mean,dpdz_mean
-     $             , dgtq(3,4)
-c
       common /ICPVARS/ pvars(lx1,ly1,lz1,7)
       real             pvars
 c
