@@ -155,7 +155,7 @@ c
 c
 c     Open file
 c
-      call byte_open(fname)
+      call byte_open(fname,ierr)
 c
 c     Write original header
 c
@@ -164,9 +164,9 @@ c      call byte_write(bytetest,1)
 c
 c      call copy(y,x,n)
 c      if (if_byte_sw) call byte_reverse(y,n)
-      call byte_write(y,n)
+      call byte_write(y,n,ierr)
 c
-      call byte_close()
+      call byte_close(ierr)
 c
       return
       end
@@ -186,7 +186,7 @@ c-----------------------------------------------------------------------
       logical ifbyte
 
       if (ifbyte) then
-         call byte_write(s,n)
+         call byte_write(s,n,ierr)
       else
          call lineout(6,s,n)
       endif

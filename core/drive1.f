@@ -4,7 +4,6 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'DOMAIN'
-      include 'ZPER'
 c
       include 'OPCTR'
       include 'CTIMER'
@@ -106,44 +105,19 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
+      call mesh_metrics     ! print some metrics
 
       call setlog  ! Initalize logical flags
 
       call bcmask  ! Set BC masks for Dirichlet boundaries.
 
-      if (fintim.ne.0.0.or.nsteps.ne.0) 
+      if (fintim.ne.0.0 .or. nsteps.ne.0) 
      $   call geneig(igeom) ! eigvals for tolerances
 
-      call vrdsmsh     !     Verify mesh topology
+      call dg_setup ! Setup DG, if dg flag is set.
 
-      call dg_setup    !     Setup DG, if dg flag is set.
-
-      if (ifflow.and.(fintim.ne.0.or.nsteps.ne.0)) then    ! Pressure solver 
-         if(nio.eq.0) write(6,*) 'initialize pressure solver'
-         call estrat                                       ! initialization.
-         if (iftran.and.solver_type.eq.'itr') then
-            isolver = param(40)
-            if (isolver.eq.0) then      ! semg_xxt
-                if (nelgt.gt.350000) call exitti(
-     $      'problem size too large for xxt - use different preco!$',0)
-                call set_overlap
-            else if (isolver.eq.1) then ! semg_amg
-                call set_overlap
-            else if (isolver.eq.3) then ! fem_amg_hypre 
-                call fem_amg_setup(nx1,ny1,nz1,
-     $                             nelv,ndim,
-     $                             xm1,ym1,zm1,
-     $                             pmask,binvm1,
-     $                             gsh_fld(1),fem_amg_param)
-            endif
-         elseif (solver_type.eq.'fdm'.or.solver_type.eq.'pdm')then
-            ifemati = .true.
-            kwave2  = 0.0
-            if (ifsplit) ifemati = .false.
-            call gfdm_init(lx2,ly2,lz2,ifemati,kwave2)
-         elseif (solver_type.eq.'25D') then
-            call g25d_init
-         endif
+      if (ifflow.and.iftran) then ! Init pressure solver 
+         if (fintim.ne.0 .or. nsteps.ne.0) call prinit
       endif
 
       if(ifcvode) call cv_setsize
@@ -154,23 +128,23 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
 #ifdef CMTNEK
         call nek_cmt_init
-        if (nio.eq.0) write(6,*)'Initialized DG machinery'
 #endif
 
       call setics
       call setprop
 
       if (instep.ne.0) then
-         if (ifneknek) call xfer_bcs_neknek
-         if (ifneknek) call bcopy
-         if (ifneknek) call chk_outflow
+         if (ifneknekc) call neknek_exchange
+         if (ifneknekc) call chk_outflow
 
          if (nio.eq.0) write(6,*) 'call userchk'
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-      call setprop
+      call projfld_c0   ! ensure fields are contiguous
+
+      call setprop      ! call again because input has changed in userchk
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
 
@@ -194,8 +168,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
         write (6,*) ' '
         if (time.ne.0.0) write (6,'(a,e14.7)') ' Initial time:',time
         write (6,'(a,g13.5,a)') 
-     &              ' Initialization successfully completed ',
-     &              tinit, ' sec'
+     &     ' Initialization successfully completed ', tinit, ' sec'
       endif
 
       return
@@ -301,7 +274,7 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+         if (ifneknekc .and. igeom.gt.2) call neknek_exchange
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -330,7 +303,7 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknek .and. igeom.gt.2) call xfer_bcs_neknek
+            if (ifneknekc .and. igeom.gt.2) call neknek_exchange
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -392,9 +365,8 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknek) call xfer_bcs_neknek
-         if (ifneknek) call bcopy
-         if (ifneknek) call chk_outflow
+         if (ifneknekc) call neknek_exchange
+         if (ifneknekc) call chk_outflow
       enddo
 
       return

@@ -403,7 +403,7 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
-               if (param(40).eq.0 .or. param(40).eq.1) then
+               if (param(40).ge.0 .and. param(40).le.2) then
                   call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
                else if (param(40).eq.3) then
                   call fem_amg_solve(z_gmres(1,j),w_gmres)

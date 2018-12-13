@@ -17,15 +17,11 @@ class FsHydro(NekTestCase):
             lxd       = '18',
             lx2       = 'lx1-2',
             lelg      = '100',
-            ldimt     = '1',
             lhis      = '100',
             lelx      = '20',
             lely      = '60',
             lelz      = '1',
             lx1m      = 'lx1',
-            lbelt     = '1',
-            lpelt     = '1',
-            lcvelt    = '1',
         )
         self.build_tools(['genmap'])
         self.run_genmap(tol='0.01')
@@ -399,11 +395,16 @@ class Eddy_NeknekU(NekTestCase):
     def setUp(self):
 
         self.size_params = dict(
-            nsessmax='2',
+            ldim='2',
+            lx1='8',
+            lxd='12',
             lx2='lx1-2',
+            lelg='100',
+            nsessmax='2',
         )
 
         self.build_tools(['genmap'])
+        self.run_genmap(rea_file='inside',tol='0.2')
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
@@ -413,8 +414,8 @@ class Eddy_NeknekU(NekTestCase):
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
-        self.run_genmap(rea_file='inside',tol='0.2')
-
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
         self.build_nek()
         run_neknek(
             cwd = cwd,
@@ -436,7 +437,9 @@ class Eddy_NeknekU(NekTestCase):
         ))
 
         phrase = self.get_phrase_from_log('gs_op_ms test PASSED',logfile=logfile)
-        self.assertIsNotNullDelayed(phrase, label='gs_op_ms test PASSED')
+        self.assertAlmostEqualDelayed(phrase, label='gs_op_ms test PASSED')
+
+        self.assertDelayedFailures()
 
     def tearDown(self):
         self.move_logs()
@@ -455,7 +458,6 @@ class Eddy_Neknek(NekTestCase):
             lxd='12',
             lx2='lx1-2',
             lelg='1000',
-            lpert='1',
             nsessmax='2',
         )
 
@@ -642,7 +644,8 @@ class Ethier(NekTestCase):
             lx1       = '8',
             lxd       = '12',
             lx2       = 'lx1-2',
-            lelg      = '50',
+            lelg      = '32',
+            lhis      = '1000',
         )
 
         self.build_tools(['genmap'])
@@ -670,35 +673,28 @@ class Ethier(NekTestCase):
         prerr = self.get_value_from_log(label='L2 err', column=-3, row=-1)
         self.assertAlmostEqualDelayed(prerr, target_val=1.127384e-04, delta=1e-06, label='PR err')
 
-        if os.environ['PARALLEL_PROCS'] == '2': 
-        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc0, target_val=189, delta=0, label='pm0 chksum')
-        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc1, target_val=339, delta=0, label='pm1 chksum')
-        elif os.environ['PARALLEL_PROCS'] == '3':
-        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc0, target_val=119, delta=0, label='pm0 chksum')
-        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm1 chksum')
-        	pmc2 = self.get_value_from_log(label='pm2 chksum', column=-3)
-        	self.assertAlmostEqualDelayed(pmc2, target_val=241, delta=0, label='pm2 chksum')
+#        if os.environ['PARALLEL_PROCS'] == '2': 
+#        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+#        	self.assertAlmostEqualDelayed(pmc0, target_val=189, delta=0, label='pm0 chksum')
+#        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+#        	self.assertAlmostEqualDelayed(pmc1, target_val=339, delta=0, label='pm1 chksum')
+#        elif os.environ['PARALLEL_PROCS'] == '3':
+#        	pmc0 = self.get_value_from_log(label='pm0 chksum', column=-3)
+#        	self.assertAlmostEqualDelayed(pmc0, target_val=119, delta=0, label='pm0 chksum')
+#        	pmc1 = self.get_value_from_log(label='pm1 chksum', column=-3)
+#        	self.assertAlmostEqualDelayed(pmc1, target_val=168, delta=0, label='pm1 chksum')
+#        	pmc2 = self.get_value_from_log(label='pm2 chksum', column=-3)
+#        	self.assertAlmostEqualDelayed(pmc2, target_val=241, delta=0, label='pm2 chksum')
 
         self.assertDelayedFailures()
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-#        self.size_params['lx2'] = 'lx1'
-#        self.config_size()
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
         self.mkSIZE()
-        self.build_nek()
-
-        from re import sub
-        cls = self.__class__
-        rea_path = os.path.join(self.examples_root, cls.example_subdir, cls.case_name + '.par')
-        with open(rea_path, 'r') as f:
-            lines = [sub(r'.*preconditioner.*', 'preconditioner = semg_amg', l, flags=re.I) for l in f]
-        with open(rea_path, 'w') as f:
-            f.writelines(lines)
+        self.build_nek(opts={'PPLIST':'HYPRE'})
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'semg_amg'}})
 
         self.run_nek(step_limit=1000)
 
@@ -712,6 +708,27 @@ class Ethier(NekTestCase):
         self.assertAlmostEqualDelayed(prerr, target_val=7.554325E-005, delta=1e-08, label='PR err')
 
         self.assertDelayedFailures()
+
+
+        # SEMG_AMG_HYPRE
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'semg_amg_hypre'}})
+
+        self.run_nek(step_limit=10)
+
+        gmres = self.get_value_from_log('gmres ', column=-7)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=14., label='gmres')
+
+        self.assertDelayedFailures()
+
+        # FEM_AMG_HYPRE
+        self.config_parfile({'PRESSURE' : {'preconditioner' : 'fem_amg_hypre'}})
+
+        self.run_nek(step_limit=10)
+        gmres = self.get_value_from_log('gmres ', column=-7)
+        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=13., label='gmres')
+
+        self.assertDelayedFailures()
+
 
     def tearDown(self):
         self.move_logs()
@@ -1036,6 +1053,7 @@ class IO_Test(NekTestCase):
             lx2       = 'lx1-2',
             lelg      = '100',
             ldimt     = '3',
+            lelr      = 'lelg',
         )
 
         self.build_tools(['genmap'])
@@ -1071,7 +1089,6 @@ class InclDef(NekTestCase):
             lelg      = '100',
             ldimt     = '2',
             lhis      = '100',
-            lpert     = '1',
             toteq     = '1',
             lelx      = '1',
             lely      = '1',

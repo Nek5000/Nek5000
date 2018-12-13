@@ -50,7 +50,7 @@ while(0)
 void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint *np,
                 const sint *n, const slong id[], const sint *nz,
                 const sint Ai[], const sint Aj[], const double A[],
-                const sint *null_space)
+                const sint *null_space, const double *param)
 {
   struct comm c;
   if(handle_n==handle_max)
@@ -68,6 +68,9 @@ void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint 
     case 1: handle_array[handle_n]=ccrs_amg_setup(*n,(const ulong*)id,
                                                   *nz,(const uint*)Ai,(const uint*)Aj,A,
                                                   *null_space,&c); break;
+    case 2: handle_array[handle_n]=ccrs_hypre_setup(*n,(const ulong*)id,
+                                                  *nz,(const uint*)Ai,(const uint*)Aj,A,
+                                                  *null_space,&c,param); break;
   }
 
   comm_free(&c);
@@ -80,15 +83,7 @@ void fcrs_solve(const sint *handle, double x[], double b[])
   switch(sid_array[*handle]) {
     case 0: ccrs_xxt_solve(x,handle_array[*handle],b); break;
     case 1: ccrs_amg_solve(x,handle_array[*handle],b); break;
-  }
-}
-
-void fcrs_stats(const sint *handle)
-{
-  CHECK_HANDLE("crs_stats");
-  switch(sid_array[*handle]) {
-    case 0: ccrs_xxt_stats(handle_array[*handle]); break;
-    case 1: ccrs_amg_stats(handle_array[*handle]); break;
+    case 2: ccrs_hypre_solve(x,handle_array[*handle],b); break;
   }
 }
 
@@ -98,6 +93,7 @@ void fcrs_free(sint *handle)
   switch(sid_array[*handle]) {
     case 0: ccrs_xxt_free(handle_array[*handle]); break;
     case 1: ccrs_amg_free(handle_array[*handle]); break;
+    case 2: ccrs_hypre_free(handle_array[*handle]); break;
   }
   handle_array[*handle] = 0;
 }
