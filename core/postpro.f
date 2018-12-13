@@ -376,7 +376,7 @@ c    if (icall.eq.0) call build_new_filter(intv,zgm1,lx1,ncut,wght,nio)
       call filterq(scalar,intv,lx1,lz1,wk1,wk2,intt,if3d,fmax)
       fmax = glmax(fmax,1)
 
-      if (nio.eq.0) write(6,1) istep,fmax,name5
+c     if (nio.eq.0) write(6,1) istep,fmax,name5
     1 format(i8,' sfilt:',1pe12.4,a10)
 
       return

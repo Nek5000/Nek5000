@@ -17,6 +17,10 @@ C> @file Dirichlet states for inflow boundary conditions
 !--------------------------------------------------------------------
 
       subroutine inflow_rflu(nvar,f,e,facew,wbc)
+!--------------------------------------------------------------------
+! JH080118 CP IS ENERGY NOW
+! DOESN'T WORK!!!
+!--------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'NEKUSE'
@@ -164,7 +168,8 @@ c                                     !     ux,uy,uz
             wbc(l,f,e,ipr)  = pres
             wbc(l,f,e,isnd) = sqrt(cp/cv*pres/rho) ! too perfect?
             wbc(l,f,e,ithm) = temp      ! definitely too perfect!
-            wbc(l,f,e,icpf) = rho*cp ! NEED EOS WITH TEMP Dirichlet, userbc
+!           wbc(l,f,e,icpf) = rho*cp ! NEED EOS WITH TEMP Dirichlet, userbc
+            wbc(l,f,e,icpf) = e_internal
             wbc(l,f,e,icvf) = rho*cv ! NEED EOS WITH TEMP Dirichlet, userbc
 
          else ! supersonic inflow
@@ -172,13 +177,15 @@ c                                     !     ux,uy,uz
             wbc(l,f,e,ipr)  = pres
             wbc(l,f,e,isnd) = asnd
             wbc(l,f,e,ithm) = temp
-            wbc(l,f,e,icpf) = rho*cp
+!           wbc(l,f,e,icpf) = rho*cp
+            wbc(l,f,e,icpf) = e_internal
             wbc(l,f,e,icvf) = rho*cv
 
          endif
 
 ! find a smarter way of doing this. fold it into usr file if you must
-         wbc(l,f,e,iu5)  = phi*rho*cv*temp+0.5/rhob*(rhoub**2+rhovb**2+
+
+         wbc(l,f,e,iu5)  = phi*rho*e_internal+0.5/rhob*(rhoub**2+rhovb**2+
      >                                               rhowb**2)
 
       enddo
