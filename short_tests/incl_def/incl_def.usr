@@ -87,6 +87,7 @@ c      include 'GLOBALCOM' ! already inclued in NEKNEK
       include 'WZ'
       include 'WZF'
       include 'ZPER'
+      include 'OBJDATA'
 
 c     cmt
       include 'cmt/CMTBCDATA'

@@ -184,6 +184,7 @@ c
       include 'MVGEOM'
       include 'INPUT'
       include 'TSTEP'
+      include 'PARALLEL'
 
       common /scruz/ cx(lx1*ly1*lz1*lelt)
      $ ,             cy(lx1,ly1,lz1,lelt)
@@ -214,6 +215,7 @@ C
          else
            call compute_cfl(umax,vx,vy,vz,1.0)
          endif
+
          goto 200
       else IF (PARAM(84).NE.0.0) THEN
          if (dtold.eq.0.0) then
@@ -228,6 +230,7 @@ C
             dt=min(dt,param(12))
          endif
       endif
+
 C
 C     Find DT=DTCFL based on CFL-condition (if applicable)
 C
@@ -304,7 +307,7 @@ C      endif
       COURNO = DT*UMAX
 
 ! synchronize time step for multiple sessions
-      if (ifneknek) dt=uglmin(dt,1)
+      if (ifneknek) dt = glmin_ms(dt,1)
 c
       if (iffxdt.and.abs(courno).gt.10.*abs(ctarg)) then
          if (nid.eq.0) write(6,*) 'CFL, Ctarg!',courno,ctarg
@@ -547,13 +550,13 @@ C
  
       if (ifmvbd) then
         call opsub3 (cx,cy,cz,vx,vy,vz,wx,wy,wz)
-        call cumax  (cx,cy,cz,umax)
+           call compute_cfl(umax,cx,cy,cz,1.0)
       else
-        call cumax  (vx,vy,vz,umax)
+           call compute_cfl(umax,vx,vy,vz,1.0)
       endif
 
 c      if (nio.eq.0) write(6,1) istep,time,umax,cmax
-c   1  format(i9,1p3e12.4,' cumax')
+c   1  format(i9,1p3e12.4,' cmax')
 
 C     Zero DT
 
@@ -675,122 +678,6 @@ C
       call lpm_set_dt(rdt_part)
       dt = min(dt,rdt_part)
 #endif
-C
-      return
-      end
-C
-      subroutine cumax (v1,v2,v3,umax)
-C
-      include 'SIZE'
-      include 'WZ'
-      include 'GEOM'
-      include 'INPUT'
-C
-      common /scrns/ xrm1 (lx1,ly1,lz1,lelv)
-     $ ,             xsm1 (lx1,ly1,lz1,lelv)
-     $ ,             xtm1 (lx1,ly1,lz1,lelv)
-     $ ,             yrm1 (lx1,ly1,lz1,lelv)
-     $ ,             ysm1 (lx1,ly1,lz1,lelv)
-     $ ,             ytm1 (lx1,ly1,lz1,lelv)
-      common /scrmg/ zrm1 (lx1,ly1,lz1,lelv)
-     $ ,             zsm1 (lx1,ly1,lz1,lelv)
-     $ ,             ztm1 (lx1,ly1,lz1,lelv)
-      common /ctmp1/ u    (lx1,ly1,lz1,lelv)
-     $ ,             v    (lx1,ly1,lz1,lelv)
-     $ ,             w    (lx1,ly1,lz1,lelv)
-      common /ctmp0/ x    (lx1,ly1,lz1,lelv)
-     $ ,             r    (lx1,ly1,lz1,lelv)
-      common /delrst/ drst(lx1),drsti(lx1)
-C
-      DIMENSION V1(LX1,LY1,LZ1,1)
-     $        , V2(LX1,LY1,LZ1,1)
-     $        , V3(LX1,LY1,LZ1,1)
-      DIMENSION U3(3)
-      INTEGER ICALLD
-      SAVE    ICALLD
-      DATA    ICALLD /0/
-C
-      NTOT  = lx1*ly1*lz1*NELV
-      NTOTL = LX1*LY1*LZ1*LELV
-      NTOTD = NTOTL*ldim
-C
-C     Compute isoparametric partials.
-C
-      CALL XYZRST (XRM1,YRM1,ZRM1,XSM1,YSM1,ZSM1,XTM1,YTM1,ZTM1,
-     $             IFAXIS)
-C
-C     Compute maximum U/DX
-C
-      IF (ICALLD.EQ.0) THEN
-         ICALLD=1
-         DRST (1)=ABS(ZGM1(2,1)-ZGM1(1,1))
-         DRSTI(1)=1.0/DRST(1)
-         DO 400 I=2,lx1-1
-            DRST (I)=ABS(ZGM1(I+1,1)-ZGM1(I-1,1))/2.0
-            DRSTI(I)=1.0/DRST(I)
- 400     CONTINUE
-         DRST (lx1)=DRST(1)
-         DRSTI(lx1)=1.0/DRST(lx1)
-      endif
-C
-C     Zero out scratch arrays U,V,W for ALL declared elements...
-C
-      CALL RZERO3 (U,V,W,NTOTL)
-C
-      IF (ldim.EQ.2) THEN
-
-      CALL VDOT2  (U,V1  ,V2  ,RXM1,RYM1,NTOT)
-      CALL VDOT2  (R,RXM1,RYM1,RXM1,RYM1,NTOT)
-      CALL VDOT2  (X,XRM1,YRM1,XRM1,YRM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(U,R,NTOT)
-C
-      CALL VDOT2  (V,V1  ,V2  ,SXM1,SYM1,NTOT)
-      CALL VDOT2  (R,SXM1,SYM1,SXM1,SYM1,NTOT)
-      CALL VDOT2  (X,XSM1,YSM1,XSM1,YSM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(V,R,NTOT)
-C
-      ELSE
-C
-      CALL VDOT3  (U,V1  ,V2  ,V3  ,RXM1,RYM1,RZM1,NTOT)
-      CALL VDOT3  (R,RXM1,RYM1,RZM1,RXM1,RYM1,RZM1,NTOT)
-      CALL VDOT3  (X,XRM1,YRM1,ZRM1,XRM1,YRM1,ZRM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(U,R,NTOT)
-C
-      CALL VDOT3  (V,V1  ,V2  ,V3  ,SXM1,SYM1,SZM1,NTOT)
-      CALL VDOT3  (R,SXM1,SYM1,SZM1,SXM1,SYM1,SZM1,NTOT)
-      CALL VDOT3  (X,XSM1,YSM1,ZSM1,XSM1,YSM1,ZSM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(V,R,NTOT)
-C
-      CALL VDOT3  (W,V1  ,V2  ,V3  ,TXM1,TYM1,TZM1,NTOT)
-      CALL VDOT3  (R,TXM1,TYM1,TZM1,TXM1,TYM1,TZM1,NTOT)
-      CALL VDOT3  (X,XTM1,YTM1,ZTM1,XTM1,YTM1,ZTM1,NTOT)
-      CALL COL2   (R,X,NTOT)
-      CALL VSQRT  (R,NTOT)
-      CALL INVCOL2(W,R,NTOT)
-C
-      endif
-C
-      DO 500 IE=1,NELV
-      DO 500 IX=1,lx1
-      DO 500 IY=1,ly1
-      DO 500 IZ=1,lz1
-            U(IX,IY,IZ,IE)=ABS( U(IX,IY,IZ,IE)*DRSTI(IX) )
-            V(IX,IY,IZ,IE)=ABS( V(IX,IY,IZ,IE)*DRSTI(IY) )
-            W(IX,IY,IZ,IE)=ABS( W(IX,IY,IZ,IE)*DRSTI(IZ) )
-  500    CONTINUE
-C
-      U3(1)   = VLMAX(U,NTOT)
-      U3(2)   = VLMAX(V,NTOT)
-      U3(3)   = VLMAX(W,NTOT)
-      UMAX    = GLMAX(U3,3)
 C
       return
       end
@@ -1152,18 +1039,7 @@ c     INTLOC =      integration type
          if (intloc.eq.0) then
             call rzero (h2,ntot1)
          else
-            if (ifield.eq.1.or.param(107).eq.0) then 
-
-               call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
-
-            else   ! unsteady reaction-diffusion type equation
-
-               do i=1,ntot1
-                 h2(i) = dtbd*vtrans(i,1,1,1,ifield) + param(107)
-               enddo
-
-            endif
-
+            call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
          endif
 
 c        if (ifield.eq.1 .and. ifanls) then   ! this should be replaced
@@ -1174,11 +1050,6 @@ c        endif
       ELSE
          CALL COPY  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
          CALL RZERO (H2,NTOT1)
-         if (param(107).ne.0) then
-            write(6,*) 'SPECIAL SETHLM!!',param(107)
-c           call cfill (h2,param(107),ntot1)
-            call copy  (h2,vtrans(1,1,1,1,ifield),ntot1)
-         endif
       endif
 
       return
@@ -2151,10 +2022,6 @@ c     Setup local SEM-based Neumann operators (for now, just full...)
 c     stop
 
       imode = param(40)
-
-      if (imode.eq.0 .and. nelgt.gt.350000) call exitti(
-     $ 'Problem size requires AMG solver$',1)
-
       call fgslib_crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
      $                      nnz,ia,ja,a,null_space)
 
@@ -2786,19 +2653,11 @@ C
 
       ifld = ifield
 
-      DO IFIELD=MFIELD,nfldt
-csk         IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! expensive !
-
-         CALL VPROPS
-
-         nel = nelfld(ifield)
-         vol = volfld(ifield)
-         ntot1 = nxyz1*nel
-
-csk         avdiff(ifield) = glsc2 (bm1,vdiff (1,1,1,1,ifield),ntot1)/vol
-csk         avtran(ifield) = glsc2 (bm1,vtrans(1,1,1,1,ifield),ntot1)/vol
-
-      ENDDO
+      do ifield=mfield,nfldt
+         if (idpss(ifield-1).eq.-1) goto 100
+         call vprops
+ 100     continue
+      enddo
 
       ifield = ifld
 

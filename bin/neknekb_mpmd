@@ -1,0 +1,37 @@
+if [ $# -eq 0 ] || [ $# -lt 3 ]; then
+  echo ""
+  echo "usage: neknekb_mpmd case1 case2 np1 np 2 [uncoupled]"
+  echo ""
+  exit 1
+fi
+
+CASENAME1=$(basename "$1")
+CASENAME2=$(basename "$2")
+
+CASEDIR1=`pwd`'/'$CASENAME1
+CASEDIR2=`pwd`'/'$CASENAME2 
+NP1=$3
+NP2=$4
+
+COUPLED="T"
+if [ "$5" == "uncoupled" ]; then COUPLED="F"; fi
+
+echo  2           >   SESSION.NAME                        
+echo  $COUPLED   >>   SESSION.NAME                        
+echo  $CASENAME1 >>   SESSION.NAME                     
+echo  $CASEDIR1  >>   SESSION.NAME                         
+echo  $NP1       >>   SESSION.NAME                      
+echo  $CASENAME2 >>   SESSION.NAME                      
+echo  $CASEDIR2  >>   SESSION.NAME                        
+echo  $NP2       >>   SESSION.NAME                       
+
+rm -f ioinfo
+
+export NEK_LOGFILE=logfile
+cp -f $1.logfile $1.logfile1 2>/dev/null
+cp -f $2.logfile $2.logfile1 2>/dev/null
+rm -f s00000_"$NEK_LOGFILE" s00001_"$NEK_LOGFILE"
+ln -sf s00000_"$NEK_LOGFILE" $1.logfile
+ln -sf s00001_"$NEK_LOGFILE" $2.logfile
+
+mpiexec -np $NP1 $CASEDIR1/nek5000 : -np $NP2 $CASEDIR2/nek5000 & 

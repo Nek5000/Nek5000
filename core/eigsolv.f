@@ -241,7 +241,7 @@ C
          IF (CRIT.LT.TOLEV)                  GOTO 2000
          CALL COL2    (X1,BM1,NTOT1)
          CALL HMHOLTZ ('NOMG',Y1,X1,H1,H2,MASK,MULT,
-     $                              IMESH,TOLHE,NMXH,ISD)
+     $                              IMESH,TOLHE,NMXE,ISD)
          CALL COL3    (X1,BM1,Y1,NTOT1)
          CALL DSSUM   (X1,lx1,ly1,lz1)
          YY = GLSC3  (X1,Y1,MULT,NTOT1)

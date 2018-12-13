@@ -52,7 +52,7 @@ c     outpost arrays
       if(wght.le.0) return
       if(ifaxis) call exitti('Filtering not supported w/ IFAXIS!$',1)
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'apply q_filter ',
-     $                                            ifield, ncut, wght
+     $                                            ncut, wght
 
       imax = nid
       imax = iglmax(imax,1)
@@ -88,89 +88,77 @@ c        decay in wave space
       endif
 
       ifldt  = ifield
-c     ifield = 1
+      ifield = 1
 
       if_fltv = .false.
       if ( ifflow .and. .not. ifmhd ) if_fltv = .true.
-      if ( ifield.eq.1  .and. ifmhd ) if_fltv = .true.
-
-c     Adam Peplinski; to take into account freezing of base flow
-      if ( .not.ifbase             ) if_fltv = .false. ! base-flow frozen
+      if ( ifmhd                    ) if_fltv = .true.
+      if ( .not.ifbase              ) if_fltv = .false. ! base-flow frozen
+      if ( .not. iffilter(1)        ) if_fltv = .false. 
 
       if ( if_fltv ) then
          call filterq(vx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
          call filterq(vy,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
-     $      call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+     $   call filterq(vz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+
          if (ifsplit.and..not.iflomach) 
      $      call filterq(pr,intv,lx1,lz1,wk1,wk2,intt,if3d,pmax)
+
+         if (ifpert) then
+           do j=1,npert
+              call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
+              call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
+              if (if3d)
+     $        call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
+           enddo
+         endif
       endif
-c
+
       if (ifmhd.and.ifield.eq.ifldmhd) then
          call filterq(bx,intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
          call filterq(by,intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
          if (if3d)
      $   call filterq(bz,intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
       endif
-c
-      if (ifpert) then
-        do j=1,npert
 
-         ifield = 1
-         call filterq(vxp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,umax)
-         call filterq(vyp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,vmax)
-         if (if3d)
-     $   call filterq(vzp(1,j),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
-
-         ifield = 2
-         if (ifheat .and. .not.ifcvfld(ifield)) 
-     $   call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,wmax)
-
-        enddo
-      endif
-c
       mmax = 0
       if (ifflow) then
 c        pmax    = glmax(pmax,1)
-         omax(1) = glmax(umax,1)
-         omax(2) = glmax(vmax,1)
-         omax(3) = glmax(wmax,1)
+c         omax(1) = glmax(umax,1)
+c         omax(2) = glmax(vmax,1)
+c         omax(3) = glmax(wmax,1)
          mmax = ldim
       endif
          
-c
       nfldt = 1+npscal
-      if (ifheat .and. .not.ifcvode) then
-         do ifld=1,nfldt
-            ifield = ifld + 1
-            call filterq(t(1,1,1,1,ifld),intv
-     $                  ,lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
-            mmax = mmax+1
-            omax(mmax) = glmax(tmax(ifld),1)
-         enddo
-      endif
-
-      if (nio.eq.0) then
-         if (npscal.eq.0) then
-c           write(6,101) mmax
-c           write(sfmt,101) mmax
-c 101       format('''(i8,1p',i1,'e12.4,a6)''')
-c           write(6,sfmt) istep,(omax(k),k=1,mmax),' qfilt'
-c         write(6,'(i8,1p4e12.4,a6)') istep,(omax(k),k=1,mmax),' qfilt'
-         else
-            if (if3d) then
-               write(6,1) istep,ifield,umax,vmax,wmax
-            else
-               write(6,1) istep,ifield,umax,vmax
-            endif
-    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
-            if(ifheat .and. .not.ifcvode) 
-     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+      do ifld=1,nfldt
+         ifield = ifld + 1
+         if (.not. iffilter(ifield)) goto 10
+         call filterq(t(1,1,1,1,ifld),intv,
+     $                lx1,lz1,wk1,wk2,intt,if3d,tmax(ifld))
+         if (ifpert) then
+            do j=1,npert
+               call filterq(tp(1,j,1),intv,lx1,lz1,wk1,wk2,intt,if3d,
+     $                      wmax)
+            enddo
          endif
-      endif
+  10     mmax = mmax+1
+c         omax(mmax) = glmax(tmax(ifld),1)
+      enddo
+
+c      if (nio.eq.0) then
+c            if (if3d) then
+c               write(6,1) istep,ifield,umax,vmax,wmax
+c            else
+c               write(6,1) istep,ifield,umax,vmax
+c            endif
+c    1       format(4x,i7,i3,' qfilt:',1p3e12.4)
+c            if(ifheat) 
+c     &            write(6,'(1p50e12.4)') (tmax(k),k=1,nfldt)
+c      endif
 
       ifield = ifldt   ! RESTORE ifield
-
 
       return
       end
@@ -192,9 +180,8 @@ c
       nxyz=nx*nx*nz
       dmax = 0.
 
-
+      if (nio.eq.0 .and. loglevel.gt.2) write(6,*) 'call filterq',ifield
       nel = nelfld(ifield)
-
 
       if (if3d) then
          do e=1,nel
@@ -242,269 +229,6 @@ c
       enddo
     1 format(1p1e22.13)
       close(unit=io)
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine drag_calc(scale)
-c
-      INCLUDE 'SIZE'  
-      INCLUDE 'TOTAL' 
-c
-      common /scrns/         pm1(lx1,ly1,lz1,lelv)
-     $,vxx(lx1,ly1,lz1,lelv),vxy(lx1,ly1,lz1,lelv),vxz(lx1,ly1,lz1,lelv)
-     $,vyx(lx1,ly1,lz1,lelv),vyy(lx1,ly1,lz1,lelv),vyz(lx1,ly1,lz1,lelv)
-      common /scruz/ 
-     $ vzx(lx1,ly1,lz1,lelv),vzy(lx1,ly1,lz1,lelv),vzz(lx1,ly1,lz1,lelv)
-     $,one(lx1,ly1,lz1,lelv)
-       real work(1)
-       equivalence (work,one)
-c
-      common /cdrag/ dragx(0:maxobj),dragy(0:maxobj),dragz(0:maxobj)
-     $             ,  momx(0:maxobj), momy(0:maxobj), momz(0:maxobj)
-     $             ,  dpdx_mean,dpdy_mean,dpdz_mean
-      real momx ,momy ,momz
-c
-      common /tdrag/ drag(11)
-      real dragpx,dragpy,dragpz,dragvx,dragvy,dragvz
-      real momvx ,momvy ,momvz
-      real check1,check2
-c
-      equivalence (dragpx,drag(1)),(dragpy,drag(2)),(dragpz,drag(3))
-      equivalence (dragvx,drag(4)),(dragvy,drag(5)),(dragvz,drag(6))
-      equivalence (momvx ,drag(7)),(momvy ,drag(8)),(momvz ,drag(9)) 
-      equivalence (check1,drag(10)),(check2,drag(11))
-
-      common /cvflow_r/ flow_rate,base_flow,domain_length,xsec
-     $                , scale_vf(3)
-
-      ntot1  = lx1*ly1*lz1*nelv
-
-c    Map pressure onto mesh 1   (vxx and vyy are used as work arrays)
-      call mappr(pm1,pr,vxx,vyy)
-      call rone (one,ntot1)
-c
-c    Add mean_pressure_gradient.X to p:
-
-      if (param(55).ne.0) then
-         dpdx_mean = -scale_vf(1)
-         dpdy_mean = -scale_vf(2)
-         dpdz_mean = -scale_vf(3)
-      endif
-
-      call add2s2(pm1,xm1,dpdx_mean,ntot1)  ! Doesn't work if object is cut by 
-      call add2s2(pm1,ym1,dpdy_mean,ntot1)  ! periodicboundary.  In this case,
-      call add2s2(pm1,zm1,dpdz_mean,ntot1)  ! set ._mean=0 and compensate in
-c                                           ! usrchk()  [ pff 10/21/04 ].
-
-c    Compute du/dn
-                CALL DUDXYZ (vxx,vx,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vxy,vx,RYM1,SYM1,TYM1,JACM1,1,1)
-      if (if3d) CALL DUDXYZ (vxz,vx,RZM1,SZM1,TZM1,JACM1,1,1)
-c
-                CALL DUDXYZ (vyx,vy,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vyy,vy,RYM1,SYM1,TYM1,JACM1,1,1)
-      if (if3d) CALL DUDXYZ (vyz,vy,RZM1,SZM1,TZM1,JACM1,1,1)
-c
-      if (if3d) then
-                CALL DUDXYZ (vzx,vz,RXM1,SXM1,TXM1,JACM1,1,1)
-                CALL DUDXYZ (vzy,vz,RYM1,SYM1,TYM1,JACM1,1,1)
-                CALL DUDXYZ (vzz,vz,RZM1,SZM1,TZM1,JACM1,1,1)
-      endif
-c
-c     Fill up viscous array w/ default
-c
-      if (istep.lt.1) call cfill(vdiff,param(2),ntot1)
-c
-      call col2(vxx,vdiff,ntot1)
-      call col2(vxy,vdiff,ntot1)
-      call col2(vxz,vdiff,ntot1)
-      call col2(vyx,vdiff,ntot1)
-      call col2(vyy,vdiff,ntot1)
-      call col2(vyz,vdiff,ntot1)
-      call col2(vzx,vdiff,ntot1)
-      call col2(vzy,vdiff,ntot1)
-      call col2(vzz,vdiff,ntot1)
-c
-      dragxt=0.0
-      dragyt=0.0
-      dragzt=0.0
-c
-      DO 100 II=1,NHIS
-         IF (HCODE(10,II).NE.'I') GOTO 100
-         IOBJ   = LOCHIS(1,II)
-         MEMTOT = NMEMBER(IOBJ)
-C
-c
-         IF (HCODE(1,II).NE.' ' .OR. HCODE(2,II).NE.' ' .OR.
-     $       HCODE(3,II).NE.' ' ) THEN
-            IFIELD = 1
-c
-c---------------------------------------------------------------------------
-c           Compute drag for this object
-c---------------------------------------------------------------------------
-c
-            dragvx=0.0
-            dragvy=0.0
-            dragvz=0.0
-            dragpx=0.0
-            dragpy=0.0
-            dragpz=0.0
-c
-            momvx=0.0
-            momvy=0.0
-            momvz=0.0
-c
-            check1=0.0
-            check2=0.0
-            DO 50 MEM=1,MEMTOT
-               ISK   = 0
-               IEG   = OBJECT(IOBJ,MEM,1)
-               IFC   = OBJECT(IOBJ,MEM,2)
-               IF (GLLNID(IEG).EQ.NID) THEN
-C                 This processor has a contribution
-                  IE = GLLEL(IEG)
-c
-c                 Pressure drag
-                  check1=check1+facint(one,one,area,ifc,ie)
-                  check2=check2+facint(one,uny,area,ifc,ie)
-c
-                  dragpx=dragpx+facint(pm1,unx,area,ifc,ie)
-                  dragpy=dragpy+facint(pm1,uny,area,ifc,ie)
-                  if (if3d) dragpz=dragpz+facint(pm1,unz,area,ifc,ie)
-c
-c                 Viscous drag
-                  if (if3d) then
-                     dragvx=dragvx+facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vxy,uny,area,ifc,ie)
-     $                            +facint(vxz,unz,area,ifc,ie)
-     $                            +facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vyx,uny,area,ifc,ie)
-     $                            +facint(vzx,unz,area,ifc,ie)
-                     dragvy=dragvy+facint(vyx,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-     $                            +facint(vyz,unz,area,ifc,ie)
-     $                            +facint(vxy,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-     $                            +facint(vzy,unz,area,ifc,ie)
-                     dragvz=dragvz+facint(vzx,unx,area,ifc,ie)
-     $                            +facint(vzy,uny,area,ifc,ie)
-     $                            +facint(vzz,unz,area,ifc,ie)
-     $                            +facint(vxz,unx,area,ifc,ie)
-     $                            +facint(vyz,uny,area,ifc,ie)
-     $                            +facint(vzz,unz,area,ifc,ie)
-c
-                     momvx=momvx-facint2(vxy,unx,unz,area,ifc,ie)
-     $                        -facint2(vyx,unx,unz,area,ifc,ie)
-     $                        -facint2(vyy,uny,unz,area,ifc,ie)
-     $                        -facint2(vyy,uny,unz,area,ifc,ie)
-     $                        -facint2(vzy,unz,unz,area,ifc,ie)
-     $                        -facint2(vyz,unz,unz,area,ifc,ie)
-     $                        +facint2(vxz,unx,uny,area,ifc,ie)
-     $                        +facint2(vzx,unx,uny,area,ifc,ie)
-     $                        +facint2(vyz,uny,uny,area,ifc,ie)
-     $                        +facint2(vzy,uny,uny,area,ifc,ie)
-     $                        +facint2(vzz,unz,uny,area,ifc,ie)
-     $                        +facint2(vzz,unz,uny,area,ifc,ie)
-                     momvy=momvy+facint2(vxx,unx,unz,area,ifc,ie)
-     $                        +facint2(vxx,unx,unz,area,ifc,ie)
-     $                        +facint2(vyx,uny,unz,area,ifc,ie)
-     $                        +facint2(vxy,uny,unz,area,ifc,ie)
-     $                        +facint2(vzx,unz,unz,area,ifc,ie)
-     $                        +facint2(vxz,unz,unz,area,ifc,ie)
-     $                        -facint2(vxz,unx,unx,area,ifc,ie)
-     $                        -facint2(vzx,unx,unx,area,ifc,ie)
-     $                        -facint2(vyz,uny,unx,area,ifc,ie)
-     $                        -facint2(vzy,uny,unx,area,ifc,ie)
-     $                        -facint2(vzz,unz,unx,area,ifc,ie)
-     $                        -facint2(vzz,unz,unx,area,ifc,ie)
-                     momvz=momvz-facint2(vxx,unx,uny,area,ifc,ie)
-     $                        -facint2(vxx,unx,uny,area,ifc,ie)
-     $                        -facint2(vyx,uny,uny,area,ifc,ie)
-     $                        -facint2(vxy,uny,uny,area,ifc,ie)
-     $                        -facint2(vzx,unz,uny,area,ifc,ie)
-     $                        -facint2(vxz,unz,uny,area,ifc,ie)
-     $                        +facint2(vxy,unx,unx,area,ifc,ie)
-     $                        +facint2(vyx,unx,unx,area,ifc,ie)
-     $                        +facint2(vyy,uny,unx,area,ifc,ie)
-     $                        +facint2(vyy,uny,unx,area,ifc,ie)
-     $                        +facint2(vzy,unz,unx,area,ifc,ie)
-     $                        +facint2(vyz,unz,unx,area,ifc,ie) 
-c
-                  else
-                     dragvx=dragvx+facint(vxx,unx,area,ifc,ie)
-     $                            +facint(vxy,uny,area,ifc,ie)
-                     dragvy=dragvy+facint(vyx,unx,area,ifc,ie)
-     $                            +facint(vyy,uny,area,ifc,ie)
-                  endif
-               ENDIF
-   50       CONTINUE
-c
-c          Sum contributions from all processors
-            call gop(drag,work,'+  ',11)
-            dragvx = -dragvx
-            dragvy = -dragvy
-            dragvz = -dragvz
-         ENDIF
-c
-c        Scale by user specified scale factor (for convenience)
-c
-         dragvx = scale*dragvx
-         dragvy = scale*dragvy
-         dragvz = scale*dragvz
-c
-         dragpx = scale*dragpx
-         dragpy = scale*dragpy
-         dragpz = scale*dragpz
-c
-         dragx(iobj) = dragvx+dragpx
-         dragy(iobj) = dragvy+dragpy
-         dragz(iobj) = dragvz+dragpz
-c
-c
-         momx(iobj)  = 0.5*momvx
-         momy(iobj)  = 0.5*momvy
-         momz(iobj)  = 0.5*momvz
-c
-         dragxt = dragxt + dragx(iobj)
-         dragyt = dragyt + dragy(iobj)
-         dragzt = dragzt + dragz(iobj)
-c
-         if (nio.eq.0.and.istep.eq.1) 
-     $      write(6,*) 'drag_calc: scale=',scale
-         if (nio.eq.0) then
-            write(6,6) istep,time,dragx(iobj),dragpx,dragvx,'dragx',iobj
-            write(6,6) istep,time,dragy(iobj),dragpy,dragvy,'dragy',iobj
-            if (if3d) 
-     $      write(6,6) istep,time,dragz(iobj),dragpz,dragvz,'dragz',iobj
-c
-c done by zly (3/17/03)
-c          if(if3d) then
-c             write(6,113) istep,time,momx,momy,momz
-c          else
-c             write(6,112) istep,time,momx,momy
-c          endif
-c         
-         endif
-    6    format(i8,1p4e15.7,2x,a5,i5)
-  112    format(i6,1p3e15.7,'  momx')
-  113    format(i6,1p4e15.7,'  momx')
-         if (istep.lt.10.and.nio.eq.0) 
-     $      write(6,9) 'check:',check1,check2,dpdx_mean,istep
-    9    format(a6,1p3e16.8,i9)
-c        if (time.gt.1.0.and.dragx.gt.10.) call emerxit
-  100 continue
-c
-      if (nio.eq.0) then
-         write(6,6) istep,time,dragxt,dragpx,dragvx,'drgxt',iobj
-         write(6,6) istep,time,dragyt,dragpy,dragvy,'drgyt',iobj
-         if (if3d) 
-     $   write(6,6) istep,time,dragzt,dragpz,dragvz,'drgzt',iobj
-      endif
-c
-      dragx(0) = dragxt
-      dragy(0) = dragyt
-      dragz(0) = dragzt
 c
       return
       end
@@ -1273,11 +997,14 @@ c-----------------------------------------------------------------------
 
          time_temp = time
          time      = atime   ! Output the duration of this avg
+         dtmp      = param(63)
+         param(63) = 1       ! Enforce 64-bit output
 
          call outpost2(uavg,vavg,wavg,pavg,tavg,ldimt,'avg')
          call outpost2(urms,vrms,wrms,prms,trms,ldimt,'rms')
          call outpost (uvms,vwms,wums,prms,trms,      'rm2')
 
+         param(63) = dtmp
          atime = 0.
          time  = time_temp  ! Restore clock
 
@@ -1759,50 +1486,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine planar_average_z(ua,u,w1,w2)
-c
-c     Compute r-s planar average of quantity u()
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-c
-      real ua(lz1,nelz),u(lx1*ly1,lz1,nelv),w1(lz1,nelz),w2(lz1,nelz)
-      integer e,eg,ez
-c
-      melxy = nelx*nely
-c
-      nz = lz1*nelz
-      call rzero(ua,nz)
-      call rzero(w1,nz)
-c
-      do e=1,nelt
-c
-         eg = lglel(e)
-         ez = 1 + (eg-1)/melxy
-c
-         do k=1,lz1
-         do i=1,lx1*ly1
-            zz = (1.-zgm1(k,3))/2.  ! = 1 for k=1, = 0 for k=lz1
-            aa = zz*area(i,1,5,e) + (1-zz)*area(i,1,6,e)  ! wgtd jacobian
-            w1(k,ez) = w1(k,ez) + aa
-            ua(k,ez) = ua(k,ez) + aa*u(i,k,e)
-         enddo
-         enddo
-      enddo
-c
-      call gop(ua,w2,'+  ',nz)
-      call gop(w1,w2,'+  ',nz)
-c
-      do i=1,nz
-         ua(i,1) = ua(i,1) / w1(i,1)   ! Normalize
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,visc,f,e)
 c
       INCLUDE 'SIZE'
@@ -1966,18 +1649,6 @@ c
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 c
-      common /ctorq/ dragx(0:maxobj),dragpx(0:maxobj),dragvx(0:maxobj)
-     $             , dragy(0:maxobj),dragpy(0:maxobj),dragvy(0:maxobj)
-     $             , dragz(0:maxobj),dragpz(0:maxobj),dragvz(0:maxobj)
-c
-     $             , torqx(0:maxobj),torqpx(0:maxobj),torqvx(0:maxobj)
-     $             , torqy(0:maxobj),torqpy(0:maxobj),torqvy(0:maxobj)
-     $             , torqz(0:maxobj),torqpz(0:maxobj),torqvz(0:maxobj)
-c
-     $             , dpdx_mean,dpdy_mean,dpdz_mean
-     $             , dgtq(3,4)
-c
-c
       n = lx1*ly1*lz1*nelv
 c
       call mappr(pm1,pr,xm0,ym0) ! map pressure onto Mesh 1
@@ -2039,48 +1710,35 @@ c
       enddo
 c
 c
-      nobj = 0
-      do ii=1,nhis
-        if (hcode(10,ii).EQ.'I') then
-          iobj   = lochis(1,ii)
-          memtot = nmember(iobj)
-          nobj   = max(iobj,nobj)
-c
-          if (hcode(1,ii).ne.' ' .or. hcode(2,ii).ne.' ' .or.
-     $      hcode(3,ii).ne.' ' ) then
-            ifield = 1
-c
-c           Compute drag for this object
-c
-            do mem=1,memtot
-               ieg   = object(iobj,mem,1)
-               ifc   = object(iobj,mem,2)
-               if (gllnid(ieg).eq.nid) then ! this processor has a contribution
-                  ie = gllel(ieg)
-                  call drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
-c
-                  call cmult(dgtq,scale,12)
-c
-                  dragpx(iobj) = dragpx(iobj) + dgtq(1,1)  ! pressure 
-                  dragpy(iobj) = dragpy(iobj) + dgtq(2,1)
-                  dragpz(iobj) = dragpz(iobj) + dgtq(3,1)
-c
-                  dragvx(iobj) = dragvx(iobj) + dgtq(1,2)  ! viscous
-                  dragvy(iobj) = dragvy(iobj) + dgtq(2,2)
-                  dragvz(iobj) = dragvz(iobj) + dgtq(3,2)
-c
-                  torqpx(iobj) = torqpx(iobj) + dgtq(1,3)  ! pressure 
-                  torqpy(iobj) = torqpy(iobj) + dgtq(2,3)
-                  torqpz(iobj) = torqpz(iobj) + dgtq(3,3)
-c
-                  torqvx(iobj) = torqvx(iobj) + dgtq(1,4)  ! viscous
-                  torqvy(iobj) = torqvy(iobj) + dgtq(2,4)
-                  torqvz(iobj) = torqvz(iobj) + dgtq(3,4)
-c
-               endif
-            enddo
-          endif
-        endif
+      ifield = 1
+      do iobj = 1,nobj
+         memtot = nmember(iobj)
+      do mem  = 1,memtot
+         ieg   = object(iobj,mem,1)
+         ifc   = object(iobj,mem,2)
+         if (gllnid(ieg).eq.nid) then ! this processor has a contribution
+            ie = gllel(ieg)
+            call drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+
+            call cmult(dgtq,scale,12)
+
+            dragpx(iobj) = dragpx(iobj) + dgtq(1,1)  ! pressure 
+            dragpy(iobj) = dragpy(iobj) + dgtq(2,1)
+            dragpz(iobj) = dragpz(iobj) + dgtq(3,1)
+
+            dragvx(iobj) = dragvx(iobj) + dgtq(1,2)  ! viscous
+            dragvy(iobj) = dragvy(iobj) + dgtq(2,2)
+            dragvz(iobj) = dragvz(iobj) + dgtq(3,2)
+
+            torqpx(iobj) = torqpx(iobj) + dgtq(1,3)  ! pressure 
+            torqpy(iobj) = torqpy(iobj) + dgtq(2,3)
+            torqpz(iobj) = torqpz(iobj) + dgtq(3,3)
+
+            torqvx(iobj) = torqvx(iobj) + dgtq(1,4)  ! viscous
+            torqvy(iobj) = torqvy(iobj) + dgtq(2,4)
+            torqvz(iobj) = torqvz(iobj) + dgtq(3,4)
+         endif
+      enddo
       enddo
 c
 c     Sum contributions from all processors
@@ -2098,48 +1756,42 @@ c
       call gop(torqvx,w1,'+  ',maxobj+1)
       call gop(torqvy,w1,'+  ',maxobj+1)
       call gop(torqvz,w1,'+  ',maxobj+1)
-c
-      nobj = iglmax(nobj,1)
-c
+
       do i=1,nobj
          dragx(i) = dragpx(i) + dragvx(i)
          dragy(i) = dragpy(i) + dragvy(i)
          dragz(i) = dragpz(i) + dragvz(i)
-c
+
          torqx(i) = torqpx(i) + torqvx(i)
          torqy(i) = torqpy(i) + torqvy(i)
          torqz(i) = torqpz(i) + torqvz(i)
-c
+
          dragpx(0) = dragpx (0) + dragpx (i)
          dragvx(0) = dragvx (0) + dragvx (i)
          dragx (0) = dragx  (0) + dragx  (i)
-c
+
          dragpy(0) = dragpy (0) + dragpy (i)
          dragvy(0) = dragvy (0) + dragvy (i)
          dragy (0) = dragy  (0) + dragy  (i)
-c
+
          dragpz(0) = dragpz (0) + dragpz (i)
          dragvz(0) = dragvz (0) + dragvz (i)
          dragz (0) = dragz  (0) + dragz  (i)
-c
+
          torqpx(0) = torqpx (0) + torqpx (i)
          torqvx(0) = torqvx (0) + torqvx (i)
          torqx (0) = torqx  (0) + torqx  (i)
-c
+
          torqpy(0) = torqpy (0) + torqpy (i)
          torqvy(0) = torqvy (0) + torqvy (i)
          torqy (0) = torqy  (0) + torqy  (i)
-c
+
          torqpz(0) = torqpz (0) + torqpz (i)
          torqvz(0) = torqvz (0) + torqvz (i)
          torqz (0) = torqz  (0) + torqz  (i)
-c
       enddo
-c
-      i0 = 0
-      if (nobj.le.1) i0 = 1  ! one output for single-object case
-c
-      do i=i0,nobj
+
+      do i=1,nobj
         if (nio.eq.0) then
           if (if3d.or.ifaxis) then
            if (ifdout) then
@@ -2164,7 +1816,7 @@ c
         endif
     6   format(i8,1p4e19.11,2x,i5,a5)
       enddo
-c
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2313,7 +1965,6 @@ c
 
       include 'SIZE'
       include 'TOTAL'
-      include 'ZPER'
 
       character*127 fname127
       character*1   f1(127)
@@ -2395,619 +2046,6 @@ c
       ierr = 1
       if (nid.eq.0) ierr = iglmax(ierr,1)
       call exitti('Auto averager did not find list file.$',ierr)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine x_average(ua,u,w1,w2)
-c
-c     Compute the x average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real ua(ly1,lz1,nely,nelz),u (lx1,ly1,lz1,nelv)
-     $    ,w1(ly1,lz1,nely,nelz),w2(ly1,lz1,nely,nelz)
-      integer e,eg,ex,ey,ez
-      real dy2
-
-      nelyz = nely*nelz
-      if (nelyz.gt.lely*lelz) call exitti
-     $  ('ABORT IN x_average. Increase lely*lelz in SIZE:$',nelyz)
-
-      myz = nely*nelz*ly1*lz1
-      call rzero(ua,myz)
-      call rzero(w1,myz)
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do j=1,ly1
-            do i=1,lx1
-               dx2 = 1.0  !  Assuming uniform element size in "x" direction
-               ua(j,k,ey,ez) = ua(j,k,ey,ez)+dx2*wzm1(i)*u(i,j,k,e)
-               w1(j,k,ey,ez) = w1(j,k,ey,ez)+dx2*wzm1(i) ! redundant but clear
-            enddo
-         enddo
-         enddo
-      enddo
-
-      call gop(ua,w2,'+  ',myz)
-      call gop(w1,w2,'+  ',myz)
-
-      do i=1,myz
-         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine x_average_transpose(u,ua) ! distribute ua to each z-plane
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real u(lx1,ly1,lz1,nelv),ua(ly1,lz1,nely,nelz)
-
-      integer e,eg,ex,ey,ez
-
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do j=1,ly1
-            do i=1,lx1
-               u(i,j,k,e) = ua(j,k,ey,ez)
-            enddo
-         enddo
-         enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine x_distribute(u)
-c
-c     Compute the x average of quantity u() and redistribute
-c
-c     Assumes you have nelx*nely elements, in the same order,
-c     within each x plane
-c
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-
-      real u(1)
-
-      parameter (lyavg = ly1*lz1*lely*lelz)
-      common /scravg/ ua(lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-
-      call x_average          (ua,u,w1,w2)
-      call x_average_transpose(u,ua) ! distribute ua to each z-plane
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine x_distribute2(ua,u)
-c
-c     Compute the x average of quantity u() and redistribute
-c
-c     Assumes you have nelx*nely elements, in the same order,
-c     within each x plane
-c
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-
-      real ua(1),u(1)
-
-      parameter (lyavg = ly1*lz1*lely*lelz)
-      common /scravg/ w1(lyavg)
-     $              , w2(lyavg)
-
-      call x_average          (ua,u,w1,w2)
-      call x_average_transpose(u,ua) ! distribute ua to each z-plane
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_slice (ua,u,w1,w2)
-c
-c     Extract a y slice of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-c
-      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
-      integer e,eg,ex,ey,ez
-      real dy2
-c
-      mxz = nelx*nelz*lx1*lz1
-      call rzero(ua,mxz)
-c
-      do e=1,nelt
-c
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         j = 1
-         if (ey.eq.1) then
-            do k=1,lz1
-            do i=1,lx1
-               ua(i,k,ex,ez) = u(i,j,k,e)
-            enddo
-            enddo
-         endif
-      enddo
-
-      call gop(ua,w2,'+  ',mxz)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_slice_g (uz,u,w1,kz,ezi,nx,ny,nz,nlxy)
-c
-c     Extract a z slice of quantity u() 
-c
-c     ASSUMES data is in a global tensor-product structure, nlxy x nelz,
-c             as would be produced by n2to3 or genbox.
-c
-c     Arguments:
-c
-c     uz(lx1,ly1,nlxy):       extracted z-slice data
-c     u (lx1,ly1,lz1,nelt):   input data
-c     w1(lx1,ly1,nlxy):       work array
-c     kz:                     z-plane within element ezi to be extracted
-c     ezi:                    elemental z-slab to be extracted
-c     nx,ny,nz:               dimensions for 3D spectral element input
-c     nlxy:                   global number of elements in x-y plane.
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-
-      real uz(nx,ny,nlxy),u (nx,ny,nz,nelv),w1(nx,ny,nlxy)
-      integer e,eg,ex,ey,ez,ezi
-      real dy2
-
-      nxy = nx*ny
-      mxy = nxy*nlxy
-
-      call rzero(uz,mxy) ! zero out the entire plane
-
-      do e=1,nelt
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nlxy,1,1)
-
-         if (ez.eq.ezi) 
-     $      call copy(uz(1,1,ex),u(1,1,kz,e),nxy) ! u(zlice) --> uz()
-
-      enddo
-
-      call gop(uz,w1,'+  ',mxy) ! Collect partial contributions from all procs
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_slice (ua,u,w1,w2)
-c
-c     Extract a z slice of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-c
-      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
-      integer e,eg,ex,ey,ez
-      real dy2
-c
-      mxy = nelx*nely*lx1*ly1
-      call rzero(ua,mxy)
-c
-      do e=1,nelt
-c
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         k = 1
-         if (ez.eq.1) then
-            do j=1,ly1
-            do i=1,lx1
-               ua(i,j,ex,ey) = u(i,j,k,e)
-            enddo
-            enddo
-         endif
-      enddo
-
-      call gop(ua,w2,'+  ',mxy)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_average(ua,u,w1,w2)
-c
-c     Compute the y average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-c
-      real ua(lx1,lz1,nelx,nelz),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lx1,lz1,nelx,nelz),w2(lx1,lz1,nelx,nelz)
-      integer e,eg,ex,ey,ez
-      real dy2
-c
-      mxz = nelx*nelz*lx1*lz1
-      call rzero(ua,mxz)
-      call rzero(w1,mxz)
-c
-      do e=1,nelt
-c
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-c
-         do k=1,lz1
-         do i=1,lx1
-c           dy2 = .5*( ym1(i,ly1,k,e) - ym1(i,1,k,e) )
-            dy2 = 1.0  !  Assuming uniform in "y" direction
-            do j=1,ly1
-               ua(i,k,ex,ez) = ua(i,k,ex,ez)+dy2*wym1(j)*u(i,j,k,e)
-               w1(i,k,ex,ez) = w1(i,k,ex,ez)+dy2*wym1(j) ! redundant but clear
-            enddo
-         enddo
-         enddo
-      enddo
-c
-      call gop(ua,w2,'+  ',mxz)
-      call gop(w1,w2,'+  ',mxz)
-c
-      do i=1,mxz
-         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
-      enddo
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_avg_buff(ux,uy,uz,c2,name,icount)
-c
-c     Compute the y average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-
-      real ux(1),uy(1),uz(1)
-      character*2 c2,name
-
-      parameter (lyavg = lx1*lz1*lelx*lelz)
-      common /scravg/ u (lyavg)
-     $              , v (lyavg)
-     $              , w (lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-
-      call y_average(u,ux,w1,w2)
-      call y_average(v,uy,w1,w2)
-      call y_average(w,uz,w1,w2)
-
-      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_avg_buff(ux,uy,uz,c2,name,icount)
-c
-c     Compute the z average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-c
-      real ux(1),uy(1),uz(1)
-      character*2 c2,name
-c
-      parameter (lyavg = lx1*ly1*lelx*lely)
-      common /scravg/ u (lyavg)
-     $              , v (lyavg)
-     $              , w (lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-c
-      call z_average(u,ux,w1,w2)
-      call z_average(v,uy,w1,w2)
-      call z_average(w,uz,w1,w2)
-
-      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_ins_buff(ux,uy,uz,c2,name,icount)
-c
-c     Compute the z average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-c
-      real ux(1),uy(1),uz(1)
-      character*2 c2,name
-c
-      parameter (lyavg = lx1*lz1*lelx*lelz)
-      common /scravg/ u (lyavg)
-     $              , v (lyavg)
-     $              , w (lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-c
-      call y_slice  (u,ux,w1,w2)
-      call y_slice  (v,uy,w1,w2)
-      call y_slice  (w,uz,w1,w2)
-c
-      call buff_2d_out(u,v,w,lx1,lz1,nelx,nelz,c2,name,icount)
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_ins_buff(ux,uy,uz,c2,name,icount)
-c
-c     Compute the z average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-c
-      real ux(1),uy(1),uz(1)
-      character*2 c2,name
-c
-      parameter (lyavg = lx1*ly1*lelx*lely)
-      common /scravg/ u (lyavg)
-     $              , v (lyavg)
-     $              , w (lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-c
-      call z_slice  (u,ux,w1,w2)
-      call z_slice  (v,uy,w1,w2)
-      call z_slice  (w,uz,w1,w2)
-c
-      call buff_2d_out(u,v,w,lx1,ly1,nelx,nely,c2,name,icount)
-c
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine buff_2d_out(u,v,w,nx,ny,nex,ney,c2,name,ifld)
-c
-      include 'SIZE'
-      include 'TOTAL'
-
-      real u(1),v(1),w(1)
-      character*2 c2,name
-      character*4  bname
-      save         bname
-
-      parameter (lyzm = lelx*max(lely,lelz))
-      common /scrav2/ ub(lx1,lz1,lyzm),vb(lx1,lz1,lyzm),wb(lx1,lz1,lyzm)
-
-      integer ibfld,icalld,nxf,nyf,nexf,neyf
-      save    ibfld,icalld,nxf,nyf,nexf,neyf
-      data    ibfld,icalld,nxf,nyf,nexf,neyf  / 6*0 /
-
-c     npido = 64             !  64 files buffered
-      npido = 128            !  64 files buffered
-      npido =  min(npido,np) !  P  files buffered
-
-      mpido = np/npido     ! stride between processors (e.g., 128/64 = 2)
-
-      jcalld = mod(icalld,npido)       ! call # 0,1,...,63,0,1,...
-      if (mod(nid,mpido) .eq. 0) then  ! this is a buffering/writing proc
-
-         jid = nid/mpido
-         if (jid.eq.jcalld) then       ! save this buffer on this proc
-c           write(6,1) nid,jid,istep,icalld,jcalld,c2,name,nex,ney,ifld
-c   1       format(5i7,' buffering: ',2a2,3i7)
-            write(bname,4) c2,name
-    4       format(2a2)
-            n = nx*ny*nex*ney
-            ibfld = ifld
-            call copy(ub,u,n)
-            call copy(vb,v,n)
-            call copy(wb,w,n)
-            nxf  = nx
-            nyf  = ny
-            nexf = nex
-            neyf = ney
-         endif
-
-         if (jcalld .eq. npido-1) call  ! output buffer
-     $  outfld2d_p(ub,vb,wb,nxf,nyf,nexf,neyf,bname,ibfld,jid,npido,ir)
-
-      endif
-      call err_chk(ir,'Error with byte_write, buff_2d_out $')
-      icalld = icalld+1
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y2d(u,v,w,p,c1,icount)
-c
-c     Compute the y average of quantity u() - assumes global tens.prod.
-c
-
-      include 'SIZE'
-      include 'TOTAL'
-      real u(1),v(1),w(1),p(1)
-      character*1 c1,c2(2)
-
-      common /scrns/ ur(lx1*ly1*lz1*lelv)
-     $             , ut(lx1*ly1*lz1*lelv)
-     $             , wr(lx1*ly1*lz1*lelv)
-     $             , wt(lx1*ly1*lz1*lelv)
-     $             , wp(lx1*ly1*lz1*lelv)
-c
-c     Convert velocities to poloidal-toroidal
-c
-      n = lx1*ly1*lz1*nelv
-      do i=1,n
-         rr = xm1(i,1,1,1)*xm1(i,1,1,1)+ym1(i,1,1,1)*ym1(i,1,1,1)
-         rr = sqrt(rr)
-         ct = xm1(i,1,1,1)/rr
-         st = ym1(i,1,1,1)/rr
-         ur(i) = ct*u(i)+st*v(i)
-         ut(i) = ct*v(i)-st*u(i)
-         wr(i) = ur(i)**2
-         wt(i) = ut(i)**2
-         wp(i) = w (i)**2
-      enddo
-
-      c2(1) = c1
-      c2(2) = 'y'
-
-      call y_avg_buff(ur,w ,ut,c2,'ub',icount)
-      call y_avg_buff(wr,wp,wt,c2,'u2',icount)
-
-      do i=1,n
-         wr(i) = ur(i)*ut(i)
-         wt(i) = ut(i)*w (i)
-         wp(i) = w (i)*ur(i)
-      enddo
-      call y_avg_buff(wr,wt,wp,c2,'uv',icount)
-
-      call y_ins_buff(ur,w ,ut,c2,'ui',icount)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z2d(u,v,w,p,c1,icount)
-c
-c     Compute the y average of quantity u() - assumes global tens.prod.
-c
-
-      include 'SIZE'
-      include 'TOTAL'
-      real u(1),v(1),w(1),p(1)
-      character*1 c1,c2(2)
-
-      common /scrns/ ur(lx1*ly1*lz1*lelv)
-     $             , ut(lx1*ly1*lz1*lelv)
-     $             , wr(lx1*ly1*lz1*lelv)
-     $             , wt(lx1*ly1*lz1*lelv)
-     $             , wp(lx1*ly1*lz1*lelv)
-c
-c
-c     Convert velocities to poloidal-toroidal
-c
-      n = lx1*ly1*lz1*nelv
-      do i=1,n
-         wr(i) = u (i)**2
-         wt(i) = v (i)**2
-         wp(i) = w (i)**2
-      enddo
-
-      c2(1) = c1
-      c2(2) = 'z'
-
-      call z_avg_buff(u ,v ,w ,c2,'ub',icount)
-      call z_avg_buff(wr,wt,wp,c2,'u2',icount)
-
-      do i=1,n
-         wr(i) = u(i)*v(i)
-         wt(i) = v(i)*w(i)
-         wp(i) = w(i)*u(i)
-      enddo
-      call z_avg_buff(wr,wt,wp,c2,'uv',icount)
-
-      call z_ins_buff(u ,v ,w ,c2,'ui',icount)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine anal_2d
-
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-
-      integer icount
-      save    icount
-
-      if (nelx.gt.lelx .or.
-     $    nely.gt.lely .or.
-     $    nelz.gt.lelz ) then
-         if (nio.eq.0) write(6,1) nelx,nely,nelz,lelx,lely,lelz
-    1    format('anal_2d fail:',6i6)
-         return
-      endif
-
-      if (istep.eq.0) then   ! dump four times, just to keep phase
-
-         icount = 0
-         call z2d(xm1,ym1,zm1,pr,'u',icount)
-         if (ifmhd) call z2d(xm1,ym1,zm1,pm,'b',icount)
-
-         call y2d(xm1,ym1,zm1,pr,'u',icount)
-         if (ifmhd) call y2d(xm1,ym1,zm1,pm,'b',icount)
-
-      endif
-
-      icount = icount + 1
-
-      call z2d(vx,vy,vz,pr,'u',icount)
-      if (ifmhd) call z2d(bx,by,bz,pm,'b',icount)
-
-      call y2d(vx,vy,vz,pr,'u',icount)
-      if (ifmhd) call y2d(bx,by,bz,pm,'b',icount)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine chkit(u,name4,n)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      character*4 name4
-      real u(1)
-
-
-      integer icalld
-      save    icalld
-      data    icalld /0/
-      
-      icalld = icalld + 1
-
-      u2   = vlsc2(u,u,n)
-      umin = vlmin(u,n)
-      umax = vlmax(u,n)
-      ulst = u(n)
-      if (nio.eq.0)
-     $write(6,1) nid,icalld,istep,n,umin,umax,ulst,name4,' chkit',nid
-    1 format(4i7,1p3e12.4,a4,a6,i1)
 
       return
       end
@@ -3161,44 +2199,27 @@ c
       x3max=glmax(zm0(1,1,1,1),n)
 c
       call rzero(strsmx,maxobj)
-c
-c
-      nobj = 0
-      do ii=1,nhis
-        if (hcode(10,ii).EQ.'I') then
-          iobj   = lochis(1,ii)
-          memtot = nmember(iobj)
-          nobj   = max(iobj,nobj)
-c
-          if (hcode(1,ii).ne.' ' .or. hcode(2,ii).ne.' ' .or.
-     $      hcode(3,ii).ne.' ' ) then
-            ifield = 1
-c
-c           Compute max stress for this object
-c
-            strsmx(ii) = 0.
-            do mem=1,memtot
-               ieg   = object(iobj,mem,1)
-               ifc   = object(iobj,mem,2)
-               if (gllnid(ieg).eq.nid) then ! this processor has a contribution
 
-                  ie = gllel(ieg)
-                  call get_strsmax
-     $                    (strsmxl,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+      ifield = 1
 
-                  call cmult(strsmxl,scale,1)
-                  strsmx(ii)=max(strsmx(ii),strsmxl)
-
-               endif
-            enddo
-          endif
-        endif
+      strsmx(ii) = 0.
+      do iobj = 1,nobj
+         memtot = nmember(iobj)
+      do mem  = 1,memtot
+         ieg   = object(iobj,mem,1)
+         ifc   = object(iobj,mem,2)
+         if (gllnid(ieg).eq.nid) then ! this processor has a contribution
+            ie = gllel(ieg)
+            call get_strsmax(strsmxl,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
+            call cmult(strsmxl,scale,1)
+            strsmx(ii)=max(strsmx(ii),strsmxl)
+         endif
+      enddo
       enddo
 c
 c     Max contributions over all processors
 c
       call gop(strsmx,w1,'M  ',maxobj)
-
 
       return
       end
@@ -3696,307 +2717,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine z_distribute(u)
-c
-c     Compute the z average of quantity u() and redistribute
-c
-c     Assumes you have nelx*nely elements, in the same order,
-c     within each z plane
-c
-c
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'
-
-      real ux(1),uy(1),uz(1)
-      character*2 c2,name
-
-      parameter (lyavg = lx1*ly1*lelx*lely)
-      common /scravg/ ua(lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-
-      call z_average          (ua,u,w1,w2)
-      call z_average_transpose(u,ua) ! distribute ua to each z-plane
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_average(ua,u,w1,w2)
-c
-c     Compute the z average of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real ua(lx1,ly1,nelx,nely),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lx1,ly1,nelx,nely),w2(lx1,ly1,nelx,nely)
-      integer e,eg,ex,ey,ez
-      real dy2
-
-      nelxy = nelx*nely
-      if (nelxy.gt.lelx*lely) call exitti
-     $  ('ABORT IN z_average. Increase lelx*lely in SIZE:$',nelxy)
-
-      mxy = nelx*nely*lx1*ly1
-      call rzero(ua,mxy)
-      call rzero(w1,mxy)
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do j=1,ly1
-         do i=1,lx1
-            dz2 = 1.0  !  Assuming uniform in "z" direction
-            do k=1,lz1
-               ua(i,j,ex,ey) = ua(i,j,ex,ey)+dz2*wzm1(k)*u(i,j,k,e)
-               w1(i,j,ex,ey) = w1(i,j,ex,ey)+dz2*wzm1(k) ! redundant but clear
-            enddo
-         enddo
-         enddo
-      enddo
-
-      call gop(ua,w2,'+  ',mxy)
-      call gop(w1,w2,'+  ',mxy)
-
-      do i=1,mxy
-         ua(i,1,1,1) = ua(i,1,1,1) / w1(i,1,1,1)   ! Normalize
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_average_transpose(u,ua) ! distribute ua to each z-plane
-
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real u(lx1,ly1,lz1,nelv),ua(lx1,ly1,nelx,nely)
-
-      integer e,eg,ex,ey,ez
-
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do j=1,ly1
-         do i=1,lx1
-            do k=1,lz1
-               u(i,j,k,e) = ua(i,j,ex,ey)
-            enddo
-         enddo
-         enddo
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine no_z_profile(u)
-
-c     Subtract the z_profile from u for a tensor-product array of elements
-
-c     Assumes you have nelx*nely*nelz elements, in the same order,
-c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
-
-
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'         ! nelx,nely,nelz
-
-      real u(1)
-
-      parameter (lyavg = ly1*lely)
-      common /scravg/ ua(lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-      common /scrmg/  ub(lx1*ly1*lz1*lelt)
-
-      call z_profile          (ua,u,w1,w2)
-      call z_profile_transpose(ub,ua) ! distribute ua to each z-plane
-
-      n = lx1*ly1*lz1*nelv
-      call sub2(u,ub,n)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_profile(ua,u,w1,w2)
-c
-c     Compute the z profile of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lz1,lelz),w2(lz1,lelz)
-      integer e,eg,ex,ey,ez
-
-      mz = lz1*nelz
-      call rzero(ua,mz)
-      call rzero(w1,mz)
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do i=1,lx1*ly1
-            ua(k,ez) = ua(k,ez) + area(i,1,5,e)*u(i,1,k,e)
-            w1(k,ez) = w1(k,ez) + area(i,1,5,e)
-         enddo
-         enddo
-
-      enddo
-
-      call gop(ua,w2,'+  ',mz)
-      call gop(w1,w2,'+  ',mz)
-
-      do i=1,mz
-         ua(i,1) = ua(i,1) / w1(i,1)   ! Normalize
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine z_profile_transpose(u,ua) ! distribute ua to each z-plane
-
-      include 'SIZE'
-      include 'PARALLEL'
-      include 'ZPER'
-
-      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
-      integer e,eg,ex,ey,ez
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do i=1,lx1*ly1
-            u(i,1,k,e) = ua(k,ez)
-         enddo
-         enddo
-
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine no_y_profile(u)
-
-c     Subtract the y_profile from u for a tensor-product array of elements
-
-c     Assumes you have nelx*nely*nelz elements, in the same order,
-c     and that lelx,lely,lelz are defined to be >= nelx,nely,nelz
-
-
-      include 'SIZE'
-      include 'TOTAL'
-      include 'ZPER'         ! nelx,nely,nelz
-
-      real u(1)
-
-      parameter (lyavg = ly1*lely)
-      common /scravg/ ua(lyavg)
-     $              , w1(lyavg)
-     $              , w2(lyavg)
-      common /scrmg/  ub(lx1*ly1*lz1*lelt)
-
-      call y_profile          (ua,u,w1,w2)
-      call y_profile_transpose(ub,ua) ! distribute ua to each y-plane
-
-      n = lx1*ly1*lz1*nelv
-      call sub2(u,ub,n)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_profile(ua,u,w1,w2)
-c
-c     Compute the z profile of quantity u() - assumes global tens.prod.
-c
-      include 'SIZE'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'WZ'
-      include 'ZPER'
-
-      real ua(lz1,lelz),u (lx1,ly1,lz1,nelv)
-     $    ,w1(lz1,lelz),w2(lz1,lelz)
-      integer e,eg,ex,ey,ez
-
-      my = ly1*nely
-      call rzero(ua,my)
-      call rzero(w1,my)
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do j=1,ly1
-         do i=1,lx1
-            ua(j,ey) = ua(j,ey) + area(i,k,1,e)*u(i,j,k,e)
-            w1(j,ey) = w1(j,ey) + area(i,k,1,e)
-         enddo
-         enddo
-         enddo
-
-      enddo
-
-      call gop(ua,w2,'+  ',my)
-      call gop(w1,w2,'+  ',my)
-
-      do i=1,my
-         ua(i,1) = ua(i,1) / w1(i,1)   ! Normalize
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine y_profile_transpose(u,ua) ! distribute ua to each z-plane
-
-      include 'SIZE'
-      include 'PARALLEL'
-      include 'ZPER'
-
-      real u(lx1,ly1,lz1,nelv),ua(lz1,lelz)
-      integer e,eg,ex,ey,ez
-
-      do e=1,nelt
-
-         eg = lglel(e)
-         call get_exyz(ex,ey,ez,eg,nelx,nely,nelz)
-
-         do k=1,lz1
-         do j=1,ly1
-         do i=1,lx1
-            u(i,j,k,e) = ua(j,ey)
-         enddo
-         enddo
-         enddo
-
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine build_filter(f,diag,nx)
       include 'SIZE'
 
@@ -4337,7 +3057,7 @@ c     will not.
          call fgslib_gs_op(gsh_fld(ifld),d,1,3,0) ! min over all elements
          nchange = iglsum(nchange,1)
          dmax = glmax(dmax,1)
-         if (nio.eq.0) write(6,1) ipass,nchange,dmax,b
+         if (nio.eq.0.and.loglevel.gt.2) write(6,1) ipass,nchange,dmax,b
     1    format(i9,i12,1pe12.4,' max distance b: ',a3)
          if (nchange.eq.0) goto 1000
       enddo
@@ -4693,3 +3413,39 @@ c     enddo
       return
       end
 c-----------------------------------------------------------------------
+      subroutine planar_avg(ua,u,hndl)
+c
+c     Examples:
+c
+c     ! average field in z and then in x 
+c     idir = 3 ! z
+c     call gtpp_gs_setup(igs_z,nelx*nely,1,nelz,idir)
+c     call planar_avg(uavg_z,u,igs_z)
+c     idir = 1 ! x
+c     call gtpp_gs_setup(igs_x,nelx,nely,nelz,idir)
+c     call planar_avg(uavg_xz,uavg,igs_z)
+c    
+c     Note, mesh has to be extruded in idir (tensor product)
+c 
+      include 'SIZE'
+      include 'TOTAL'
+
+      real ua(*)
+      real u (*)
+
+      common /scrcg/ wrk(lx1*ly1*lz1*lelv)
+
+      n = nx1*ny1*nz1*nelv
+
+      call copy(wrk,bm1,n)              ! Set the averaging weights
+      call fgslib_gs_op(hndl,wrk,1,1,0) ! Sum weights
+      call invcol1(wrk,n)
+
+      do i=1,n
+         ua(i) = bm1(i,1,1,1)*u(i)*wrk(i)
+      enddo
+
+      call fgslib_gs_op(hndl,ua,1,1,0) ! Sum weighted values
+
+      return
+      end

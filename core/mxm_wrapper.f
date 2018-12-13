@@ -11,6 +11,7 @@ c
       include 'TOTAL'
 c
       integer*8 tt
+      parameter(tt = 32) 
 
 #ifdef TIMER2
       if (isclld.eq.0) then
@@ -29,22 +30,21 @@ c
 
 #ifdef BGQ
       if (n2 .eq. 8 .and. mod(n1,4) .eq. 0 
-c        .and. MOD(LOC(a),tt).eq.0 & 
-c        .and. MOD(LOC(b),tt).eq.0 & 
-c        .and. MOD(LOC(c),tt).eq.0 & 
-     &   ) then
+     $  .and. MOD(LOC(a),tt).eq.0 
+     $  .and. MOD(LOC(b),tt).eq.0 
+     $  .and. MOD(LOC(c),tt).eq.0 
+     $   ) then
         call mxm_bgq_8(a, n1, b, n2, c, n3)  
         goto 111
       endif
       if (n2 .eq. 16 .and. mod(n1,4) .eq. 0 
-c        .and. MOD(LOC(a),tt).eq.0 & 
-c        .and. MOD(LOC(b),tt).eq.0 & 
-c        .and. MOD(LOC(c),tt).eq.0 & 
-     &    ) then
+     $  .and. MOD(LOC(a),tt).eq.0
+     $  .and. MOD(LOC(b),tt).eq.0
+     $  .and. MOD(LOC(c),tt).eq.0
+     $    ) then
         call mxm_bgq_16(a, n1, b, n2, c, n3)  
         goto 111
       endif
-      tt = 32
       if (n2 .eq. 10 .and. mod(n1,4) .eq. 0 .and. mod(n3,2) .eq. 0 
      &   .and. MOD(LOC(a),tt).eq.0 
      &   .and. MOD(LOC(b),tt).eq.0  

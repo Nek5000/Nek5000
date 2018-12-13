@@ -602,7 +602,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     domain, lname
       include "visitfortransimV2interface.inc"
-      visitgetmaterial = VISIT_ERROR
+      visitgetmaterial = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -655,8 +655,8 @@ c     // Also need to get local domain index
           elseif(visitstrcmp("s", 1, name, 1).eq.0) then
 c             // Handle the user define variables.
               read( name(2:lname), '(i10)' ) k
-              k = k + 1
               if(IFPSCO(k)) then
+                  k = k + 1
                   err = visitvardatasetd(h, VISIT_OWNER_SIM, 1, nvals,
      .                                   T(1,1,1,domain,k))
               endif
@@ -675,7 +675,7 @@ c---------------------------------------------------------------------
       character*8 name
       integer     handle, lname
       include "visitfortransimV2interface.inc"
-      visitgetcurve = VISIT_ERROR
+      visitgetcurve = VISIT_INVALID_HANDLE
       end
 
 c---------------------------------------------------------------------
@@ -744,5 +744,5 @@ c---------------------------------------------------------------------
       character*8 name
       integer     domain, lname
       include "visitfortransimV2interface.inc"
-      visitgetmixedvariable = VISIT_ERROR
+      visitgetmixedvariable = VISIT_INVALID_HANDLE
       end

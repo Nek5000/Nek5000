@@ -747,19 +747,6 @@ C
       common /scruz/ prt  (lx1,ly1,lz1,lelt)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-C
-C     Set up parameters for mesh solver
-C
-c     return
-c     if (istep.gt.1) then
-c        ifldx = ifield
-c        ifield = 1
-c        call incomprn (wx,wy,wz,prt) ! project U onto div-free space
-c        ifield = ifldx
-c        return
-c     endif
-c
-c     call quickmv
 
       if (ifusermv) return  ! Compute wx,wy,wz in userchk.
 c
