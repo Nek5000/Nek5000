@@ -76,7 +76,7 @@ C        first, compute pressure
          napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult
-     $                        ,imesh,tolspl,nmxp,1
+     $                        ,imesh,tolspl,nmxh,1
      $                        ,approxp,napproxp,binvm1)
          call add2    (pr,dpr,ntot1)
          call ortho   (pr)
@@ -84,9 +84,10 @@ C        first, compute pressure
          tpres=tpres+(dnekclock()-etime1)
 
 C        Compute velocity
-         call cresvsp (res1,res2,res3,h1,h2)
-         call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
-         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+         call bcneutr ! XXXXXX change for stress formulation and Pn-Pn
+         call cresvsp_weak (res1,res2,res3,h1,h2)
+         call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call opadd2       (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
       endif
@@ -158,8 +159,8 @@ c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
          nij = 3
          if (if3d.or.ifaxis) nij=6
 
-         call comp_sij   (sij,nij,vx_e,vy_e,vz_e,
-     &                    ur,us,ut,vr,vs,vt,wr,ws,wt)
+         call comp_sij(sij,nij,vx_e,vy_e,vz_e,
+     &                 ur,us,ut,vr,vs,vt,wr,ws,wt)
          call col_mu_sij (w1,w2,w3,ta1,ta2,ta3,sij,nij)
 
          call opcolv   (ta1,ta2,ta3,QTL)
@@ -176,7 +177,8 @@ c     add old pressure term because we solve for delta p
       call invers2 (ta1,vtrans,ntot1)
       call rzero   (ta2,ntot1)
 
-      call bcdirpr(pr)
+      call bcdirpr (pr)
+c      call bcdirsc (pr)
 c     call outpost(vx,vy,vz,pr,t,'   ')
 c     call exitti ('exit in cresps$',ifield)
 
@@ -196,6 +198,7 @@ c     add explicit (NONLINEAR) terms
          ta2(i,1) = ta2(i,1)*binvm1(i,1,1,1)
          ta3(i,1) = ta3(i,1)*binvm1(i,1,1,1)
       enddo
+
       if (if3d) then
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
@@ -206,6 +209,7 @@ c     add explicit (NONLINEAR) terms
       else
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
+
          do i=1,n
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
@@ -224,7 +228,7 @@ C     surface terms
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
-     $         cb.eq.'MV '.or.cb.eq.'mv ') then
+     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'shl') then
                CALL FACCL3
      $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
@@ -290,7 +294,7 @@ C     Compute the residual for the velocity
       if (ifstrs) scale =  2./3.
 
       call col3    (ta4,vdiff,qtl,ntot)
-      call add2s1  (ta4,pr,scale,ntot)    
+      call add2s1  (ta4,pr,scale,ntot)
       call opgrad  (ta1,ta2,ta3,TA4)
       if(IFAXIS) then
          CALL COL2 (TA2, OMASK,NTOT)
@@ -299,7 +303,67 @@ C     Compute the residual for the velocity
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
-C
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine cresvsp_weak (resv1,resv2,resv3,h1,h2)
+
+C     Compute the residual for the velocity
+
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      real resv1(lx1,ly1,lz1,lelv)
+     $   , resv2(lx1,ly1,lz1,lelv)
+     $   , resv3(lx1,ly1,lz1,lelv)
+     $   , h1   (lx1,ly1,lz1,lelv)
+     $   , h2   (lx1,ly1,lz1,lelv)
+
+      COMMON /SCRUZ/ TA1   (LX1,LY1,LZ1,LELV)
+     $ ,             TA2   (LX1,LY1,LZ1,LELV)
+     $ ,             TA3   (LX1,LY1,LZ1,LELV)
+     $ ,             TA4   (LX1,LY1,LZ1,LELV)
+      COMMON /SCRMG/ wa1   (LX1*LY1*LZ1,LELV)
+     $ ,             wa2   (LX1*LY1*LZ1,LELV)
+     $ ,             wa3   (LX1*LY1*LZ1,LELV)
+
+      NTOT = lx1*ly1*lz1*NELV
+      INTYPE = -1
+
+      CALL OPRZERO (RESV1,RESV2,RESV3)
+      CALL OPRZERO (wa1  ,wa2  ,wa3  )
+      CALL OPRZERO (ta1  ,ta2  ,ta3  )
+
+      CALL SETHLM  (H1,H2,INTYPE)
+
+      CALL OPHX    (RESV1,RESV2,RESV3,VX,VY,VZ,H1,H2)
+      CALL OPCHSGN (RESV1,RESV2,RESV3)
+
+      scale = -1./3.
+      if (ifstrs) scale =  2./3.
+
+      call col3    (ta4,vdiff,qtl,ntot)
+      call cmult   (ta4,scale,ntot)
+      call opgrad  (ta1,ta2,ta3,TA4)
+
+      call cdtp    (wa1,pr ,rxm1,sxm1,txm1,1)
+      call cdtp    (wa2,pr ,rym1,sym1,tym1,1)
+      if(if3d) call cdtp    (wa3,pr ,rzm1,szm1,tzm1,1)
+
+      call sub2    (ta1,wa1,ntot)
+      call sub2    (ta2,wa2,ntot)
+      if(if3d) call sub2    (ta3,wa3,ntot)
+
+      if(IFAXIS) then
+         CALL COL2 (TA2, OMASK,NTOT)
+         CALL COL2 (TA3, OMASK,NTOT)
+      endif
+c
+      call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
+      call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
+
       return
       end
 
@@ -629,70 +693,4 @@ c
 
       return
       end
-c-----------------------------------------------------------------------
-      SUBROUTINE BCDIRPR(S)
-C
-C     Apply Dirichlet boundary conditions to surface of Pressure.
-C     Use IFIELD=1.
-C
-      INCLUDE 'SIZE'
-      INCLUDE 'TSTEP'
-      INCLUDE 'INPUT'
-      INCLUDE 'SOLN'
-      INCLUDE 'TOPOL'
-      INCLUDE 'CTIMER'
-C
-      DIMENSION S(LX1,LY1,LZ1,LELT)
-      COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
-     $             , TMA(LX1,LY1,LZ1,LELT)
-     $             , SMU(LX1,LY1,LZ1,LELT)
-      common  /nekcb/ cb
-      CHARACTER CB*3
-
-      if (icalld.eq.0) then
-         tusbc=0.0
-         nusbc=0
-         icalld=icalld+1
-      endif
-      nusbc=nusbc+1
-      etime1=dnekclock()
-C
-      IFLD   = 1
-      NFACES = 2*ldim
-      NXYZ   = lx1*ly1*lz1
-      NEL    = NELFLD(IFIELD)
-      NTOT   = NXYZ*NEL
-      NFLDT  = NFIELD - 1
-C
-      CALL RZERO(TMP,NTOT)
-C
-C     pressure boundary condition
-C
-      DO 2100 ISWEEP=1,2
-C
-         DO 2010 IE=1,NEL
-         DO 2010 IFACE=1,NFACES
-            CB=CBC(IFACE,IE,IFIELD)
-            BC1=BC(1,IFACE,IE,IFIELD)
-            IF (cb.EQ.'O  ' .or. cb.eq.'ON ' .or.
-     $          cb.eq.'o  ' .or. cb.eq.'on ') 
-     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,lx1,ly1,lz1)
- 2010    CONTINUE
-C
-C        Take care of Neumann-Dirichlet shared edges...
-C
-         IF (ISWEEP.EQ.1) CALL DSOP(TMP,'MXA',lx1,ly1,lz1)
-         IF (ISWEEP.EQ.2) CALL DSOP(TMP,'MNA',lx1,ly1,lz1)
- 2100 CONTINUE
-C
-C     Copy temporary array to temperature array.
-C
-      CALL COL2(S,PMASK,NTOT)
-      CALL ADD2(S,TMP,NTOT)
-
-      tusbc=tusbc+(dnekclock()-etime1)
-
-      RETURN
-      END
-C
 c-----------------------------------------------------------------------

@@ -14,7 +14,7 @@ C
       RETURN
       END
       SUBROUTINE SETAXW2 (IFAXWG)
-C
+C-----------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'WZ'
 C
@@ -28,6 +28,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE STNRINV
 C
 C     Calculate 2nd and 3rd strain-rate invariants
@@ -74,6 +75,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE OPDOT (DP,A1,A2,A3,B1,B2,B3,N)
 C
       INCLUDE 'SIZE'
@@ -94,6 +96,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE OPADDS (A1,A2,A3,B1,B2,B3,CONST,N,ISC)
 C
       INCLUDE 'SIZE'
@@ -117,6 +120,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FACEXS (A,B,IFACE1,IOP)
 C
 C     IOP = 0
@@ -161,6 +165,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FACEXV (A1,A2,A3,B1,B2,B3,IFACE1,IOP)
 C
 C     IOP = 0
@@ -210,6 +215,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FACSUB2 (A1,A2,A3,B1,B2,B3,IFACE1)
 C
 C     Subtract B1,B2,B3 from A1,A2,A3 on surface IFACE1 of element IE.
@@ -245,6 +251,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE GAMMASF (H1,H2)
 C-----------------------------------------------------------------------
 C
@@ -329,6 +336,7 @@ C
       call exitt
 C
       END
+C-----------------------------------------------------------------------
       SUBROUTINE CMULT2 (A,B,CONST,N)
       DIMENSION A(1),B(1)
       DO 100 I=1,N
@@ -336,6 +344,7 @@ C
  100  CONTINUE
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE ADD3S (A,B,C,CONST,N)
       DIMENSION A(1),B(1),C(1)
       DO 100 I=1,N
@@ -343,6 +352,7 @@ C
   100 CONTINUE
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE EMERXIT
 C
       INCLUDE 'SIZE'
@@ -377,6 +387,7 @@ c
       call exitt
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FACCVS (A1,A2,A3,B,IFACE1)
 C
 C     Collocate scalar B with vector A, components A1,A2,A3,
@@ -423,6 +434,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE STX1SF
 C------------------------------------------------------------------
 C
@@ -467,7 +479,7 @@ c     call exitti   ('quit in stx1sf$,',nel)
 C
       RETURN
       END
-C
+C-----------------------------------------------------------------------
       SUBROUTINE SOLVEL
 C
       INCLUDE 'SIZE'
@@ -485,6 +497,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE VSOLN (UX,UY,UZ,X,Y,Z,PI)
 C                                                                               
 C       URR=(1.-0.75/SQRT(X**2+Y**2)+0.0625/(SQRT(X**2+Y**2)**3))*(X/
@@ -502,6 +515,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SOLPRES
 C
       INCLUDE 'SIZE'
@@ -519,6 +533,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE PRSOLN (P,X,Y,Z,PI)
 C                                                                               
 C      R  = SQRT( X**2 + Y**2 )
@@ -531,6 +546,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE PRINTEL (TA,A,IEL)
 C
       INCLUDE 'SIZE'
@@ -548,6 +564,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE PRINTV (TA,A,NEL)
 C-----------------------------------------------------------------------
 C
@@ -571,6 +588,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE OUTF1 (X,TXT,IEL,IFC)
       INCLUDE 'SIZE'
       DIMENSION X(LX1,LZ1,6,LELT)
@@ -598,6 +616,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE OUTM1 (X,TXT,NP,IEL,IP)
       INCLUDE 'SIZE'
       DIMENSION X(LX1,LY1,LZ1,LELT)
@@ -625,6 +644,7 @@ c 105 FORMAT(1p8e10.3)
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE OUTM2 (X,TXT,NP,IEL,IP)
       INCLUDE 'SIZE'
       DIMENSION X(LX2,LY2,LZ2,LELV)
@@ -651,6 +671,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE STSMASK (C1MASK,C2MASK,C3MASK)
 C
       INCLUDE 'SIZE'
@@ -686,6 +707,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE UPDMSYS (IFLD)
 C
       INCLUDE 'SIZE'
@@ -702,6 +724,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETHMSK (HVMASK,HFMASK,IFLD,NEL)
 C
       INCLUDE 'SIZE'
@@ -801,6 +824,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SKIPCNR (NEL)
 C
       INCLUDE 'SIZE'
@@ -848,9 +872,11 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETMASK (C1MASK,C2MASK,C3MASK,HVMASK,NEL) 
 C 
       INCLUDE 'SIZE'
+      INCLUDE 'TOTAL' !XXXXX
 C
       DIMENSION HVMASK (LX1,LY1,LZ1,1)
      $        , C1MASK(LX1,LY1,LZ1,1)
@@ -877,6 +903,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETMLOG (HVMASK,HFMASK,IFLD,NEL)
 C
       INCLUDE 'SIZE'
@@ -976,6 +1003,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETCSYS (HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1007,6 +1035,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE COMAVN2 (HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1071,6 +1100,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE COMAVN3 (HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1215,6 +1245,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FIXWMSK (W2MASK,W3MASK,HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1235,6 +1266,7 @@ C
 C 
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FXWMS2 (W2MASK,HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1282,6 +1314,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FXWMS3 (W2MASK,W3MASK,HVMASK,HFMASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1364,6 +1397,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETCDAT 
 C
       INCLUDE 'SIZE'
@@ -1642,6 +1676,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE EDGINDF (LF1,LF2,LFSKIP,ISD,IFCN)
 C
       INCLUDE 'SIZE'
@@ -1667,6 +1702,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE EDGINDV (LV1,LV2,LVSKIP,ISD)
 C
       INCLUDE 'SIZE'
@@ -1701,6 +1737,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE SETCDOF
 C
       INCLUDE 'SIZE'
@@ -1715,6 +1752,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE AMASK (VB1,VB2,VB3,V1,V2,V3,NEL)
 C
       INCLUDE 'SIZE'
@@ -1758,6 +1796,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE RMASK (R1,R2,R3,NEL)
 C
       INCLUDE 'SIZE'
@@ -1792,6 +1831,7 @@ c     call exitti   ('quit in rmask$,',nel)
 
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE QMASK (R1,R2,R3,R1MASK,R2MASK,R3MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1848,6 +1888,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FCMSK2 (R1,R2,S1,S2,R1MASK,R2MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1883,6 +1924,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE FCMSK3 (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1932,6 +1974,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE EGMASK (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -1980,6 +2023,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE CRMSK2 (R1,R2,S1,S2,R1MASK,R2MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -2025,6 +2069,7 @@ C
 C
       RETURN
       END
+C-----------------------------------------------------------------------
       SUBROUTINE CRMSK3 (R1,R2,R3,S1,S2,S3,R1MASK,R2MASK,R3MASK,NEL)
 C
       INCLUDE 'SIZE'
@@ -2084,7 +2129,7 @@ C
 C
       RETURN
       END
-
+C-----------------------------------------------------------------------
       subroutine getSnormal(sn,ix,iy,iz,iside,e)
 
 c     calculate surface normal

@@ -280,7 +280,7 @@ C
 
       ieg  = lglel(iel)
 
-      if (ifstrs .and. .not.ifsplit) return
+      if (ifstrs) return !TEST AT 11/16/2018
 
 C     Laplacian formulation only
       IF  (CB.EQ.'SH ' .OR.  CB.EQ.'sh ' .OR.
@@ -291,8 +291,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
-c      IF ( .NOT.IFALGN .AND.
-c     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+       IF ( .NOT.IFALGN .AND.
+      $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
 
       RETURN
 
@@ -361,12 +361,12 @@ C
          do 50 iel=1,nelt
          do 50 iface=1,nfaces
             cb=cbc(iface,iel,ifield)
-            if ((cb.eq.'o  ' .and. IFSPLIT) .or.
-     $          (cb.eq.'on ' .and. IFSPLIT)) then
-               if (nid.eq.0) write(6,*)
-     $              "Error: BC 'o' and 'on' not supported for PN-PN."
-               call exitt
-            endif
+c           if ((cb.eq.'o  ' .and. IFSPLIT) .or. !'o' and 'on' now supported for PN-PN AT/DRS 12/13/2018
+c    $          (cb.eq.'on ' .and. IFSPLIT)) then
+c              if (nid.eq.0) write(6,*)
+c    $              "Error: BC 'o' and 'on' not supported for PN-PN."
+c              call exitt
+c           endif
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
      $         call facev(pmask,iel,iface,0.0,lx1,ly1,lz1)
@@ -382,8 +382,6 @@ C
 C
 C        Velocity masks
 C
-c        write(6,*) 'MASK ifstrs',ifstrs,ifield
-c        call exitt
          IF (IFSTRS) THEN
            CALL STSMASK (V1MASK,V2MASK,V3MASK)
          ELSE
@@ -407,7 +405,7 @@ C
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
-         ENDIF
+           ENDIF
 C
 C        Mixed-Dirichlet-Neumann boundary conditions
 C
@@ -438,7 +436,6 @@ C
 
          CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
          call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
-
 
        ENDIF
 C
@@ -698,6 +695,71 @@ C
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
 
+
+      tusbc=tusbc+(dnekclock()-etime1)
+
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      SUBROUTINE BCDIRPR(S)
+C
+C     Apply Dirichlet boundary conditions to surface of Pressure.
+C     Use IFIELD=1.
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'TSTEP'
+      INCLUDE 'INPUT'
+      INCLUDE 'SOLN'
+      INCLUDE 'TOPOL'
+      INCLUDE 'CTIMER'
+C
+      DIMENSION S(LX1,LY1,LZ1,LELT)
+      COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
+     $             , TMA(LX1,LY1,LZ1,LELT)
+     $             , SMU(LX1,LY1,LZ1,LELT)
+      common  /nekcb/ cb
+      CHARACTER CB*3
+
+      if (icalld.eq.0) then
+         tusbc=0.0
+         nusbc=0
+         icalld=icalld+1
+      endif
+      nusbc=nusbc+1
+      etime1=dnekclock()
+C
+      IFLD   = 1
+      NFACES = 2*ldim
+      NXYZ   = lx1*ly1*lz1
+      NEL    = NELFLD(IFIELD)
+      NTOT   = NXYZ*NEL
+      NFLDT  = NFIELD - 1
+C
+      CALL RZERO(TMP,NTOT)
+C
+C     pressure boundary condition
+C
+      DO 2100 ISWEEP=1,2
+C
+         DO 2010 IE=1,NEL
+         DO 2010 IFACE=1,NFACES
+            CB=CBC(IFACE,IE,IFIELD)
+            BC1=BC(1,IFACE,IE,IFIELD)
+            IF (cb.EQ.'O  ' .or. cb.eq.'ON ' .or.
+     $          cb.eq.'o  ' .or. cb.eq.'on ')
+     $          CALL FACEIS (CB,TMP(1,1,1,IE),IE,IFACE,lx1,ly1,lz1)
+ 2010    CONTINUE
+C
+C        Take care of Neumann-Dirichlet shared edges...
+C
+         IF (ISWEEP.EQ.1) CALL DSOP(TMP,'MXA',lx1,ly1,lz1)
+         IF (ISWEEP.EQ.2) CALL DSOP(TMP,'MNA',lx1,ly1,lz1)
+ 2100 CONTINUE
+C
+C     Copy temporary array to temperature array.
+C
+      CALL COL2(S,PMASK,NTOT)
+      CALL ADD2(S,TMP,NTOT)
 
       tusbc=tusbc+(dnekclock()-etime1)
 
