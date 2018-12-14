@@ -278,9 +278,9 @@ C
       CHARACTER CB*3
       LOGICAL IFALGN
 
-      ieg  = lglel(iel)
+      if (ifstrs) return 
 
-      if (ifstrs .and. .not.ifsplit) return
+      ieg  = lglel(iel)
 
 C     Laplacian formulation only
       IF  (CB.EQ.'SH ' .OR.  CB.EQ.'sh ' .OR.
@@ -291,8 +291,8 @@ C     Laplacian formulation only
      $     CB.EQ.'MS ' .OR.  CB.EQ.'ms ' .OR.
      $     CB.EQ.'MSI' .OR.  CB.EQ.'msi'    )                GOTO 9001
 
-c      IF ( .NOT.IFALGN .AND.
-c     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
+       IF ( .NOT.IFALGN .AND.
+     $    (CB.EQ.'ON ' .OR.  CB.EQ.'on ' .OR. CB.EQ.'SYM') ) GOTO 9010
 
       RETURN
 
@@ -361,12 +361,6 @@ C
          do 50 iel=1,nelt
          do 50 iface=1,nfaces
             cb=cbc(iface,iel,ifield)
-            if ((cb.eq.'o  ' .and. IFSPLIT) .or.
-     $          (cb.eq.'on ' .and. IFSPLIT)) then
-               if (nid.eq.0) write(6,*)
-     $              "Error: BC 'o' and 'on' not supported for PN-PN."
-               call exitt
-            endif
             if (cb.eq.'O  ' .or. cb.eq.'ON ' .or.
      $          cb.eq.'o  ' .or. cb.eq.'on ')
      $         call facev(pmask,iel,iface,0.0,lx1,ly1,lz1)
@@ -382,8 +376,6 @@ C
 C
 C        Velocity masks
 C
-c        write(6,*) 'MASK ifstrs',ifstrs,ifield
-c        call exitt
          IF (IFSTRS) THEN
            CALL STSMASK (V1MASK,V2MASK,V3MASK)
          ELSE
@@ -407,7 +399,7 @@ C
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              CALL FACEV (V3MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
              GOTO 100
-         ENDIF
+           ENDIF
 C
 C        Mixed-Dirichlet-Neumann boundary conditions
 C
@@ -438,7 +430,6 @@ C
 
          CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
          call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
-
 
        ENDIF
 C
