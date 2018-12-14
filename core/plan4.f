@@ -54,16 +54,12 @@ c
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
 
-         ! split viscosity into explicit/implicit part
-         if (ifexplvis) call split_vis
-
          if (igeom.eq.2) call lagvel
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
-C        first, compute pressure
-
+         ! compute pressure
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
@@ -83,13 +79,16 @@ C        first, compute pressure
 
          tpres=tpres+(dnekclock()-etime1)
 
-C        Compute velocity
-         call bcneutr
-         call cresvsp_weak (res1,res2,res3,h1,h2)
+         ! compute velocity
+         if(ifstrs .and. .not.ifaxis) then
+            call bcneutr
+            call cresvsp_weak(res1,res2,res3,h1,h2)
+         else
+            call cresvsp     (res1,res2,res3,h1,h2)
+         endif
          call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
          call opadd2       (vx,vy,vz,dv1,dv2,dv3)
 
-         if (ifexplvis) call redo_split_vis
       endif
 
       return
