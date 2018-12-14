@@ -86,7 +86,7 @@ C        first, compute pressure
 C        Compute velocity
          call bcneutr
          call cresvsp_weak (res1,res2,res3,h1,h2)
-         call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxh)
+         call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
          call opadd2       (vx,vy,vz,dv1,dv2,dv3)
 
          if (ifexplvis) call redo_split_vis
