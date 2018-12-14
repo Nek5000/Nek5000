@@ -673,12 +673,6 @@ c 939 format(' d5',4f9.5,4f10.6)
 C
       endif
 C
-#ifdef LPM
-      rdt_part = dt 
-      call lpm_set_dt(rdt_part)
-      dt = min(dt,rdt_part)
-#endif
-C
       return
       end
 C

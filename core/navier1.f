@@ -1501,12 +1501,6 @@ C
          DO 100 I=1,lx1
             if (optlevel.le.2) CALL NEKASGN (I,J,K,IEL)
             CALL USERF   (I,J,K,IELG)
-#ifdef LPM
-            call lpm_userf(I,J,K,IEL,rdum1,rdum2,rdum3,rdum4)
-            FFX = FFX + rdum1
-            FFY = FFY + rdum2
-            FFZ = FFZ + rdum3
-#endif
             F1(I,J,K,IEL) = FFX
             F2(I,J,K,IEL) = FFY
             F3(I,J,K,IEL) = FFZ
