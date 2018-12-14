@@ -12,7 +12,7 @@ c     "Stability analysis of interface temporal discretization in grid
 c      overlapping methods," Y. Peet, P.F. Fischer, SIAM J. Numer. Anal.
 c      50 (6) (2012) 3375–3401.
 c-----------------------------------------------------------------------
-      subroutine init_neknek_par
+      subroutine setup_neknek_wts
 
       include 'SIZE'
       include 'TOTAL'
@@ -25,7 +25,7 @@ c     Initialize unity partition function to 1
       return
       end
 c-------------------------------------------------------------
-      subroutine multimesh_create
+      subroutine setup_neknek
 
       include 'SIZE'
       include 'TOTAL'
@@ -41,9 +41,6 @@ c-------------------------------------------------------------
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
       call neknekgsync()
-c     Do some sanity checks - just once at setup
-c     Set interpolation flag: points with bc = 'int' get intflag=1. 
-c     Boundary conditions are changed back to 'v' or 't'.
 
       if (nsessmax.eq.1) 
      $  call exitti('set nsessmax > 1 in SIZE!$',nsessmax)
@@ -746,12 +743,12 @@ c     then recompute base flow solution corresponding to unit forcing:
       if (ifcomp) call compute_vol_soln_ms(vxc,vyc,vzc,prc)
 
       if (icvflow.eq.1)
-     $       current_flow=rs_glsc2(vx,bm1ms,ntot1)/domain_length  ! for X
+     $       current_flow=glsc2_ms(vx,bm1ms,ntot1)/domain_length  ! for X
       if (icvflow.eq.2)
-     $       current_flow=rs_glsc2(vy,bm1ms,ntot1)/domain_length  ! for Y
+     $       current_flow=glsc2_ms(vy,bm1ms,ntot1)/domain_length  ! for Y
       if (icvflow.eq.3)
-     $       current_flow=rs_glsc2(vz,bm1ms,ntot1)/domain_length  ! for Z
-      volvm1ms = rs_glsum(bm1ms,ntot1)
+     $       current_flow=glsc2_ms(vz,bm1ms,ntot1)/domain_length  ! for Z
+      volvm1ms = glsum_ms(bm1ms,ntot1)
 
       if (iavflow.eq.1) then
          xsec = volvm1ms / domain_length
@@ -808,12 +805,12 @@ c
       ntot1 = lx1*ly1*lz1*nelv
       if (icalld.eq.0) then
          icalld=icalld+1
-         xlmin = rs_glmin(xm1,ntot1)
-         xlmax = rs_glmax(xm1,ntot1)
-         ylmin = rs_glmin(ym1,ntot1)          !  for Y!
-         ylmax = rs_glmax(ym1,ntot1)
-         zlmin = rs_glmin(zm1,ntot1)          !  for Z!
-         zlmax = rs_glmax(zm1,ntot1)
+         xlmin = glmin_ms(xm1,ntot1)
+         xlmax = glmax_ms(xm1,ntot1)
+         ylmin = glmin_ms(ym1,ntot1)          !  for Y!
+         ylmax = glmax_ms(ym1,ntot1)
+         zlmin = glmin_ms(zm1,ntot1)          !  for Z!
+         zlmax = glmax_ms(zm1,ntot1)
 c
          if (icvflow.eq.1) domain_length = xlmax - xlmin
          if (icvflow.eq.2) domain_length = ylmax - ylmin
@@ -830,11 +827,11 @@ c
 c     Compute base flow rate
 c 
       if (icvflow.eq.1)
-     $       base_flow = rs_glsc2(vxc,bm1ms,ntot1)/domain_length
+     $       base_flow = glsc2_ms(vxc,bm1ms,ntot1)/domain_length
       if (icvflow.eq.2)
-     $       base_flow = rs_glsc2(vyc,bm1ms,ntot1)/domain_length
+     $       base_flow = glsc2_ms(vyc,bm1ms,ntot1)/domain_length
       if (icvflow.eq.3)
-     $       base_flow = rs_glsc2(vzc,bm1ms,ntot1)/domain_length
+     $       base_flow = glsc2_ms(vzc,bm1ms,ntot1)/domain_length
 c
       if (nio.eq.0 .and. loglevel.gt.0) write(6,1) 
      $   istep,chv(icvflow),base_flow,domain_length,flow_rate
@@ -965,9 +962,9 @@ c
         call sub3(dvxc,vxcp,vxc,ntot1)
         call sub3(dvyc,vycp,vyc,ntot1)
         call sub3(dvzc,vzcp,vzc,ntot1)
-        dvxmax = rs_glamax(dvxc,ntot1)
-        dvymax = rs_glamax(dvyc,ntot1)
-        dvzmax = rs_glamax(dvzc,ntot1)
+        dvxmax = glamax_ms(dvxc,ntot1)
+        dvymax = glamax_ms(dvyc,ntot1)
+        dvzmax = glamax_ms(dvzc,ntot1)
          if (nio.eq.0)
      $      write(6,'(i2,i8,i4,1p4e13.4,a11)') idsess,istep,ictr,time,
      $      dvxmax,dvymax,dvzmax,' del-vol-vxy'
@@ -1116,99 +1113,15 @@ ccccc
         call sub3(dvxc,vxcp,vxc,n)
         call sub3(dvyc,vycp,vyc,n)
         call sub3(dvzc,vzcp,vzc,n)
-        dvxmax = rs_glamax(dvxc,n)
-        dvymax = rs_glamax(dvyc,n)
-        dvzmax = rs_glamax(dvzc,n)
+        dvxmax = glamax_ms(dvxc,n)
+        dvymax = glamax_ms(dvyc,n)
+        dvzmax = glamax_ms(dvzc,n)
         if (ifexplvis) call redo_split_vis ! restore vdiff
         if (nid.eq.0)
      $    write(6,'(i2,i8,i4,1p4e13.4,a11)') idsess,istep,ictr,time,
      $    dvxmax,dvymax,dvzmax,' del-vol-vxy'
 
       enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function rs_glmin(a,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glmin=glmin(a,n)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function rs_glamin(a,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glamin=glamin(a,n)
-      call setnekcomm(intracomm)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function rs_glmax(a,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glmax=glmax(a,n)
-      call setnekcomm(intracomm)
-
-      return
-      end
-c------------------------------------------------------------------------
-      function rs_glamax(a,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glamax=glamax(a,n)
-      call setnekcomm(intracomm)
-
-      return
-      end
-c------------------------------------------------------------------------
-      function rs_glsum(a,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glsum = glsum(a,n)
-      call setnekcomm(intracomm)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      function rs_glsc3(a,b,c,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1),b(1),c(1)
-
-      call setnekcomm(iglobalcomm)
-      rs_glsc3 = glsc3(a,b,c,n)
-      call setnekcomm(intracomm)
-
-      return
-      end
-c-----------------------------------------------------------------------
-      real function rs_glsc2(a,b,n)
-      include 'SIZE'
-      include 'PARALLEL'
-      real a(1),b(1),tmp
-
-      call setnekcomm(iglobalcomm)
-      tmp = glsc2(a,b,n)
-      rs_glsc2 = tmp
-      call setnekcomm(intracomm)
 
       return
       end

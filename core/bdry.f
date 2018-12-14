@@ -698,7 +698,7 @@ C
       CALL ADD2(V2,TMP2,NTOT)
       IF (IF3D) CALL ADD2(V3,TMP3,NTOT)
 
-      if (ifneknek) call fix_surface_flux
+      if (ifneknekc) call fix_surface_flux
 
       tusbc=tusbc+(dnekclock()-etime1)
 

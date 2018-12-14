@@ -599,6 +599,7 @@ class Eddy_Neknek_mv(NekTestCase):
             lx1='8',
             lxd='12',
             lx2='lx1-2',
+            lx1m='lx1',
             lelg='1000',
             nsessmax='2',
         )
@@ -717,8 +718,8 @@ class Eddy_Neknek_mv(NekTestCase):
         yerr_inside = self.get_value_from_log('Y err  inside', logfile=logfile, column=-7, row=-1)
         self.assertAlmostEqualDelayed(yerr_inside, target_val=6.742920E-05, delta=1E-05, label='Y err  insidemv')
 
-        yerr_global = self.get_value_from_log('Y err   global', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(yerr_global, target_val=7.705630E-05, delta=1E-05, label='Y err   global')
+        yerr_global = self.get_value_from_log('Y err     global', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_global, target_val=7.705630E-05, delta=1E-05, label='Y err     global')
 
         yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
         self.assertAlmostEqualDelayed(yerr_outside, target_val=7.705630E-05, delta=1E-05, label='Y err  outside')

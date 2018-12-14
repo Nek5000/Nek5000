@@ -96,14 +96,14 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
-      if (ifneknek) call init_neknek_par
+      if (ifneknekc) call setup_neknek_wts 
 
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
       call fix_geom
       
-      if (ifneknekc) call multimesh_create 
+      if (ifneknekc) call setup_neknek
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -279,7 +279,7 @@ c-----------------------------------------------------------------------
          do igeom=1,ngeom
 
          if (ifneknekc .and. igeom.gt.2) then
-            if (ifneknekm.and.igeom.eq.3) call multimesh_create
+            if (ifneknekm.and.igeom.eq.3) call setup_neknek
             call neknek_exchange
          endif
 
@@ -311,7 +311,7 @@ c-----------------------------------------------------------------------
          do igeom=1,ngeom
 
             if (ifneknekc .and. igeom.gt.2) then
-              if (ifneknekm.and.igeom.eq.3) call multimesh_create
+              if (ifneknekm.and.igeom.eq.3) call setup_neknek
               call neknek_exchange
             endif
 
