@@ -1,4 +1,3 @@
-
 c Maximum number of real particles on a processor
 #define LPM_LPART 50000
 
@@ -22,9 +21,7 @@ c Number of real properties for a particle
 #define LPM_R_JUY   5
 #define LPM_R_JUZ   6
 
-#define LPM_INCLUDE "../core/experimental/LPM"
-#define LPM_HEADER  "../core/experimental/lpm.h"
-#include LPM_HEADER
+#include "experimental/lpm.h"
 
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,eg)
@@ -67,30 +64,25 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
-      ! --- start diagnostics --- !
-
-      ! average all particle y-velocities
-      vel_avg = 0.0
-      do i=1,lpm_npart
-         vel_avg = vel_avg + lpm_y(LPM_JVY,i)
-      enddo
-      vel_avg = glsum(vel_avg,1)
-      nptot   = iglsum(lpm_npart,1)
-      vel_avg = vel_avg/nptot
-      
-      ! particle time scale
-      vel_error = (vel_avg + 1.0)/(-1.0)
-      vel_error = abs(vel_error)
-
-      ! write error
-      if (nid .eq. 0) then
-         if (istep .eq. nsteps) write(6,100) vel_error
+      if (istep .eq. nsteps) then
+         ! average all particle y-velocities
+         vel_avg = 0.0
+         do i=1,lpm_npart
+            vel_avg = vel_avg + lpm_y(LPM_JVY,i)
+         enddo
+         vel_avg = glsum(vel_avg,1)
+         nptot   = iglsum(lpm_npart,1)
+         vel_avg = vel_avg/nptot
+          
+         ! particle time scale
+         vel_error = (vel_avg + 1.0)/(-1.0)
+         vel_error = abs(vel_error)
+ 
+         if (nid .eq. 0) write(6,100) vel_error 
+ 100     format('lpm error: ', E14.7)
       endif
- 100  format('lpm error: ', E14.7)
-
-      ! --- finish diagnostics --- !
 
       call lpm_solve(time,lpm_y,lpm_ydot)
 
@@ -138,7 +130,7 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real rparam(lpm_nparam) 
 
@@ -154,22 +146,24 @@ c-----------------------------------------------------------------------
       rparam(10) = 0           ! periodic in z (== 0)
 
       call init_particles(lpm_y,npart)
-c     call lpm_io_vtu_read('new99999.vtu',npart)
       call lpm_init      (rparam,lpm_y,npart,time)
 
       return
       end
 !-----------------------------------------------------------------------
       subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+
+      ifflow = .false.
+
       return
       end
-!-----------------------------------------------------------------------
-! PARTICLE ROUTINES BELOW
 !-----------------------------------------------------------------------
       subroutine init_particles(y,npart)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real      y(*)
       real      ran2
@@ -202,23 +196,18 @@ c----------------------------------------------------------------------
       subroutine lpm_fun(time_,y,ydot)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real time_
       real y(*)
       real ydot(*)
 
-c setup interpolation
       call lpm_interpolate_setup
-c setup interpolation
 
-C interpolate fields
       call lpm_interpolate_fld(LPM_R_JUX  , vx_e    )
       call lpm_interpolate_fld(LPM_R_JUY  , vy_e    )
       call lpm_interpolate_fld(LPM_R_JUZ  , vz_e    )
-C interpolate fields
 
-c evaluate ydot
       do i=1,lpm_npart
          ! striding solution y vector
          j = LPM_LRS*(i-1)
@@ -249,11 +238,8 @@ c evaluate ydot
          ydot(LPM_JVY+j) = (fqsy+fby)/rmass
          if (if3d) ydot(LPM_JVZ+j) = (fqsz+fbz)/rmass
       enddo 
-c evaluate ydot
 
-c project fields
       call lpm_project
-c project fields
 
       return
       end

@@ -1,22 +1,24 @@
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_setup
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-#include "LPM"
+#     include "LPM"
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      call interp_setup(i_fp_hndl,0.0,idum,nelt)
+      nmsh = lpm_rparam(3)
+
+      call interp_setup(i_fp_hndl,0.0,nmsh,nelt)
       call fgslib_crystal_setup(i_cr_hndl,nekcomm,np)
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_findpts
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       common /intp_h/ ih_intp(2,1)
 
@@ -66,12 +68,12 @@
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_crystal
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-#include "LPM"
+#     include "LPM"
 
       logical partl    
       integer lpm_ipmap1(1,LPM_LPART)
@@ -118,11 +120,11 @@
         
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_bin_setup
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
      >                            nfacegp, nedgegp, ncornergp
@@ -444,11 +446,11 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_ghost_create
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       character*132 deathmessage
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
@@ -828,8 +830,8 @@ c----------------------------------------------------------------------
       subroutine lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
-c
+#     include "LPM"
+
       real rxnew(3), rxdrng(3)
       integer iadd(3), irett(3), ntype, ntypel(7)
 
@@ -907,9 +909,8 @@ c
       end
 c----------------------------------------------------------------------
       subroutine lpm_comm_ghost_send
-c
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       logical partl         
 
