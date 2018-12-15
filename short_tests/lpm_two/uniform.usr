@@ -275,8 +275,8 @@ C field manipulation
       ntot1  = lx1*ly1*lz1*nelv
       if (lx2 .ne. lx1) call mappr(pm1,pr,pm1a,pr_e)
       if (lx2 .eq. lx1) call copy (pm1,pr,ntot1)
-      call sumab(pr_e,pm1,prlag,ntot1,ab,nab)
-      call opgrad (dpdx,dpdy,dpdz,pr_e)
+c     call sumab(pr_e,pm1,prlag,ntot1,ab,nab)
+      call opgrad (dpdx,dpdy,dpdz,pm1)
 C field manipulation
 
 c setup interpolation
