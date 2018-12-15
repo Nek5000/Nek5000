@@ -682,6 +682,7 @@ c-----------------------------------------------------------------------
       jj(3) = 3
 
       do i=1,lpm_npart
+         isl = (i -1) * LPM_LRS + 1
          in_part(i) = 0
          do j=0,ndim-1
             jchk = jj(j+1)
@@ -691,6 +692,8 @@ c-----------------------------------------------------------------------
      >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
                    lpm_y(jchk,i) = lpm_xdrange(2,j+1) - 
      &                         abs(lpm_xdrange(1,j+1) - lpm_y(jchk,i))
+                   lpm_y1(isl+j)   = lpm_xdrange(2,j+1) +
+     &                         abs(lpm_xdrange(1,j+1) - lpm_y1(isl+j))
                   goto 1512
                 endif
             endif
@@ -700,6 +703,8 @@ c-----------------------------------------------------------------------
      >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
                    lpm_y(jchk,i) = lpm_xdrange(1,j+1) +
      &                         abs(lpm_y(jchk,i) - lpm_xdrange(2,j+1))
+                   lpm_y1(isl+j)   = lpm_xdrange(1,j+1) +
+     &                         abs(lpm_y1(isl+j) - lpm_xdrange(2,j+1))
                   goto 1512
                 endif
             endif
