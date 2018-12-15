@@ -871,8 +871,8 @@ c
       enddo
       np1 = nx+1
       if (nio.eq.0) then
-c        write(6,6) 'filt amp',(pht (k),k=1,nx*nx,np1)
-c        write(6,6) 'filt trn',(diag(k),k=1,nx*nx,np1)
+         write(6,6) 'filt amp',(pht (k),k=1,nx*nx,np1)
+         write(6,6) 'filt trn',(diag(k),k=1,nx*nx,np1)
    6     format(a8,16f7.4,6(/,8x,16f7.4))
       endif
 c
