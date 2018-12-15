@@ -1,0 +1,411 @@
+
+c Maximum number of real particles on a processor
+#define LPM_LPART 10000
+
+c Number of particle equations being solved
+#define LPM_LRS 6
+
+#define LPM_JX  1
+#define LPM_JY  2
+#define LPM_JZ  3
+#define LPM_JVX 4
+#define LPM_JVY 5
+#define LPM_JVZ 6
+
+c Number of real properties for a particle
+#define LPM_LRP 10
+
+#define LPM_R_JRHOP 1
+#define LPM_R_JDP   2
+#define LPM_R_JVOLP 3
+#define LPM_R_JUX   4
+#define LPM_R_JUY   5
+#define LPM_R_JUZ   6
+#define LPM_R_JDPDX 7
+#define LPM_R_JDPDY 8
+#define LPM_R_JDPDZ 9
+#define LPM_R_JRHO  10
+
+C Number of real properties to project
+#define LPM_LRP_PRO 4
+
+#define LPM_P_JPHIP 1
+#define LPM_P_JFFX  2
+#define LPM_P_JFFY  3
+#define LPM_P_JFFZ  4
+
+#define LPM_INCLUDE "../core/experimental/LPM"
+#define LPM_HEADER  "../core/experimental/lpm.h"
+#include LPM_HEADER
+
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      e = gllel(eg)
+
+      udiff=0.0
+      utrans=0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userqtl 
+      include 'SIZE'
+      include 'TOTAL'
+#include LPM_INCLUDE
+
+      call lpm_solve_qtl_pvol(usrdiv,lpm_pro_fld(1,1,1,1,LPM_P_JPHIP))
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+#include LPM_INCLUDE
+
+      integer e,eg
+
+      e = gllel(eg)
+
+      ffx = lpm_pro_fld(ix,iy,iz,e,LPM_P_JFFX)
+      ffy = lpm_pro_fld(ix,iy,iz,e,LPM_P_JFFY)
+      ffz = lpm_pro_fld(ix,iy,iz,e,LPM_P_JFFZ)
+      
+      rdum = 1./vtrans(ix,iy,iz,e,1)
+     >         /(1.-lpm_pro_fld(ix,iy,iz,e,LPM_P_JPHIP))
+
+      ffx = ffx*rdum
+      ffy = ffy*rdum
+      ffz = ffz*rdum
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg
+
+      qvol   = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+#include LPM_INCLUDE
+
+      real  p_lagrange(LPM_LRP_PRO)
+     >     ,p_eulerian(LPM_LRP_PRO)
+     >     ,p_error   (LPM_LRP_PRO)
+     >     ,p_error_max
+
+      ! --- start diagnostics --- !
+
+      ! lagrangian properties
+      jst = 4
+      call rzero(p_lagrange(1),LPM_LRP_PRO)
+      do j=1,LPM_LRP_PRO
+      do i=1,lpm_npart
+         p_lagrange(j) = p_lagrange(j) + lpm_cp_map(jst+j,i)
+      enddo
+         p_lagrange(j) = glsum(p_lagrange(j),1)
+      enddo
+
+      ! eulerian volume
+      ndum = lx1*ly1*lz1*nelt
+      call rzero(p_eulerian(1),LPM_LRP_PRO)
+      do j=1,LPM_LRP_PRO
+         p_eulerian(j) = glsc2(bm1,lpm_pro_fld(1,1,1,1,j),ndum)
+      enddo
+
+      ! compute error
+      p_error_max = 0.0
+      do j=1,LPM_LRP_PRO-1 ! we don't need fz in 2d
+         p_error(j) = (p_lagrange(j) - p_eulerian(j))/p_lagrange(j)
+         p_error(j) = abs(p_error(j))
+         if (p_error(j) .gt. p_error_max) p_error_max = p_error(j)
+      enddo
+
+      ! write error
+      if (nid .eq. 0) then
+         if (istep .eq. nsteps) write(6,100) p_error_max
+      endif
+ 100  format('lpm error: ', E14.7)
+
+      ! --- finish diagnostics --- !
+
+      call lpm_solve(time,lpm_y,lpm_ydot)
+
+      if(mod(istep,iostep).eq.0) then
+         call lpm_io_vtu_write('',0)
+         call outpost2(lpm_pro_fld(1,1,1,1,LPM_P_JFFX)
+     >                ,lpm_pro_fld(1,1,1,1,LPM_P_JFFY)
+     >                ,lpm_pro_fld(1,1,1,1,LPM_P_JFFZ)
+     >                ,lpm_pro_fld(1,1,1,1,LPM_P_JPHIP)
+     >                ,lpm_pro_fld(1,1,1,1,LPM_P_JPHIP),1,'ptw')
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,eg)
+      include 'SIZE'
+      include 'TSTEP'
+      include 'NEKUSE'
+      include 'INPUT'
+      include 'GEOM' 
+
+      ux = 0.0
+      uy = 0.0
+      uz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,eg, eqnum
+
+      ux = 0.
+      uy = 0.
+      uz = 0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+#include LPM_INCLUDE
+
+      real rparam(lpm_nparam) 
+
+      rparam(1)  = 1           ! use custom values
+      rparam(2)  = 1           ! time integration method
+      rparam(3)  = 2           ! polynomial order of mesh
+      rparam(4)  = 0           ! use 1 for tracers only
+      rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
+      rparam(6)  = 50.0        ! non-dimensional Gaussian filter width
+      rparam(7)  = 1E-5        ! percent decay of Gaussian filter
+      rparam(8)  = 0           ! periodic in x (== 0)
+      rparam(9)  = 0           ! periodic in y (== 0)
+      rparam(10) = 0           ! periodic in z (== 0)
+
+      call init_particles(lpm_y,npart)
+c     call lpm_io_vtu_read('new99999.vtu',npart)
+      call lpm_init      (rparam,lpm_y,npart,time)
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine usrdat3
+      return
+      end
+!-----------------------------------------------------------------------
+! PARTICLE ROUTINES BELOW
+!-----------------------------------------------------------------------
+      subroutine init_particles(y,npart)
+      include 'SIZE'
+      include 'TOTAL'
+#include LPM_INCLUDE
+
+      real      y(*)
+      real      ran2
+      external  ran2
+
+      npart   = 100     ! particles/rank to distribute
+      dp      = 0.01    ! particle diameter
+      rhop    = 2.0     ! particle density
+      rdum    = ran2(-1-nid) ! initialize random number generator
+
+      do i=1,npart
+         ! set initial conditions for solution
+         j = LPM_LRS*(i-1)
+         y(LPM_JX +j) = 2.0 + ran2(2)*2.0
+         y(LPM_JY +j) = 2.0 + ran2(2)*2.0
+         y(LPM_JZ +j) = 0.0
+         y(LPM_JVX+j) = 0.0
+         y(LPM_JVY+j) = 0.0
+         y(LPM_JVZ+j) = 0.0
+      
+         ! set some initial particle properties
+         lpm_rprop(LPM_R_JRHOP,i) = rhop
+         lpm_rprop(LPM_R_JDP  ,i) = dp
+         lpm_rprop(LPM_R_JVOLP,i) = pi/6.0*lpm_rprop(LPM_R_JDP,i)**3
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine lpm_fun(time_,y,ydot)
+      include 'SIZE'
+      include 'TOTAL'
+#include LPM_INCLUDE
+
+      real time_
+      real y(*)
+      real ydot(*)
+
+      COMMON /SCRNS/ pm1 (LX1,LY1,LZ1,LELV)
+     >              ,pm1a(LX1,LY1,LZ1,LELV)
+     >              ,dpdx(LX1,LY1,LZ1,LELV)
+     >              ,dpdy(LX1,LY1,LZ1,LELV)
+     >              ,dpdz(LX1,LY1,LZ1,LELV)
+     >              ,pr_e(LX1,LY1,LZ1,LELV)
+
+C field manipulation
+      ntot1  = lx1*ly1*lz1*nelv
+      if (lx2 .ne. lx1) call mappr(pm1,pr,pm1a,pr_e)
+      if (lx2 .eq. lx1) call copy (pm1,pr,ntot1)
+      call sumab(pr_e,pm1,prlag,ntot1,ab,nab)
+      call opgrad (dpdx,dpdy,dpdz,pr_e)
+C field manipulation
+
+c setup interpolation
+      call lpm_interpolate_setup
+c setup interpolation
+
+C interpolate fields
+      call lpm_interpolate_fld(LPM_R_JRHO , vtrans  )
+      call lpm_interpolate_fld(LPM_R_JUX  , vx_e    )
+      call lpm_interpolate_fld(LPM_R_JUY  , vy_e    )
+      call lpm_interpolate_fld(LPM_R_JUZ  , vz_e    )
+      call lpm_interpolate_fld(LPM_R_JDPDX, dpdx    )
+      call lpm_interpolate_fld(LPM_R_JDPDY, dpdy    )
+      call lpm_interpolate_fld(LPM_R_JDPDZ, dpdz    )
+C interpolate fields
+
+c evaluate ydot
+      do i=1,lpm_npart
+         ! striding solution y vector
+         j = LPM_LRS*(i-1)
+
+         ! fluid viscosity
+         rmu   = param(2)
+
+         ! particle mass
+         rmass = lpm_rprop(LPM_R_JVOLP,i)*lpm_rprop(LPM_R_JRHOP,i)
+
+         ! particle Reynolds number
+         rvmag =   (lpm_rprop(LPM_R_JUX,i) - y(LPM_JVX+j))**2
+     >           + (lpm_rprop(LPM_R_JUY,i) - y(LPM_JVY+j))**2
+         if (if3d) rvmag = rvmag
+     >           + (lpm_rprop(LPM_R_JUY,i) - y(LPM_JVY+j))**2
+         rvmag = sqrt(rvmag)
+         rep = rvmag*lpm_rprop(LPM_R_JRHO,i)*lpm_rprop(LPM_R_JDP,i)/rmu
+         rep = max(1E-12,rep)
+
+         ! Drag force (Schiller-Naumann drag)
+         rdum  = 18.0*rmu/lpm_rprop(LPM_R_JDP,i)**2
+         rdum  = rdum*(1.0 + 0.15*rep**0.687)
+         rdum  = rdum*lpm_rprop(LPM_R_JVOLP,i)
+         fqsx  = rdum*(lpm_rprop(LPM_R_JUX,i) - y(LPM_JVX+j))
+         fqsy  = rdum*(lpm_rprop(LPM_R_JUY,i) - y(LPM_JVY+j))
+         fqsz  = rdum*(lpm_rprop(LPM_R_JUZ,i) - y(LPM_JVZ+j))
+
+         ! Gravity force
+         fbx =  0.0
+         fby = -9.8*rmass
+         fbz =  0.0
+
+         ! Pressure gradient force
+         fpgx = -lpm_rprop(LPM_R_JVOLP,i)*lpm_rprop(LPM_R_JDPDX,i)
+         fpgy = -lpm_rprop(LPM_R_JVOLP,i)*lpm_rprop(LPM_R_JDPDY,i)
+         fpgz = -lpm_rprop(LPM_R_JVOLP,i)*lpm_rprop(LPM_R_JDPDZ,i)
+
+         ! save particle-fluid coupling force
+         lpm_ydotc(LPM_JVX,i) = fqsx
+         lpm_ydotc(LPM_JVY,i) = fqsy
+         lpm_ydotc(LPM_JVZ,i) = fqsz
+
+         ! set ydot for all LPM_SLN number of equations
+         ydot(LPM_JX +j) = y(LPM_JVX +j)
+         ydot(LPM_JY +j) = y(LPM_JVY +j)
+         if (if3d) ydot(LPM_JZ +j) = y(LPM_JVZ +j)
+         ydot(LPM_JVX+j) = (fqsx+fbx+fpgx)/rmass
+         ydot(LPM_JVY+j) = (fqsy+fby+fpgy)/rmass
+         if (if3d) ydot(LPM_JVZ+j) = (fqsz+fbz+fpgz)/rmass
+      enddo 
+c evaluate ydot
+
+c project fields
+      call lpm_project
+c project fields
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
+
+      real map(*)
+      real y(*)
+      real ydot(*)
+      real ydotc(*)
+      real rprop(*)
+
+      map(LPM_P_JPHIP) = rprop(LPM_R_JVOLP)   ! particle volume
+      map(LPM_P_JFFX)  = -ydotc(LPM_JVX)      ! coupled force_x
+      map(LPM_P_JFFY)  = -ydotc(LPM_JVY)      ! coupled force_y
+      map(LPM_P_JFFZ)  = -ydotc(LPM_JVZ)      ! coupled force_z
+
+      return
+      end
+!-----------------------------------------------------------------------
+      FUNCTION ran2(idum)
+      INTEGER idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV 
+      REAL ran2,AM,EPS,RNMX
+      PARAMETER (IM1=2147483563,IM2=2147483399,AM=1./IM1,IMM1=IM1-1,
+     $        IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,
+     $        IR2=3791,NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
+c Long period (> 2 ! 1018 ) random number generator of L’Ecuyer with 
+c Bays-Durham shuffle and added safeguards. Returns a uniform random deviate 
+c between 0.0 and 1.0 (exclusive of the endpoint values). 
+c Call with idum a negative integer to initialize; thereafter, do not alter 
+c idum between successive deviates in a sequence. RNMX should approximate the 
+c largest floating value that is less than 1.
+      INTEGER idum2,j,k,iv(NTAB),iy
+      SAVE iv,iy,idum2
+      DATA idum2/123456789/, iv/NTAB*0/, iy/0/
+      if (idum.le.0) then 
+         idum1=max(-idum,1) 
+         idum2=idum1
+         do j=NTAB+8,1,-1
+            k=idum1/IQ1
+            idum1=IA1*(idum1-k*IQ1)-k*IR1 
+            if (idum1.lt.0) idum1=idum1+IM1 
+            if (j.le.NTAB) iv(j)=idum1
+         enddo
+         iy=iv(1) 
+      endif
+      k=idum1/IQ1 
+      idum1=IA1*(idum1-k*IQ1)-k*IR1
+      if (idum1.lt.0) idum1=idum1+IM1 
+      k=idum2/IQ2 
+      idum2=IA2*(idum2-k*IQ2)-k*IR2 
+      if (idum2.lt.0) idum2=idum2+IM2 
+      j=1+iy/NDIV
+      iy=iv(j)-idum2
+      iv(j)=idum1 
+      if(iy.lt.1)iy=iy+IMM1 
+      ran2=min(AM*iy,RNMX)
+      return
+      END
+c----------------------------------------------------------------------
