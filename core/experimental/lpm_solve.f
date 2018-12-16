@@ -1,15 +1,29 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_init(rparam,y,npart,time_)
+      subroutine lpm_init(rparam,yp,nyp,pp,npp,npart,time_)
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
 #     include "LPM"
 
-      real     y(*)
+      real     yp(*)
+      real     pp(*)
       real     rparam(*)
 
       lpm_d2chk(2) = 0.0
       lpm_npart = npart
+      lpm_timef = time_
+
+      if (nyp.gt.LPM_LRS)
+     $   call exitti('nyp > LPM_LRS$',nyp)
+
+      if (npp.gt.LPM_LRP)
+     $   call exitti('npp > LPM_LRP$',npp)
+
+      if (lpm_npart.gt.LPM_LPART)
+     $   call exitti('lpm_npart > LPM_LPART$',lpm_npart)
+
+      call copy(lpm_y    ,yp,lpm_npart*nyp)
+      call copy(lpm_rprop,pp,lpm_npart*npp)
 
       if (nio.eq.0) then
          write(6,*) ' '
@@ -38,9 +52,12 @@
       endif
 
       if (nio.eq.0) then
-        write(6,*) 'done :: initialize LPM'
+        write(6,*) 'done :: initialize LPM' 
         write(6,*) ' '
       endif
+
+      if (lpm_npart.gt.LPM_LPART)
+     $   call exitti('lpm_npart > LPM_LPART$',lpm_npart)
 
       return
       end
@@ -52,24 +69,18 @@
 
       real rparam(*)
 
-      call rzero(lpm_rparam, lpm_nparam)
-
-      ! set defaults
-      if (rparam(1) .eq. 0) then
-         lpm_rparam(1)  = 0    ! use custom values
-         lpm_rparam(2)  = 1    ! time integration method
+      if (rparam(1) .eq. 0) then ! set defaults
+         lpm_rparam(2)  = 1      ! time integration method
          lpm_rparam(3)  = lx1-1  ! polynomial order of mesh
-         lpm_rparam(4)  = 1    ! use 1 for tracers only
-         lpm_rparam(5)  = 0    ! index of filter non-dimensionalization in rprop
-         lpm_rparam(6)  = 0    ! non-dimensional Gaussian filter width
-         lpm_rparam(7)  = 0    ! percent decay of Gaussian filter
-         lpm_rparam(8)  = 1    ! periodic in x
-         lpm_rparam(9)  = 1    ! periodic in y
-         lpm_rparam(10) = 1    ! periodic in z
-
-      ! custom values
-      else
-         do i=1,lpm_nparam
+         lpm_rparam(4)  = 0      ! use 1 for tracers only
+         lpm_rparam(5)  = 0      ! index of filter non-dim in rprop
+         lpm_rparam(6)  = 0      ! non-dimensional Gaussian filter width
+         lpm_rparam(7)  = 0      ! percent decay of Gaussian filter
+         lpm_rparam(8)  = 0      ! periodic in x
+         lpm_rparam(9)  = 0      ! periodic in y
+         lpm_rparam(10) = 0      ! periodic in z
+      else ! custom values
+         do i=2,lpm_nparam
             lpm_rparam(i) = rparam(i)
          enddo
       endif
@@ -212,61 +223,57 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine lpm_solve(time_,y,ydot)
+      subroutine lpm_solve(time_)
       include 'SIZE'
       include 'TSTEP'
 #     include "LPM"
 
       real time_
-      real y(*)
-      real ydot(*)
 
       ts   = dnekclock()
+
       isol = lpm_rparam(2)
+      dt_  = time_ - lpm_timef 
+      n    = LPM_NPART*LPM_LRS
+
+      ! save previous solution
+      call copy(lpm_y1,lpm_y,n)
 
       if (isol .eq. 1) then
-         call lpm_rk3_driver(time_,dt,y,ydot)
+         call lpm_rk3_driver(time_,dt_,lpm_y1,lpm_y,lpm_ydot,n)
       else
-         call exitti('unknown lpm integrator$',isol)
+         call exitti('unknown LPM integrator$',isol)
       endif
 
+      lpm_timef = time_
+
       if(nio.eq.0)
-     &   write(*,'(4x,i7,a,1p2e12.4)')
-     &   istep,'  LPM-solver done',time,dnekclock()-ts
+     &   write(*,'(4x,i7,a,1p3e12.4)')
+     &   istep,'  LPM-solver done',time,dnekclock()-ts, lpm_timef
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine lpm_rk3_driver(time_,dt_,y,ydot)
+      subroutine lpm_rk3_driver(time_,dt_,y0,y,ydot,n)
       include 'SIZE'
 #     include "LPM"
 
       real time_
+      real y0(*)
       real y(*)
       real ydot(*)
 
+      parameter(nstage = 3)
       real tcoef(3,3)
 
-      ndum = LPM_NPART*LPM_LRS
-
-      ! save stage 1 solution
-      call copy(lpm_y1,y,ndum)
-
-      ! get rk3 coeffs
       call lpm_rk3_coeff(tcoef,dt_)
 
-      nstage = 3
       do istage=1,nstage
-
-         ! evaluate ydot
          call lpm_fun(time_,y,ydot)
-
-         ndum = LPM_NPART*LPM_LRS
-         ! rk3 integrate
-         do i=1,ndum
-            y(i) =  tcoef(1,istage)*lpm_y1 (i)
-     >            + tcoef(2,istage)*y      (i)
-     >            + tcoef(3,istage)*ydot   (i)
+         do i=1,n
+            y(i) = tcoef(1,istage)*y0  (i)
+     >           + tcoef(2,istage)*y   (i)
+     >           + tcoef(3,istage)*ydot(i)
          enddo
       enddo
 
@@ -607,7 +614,7 @@ c     ndum = lpm_npart_gp
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_solve_qtl_pvol(divin,phipin)
+      subroutine lpm_qtl_pvol(divin,phipin)
 c
 c     Computes modified divergence constraint for multiphase dense
 c     incompressible flow

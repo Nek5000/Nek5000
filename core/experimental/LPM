@@ -73,3 +73,6 @@ C Ghost particles
 
       COMMON /LPM_GHOST_NUMBER_I/ LPM_NPART_GP
       INTEGER  LPM_NPART_GP
+
+      COMMON /LPM_T/ LPM_TIMEF
+      REAL     LPM_TIMEF 

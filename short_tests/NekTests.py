@@ -1143,7 +1143,7 @@ class lpm_one(NekTestCase):
         self.run_nek(step_limit=1000)
 
         en = self.get_value_from_log('lpm error: ', column=-1)
-        self.assertAlmostEqualDelayed(en, target_val=3.086694e-4, delta=1e-5, label='error')
+        self.assertAlmostEqualDelayed(en, target_val=3.081213E-04, delta=1e-5, label='error')
 
         self.assertDelayedFailures()
 
@@ -1176,8 +1176,8 @@ class lpm_two(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
-        en = self.get_value_from_log('lpm error: ', column=-1)
-        self.assertAlmostEqualDelayed(en, target_val=8.502024e-05, delta=1e-6, label='error')
+        en = self.get_value_from_log('proj error: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=8.469937E-05, delta=1e-5, label='error')
 
         self.assertDelayedFailures()
 

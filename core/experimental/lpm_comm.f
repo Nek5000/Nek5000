@@ -29,14 +29,14 @@ c-----------------------------------------------------------------------
       iz = 3
 
       call fgslib_findpts(ih_intp2           !   call fgslib_findpts( ihndl,
-     $        , lpm_iprop (1 ,1),LPM_LIP        !   $             rcode,1,
-     $        , lpm_iprop (3 ,1),LPM_LIP        !   &             proc,1,
-     $        , lpm_iprop (2 ,1),LPM_LIP        !   &             elid,1,
-     $        , lpm_rprop2(1 ,1),LPM_LRP2       !   &             rst,ndim,
-     $        , lpm_rprop2(4 ,1),LPM_LRP2       !   &             dist,1,
-     $        , lpm_y     (ix,1),LPM_LRS        !   &             pts(    1),1,
-     $        , lpm_y     (iy,1),LPM_LRS        !   &             pts(  n+1),1,
-     $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &             pts(2*n+1),1,n)
+     $        , lpm_iprop (1 ,1),LPM_LIP        !   $        rcode,1,
+     $        , lpm_iprop (3 ,1),LPM_LIP        !   &        proc,1,
+     $        , lpm_iprop (2 ,1),LPM_LIP        !   &        elid,1,
+     $        , lpm_rprop2(1 ,1),LPM_LRP2       !   &        rst,ndim,
+     $        , lpm_rprop2(4 ,1),LPM_LRP2       !   &        dist,1,
+     $        , lpm_y     (ix,1),LPM_LRS        !   &        pts(    1),1,
+     $        , lpm_y     (iy,1),LPM_LRS        !   &        pts(  n+1),1,
+     $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &   pts(2*n+1),1,n)
 
       do i=1,lpm_npart
          lpm_iprop(4,i) = lpm_iprop(3,i)

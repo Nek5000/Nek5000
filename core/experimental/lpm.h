@@ -1,6 +1,15 @@
-c Maximum number of real particles on a processor
+c Set default values
 #ifndef LPM_LPART
-#define LPM_LPART 100000
+#  define LPM_LPART 10000
+#endif
+#ifndef LPM_JX
+#  define LPM_JX  1
+#endif
+#ifndef LPM_JY
+#  define LPM_JY  2
+#endif
+#ifndef LPM_JZ
+#  define LPM_JZ  3
 #endif
 
 c Number of secondary real properties for a particle

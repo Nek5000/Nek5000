@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_read(filein1,npart)
+      subroutine lpm_io_read(filein1,npart)
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
@@ -171,7 +171,7 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_write(filein1,iobig)
+      subroutine lpm_io_write(filein1,iobig)
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
