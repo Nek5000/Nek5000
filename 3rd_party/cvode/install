@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+VER=2.7.0
+
 if [ "$1" == "clean" ]; then
   rm -rf sundials lib include 2>/dev/null 
   exit 0
@@ -10,13 +12,13 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
   exit 0
 fi
 
-if [ ! -f sundials-2.7.0.tar.gz ]; then
-  wget --no-check-certificate -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
+if [ ! -f sundials-$VER.tar.gz ]; then
+  wget --no-check-certificate -O sundials-$VER.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-$VER.tar.gz
 fi
 
 rm -rf sundials 2>/dev/null
 mkdir sundials
-tar -zxvf *.tar.gz -C ./sundials --strip-components=1
+tar -zxvf sundials-$VER.tar.gz -C ./sundials --strip-components=1
 cd sundials
 mkdir -p build
 cd build

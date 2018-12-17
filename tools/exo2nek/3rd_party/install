@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
+VER=4.6.1
+
 # NETCDF
 if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then 
-  if [ ! -f netcdf-4.6.1.tar.gz ]; then
-    wget -O netcdf-4.6.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz
+  if [ ! -f netcdf-$VER.tar.gz ]; then
+    wget -O netcdf-$VER.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz
   fi
-  tar -zxvf *.tar.gz
-  mv netcdf-4.6.1 netcdf || true
+  tar -zxvf netcdf-$VER.tar.gz
+  mv netcdf-$VER netcdf || true
   cd netcdf
   mkdir install || true
   export NETCDFPATH=`pwd`/install
