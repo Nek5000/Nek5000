@@ -188,6 +188,7 @@
 
       lpm_rparam(6) = glmax(rfilt,1)
       lpm_d2chk(2)  = glmax(lpm_d2chk(2),1)
+      if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
 
       return
       end

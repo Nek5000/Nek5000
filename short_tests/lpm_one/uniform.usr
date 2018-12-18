@@ -140,9 +140,9 @@ c-----------------------------------------------------------------------
       rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
       rparam(6)  = 0           ! non-dimensional Gaussian filter width
       rparam(7)  = 0           ! percent decay of Gaussian filter
-      rparam(8)  = 0           ! periodic in x (== 0)
-      rparam(9)  = 0           ! periodic in y (== 0)
-      rparam(10) = 0           ! periodic in z (== 0)
+      rparam(8)  = 1           ! periodic in x (== 0)
+      rparam(9)  = 1           ! periodic in y (== 0)
+      rparam(10) = 1           ! periodic in z (== 0)
 
       call init_particles(yp,pp,npart)
       call lpm_init      (rparam,yp,LPM_LRS,pp,LPM_LRP,npart,time)

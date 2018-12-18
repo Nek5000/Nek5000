@@ -1,5 +1,5 @@
 [GENERAL]
-dt = 1E-3
+dt = 8E-4
 writeinterval = 1000
 numsteps = 1000
 
