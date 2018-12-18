@@ -108,7 +108,7 @@ c-----------------------------------------------------------------------
       ! lagrangian properties
       jst = 4
       call rzero(p_lagrange(1),LPM_LRP_PRO)
-      do j=1,LPM_LRP_PRO
+      do j=1,LPM_LRP_PRO-1
          do i=1,lpm_npart
             p_lagrange(j) = p_lagrange(j) + lpm_cp_map(jst+j,i)
          enddo
@@ -117,14 +117,13 @@ c-----------------------------------------------------------------------
 
       ! eulerian volume
       ndum = lx1*ly1*lz1*nelt
-      do j=1,LPM_LRP_PRO
+      do j=1,LPM_LRP_PRO-1
          p_eulerian(j) = glsc2(bm1,lpm_pro_fld(1,1,1,1,j),ndum)
       enddo
 
       ! compute relative projection error
       do j=1,LPM_LRP_PRO-1 ! we don't need fz in 2d
-         p_error(j) = (p_lagrange(j) - p_eulerian(j))/p_lagrange(j)
-         p_error(j) = abs(p_error(j))
+         p_error(j) = abs(p_lagrange(j) - p_eulerian(j))
          if (p_error(j) .gt. p_error_max) p_error_max = p_error(j)
       enddo
 
