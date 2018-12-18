@@ -43,6 +43,7 @@
 
       ! send particles to correct rank
       call lpm_init_filter
+
       call lpm_comm_setup
       call lpm_interpolate_setup
 
@@ -51,13 +52,11 @@
          call lpm_project
       endif
 
+      call nekgsync()
       if (nio.eq.0) then
         write(6,*) 'done :: initialize LPM' 
         write(6,*) ' '
       endif
-
-      if (lpm_npart.gt.LPM_LPART)
-     $   call exitti('lpm_npart > LPM_LPART$',lpm_npart)
 
       return
       end
@@ -287,6 +286,7 @@ c----------------------------------------------------------------------
       call lpm_move_outlier
       call lpm_comm_bin_setup
       call lpm_comm_findpts
+
       call lpm_comm_crystal
 
       return

@@ -65,7 +65,70 @@ c-----------------------------------------------------------------------
          lpm_iprop(4,i)  = nrank ! where particle is actually moved
       enddo
 
+      n = nid_glcount(lpm_iprop(4,1),LPM_LIP,lpm_npart)
+      ierr = 0
+      if (n.gt.LPM_LPART) ierr = 1 
+      ierr = iglsum(ierr,1)
+      if (ierr.gt.0) then
+         nmax = iglmax(n,1)
+         call exitti('LPM_LPART too small, require >$',nmax)
+      endif
 
+      return
+      end
+c-----------------------------------------------------------------------
+      integer function nid_glcount(a,is,n)
+c
+c     returns global nid count in distributed integer array 
+c
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      integer a(*)
+
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      integer   disp_unit
+      integer*8 wsize, tdisp
+      data      tdisp /0/
+
+      integer win, shared_counter
+      save    win, shared_counter
+
+      integer one
+      parameter (one = 1)
+
+      integer icalld
+      data    icalld /0/
+      save    icalld
+
+#ifdef MPI
+      if (icalld.eq.0) then
+         disp_unit = ISIZE
+         wsize     = disp_unit
+         call MPI_win_create(shared_counter,
+     $                       wsize,
+     $                       disp_unit,
+     $                       MPI_INFO_NULL,
+     $                       nekcomm,win,ierr)
+         icalld = 1
+      endif
+
+      shared_counter = 0
+
+      call MPI_win_fence(MPI_MODE_NOPRECEDE,win,ierr)
+      do i = 1,n
+         call MPI_accumulate(one,1,MPI_INTEGER,a((i-1)*is+1),
+     $                       tdisp,1,MPI_INTEGER,MPI_SUM,win,ierr)
+      enddo
+      call MPI_win_fence(MPI_MODE_NOSUCCEED,win,ierr)
+
+      nid_glcount = shared_counter 
+#else
+      nid_glcount = n
+#endif
+ 
       return
       end
 c-----------------------------------------------------------------------
@@ -99,7 +162,7 @@ c-----------------------------------------------------------------------
          call copy(rwork(ic,i),lpm_rprop2(1,i),LPM_LRP2)
       enddo
 
-      j0 = 4
+      j0 = 4 ! proc key
       call fgslib_crystal_tuple_transfer(i_cr_hndl,lpm_npart ,LPM_LPART
      $           ,lpm_iprop ,LPM_LIP,partl,0,rwork,lrf ,j0)
 

@@ -1,5 +1,5 @@
 c Maximum number of local particles
-#define LPM_LPART 120
+#define LPM_LPART 300
 
 c Number of particle equations being solved
 #define LPM_LRS 6
