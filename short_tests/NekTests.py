@@ -851,7 +851,7 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(tmax, target_val=13.109, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=3.88933e-06, delta=5E-07, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=6.63565e-06, delta=5E-07, label='terr')
 
         self.assertDelayedFailures()
 
@@ -1116,6 +1116,74 @@ class InclDef(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+#####################################################################
+
+class lpm_one(NekTestCase):
+    example_subdir  =  'lpm_one'
+    case_name       =  'uniform'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '3',
+            lx1       = '6',
+            lxd       = '8',
+            lx2       = 'lx1-0',
+            lelg      = '125',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        en = self.get_value_from_log('lpm error: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=3.081213E-04, delta=1e-5, label='error')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+###############################################################
+
+class lpm_two(NekTestCase):
+    example_subdir  =  'lpm_two'
+    case_name       =  'uniform'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-0',
+            lelg      = '25',
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1000)
+
+        en = self.get_value_from_log('proj error: ', column=-1)
+        self.assertAlmostEqualDelayed(en, target_val=8.469937E-05, delta=1e-4, label='error')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
 ###############################################################
 
 if __name__ == '__main__':
@@ -1160,7 +1228,9 @@ if __name__ == '__main__':
                LinCav_Dir,
                LinCav_Adj,
                IO_Test,
-               InclDef   
+               InclDef,
+               lpm_one,  
+               lpm_two   
                ) 
 
     suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(t) for t in testList])

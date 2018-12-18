@@ -54,16 +54,12 @@ c
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
 
-         ! split viscosity into explicit/implicit part
-         if (ifexplvis) call split_vis
-
          if (igeom.eq.2) call lagvel
 
          ! mask Dirichlet boundaries
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
-C        first, compute pressure
-
+         ! compute pressure
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
@@ -83,12 +79,16 @@ C        first, compute pressure
 
          tpres=tpres+(dnekclock()-etime1)
 
-C        Compute velocity
-         call cresvsp (res1,res2,res3,h1,h2)
-         call ophinv  (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
-         call opadd2  (vx,vy,vz,dv1,dv2,dv3)
+         ! compute velocity
+         if(ifstrs .and. .not.ifaxis) then
+            call bcneutr
+            call cresvsp_weak(res1,res2,res3,h1,h2)
+         else
+            call cresvsp     (res1,res2,res3,h1,h2)
+         endif
+         call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
+         call opadd2       (vx,vy,vz,dv1,dv2,dv3)
 
-         if (ifexplvis) call redo_split_vis
       endif
 
       return
@@ -176,9 +176,7 @@ c     add old pressure term because we solve for delta p
       call invers2 (ta1,vtrans,ntot1)
       call rzero   (ta2,ntot1)
 
-      call bcdirpr(pr)
-c     call outpost(vx,vy,vz,pr,t,'   ')
-c     call exitti ('exit in cresps$',ifield)
+      call bcdirpr (pr)
 
       call axhelm  (respr,pr,ta1,ta2,imesh,1)
       call chsign  (respr,ntot1)
@@ -196,6 +194,7 @@ c     add explicit (NONLINEAR) terms
          ta2(i,1) = ta2(i,1)*binvm1(i,1,1,1)
          ta3(i,1) = ta3(i,1)*binvm1(i,1,1,1)
       enddo
+
       if (if3d) then
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
@@ -206,6 +205,7 @@ c     add explicit (NONLINEAR) terms
       else
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
+
          do i=1,n
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
@@ -224,7 +224,7 @@ C     surface terms
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
-     $         cb.eq.'MV '.or.cb.eq.'mv ') then
+     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'shl') then
                CALL FACCL3
      $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
@@ -290,7 +290,7 @@ C     Compute the residual for the velocity
       if (ifstrs) scale =  2./3.
 
       call col3    (ta4,vdiff,qtl,ntot)
-      call add2s1  (ta4,pr,scale,ntot)    
+      call add2s1  (ta4,pr,scale,ntot)
       call opgrad  (ta1,ta2,ta3,TA4)
       if(IFAXIS) then
          CALL COL2 (TA2, OMASK,NTOT)
@@ -299,7 +299,67 @@ C     Compute the residual for the velocity
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
-C
+
+      return
+      end
+
+c----------------------------------------------------------------------
+      subroutine cresvsp_weak (resv1,resv2,resv3,h1,h2)
+
+C     Compute the residual for the velocity
+
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+
+      real resv1(lx1,ly1,lz1,lelv)
+     $   , resv2(lx1,ly1,lz1,lelv)
+     $   , resv3(lx1,ly1,lz1,lelv)
+     $   , h1   (lx1,ly1,lz1,lelv)
+     $   , h2   (lx1,ly1,lz1,lelv)
+
+      COMMON /SCRUZ/ TA1   (LX1,LY1,LZ1,LELV)
+     $ ,             TA2   (LX1,LY1,LZ1,LELV)
+     $ ,             TA3   (LX1,LY1,LZ1,LELV)
+     $ ,             TA4   (LX1,LY1,LZ1,LELV)
+      COMMON /SCRMG/ wa1   (LX1*LY1*LZ1,LELV)
+     $ ,             wa2   (LX1*LY1*LZ1,LELV)
+     $ ,             wa3   (LX1*LY1*LZ1,LELV)
+
+      NTOT = lx1*ly1*lz1*NELV
+      INTYPE = -1
+
+      CALL OPRZERO (RESV1,RESV2,RESV3)
+      CALL OPRZERO (wa1  ,wa2  ,wa3  )
+      CALL OPRZERO (ta1  ,ta2  ,ta3  )
+
+      CALL SETHLM  (H1,H2,INTYPE)
+
+      CALL OPHX    (RESV1,RESV2,RESV3,VX,VY,VZ,H1,H2)
+      CALL OPCHSGN (RESV1,RESV2,RESV3)
+
+      scale = -1./3.
+      if (ifstrs) scale =  2./3.
+
+      call col3    (ta4,vdiff,qtl,ntot)
+      call cmult   (ta4,scale,ntot)
+      call opgrad  (ta1,ta2,ta3,TA4)
+
+      call cdtp    (wa1,pr ,rxm1,sxm1,txm1,1)
+      call cdtp    (wa2,pr ,rym1,sym1,tym1,1)
+      if(if3d) call cdtp    (wa3,pr ,rzm1,szm1,tzm1,1)
+
+      call sub2    (ta1,wa1,ntot)
+      call sub2    (ta2,wa2,ntot)
+      if(if3d) call sub2    (ta3,wa3,ntot)
+
+      if(IFAXIS) then
+         CALL COL2 (TA2, OMASK,NTOT)
+         CALL COL2 (TA3, OMASK,NTOT)
+      endif
+c
+      call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
+      call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
+
       return
       end
 

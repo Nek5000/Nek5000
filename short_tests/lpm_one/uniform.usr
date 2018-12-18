@@ -1,30 +1,24 @@
-
-c Maximum number of real particles on a processor
-#define LPM_LPART 50000
+c Maximum number of local particles
+#define LPM_LPART 300
 
 c Number of particle equations being solved
 #define LPM_LRS 6
 
-#define LPM_JX  1
-#define LPM_JY  2
-#define LPM_JZ  3
-#define LPM_JVX 4
-#define LPM_JVY 5
-#define LPM_JVZ 6
+#define LPM_JVX (LPM_JZ+1) /* particle velocity */
+#define LPM_JVY (LPM_JZ+2) 
+#define LPM_JVZ (LPM_JZ+3) 
 
-c Number of real properties for a particle
+c Number of properties for a particle
 #define LPM_LRP 6
 
-#define LPM_R_JRHOP 1
-#define LPM_R_JDP   2
-#define LPM_R_JVOLP 3
-#define LPM_R_JUX   4
+#define LPM_R_JRHOP 1   /* density        */
+#define LPM_R_JDP   2   /* diameter       */
+#define LPM_R_JVOLP 3   /* volume         */
+#define LPM_R_JUX   4   /* fluid velocity */
 #define LPM_R_JUY   5
 #define LPM_R_JUZ   6
 
-#define LPM_INCLUDE "../core/experimental/LPM"
-#define LPM_HEADER  "../core/experimental/lpm.h"
-#include LPM_HEADER
+#include "experimental/lpm.h"
 
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,eg)
@@ -67,35 +61,30 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
-      ! --- start diagnostics --- !
-
-      ! average all particle y-velocities
-      vel_avg = 0.0
-      do i=1,lpm_npart
-         vel_avg = vel_avg + lpm_y(LPM_JVY,i)
-      enddo
-      vel_avg = glsum(vel_avg,1)
-      nptot   = iglsum(lpm_npart,1)
-      vel_avg = vel_avg/nptot
-      
-      ! particle time scale
-      vel_error = (vel_avg + 1.0)/(-1.0)
-      vel_error = abs(vel_error)
-
-      ! write error
-      if (nid .eq. 0) then
-         if (istep .eq. nsteps) write(6,100) vel_error
+      if (istep .eq. nsteps) then
+         ! average all particle y-velocities
+         vel_avg = 0.0
+         do i=1,lpm_npart
+            vel_avg = vel_avg + lpm_y(LPM_JVY,i)
+         enddo
+         vel_avg = glsum(vel_avg,1)
+         nptot   = iglsum(lpm_npart,1)
+         vel_avg = vel_avg/nptot
+          
+         ! particle time scale
+         vel_error = (vel_avg + 1.0)/(-1.0)
+         vel_error = abs(vel_error)
+ 
+         if (nid .eq. 0) write(6,100) vel_error 
+ 100     format('lpm error: ', E14.7)
       endif
- 100  format('lpm error: ', E14.7)
 
-      ! --- finish diagnostics --- !
-
-      call lpm_solve(time,lpm_y,lpm_ydot)
+      call lpm_solve(time)
 
       if(mod(istep,iostep) .eq. 0) then
-         call lpm_io_vtu_write('',0)
+         call lpm_io_write('',0)
       endif
 
       return
@@ -138,62 +127,66 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real rparam(lpm_nparam) 
+      common /SCRNS/ yp(LPM_LPART*LPM_LRS),
+     $               pp(LPM_LPART*LPM_LRP)
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
-      rparam(3)  = 2           ! polynomial order of mesh
+      rparam(3)  = 1           ! polynomial order of mesh
       rparam(4)  = 1           ! use 1 for tracers only
       rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
       rparam(6)  = 0           ! non-dimensional Gaussian filter width
       rparam(7)  = 0           ! percent decay of Gaussian filter
-      rparam(8)  = 0           ! periodic in x (== 0)
-      rparam(9)  = 0           ! periodic in y (== 0)
-      rparam(10) = 0           ! periodic in z (== 0)
+      rparam(8)  = 1           ! periodic in x (== 0)
+      rparam(9)  = 1           ! periodic in y (== 0)
+      rparam(10) = 1           ! periodic in z (== 0)
 
-      call init_particles(lpm_y,npart)
-c     call lpm_io_vtu_read('new99999.vtu',npart)
-      call lpm_init      (rparam,lpm_y,npart,time)
+      call init_particles(yp,pp,npart)
+      call lpm_init      (rparam,yp,LPM_LRS,pp,LPM_LRP,npart,time)
 
       return
       end
 !-----------------------------------------------------------------------
       subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+
+      ifflow = .false.
+
       return
       end
 !-----------------------------------------------------------------------
-! PARTICLE ROUTINES BELOW
-!-----------------------------------------------------------------------
-      subroutine init_particles(y,npart)
+      subroutine init_particles(yp,pp,npart)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
-      real      y(*)
-      real      ran2
-      external  ran2
+      real      yp(*)
+      real      pp(*)
 
-      npart   = 50       ! particles/rank to distribute
-      dp      = 0.0001   ! particle diameter
-      rhop    = 3307.327 ! particle density
+      npart   = 100          ! particles/rank to distribute
+      dp      = 0.0001       ! particle diameter
+      rhop    = 3307.327     ! particle density
       rdum    = ran2(-1-nid) ! initialize random number generator
 
       do i=1,npart
          ! set initial conditions for solution
          j = LPM_LRS*(i-1)
-         y(LPM_JX +j) = 0.1 + 0.8*ran2(2)
-         y(LPM_JY +j) = 0.7 + 0.2*ran2(2)
-         y(LPM_JZ +j) = 0.1 + 0.8*ran2(2)
-         y(LPM_JVX+j) = 0.0
-         y(LPM_JVY+j) = 0.0
-         y(LPM_JVZ+j) = 0.0
+         yp(LPM_JX +j) = 0.1 + 0.8*ran2(2)
+         yp(LPM_JY +j) = 0.7 + 0.2*ran2(2)
+         yp(LPM_JZ +j) = 0.1 + 0.8*ran2(2)
+         yp(LPM_JVX+j) = 0.0
+         yp(LPM_JVY+j) = 0.0
+         yp(LPM_JVZ+j) = 0.0
       
-         ! set some initial particle properties
-         lpm_rprop(LPM_R_JRHOP,i) = rhop
-         lpm_rprop(LPM_R_JDP  ,i) = dp
-         lpm_rprop(LPM_R_JVOLP,i) = pi/6.0*lpm_rprop(LPM_R_JDP,i)**3
+         ! set initial particle properties
+         jj = LPM_LRP*(i-1)
+         pp(LPM_R_JRHOP+jj) = rhop
+         pp(LPM_R_JDP  +jj) = dp
+         pp(LPM_R_JVOLP+jj) = pi/6.0*pp(LPM_R_JDP+jj)**3
       enddo
 
       return
@@ -202,23 +195,18 @@ c----------------------------------------------------------------------
       subroutine lpm_fun(time_,y,ydot)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real time_
       real y(*)
       real ydot(*)
 
-c setup interpolation
       call lpm_interpolate_setup
-c setup interpolation
 
-C interpolate fields
-      call lpm_interpolate_fld(LPM_R_JUX  , vx_e    )
-      call lpm_interpolate_fld(LPM_R_JUY  , vy_e    )
-      call lpm_interpolate_fld(LPM_R_JUZ  , vz_e    )
-C interpolate fields
+      call lpm_interpolate_fld(LPM_R_JUX, vx)
+      call lpm_interpolate_fld(LPM_R_JUY, vy)
+      call lpm_interpolate_fld(LPM_R_JUZ, vz)
 
-c evaluate ydot
       do i=1,lpm_npart
          ! striding solution y vector
          j = LPM_LRS*(i-1)
@@ -249,11 +237,8 @@ c evaluate ydot
          ydot(LPM_JVY+j) = (fqsy+fby)/rmass
          if (if3d) ydot(LPM_JVZ+j) = (fqsz+fbz)/rmass
       enddo 
-c evaluate ydot
 
-c project fields
       call lpm_project
-c project fields
 
       return
       end

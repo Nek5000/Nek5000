@@ -207,7 +207,8 @@ c
      $                        + ut(i)*tzm1(i,1,1,e) )
          enddo
       else
-         call local_grad2(ur,us,u,N,e,dxm1,dxtm1)
+         if (ifaxis) call setaxdy (ifrzer(e))
+         call local_grad2(ur,us,u,N,e,dxm1,dytm1)
          do i=1,lxyz
             ux(i) =jacmi(i,e)*(ur(i)*rxm1(i,1,1,e)
      $                       + us(i)*sxm1(i,1,1,e) )

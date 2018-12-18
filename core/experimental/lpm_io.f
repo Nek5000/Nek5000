@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_read(filein1,npart)
+      subroutine lpm_io_read(filein1,npart)
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
@@ -8,7 +8,7 @@
       include 'CTIMER'
       include 'TSTEP'
       include 'PARALLEL'
-#include "LPM"
+#     include "LPM"
 
       real*4  rout_pos(3      *LPM_LPART) 
      >       ,rout_sln(LPM_LRS*LPM_LPART)
@@ -171,7 +171,7 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_write(filein1,iobig)
+      subroutine lpm_io_write(filein1,iobig)
       include 'SIZE'
       include 'SOLN'
       include 'INPUT'
@@ -180,7 +180,7 @@
       include 'CTIMER'
       include 'TSTEP'
       include 'PARALLEL'
-#include "LPM"
+#     include "LPM"
 
       real*4  rout_pos(3      *LPM_LPART) 
      >       ,rout_sln(LPM_LRS*LPM_LPART)
@@ -193,7 +193,7 @@
       character*5 sprop1
       character*9 rprop1
 
-      character (len = *)  filein1
+      character filein1*(*)
       character*3 filein
       character*12 vtufile
       character*13 vtufile1
@@ -327,13 +327,8 @@
       write(vtu,'(A)',advance='no') 'Name="TIME" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-#ifdef CMTNEK
-      write(vtu,'(E14.7)',advance='no') time_cmt
-#else
       write(vtu,'(E14.7)',advance='no') time
-#endif
       write(vtu,'(A)',advance='yes') ' </DataArray> '
-
       write(vtu,'(A)',advance='no') '   <DataArray '  ! cycle
       write(vtu,'(A)',advance='no') 'type="Int32" '
       write(vtu,'(A)',advance='no') 'Name="CYCLE" '
@@ -532,7 +527,7 @@
       include 'GEOM'
       include 'TSTEP'
       include 'PARALLEL'
-#include "LPM"
+#     include "LPM"
 
       PARAMETER(LPM_LRF=3+LPM_LRP+LPM_LRS)
       COMMON /LPM_RFPTS_C/ LPM_RFPTS

@@ -100,6 +100,8 @@ TMP1 += $(CMTCORE)
 OPT_INCDIR += -I $(SCMT)
 endif
 
+OPT_INCDIR += -I $S/experimental
+
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 
 L0 = $(G) -O0
@@ -110,9 +112,9 @@ FL0   = $(L0) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL2   = $(L2) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S -I$(OPT_INCDIR)
 
-cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S
-cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S
-cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S
+cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
+cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
+cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 
 ################################################################################
 all : nek5000

@@ -21,6 +21,7 @@
 * Overwrite core routines in usr
 * Fully scaleable memory footprint PPLIST=DPROCMAP (experimental)
 * Online genmap PPLIST=PARRSB (experimental) 
+* Lagrangian phase model - LPM (experimental)
 * Various bug fixes
 
 ## What you may have to change to be compatible 

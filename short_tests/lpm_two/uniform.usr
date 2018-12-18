@@ -1,18 +1,14 @@
-
-c Maximum number of real particles on a processor
-#define LPM_LPART 10000
+c Maximum number of local particles
+#define LPM_LPART 300
 
 c Number of particle equations being solved
 #define LPM_LRS 6
 
-#define LPM_JX  1
-#define LPM_JY  2
-#define LPM_JZ  3
-#define LPM_JVX 4
-#define LPM_JVY 5
-#define LPM_JVZ 6
+#define LPM_JVX (LPM_JZ+1)
+#define LPM_JVY (LPM_JZ+2)
+#define LPM_JVZ (LPM_JZ+3)
 
-c Number of real properties for a particle
+c Number of properties for a particle
 #define LPM_LRP 10
 
 #define LPM_R_JRHOP 1
@@ -26,17 +22,15 @@ c Number of real properties for a particle
 #define LPM_R_JDPDZ 9
 #define LPM_R_JRHO  10
 
-C Number of real properties to project
+C Number of properties to project
 #define LPM_LRP_PRO 4
 
-#define LPM_P_JPHIP 1
+#define LPM_P_JPHIP 1   /* void fraction */
 #define LPM_P_JFFX  2
 #define LPM_P_JFFY  3
 #define LPM_P_JFFZ  4
 
-#define LPM_INCLUDE "../core/experimental/LPM"
-#define LPM_HEADER  "../core/experimental/lpm.h"
-#include LPM_HEADER
+#include "experimental/lpm.h"
 
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,eg)
@@ -56,9 +50,9 @@ c-----------------------------------------------------------------------
       subroutine userqtl 
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
-      call lpm_solve_qtl_pvol(usrdiv,lpm_pro_fld(1,1,1,1,LPM_P_JPHIP))
+      call lpm_qtl_pvol(usrdiv,lpm_pro_fld(1,1,1,1,LPM_P_JPHIP))
 
       return
       end
@@ -67,7 +61,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-#include LPM_INCLUDE
+#     include "LPM"
 
       integer e,eg
 
@@ -77,8 +71,8 @@ c-----------------------------------------------------------------------
       ffy = lpm_pro_fld(ix,iy,iz,e,LPM_P_JFFY)
       ffz = lpm_pro_fld(ix,iy,iz,e,LPM_P_JFFZ)
       
-      rdum = 1./vtrans(ix,iy,iz,e,1)
-     >         /(1.-lpm_pro_fld(ix,iy,iz,e,LPM_P_JPHIP))
+      rdum = 1/utrans
+      rdum = rdum/(1-lpm_pro_fld(ix,iy,iz,e,LPM_P_JPHIP))
 
       ffx = ffx*rdum
       ffy = ffy*rdum
@@ -101,52 +95,46 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real  p_lagrange(LPM_LRP_PRO)
      >     ,p_eulerian(LPM_LRP_PRO)
      >     ,p_error   (LPM_LRP_PRO)
-     >     ,p_error_max
 
-      ! --- start diagnostics --- !
+      real p_error_max
+      save p_error_max 
+      data p_error_max /-1/
 
       ! lagrangian properties
       jst = 4
       call rzero(p_lagrange(1),LPM_LRP_PRO)
       do j=1,LPM_LRP_PRO
-      do i=1,lpm_npart
-         p_lagrange(j) = p_lagrange(j) + lpm_cp_map(jst+j,i)
-      enddo
+         do i=1,lpm_npart
+            p_lagrange(j) = p_lagrange(j) + lpm_cp_map(jst+j,i)
+         enddo
          p_lagrange(j) = glsum(p_lagrange(j),1)
       enddo
 
       ! eulerian volume
       ndum = lx1*ly1*lz1*nelt
-      call rzero(p_eulerian(1),LPM_LRP_PRO)
       do j=1,LPM_LRP_PRO
          p_eulerian(j) = glsc2(bm1,lpm_pro_fld(1,1,1,1,j),ndum)
       enddo
 
-      ! compute error
-      p_error_max = 0.0
+      ! compute relative projection error
       do j=1,LPM_LRP_PRO-1 ! we don't need fz in 2d
          p_error(j) = (p_lagrange(j) - p_eulerian(j))/p_lagrange(j)
          p_error(j) = abs(p_error(j))
          if (p_error(j) .gt. p_error_max) p_error_max = p_error(j)
       enddo
 
-      ! write error
-      if (nid .eq. 0) then
-         if (istep .eq. nsteps) write(6,100) p_error_max
-      endif
- 100  format('lpm error: ', E14.7)
+      if (nid.eq.0 .and. istep.eq.nsteps) write(6,100) p_error_max 
+ 100  format('proj error: ', E14.7)
 
-      ! --- finish diagnostics --- !
-
-      call lpm_solve(time,lpm_y,lpm_ydot)
+      call lpm_solve(time)
 
       if(mod(istep,iostep).eq.0) then
-         call lpm_io_vtu_write('',0)
+         call lpm_io_write('',0)
          call outpost2(lpm_pro_fld(1,1,1,1,LPM_P_JFFX)
      >                ,lpm_pro_fld(1,1,1,1,LPM_P_JFFY)
      >                ,lpm_pro_fld(1,1,1,1,LPM_P_JFFZ)
@@ -194,24 +182,25 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real rparam(lpm_nparam) 
+      common /SCRNS/ yp(LPM_LPART*LPM_LRS),
+     $               pp(LPM_LPART*LPM_LRP)
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
-      rparam(3)  = 2           ! polynomial order of mesh
+      rparam(3)  = 1           ! polynomial order of mesh
       rparam(4)  = 0           ! use 1 for tracers only
       rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
       rparam(6)  = 50.0        ! non-dimensional Gaussian filter width
-      rparam(7)  = 1E-5        ! percent decay of Gaussian filter
+      rparam(7)  = 1E-05       ! percent decay of Gaussian filter
       rparam(8)  = 0           ! periodic in x (== 0)
       rparam(9)  = 0           ! periodic in y (== 0)
       rparam(10) = 0           ! periodic in z (== 0)
 
-      call init_particles(lpm_y,npart)
-c     call lpm_io_vtu_read('new99999.vtu',npart)
-      call lpm_init      (rparam,lpm_y,npart,time)
+      call init_particles(yp,pp,npart)
+      call lpm_init      (rparam,yp,LPM_LRS,pp,LPM_LRP,npart,time)
 
       return
       end
@@ -220,16 +209,13 @@ c     call lpm_io_vtu_read('new99999.vtu',npart)
       return
       end
 !-----------------------------------------------------------------------
-! PARTICLE ROUTINES BELOW
-!-----------------------------------------------------------------------
-      subroutine init_particles(y,npart)
+      subroutine init_particles(yp,pp,npart)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
-      real      y(*)
-      real      ran2
-      external  ran2
+      real      yp(*)
+      real      pp(*)
 
       npart   = 100     ! particles/rank to distribute
       dp      = 0.01    ! particle diameter
@@ -239,17 +225,18 @@ c     call lpm_io_vtu_read('new99999.vtu',npart)
       do i=1,npart
          ! set initial conditions for solution
          j = LPM_LRS*(i-1)
-         y(LPM_JX +j) = 2.0 + ran2(2)*2.0
-         y(LPM_JY +j) = 2.0 + ran2(2)*2.0
-         y(LPM_JZ +j) = 0.0
-         y(LPM_JVX+j) = 0.0
-         y(LPM_JVY+j) = 0.0
-         y(LPM_JVZ+j) = 0.0
+         yp(LPM_JX +j) = 2.0 + ran2(2)*2.0
+         yp(LPM_JY +j) = 2.0 + ran2(2)*2.0
+         yp(LPM_JZ +j) = 0.0
+         yp(LPM_JVX+j) = 0.0
+         yp(LPM_JVY+j) = 0.0
+         yp(LPM_JVZ+j) = 0.0
       
-         ! set some initial particle properties
-         lpm_rprop(LPM_R_JRHOP,i) = rhop
-         lpm_rprop(LPM_R_JDP  ,i) = dp
-         lpm_rprop(LPM_R_JVOLP,i) = pi/6.0*lpm_rprop(LPM_R_JDP,i)**3
+         ! set initial particle properties
+         jj = LPM_LRP*(i-1)
+         pp(LPM_R_JRHOP+jj) = rhop
+         pp(LPM_R_JDP  +jj) = dp
+         pp(LPM_R_JVOLP+jj) = pi/6.0*pp(LPM_R_JDP+jj)**3
       enddo
 
       return
@@ -258,42 +245,37 @@ c----------------------------------------------------------------------
       subroutine lpm_fun(time_,y,ydot)
       include 'SIZE'
       include 'TOTAL'
-#include LPM_INCLUDE
+#     include "LPM"
 
       real time_
       real y(*)
       real ydot(*)
 
-      COMMON /SCRNS/ pm1 (LX1,LY1,LZ1,LELV)
-     >              ,pm1a(LX1,LY1,LZ1,LELV)
+      COMMON /SCRNS/ wk1 (LX1,LY1,LZ1,LELV)
+     >              ,wk2 (LX1,LY1,LZ1,LELV)
+     >              ,pm1 (LX1,LY1,LZ1,LELV)
      >              ,dpdx(LX1,LY1,LZ1,LELV)
      >              ,dpdy(LX1,LY1,LZ1,LELV)
      >              ,dpdz(LX1,LY1,LZ1,LELV)
-     >              ,pr_e(LX1,LY1,LZ1,LELV)
 
-C field manipulation
-      ntot1  = lx1*ly1*lz1*nelv
-      if (lx2 .ne. lx1) call mappr(pm1,pr,pm1a,pr_e)
-      if (lx2 .eq. lx1) call copy (pm1,pr,ntot1)
-c     call sumab(pr_e,pm1,prlag,ntot1,ab,nab)
+      if (ifsplit) then
+         ntot = lx1*ly1*lz1*nelv
+         call copy (pm1,pr,ntot)
+      else
+         call mappr(pm1,pr,wk1,wk2)
+      endif
       call opgrad (dpdx,dpdy,dpdz,pm1)
-C field manipulation
 
-c setup interpolation
       call lpm_interpolate_setup
-c setup interpolation
 
-C interpolate fields
-      call lpm_interpolate_fld(LPM_R_JRHO , vtrans  )
-      call lpm_interpolate_fld(LPM_R_JUX  , vx_e    )
-      call lpm_interpolate_fld(LPM_R_JUY  , vy_e    )
-      call lpm_interpolate_fld(LPM_R_JUZ  , vz_e    )
-      call lpm_interpolate_fld(LPM_R_JDPDX, dpdx    )
-      call lpm_interpolate_fld(LPM_R_JDPDY, dpdy    )
-      call lpm_interpolate_fld(LPM_R_JDPDZ, dpdz    )
-C interpolate fields
+      call lpm_interpolate_fld(LPM_R_JRHO , vtrans)
+      call lpm_interpolate_fld(LPM_R_JUX  , vx    )
+      call lpm_interpolate_fld(LPM_R_JUY  , vy    )
+      call lpm_interpolate_fld(LPM_R_JUZ  , vz    )
+      call lpm_interpolate_fld(LPM_R_JDPDX, dpdx  )
+      call lpm_interpolate_fld(LPM_R_JDPDY, dpdy  )
+      call lpm_interpolate_fld(LPM_R_JDPDZ, dpdz  )
 
-c evaluate ydot
       do i=1,lpm_npart
          ! striding solution y vector
          j = LPM_LRS*(i-1)
@@ -344,17 +326,16 @@ c evaluate ydot
          ydot(LPM_JVY+j) = (fqsy+fby+fpgy)/rmass
          if (if3d) ydot(LPM_JVZ+j) = (fqsz+fbz+fpgz)/rmass
       enddo 
-c evaluate ydot
 
-c project fields
       call lpm_project
-c project fields
 
       return
       end
 !-----------------------------------------------------------------------
       subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
-
+c
+c     map Lagrangian quantity to Eulerian field
+c
       real map(*)
       real y(*)
       real ydot(*)

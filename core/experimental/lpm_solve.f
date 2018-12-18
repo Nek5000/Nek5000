@@ -1,15 +1,36 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_init(rparam,y,npart,time_)
+      subroutine lpm_init(rparam,yp,nyp,pp,npp,npart,time_)
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-#include "LPM"
+#     include "LPM"
 
-      real     y(*)
+      real     yp(*)
+      real     pp(*)
       real     rparam(*)
 
       lpm_d2chk(2) = 0.0
       lpm_npart = npart
+      lpm_timef = time_
+
+      if (nyp.gt.LPM_LRS)
+     $   call exitti('nyp > LPM_LRS$',nyp)
+
+      if (npp.gt.LPM_LRP)
+     $   call exitti('npp > LPM_LRP$',npp)
+
+      if (lpm_npart.gt.LPM_LPART)
+     $   call exitti('lpm_npart > LPM_LPART$',lpm_npart)
+
+      call copy(lpm_y    ,yp,lpm_npart*nyp)
+      call copy(lpm_rprop,pp,lpm_npart*npp)
+
+      if (nio.eq.0) then
+         write(6,*) ' '
+         write(6,*) 'initialize LPM'
+         if (int(rparam(1)) .ne. 0) 
+     $   write(6,*) 'overwrite default settings'
+      endif
 
       call lpm_rparam_set(rparam)
       call lpm_tag_init
@@ -22,6 +43,7 @@
 
       ! send particles to correct rank
       call lpm_init_filter
+
       call lpm_comm_setup
       call lpm_interpolate_setup
 
@@ -30,43 +52,36 @@
          call lpm_project
       endif
 
+      call nekgsync()
+      if (nio.eq.0) then
+        write(6,*) 'done :: initialize LPM' 
+        write(6,*) ' '
+      endif
+
       return
       end
 !-----------------------------------------------------------------------
       subroutine lpm_rparam_set(rparam)
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       real rparam(*)
 
-      call rzero(lpm_rparam, lpm_nparam)
-
-      ! set defaults
-      if (rparam(1) .eq. 0) then
-         lpm_rparam(1)  = 0    ! use custom values
-         lpm_rparam(2)  = 1    ! time integration method
-         lpm_rparam(3)  = lx1  ! polynomial order of mesh
-         lpm_rparam(4)  = 1    ! use 1 for tracers only
-         lpm_rparam(5)  = 0    ! index of filter non-dimensionalization in rprop
-         lpm_rparam(6)  = 0    ! non-dimensional Gaussian filter width
-         lpm_rparam(7)  = 0    ! percent decay of Gaussian filter
-         lpm_rparam(8)  = 1    ! periodic in x
-         lpm_rparam(9)  = 1    ! periodic in y
-         lpm_rparam(10) = 1    ! periodic in z
-
-      ! custom values
-      else
-         do i=1,lpm_nparam
+      if (rparam(1) .eq. 0) then ! set defaults
+         lpm_rparam(2)  = 1      ! time integration method
+         lpm_rparam(3)  = lx1-1  ! polynomial order of mesh
+         lpm_rparam(4)  = 0      ! use 1 for tracers only
+         lpm_rparam(5)  = 0      ! index of filter non-dim in rprop
+         lpm_rparam(6)  = 0      ! non-dimensional Gaussian filter width
+         lpm_rparam(7)  = 0      ! percent decay of Gaussian filter
+         lpm_rparam(8)  = 0      ! periodic in x
+         lpm_rparam(9)  = 0      ! periodic in y
+         lpm_rparam(10) = 0      ! periodic in z
+      else ! custom values
+         do i=2,lpm_nparam
             lpm_rparam(i) = rparam(i)
          enddo
-
-         tol = 1.e-12
-         if (wdsize.eq.4) tol = 1.e-6
-
-         if (abs(lpm_rparam(2)) .lt. tol  ) lpm_rparam(2) = 1
-         if (abs(lpm_rparam(3)) .lt. tol  ) lpm_rparam(3) = lx1
-
       endif
 
       return
@@ -75,7 +90,7 @@
       subroutine lpm_init_filter
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       rsig  = 0.0
       jdp   = int(lpm_rparam(5))
@@ -167,12 +182,13 @@
             write(6,100) filt, filt_new
  100        format('Reset Gaussian filter width from', E14.7
      >             ' to', E14.7, ' or larger')
-            call exitt
          endif
+         call exitt
       endif
 
       lpm_rparam(6) = glmax(rfilt,1)
       lpm_d2chk(2)  = glmax(lpm_d2chk(2),1)
+      if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
 
       return
       end
@@ -180,7 +196,7 @@ c----------------------------------------------------------------------
       subroutine lpm_tag_set
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       do i=1,lpm_npart
          if (lpm_iprop(5,i) .eq. -1) lpm_iprop(5,i) = nid
@@ -194,7 +210,7 @@ c----------------------------------------------------------------------
       subroutine lpm_tag_init
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       if (.not. LPM_RESTART) then
          do i=1,LPM_LPART
@@ -207,50 +223,57 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine lpm_solve(time_,y,ydot)
+      subroutine lpm_solve(time_)
       include 'SIZE'
-#include "LPM"
+      include 'TSTEP'
+#     include "LPM"
 
       real time_
-      real y(*)
-      real ydot(*)
 
-      if (int(lpm_rparam(2)) .eq. 1) call lpm_rk3_driver(time_,y,ydot)
+      ts   = dnekclock()
+
+      isol = lpm_rparam(2)
+      dt_  = time_ - lpm_timef 
+      n    = LPM_NPART*LPM_LRS
+
+      ! save previous solution
+      call copy(lpm_y1,lpm_y,n)
+
+      if (isol .eq. 1) then
+         call lpm_rk3_driver(time_,dt_,lpm_y1,lpm_y,lpm_ydot,n)
+      else
+         call exitti('unknown LPM integrator$',isol)
+      endif
+
+      lpm_timef = time_
+
+      if(nio.eq.0)
+     &   write(*,'(4x,i7,a,1p3e12.4)')
+     &   istep,'  LPM-solver done',time,dnekclock()-ts, lpm_timef
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine lpm_rk3_driver(time_,y,ydot)
+      subroutine lpm_rk3_driver(time_,dt_,y0,y,ydot,n)
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       real time_
+      real y0(*)
       real y(*)
       real ydot(*)
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      parameter(nstage = 3)
+      real tcoef(3,3)
 
-      ndum = LPM_NPART*LPM_LRS
+      call lpm_rk3_coeff(tcoef,dt_)
 
-      ! save stage 1 solution
-      call copy(lpm_y1,y,ndum)
-
-      ! get rk3 coeffs
-      call lpm_rk3_coeff
-
-      nstage = 3
       do istage=1,nstage
-
-         ! evaluate ydot
          call lpm_fun(time_,y,ydot)
-
-         ndum = LPM_NPART*LPM_LRS
-         ! rk3 integrate
-         do i=1,ndum
-            y(i) =  tcoef(1,istage)*lpm_y1 (i)
-     >            + tcoef(2,istage)*y      (i)
-     >            + tcoef(3,istage)*ydot   (i)
+         do i=1,n
+            y(i) = tcoef(1,istage)*y0  (i)
+     >           + tcoef(2,istage)*y   (i)
+     >           + tcoef(3,istage)*ydot(i)
          enddo
       enddo
 
@@ -259,11 +282,12 @@ c----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       subroutine lpm_interpolate_setup
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       call lpm_move_outlier
       call lpm_comm_bin_setup
       call lpm_comm_findpts
+
       call lpm_comm_crystal
 
       return
@@ -271,7 +295,7 @@ c----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       subroutine lpm_interpolate_fld(jp,fld)
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       common /intp_h/ ih_intp(2,1)
 
@@ -308,7 +332,7 @@ c    >                               ,fld)
 c----------------------------------------------------------------------
       subroutine lpm_project
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       if (int(lpm_rparam(4)) .ne. 1) then
          call lpm_comm_ghost_create
@@ -322,7 +346,7 @@ c----------------------------------------------------------------------
       subroutine lpm_solve_project
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       real               phig(lx1,ly1,lz1,lelt)
       common /otherpvar/ phig
@@ -568,134 +592,37 @@ c     ndum = lpm_npart_gp
          enddo
       enddo
 
-#ifdef CMTNEK
-      ! filtering makes velocity field smoother for p*grad(phig) in CMT
-
-c     call dsavg(ptw(1,1,1,1,1))
-c     call dsavg(ptw(1,1,1,1,2))
-c     call dsavg(ptw(1,1,1,1,3))
-c     call dsavg(ptw(1,1,1,1,4))
-c     call dsavg(ptw(1,1,1,1,5))
-c     call dsavg(ptw(1,1,1,1,6))
-c     call dsavg(ptw(1,1,1,1,7))
-
-c     wght = 1
-c     ncut = 1
-c     call filter_s0(ptw(1,1,1,1,1),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,2),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,3),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,4),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,5),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,6),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,7),wght,ncut,'phip') 
-
-c     call dsavg(ptw(1,1,1,1,1))
-c     call dsavg(ptw(1,1,1,1,2))
-c     call dsavg(ptw(1,1,1,1,3))
-c     call dsavg(ptw(1,1,1,1,4))
-c     call dsavg(ptw(1,1,1,1,5))
-c     call dsavg(ptw(1,1,1,1,6))
-c     call dsavg(ptw(1,1,1,1,7))
-#endif
-
-c     rvfmax = 0.74
-c     rvfmin = 1E-15
-c     do ie=1,nelt
-c     do k=1,nz1
-c     do j=1,ny1
-c     do i=1,nx1
-c        if (ptw(i,j,k,ie,4) .gt. rvfmax) ptw(i,j,k,ie,4) = rvfmax
-c        if (ptw(i,j,k,ie,4) .lt. rvfmin) ptw(i,j,k,ie,4) = rvfmin
-c        phig(i,j,k,ie) = 1. - ptw(i,j,k,ie,4)
-c     enddo
-c     enddo
-c     enddo
-c     enddo
-
-c     wght = 1
-c     ncut = 1
-c     call filter_s0(phig,wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,5),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,6),wght,ncut,'phip') 
-c     call filter_s0(ptw(1,1,1,1,7),wght,ncut,'phip') 
-
-c     nxyze = nxyz*nelt
-
-c     call gradm1(phigdum(1,1,1,1,1),
-c    >            phigdum(1,1,1,1,2),
-c    >            phigdum(1,1,1,1,3),
-c    >            phig)
-
-
-c     call col2(phigdum(1,1,1,1,1),pr,nxyze)
-c     call col2(phigdum(1,1,1,1,2),pr,nxyze)
-c     if(if3d) call col2(phigdum(1,1,1,1,3),pr,nxyze)
-
-c     call dsavg(phigdum(1,1,1,1,1))
-c     call dsavg(phigdum(1,1,1,1,2))
-c     call dsavg(phigdum(1,1,1,1,3))
-
-c     nspread = 6
-c     rle = 5.94E-4
-c     rgrad_max = 101325/(nspread*rle)
-
-c     do i=1,nxyze
-c        if (abs(phigdum(i,1,1,1,2)) .lt. rgrad_max) then
-c           if (phigdum(i,1,1,1,2) .lt. 0)
-c    >         phigdum(i,1,1,1,2) = - rgrad_max
-c           if (phigdum(i,1,1,1,2) .gt. 0)
-c    >         phigdum(i,1,1,1,2) = rgrad_max
-c        endif
-c     enddo
-
-
-c     call opdiv(phigvdum,ptw(1,1,1,1,5),
-c    >                    ptw(1,1,1,1,6),
-c    >                    ptw(1,1,1,1,7))
-
-
-c     call col2(phigvdum,pr,nxyze)
-c     call chsign(phigvdum,nxyze)
-
-c     call dsavg(phigvdum)
-
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_rk3_coeff
+      subroutine lpm_rk3_coeff(tcoef,rdt)
       include 'SIZE'
       include 'TOTAL'
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
+      real tcoef(*)
+      real rdt
 
-#ifdef CMTNEK
-         rdt = dt_cmt
-#else
-         rdt = dt
-#endif
-
-      tcoef(1,1) = 0.0
-      tcoef(2,1) = 1.0 
-      tcoef(3,1) = rdt
-      tcoef(1,2) = 3.0/4.0
-      tcoef(2,2) = 1.0/4.0 
-      tcoef(3,2) = rdt/4.0 
-      tcoef(1,3) = 1.0/3.0
-      tcoef(2,3) = 2.0/3.0 
-      tcoef(3,3) = rdt*2.0/3.0 
+      tcoef(1) = 0.0
+      tcoef(2) = 1.0 
+      tcoef(3) = rdt
+      tcoef(4) = 3.0/4.0
+      tcoef(5) = 1.0/4.0 
+      tcoef(6) = rdt/4.0 
+      tcoef(7) = 1.0/3.0
+      tcoef(8) = 2.0/3.0 
+      tcoef(9) = rdt*2.0/3.0 
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_solve_qtl_pvol(divin,phipin)
+      subroutine lpm_qtl_pvol(divin,phipin)
 c
 c     Computes modified divergence constraint for multiphase dense
 c     incompressible flow
 c
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       common /phig_qtl_blk/ phig_last
       real phig_last(lx1,ly1,lz1,lelt)
@@ -709,9 +636,6 @@ c
      >              ,phig_qtl(lx1,ly1,lz1,lelt)
      >              ,grad_dot(lx1,ly1,lz1,lelt)
 
-      real                  tcoef(3,3),dt_cmt,time_cmt
-      common /timestepcoef/ tcoef,dt_cmt,time_cmt
-
       integer icalld
       save    icalld
       data    icalld  /-1/
@@ -719,11 +643,7 @@ c
       icalld = icalld + 1
       nxyze = lx1*ly1*lz1*lelt
 
-#ifdef CMTNEK
-      rdt_in = 1./dt_cmt
-#else
       rdt_in = 1./dt
-#endif
 
       call rzero(phig_qtl,nxyze)
 
@@ -756,7 +676,7 @@ c     if (icalld .lt. 5) goto 123
 c-----------------------------------------------------------------------
       subroutine lpm_move_outlier
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       integer in_part(LPM_LPART)
       integer jj(3)

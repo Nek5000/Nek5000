@@ -1,22 +1,24 @@
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_setup
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-#include "LPM"
+#     include "LPM"
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      call interp_setup(i_fp_hndl,0.0,idum,nelt)
+      nmsh = lpm_rparam(3)
+
+      call interp_setup(i_fp_hndl,0.0,nmsh,nelt)
       call fgslib_crystal_setup(i_cr_hndl,nekcomm,np)
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_findpts
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       common /intp_h/ ih_intp(2,1)
 
@@ -27,14 +29,14 @@
       iz = 3
 
       call fgslib_findpts(ih_intp2           !   call fgslib_findpts( ihndl,
-     $        , lpm_iprop (1 ,1),LPM_LIP        !   $             rcode,1,
-     $        , lpm_iprop (3 ,1),LPM_LIP        !   &             proc,1,
-     $        , lpm_iprop (2 ,1),LPM_LIP        !   &             elid,1,
-     $        , lpm_rprop2(1 ,1),LPM_LRP2       !   &             rst,ndim,
-     $        , lpm_rprop2(4 ,1),LPM_LRP2       !   &             dist,1,
-     $        , lpm_y     (ix,1),LPM_LRS        !   &             pts(    1),1,
-     $        , lpm_y     (iy,1),LPM_LRS        !   &             pts(  n+1),1,
-     $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &             pts(2*n+1),1,n)
+     $        , lpm_iprop (1 ,1),LPM_LIP        !   $        rcode,1,
+     $        , lpm_iprop (3 ,1),LPM_LIP        !   &        proc,1,
+     $        , lpm_iprop (2 ,1),LPM_LIP        !   &        elid,1,
+     $        , lpm_rprop2(1 ,1),LPM_LRP2       !   &        rst,ndim,
+     $        , lpm_rprop2(4 ,1),LPM_LRP2       !   &        dist,1,
+     $        , lpm_y     (ix,1),LPM_LRS        !   &        pts(    1),1,
+     $        , lpm_y     (iy,1),LPM_LRS        !   &        pts(  n+1),1,
+     $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &   pts(2*n+1),1,n)
 
       do i=1,lpm_npart
          lpm_iprop(4,i) = lpm_iprop(3,i)
@@ -63,15 +65,78 @@
          lpm_iprop(4,i)  = nrank ! where particle is actually moved
       enddo
 
+      n = nid_glcount(lpm_iprop(4,1),LPM_LIP,lpm_npart)
+      ierr = 0
+      if (n.gt.LPM_LPART) ierr = 1 
+      ierr = iglsum(ierr,1)
+      if (ierr.gt.0) then
+         nmax = iglmax(n,1)
+         call exitti('LPM_LPART too small, require >$',nmax)
+      endif
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+      integer function nid_glcount(a,is,n)
+c
+c     returns global nid count in distributed integer array 
+c
+      include 'mpif.h'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      integer a(*)
+
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      integer   disp_unit
+      integer*8 wsize, tdisp
+      data      tdisp /0/
+
+      integer win, shared_counter
+      save    win, shared_counter
+
+      integer one
+      parameter (one = 1)
+
+      integer icalld
+      data    icalld /0/
+      save    icalld
+
+#ifdef MPI
+      if (icalld.eq.0) then
+         disp_unit = ISIZE
+         wsize     = disp_unit
+         call MPI_win_create(shared_counter,
+     $                       wsize,
+     $                       disp_unit,
+     $                       MPI_INFO_NULL,
+     $                       nekcomm,win,ierr)
+         icalld = 1
+      endif
+
+      shared_counter = 0
+
+      call MPI_win_fence(MPI_MODE_NOPRECEDE,win,ierr)
+      do i = 1,n
+         call MPI_accumulate(one,1,MPI_INTEGER,a((i-1)*is+1),
+     $                       tdisp,1,MPI_INTEGER,MPI_SUM,win,ierr)
+      enddo
+      call MPI_win_fence(MPI_MODE_NOSUCCEED,win,ierr)
+
+      nid_glcount = shared_counter 
+#else
+      nid_glcount = n
+#endif
+ 
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine lpm_comm_crystal
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
-#include "LPM"
+#     include "LPM"
 
       logical partl    
       integer lpm_ipmap1(1,LPM_LPART)
@@ -97,7 +162,7 @@
          call copy(rwork(ic,i),lpm_rprop2(1,i),LPM_LRP2)
       enddo
 
-      j0 = 4
+      j0 = 4 ! proc key
       call fgslib_crystal_tuple_transfer(i_cr_hndl,lpm_npart ,LPM_LPART
      $           ,lpm_iprop ,LPM_LIP,partl,0,rwork,lrf ,j0)
 
@@ -118,11 +183,11 @@
         
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_bin_setup
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
      >                            nfacegp, nedgegp, ncornergp
@@ -228,7 +293,9 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       lpm_ndzgp = 1
       if (if3d) lpm_ndzgp = floor( (lpm_binb(6) - lpm_binb(5))/d2new(3))
 
-      if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. np) then
+
+      if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. np .or. 
+     >    int(lpm_rparam(4)) .eq. 1) then
          nmax = 1000
          d2chk_save = lpm_d2chk(2)
          
@@ -237,10 +304,15 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
             ifac(j+1) = 1 + i
             d2new(j+1) = (lpm_binb(2+2*j) - lpm_binb(1+2*j))/ifac(j+1)
             nbb = ifac(1)*ifac(2)*ifac(3)
-            if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) then
+
+            if( nbb .gt. np ) then
+            if( int(lpm_rparam(4)) .eq. 1 .or.
+     >          int(lpm_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
+     >          then
                icount(j+1) = icount(j+1) + 1
                ifac(j+1) = ifac(j+1) - icount(j+1)
                d2new(j+1) = (lpm_binb(2+2*j) -lpm_binb(1+2*j))/ifac(j+1)
+            endif
             endif
          enddo
             if (icount(1) .gt. 0) then
@@ -444,11 +516,11 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 
       return
       end
-!-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
       subroutine lpm_comm_ghost_create
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
+#     include "LPM"
 
       character*132 deathmessage
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
@@ -828,8 +900,8 @@ c----------------------------------------------------------------------
       subroutine lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
       include 'SIZE'
       include 'TOTAL'
-#include "LPM"
-c
+#     include "LPM"
+
       real rxnew(3), rxdrng(3)
       integer iadd(3), irett(3), ntype, ntypel(7)
 
@@ -907,9 +979,8 @@ c
       end
 c----------------------------------------------------------------------
       subroutine lpm_comm_ghost_send
-c
       include 'SIZE'
-#include "LPM"
+#     include "LPM"
 
       logical partl         
 
