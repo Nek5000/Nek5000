@@ -319,7 +319,7 @@ C
           ENDIF
  1300  CONTINUE
       ENDIF
- 
+
       ierr = iglsum(ierr,1)
       IF (IERR.gt.0) THEN
          if(nid.eq.0) WRITE(6,1400) 
