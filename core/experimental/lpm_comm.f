@@ -265,15 +265,15 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if(if3d)lpm_binb(5) = max(lpm_binb(5),lpm_xdrange(1,3))
       if(if3d)lpm_binb(6) = min(lpm_binb(6),lpm_xdrange(2,3))
 
-      if (iperiodicx .eq. 0) then
+      if (iperiodicx .eq. 1) then
          lpm_binb(1) = lpm_xdrange(1,1)
          lpm_binb(2) = lpm_xdrange(2,1)
       endif
-      if (iperiodicy .eq. 0) then
+      if (iperiodicy .eq. 1) then
          lpm_binb(3) = lpm_xdrange(1,2)
          lpm_binb(4) = lpm_xdrange(2,2)
       endif
-      if (iperiodicz .eq. 0 .and. if3d) then
+      if (iperiodicz .eq. 1 .and. if3d) then
          lpm_binb(5) = lpm_xdrange(1,3)
          lpm_binb(6) = lpm_xdrange(2,3)
       endif
@@ -348,19 +348,19 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       ryrbin = lpm_binb(4)
       rzlbin = lpm_binb(5)
       rzrbin = lpm_binb(6)
-      if (iperiodicx .ne. 0) then
+      if (iperiodicx .ne. 1) then
          rxlbin = rxlbin - ninc/2*lpm_rdxgp
          rxrbin = rxrbin + ninc/2*lpm_rdxgp
          rxlbin = max(rxlbin,lpm_xdrange(1,1))
          rxrbin = min(rxrbin,lpm_xdrange(2,1))
       endif
-      if (iperiodicy .ne. 0) then
+      if (iperiodicy .ne. 1) then
          rylbin = rylbin - ninc/2*lpm_rdygp
          ryrbin = ryrbin + ninc/2*lpm_rdygp
          rylbin = max(rylbin,lpm_xdrange(1,2))
          ryrbin = min(ryrbin,lpm_xdrange(2,2))
       endif
-      if (iperiodicz .ne. 0) then
+      if (iperiodicz .ne. 1) then
       if (if3d) then
          rzlbin = rzlbin - ninc/2*lpm_rdzgp
          rzrbin = rzrbin + ninc/2*lpm_rdzgp
@@ -565,9 +565,9 @@ c CREATING GHOST PARTICLES
       ydlen = lpm_binb(4) - lpm_binb(3)
       zdlen = -1.
       if (if3d) zdlen = lpm_binb(6) - lpm_binb(5)
-      if (iperiodicx .ne. 0) xdlen = -1
-      if (iperiodicy .ne. 0) ydlen = -1
-      if (iperiodicz .ne. 0) zdlen = -1
+      if (iperiodicx .ne. 1) xdlen = -1
+      if (iperiodicy .ne. 1) ydlen = -1
+      if (iperiodicz .ne. 1) zdlen = -1
 
       rxdrng(1) = xdlen
       rxdrng(2) = ydlen
@@ -652,17 +652,17 @@ c CREATING GHOST PARTICLES
             if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
                iflgx = 1
                iig =modulo(iig,lpm_ndxgp)
-               if (iperiodicx .ne. 0) cycle
+               if (iperiodicx .ne. 1) cycle
             endif
             if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
                iflgy = 1
                jjg =modulo(jjg,lpm_ndygp)
-               if (iperiodicy .ne. 0) cycle
+               if (iperiodicy .ne. 1) cycle
             endif
             if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
                iflgz = 1  
                kkg =modulo(kkg,lpm_ndzgp)
-               if (iperiodicz .ne. 0) cycle
+               if (iperiodicz .ne. 1) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz
@@ -746,17 +746,17 @@ c CREATING GHOST PARTICLES
             if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
                iflgx = 1
                iig =modulo(iig,lpm_ndxgp)
-               if (iperiodicx .ne. 0) cycle
+               if (iperiodicx .ne. 1) cycle
             endif
             if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
                iflgy = 1
                jjg =modulo(jjg,lpm_ndygp)
-               if (iperiodicy .ne. 0) cycle
+               if (iperiodicy .ne. 1) cycle
             endif
             if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
                iflgz = 1  
                kkg =modulo(kkg,lpm_ndzgp)
-               if (iperiodicz .ne. 0) cycle
+               if (iperiodicz .ne. 1) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz
@@ -840,17 +840,17 @@ c CREATING GHOST PARTICLES
             if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
                iflgx = 1
                iig =modulo(iig,lpm_ndxgp)
-               if (iperiodicx .ne. 0) cycle
+               if (iperiodicx .ne. 1) cycle
             endif
             if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
                iflgy = 1
                jjg =modulo(jjg,lpm_ndygp)
-               if (iperiodicy .ne. 0) cycle
+               if (iperiodicy .ne. 1) cycle
             endif
             if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
                iflgz = 1  
                kkg =modulo(kkg,lpm_ndzgp)
-               if (iperiodicz .ne. 0) cycle
+               if (iperiodicz .ne. 1) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz

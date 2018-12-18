@@ -695,9 +695,9 @@ c-----------------------------------------------------------------------
          do j=0,ndim-1
             jchk = jj(j+1)
             if (lpm_y(jchk,i).lt.lpm_xdrange(1,j+1))then
-               if (((iperiodicx.eq.0) .and. (j.eq.0)) .or.   ! periodic
-     >             ((iperiodicy.eq.0) .and. (j.eq.1)) .or.     
-     >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
+               if (((iperiodicx.eq.1) .and. (j.eq.0)) .or.   ! periodic
+     >             ((iperiodicy.eq.1) .and. (j.eq.1)) .or.     
+     >             ((iperiodicz.eq.1) .and. (j.eq.2)) ) then
                    lpm_y(jchk,i) = lpm_xdrange(2,j+1) - 
      &                         abs(lpm_xdrange(1,j+1) - lpm_y(jchk,i))
                    lpm_y1(isl+j)   = lpm_xdrange(2,j+1) +
@@ -706,9 +706,9 @@ c-----------------------------------------------------------------------
                 endif
             endif
             if (lpm_y(jchk,i).gt.lpm_xdrange(2,j+1))then
-               if (((iperiodicx.eq.0) .and. (j.eq.0)) .or.   ! periodic
-     >             ((iperiodicy.eq.0) .and. (j.eq.1)) .or.     
-     >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
+               if (((iperiodicx.eq.1) .and. (j.eq.0)) .or.   ! periodic
+     >             ((iperiodicy.eq.1) .and. (j.eq.1)) .or.     
+     >             ((iperiodicz.eq.1) .and. (j.eq.2)) ) then
                    lpm_y(jchk,i) = lpm_xdrange(1,j+1) +
      &                         abs(lpm_y(jchk,i) - lpm_xdrange(2,j+1))
                    lpm_y1(isl+j)   = lpm_xdrange(1,j+1) +
