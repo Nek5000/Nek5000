@@ -293,7 +293,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       lpm_ndzgp = 1
       if (if3d) lpm_ndzgp = floor( (lpm_binb(6) - lpm_binb(5))/d2new(3))
 
-
+c     if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. np) then
       if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. np .or. 
      >    int(lpm_rparam(4)) .eq. 1) then
          nmax = 1000
@@ -301,18 +301,19 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
          
          do i=1,nmax
          do j=0,ndim-1
+            iflg = 0
             ifac(j+1) = 1 + i
             d2new(j+1) = (lpm_binb(2+2*j) - lpm_binb(1+2*j))/ifac(j+1)
             nbb = ifac(1)*ifac(2)*ifac(3)
-
-            if( nbb .gt. np ) then
-            if( int(lpm_rparam(4)) .eq. 1 .or.
-     >          int(lpm_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
-     >          then
+            if (int(lpm_rparam(4)) .eq. 0) then
+               if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) iflg = 1
+            elseif (int(lpm_rparam(4)) .eq. 1) then
+               if( nbb .gt. np ) iflg = 1
+            endif
+            if (iflg .eq. 1) then
                icount(j+1) = icount(j+1) + 1
                ifac(j+1) = ifac(j+1) - icount(j+1)
                d2new(j+1) = (lpm_binb(2+2*j) -lpm_binb(1+2*j))/ifac(j+1)
-            endif
             endif
          enddo
             if (icount(1) .gt. 0) then
