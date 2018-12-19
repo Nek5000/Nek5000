@@ -41,6 +41,9 @@ env:
 
     - TEST_CASE=InclDef::test_PnPn_Parallel MPI=0 FC=gfortran CC=gcc
 
+    - TEST_CASE=lpm_one::test_PnPn_Parallel
+    - TEST_CASE=lpm_two::test_PnPn_Parallel
+
 before_install: 
   - export ROOT_DIR=`pwd`
 
