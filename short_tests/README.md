@@ -9,7 +9,7 @@ Python 2.7 or higher.
 
 Before running the tests, several environment variables may be optionally defined.
 
-* `SOURCE_ROOT`: Points to the top-level Nek5000 repository (default: this repository).
+* `NEK_SOURCE_ROOT`: Points to the top-level Nek5000 repository (default: this repository).
 * `FC`: The Fortran 77 compiler (default mpif77).
 * `CC`: The C compiler (default: mpicc).
 * `PPLIST`: List of pre-processor symbols (default: none)
