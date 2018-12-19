@@ -474,7 +474,8 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(67) = 6
 
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
-    
+      param(33) = 0
+
       fem_amg_param(1) = 0
       crs_param(1) = 0
 
