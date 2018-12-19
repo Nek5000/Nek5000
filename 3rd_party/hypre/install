@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+VER=2.15.1
+
 if [ "$1" == "clean" ]; then
   rm -rf hypre lib include 2>/dev/null
   exit 0
@@ -9,13 +11,13 @@ fi
 if [ -f ./lib/libHYPRE.a ]; then
   exit 0
 fi
-if [ ! -f v2.15.1.tar.gz ]; then
-  wget --no-check-certificate -O v2.15.1.tar.gz https://github.com/LLNL/hypre/archive/v2.15.1.tar.gz 
+if [ ! -f v$VER.tar.gz ]; then
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/hypre/archive/v$VER.tar.gz 
 fi
 
 rm -rf hypre 2>/dev/null
 mkdir hypre
-tar -zxvf *.tar.gz -C ./hypre --strip-components=1
+tar -zxvf v$VER.tar.gz -C ./hypre --strip-components=1
 cd hypre
 mkdir -p build
 cd build
