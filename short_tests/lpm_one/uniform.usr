@@ -1,5 +1,5 @@
 c Maximum number of local particles
-#define LPM_LPART 300
+#define LPM_LPART 300 /* make it large enough to account for load imbalance */
 
 c Number of particle equations being solved
 #define LPM_LRS 6
@@ -123,8 +123,13 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine usrdat2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
       include 'SIZE'
       include 'TOTAL'
 #     include "LPM"
@@ -132,6 +137,8 @@ c-----------------------------------------------------------------------
       real rparam(lpm_nparam) 
       common /SCRNS/ yp(LPM_LPART*LPM_LRS),
      $               pp(LPM_LPART*LPM_LRP)
+
+      ifflow = .false.
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
@@ -146,15 +153,6 @@ c-----------------------------------------------------------------------
 
       call init_particles(yp,pp,npart)
       call lpm_init      (rparam,yp,LPM_LRS,pp,LPM_LRP,npart,time)
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine usrdat3
-      include 'SIZE'
-      include 'TOTAL'
-
-      ifflow = .false.
 
       return
       end

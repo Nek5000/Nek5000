@@ -1,5 +1,5 @@
 c Maximum number of local particles
-#define LPM_LPART 300
+#define LPM_LPART 300 /* make it large enough to account for load imbalance */
 
 c Number of particle equations being solved
 #define LPM_LRS 6
@@ -177,8 +177,13 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       subroutine usrdat2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
       include 'SIZE'
       include 'TOTAL'
 #     include "LPM"
@@ -201,10 +206,6 @@ c-----------------------------------------------------------------------
       call init_particles(yp,pp,npart)
       call lpm_init      (rparam,yp,LPM_LRS,pp,LPM_LRP,npart,time)
 
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine usrdat3
       return
       end
 !-----------------------------------------------------------------------
@@ -333,8 +334,9 @@ c----------------------------------------------------------------------
 !-----------------------------------------------------------------------
       subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
 c
-c     map Lagrangian quantity to Eulerian field
-c
+c     defines what Lagrangian particle data gets mapped into what 
+c     Eulerian field index in lpm_pro_fld(:,:,:,:,index)
+c     
       real map(*)
       real y(*)
       real ydot(*)
