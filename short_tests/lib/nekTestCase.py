@@ -79,7 +79,7 @@ class NekTestCase(unittest.TestCase):
         f77 (str):            The Fortran 77 compiler to use     [default: 'gfortran']
         cc (str):             The C compiler to use              [default: 'gcc']
         ifmpi (bool):         Perform compilation/tests with MPI [default: False]
-        source_root (str):    Path to Nek source directory;overridden by $SOURCE_ROOT env variable
+        source_root (str):    Path to Nek source directory;overridden by $NEK_SOURCE_ROOT env variable
                               [default: '$HOME/nek5_svn/trunk/nek']
         tools_root (str):     Path to Nek tools directory; overridden by $TOOLS_ROOT env variable
                               [default: '$HOME/nek5_svn/trunk/tools']
@@ -182,7 +182,7 @@ class NekTestCase(unittest.TestCase):
 
         # Get paths from env
         try:
-            self.source_root = os.path.abspath(os.environ['SOURCE_ROOT'])
+            self.source_root = os.path.abspath(os.environ['NEK_SOURCE_ROOT'])
         except KeyError:
             pass
         else:
@@ -209,7 +209,7 @@ class NekTestCase(unittest.TestCase):
                 ('PPLIST', self.pplist),
                 ('USR_LFLAGS', self.usr_lflags),
                 ('IFMPI', self.ifmpi),
-                ('SOURCE_ROOT', self.source_root),
+                ('NEK_SOURCE_ROOT', self.source_root),
                 ('EXAMPLES_ROOT', self.examples_root),
                 ('LOG_ROOT', self.log_root),
                 ('TOOLS_ROOT', self.tools_root),
@@ -222,7 +222,7 @@ class NekTestCase(unittest.TestCase):
 
         # Verify that pathnames are valid
         for varname, varval in (
-                ('SOURCE_ROOT', self.source_root),
+                ('NEK_SOURCE_ROOT', self.source_root),
                 ('EXAMPLES_ROOT', self.examples_root),
                 ('LOG_ROOT', self.log_root),
                 ('TOOLS_ROOT', self.tools_root),

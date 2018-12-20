@@ -46,7 +46,7 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
         _opts = {}
     else:
         _opts = opts.copy()
-    _opts.update(SOURCE_ROOT=source_root)
+    _opts.update(NEK_SOURCE_ROOT=source_root)
 
     print('Compiling nek5000...')
     print('    Using source directory "{0}"'.format(source_root))
@@ -56,7 +56,7 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
         print('    Using {0}="{1}"'.format(key, val))
 
     my_env = os.environ.copy()
-    if source_root      : my_env["SOURCE_ROOT"] = source_root
+    if source_root      : my_env["NEK_SOURCE_ROOT"] = source_root
     if _opts.get('F77')   : my_env["FC"] = _opts.get('F77') 
     if _opts.get('CC')    : my_env["CC"] = _opts.get('CC')
     if _opts.get('PPLIST') : my_env["PPLIST"] = _opts.get('PPLIST') 
