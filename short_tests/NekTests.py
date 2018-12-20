@@ -6,6 +6,20 @@ import re
 
 ###############################################################################
 
+class Tools(NekTestCase):
+    def setUp(self):
+
+        self.build_tools(['all'])
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+###############################################################################
+
 class FsHydro(NekTestCase):
     example_subdir = 'fs_hydro'
     case_name       = 'fs_hydro'
@@ -1212,6 +1226,7 @@ if __name__ == '__main__':
         ut_verbose = 1
 
     testList = (
+               Tools,
                FsHydro,
                Axi, 
                Eddy_Neknek,
