@@ -4,6 +4,7 @@ sudo: required
 
 env:
   matrix:
+    - TEST_CASE=Tools
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  MPI=0 FC=gfortran CC=gcc
 
     - TEST_CASE=Axi::test_PnPn_Parallel

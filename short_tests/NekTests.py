@@ -6,42 +6,13 @@ import re
 
 ###############################################################################
 
-class FsHydro(NekTestCase):
-    example_subdir = 'fs_hydro'
-    case_name       = 'fs_hydro'
-
+class Tools(NekTestCase):
     def setUp(self):
-        self.size_params = dict(
-            ldim      = '2',
-            lx1       = '12',
-            lxd       = '18',
-            lx2       = 'lx1-2',
-            lelg      = '100',
-            lhis      = '100',
-            lelx      = '20',
-            lely      = '60',
-            lelz      = '1',
-            lx1m      = 'lx1',
-        )
-        self.build_tools(['genmap'])
-        self.run_genmap(tol='0.01')
 
-    @pn_pn_2_parallel
-    def test_PnPn2_Parallel(self):
-        self.size_params['lx2']='lx1-2'
-        self.config_size()
-        self.build_nek()
-        self.run_nek(step_limit=1000)
+        self.build_tools(['all'])
 
-        gmres = self.get_value_from_log('gmres', column=-6,)
-        self.assertAlmostEqualDelayed(gmres, target_val=0., delta=90., label='gmres')
-
-        axhm = self.get_value_from_log('axhm', column=-3,)
-        self.assertAlmostEqualDelayed(axhm, target_val=0., delta=19180., label='axhm')
-
-        amp = self.get_value_from_log('AMP', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(amp, target_val=-5.2985368e-05, delta=4e-05, label='AMP')
-
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
         self.assertDelayedFailures()
 
     def tearDown(self):
@@ -1212,6 +1183,7 @@ if __name__ == '__main__':
         ut_verbose = 1
 
     testList = (
+               Tools,
                FsHydro,
                Axi, 
                Eddy_Neknek,
