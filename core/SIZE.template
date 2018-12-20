@@ -20,7 +20,7 @@ c
 
       ! OPTIONAL
       parameter (ldimt_proj=1)         ! max auxiliary fields residual projection
-      parameter (lelr=1)               ! max number of elements per restart file
+      parameter (lelr=lelt)            ! max number of local elements per restart file
       parameter (lhis=1)               ! max history/monitoring points
       parameter (maxobj=1)             ! max number of objects
       parameter (lpert=1)              ! max number of perturbations

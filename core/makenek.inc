@@ -426,7 +426,7 @@ if ! cat SIZE | grep -qi 'lelr' ; then
    echo >>SIZE
    echo 'c automatically added by makenek' >>SIZE
    echo '      integer lelr' >>SIZE
-   echo '      parameter (lelr=1) ! max number of elements per restart file' >>SIZE
+   echo '      parameter (lelr=lelt) ! max number of local elements per restart file' >>SIZE
 fi
 if ! cat SIZE | grep -qi 'ldimt_proj' ; then
      echo >>SIZE

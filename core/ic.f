@@ -2273,11 +2273,6 @@ c      ifgtim  = .true.  ! always get time
          endif
       endif
 
-      if (nelr.gt.lelr) then
-         write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
-         call exitt
-      endif
-
       p0th = 1 
       if (p0thr.gt.0) p0th = p0thr
 
@@ -2561,6 +2556,18 @@ c-----------------------------------------------------------------------
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif
+
+      if (ifmpiio) then
+         if (nelt.gt.lelr) then
+            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelt
+            call exitt
+         endif
+      else
+         if (nelr.gt.lelr) then
+            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
+            call exitt
+         endif
+      endif
 
       if(.not.ifmpiio) then
 
