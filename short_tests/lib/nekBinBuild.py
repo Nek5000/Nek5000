@@ -36,7 +36,7 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
 
     if proc.returncode != 0:
         print('Could not compile tools! Check "{0}" for details.'.format(maketools_log))
-        #exit(-1)
+        exit(-1)
     else:
         print('Successfully compiled tools!')
 
