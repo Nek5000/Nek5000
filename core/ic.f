@@ -2273,11 +2273,6 @@ c      ifgtim  = .true.  ! always get time
          endif
       endif
 
-      if (nelr.gt.lelr) then
-         write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
-         call exitt
-      endif
-
       p0th = 1 
       if (p0thr.gt.0) p0th = p0thr
 
@@ -2469,7 +2464,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = glsum(dnbyte,1)
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
-      if (tio.eq.0) tio=1 ! Avoid division by zero, pff, 11/29/15
+      if (tio.eq.0) tio=1
       if (nio.eq.0) write(6,7) istep,time,
      &             nbyte/tio/1024/1024/10,
      &             nfiler
@@ -2561,6 +2556,18 @@ c-----------------------------------------------------------------------
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif
+
+      if (ifmpiio) then
+         if (nelt.gt.lelr) then
+            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelt
+            call exitt
+         endif
+      else
+         if (nelr.gt.lelr) then
+            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
+            call exitt
+         endif
+      endif
 
       if(.not.ifmpiio) then
 
@@ -2713,18 +2720,18 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine full_restart(s80,n_restart)
+      subroutine full_restart(fnames,n_restart)
       include 'SIZE'
       include 'TOTAL'
 
-      character*80 s80(n_restart)
+      character *(*) fnames(*)
 
       ifile = istep+1  ! istep=0,1,...
 
       if (ifile.le.n_restart) then
          p67 = param(67)
          param(67) = 6.00
-         call chcopy (initc,s80(ifile),80)
+         call chcopy (initc,fnames(ifile),80)
          call bcast  (initc,80)
          call restart       (1)
          param(67)=p67

@@ -33,7 +33,7 @@
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
 * Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
 * Your parameters to the reserved user space param(170) - param(200) 
-* Set lelr in SIZE to number of elements per restart file (for muli-file I/O only)
+* Set lelr in SIZE for a restart using muliple files (check value in hdr) 
 * Use planar_avg() instead of planar_average_z etc. 
 
 ## Known Bugs 

@@ -100,8 +100,6 @@ c
 
       logical  ifdoin
 
-      if (iostep.lt.0 .or. timeio.lt.0) return
-
       if (ioinfodmp.eq.-2) return
 
 #ifdef TIMER
@@ -1031,6 +1029,10 @@ c-----------------------------------------------------------------------
       ifmpiio = .false.
 #endif
 
+      wdsizo = 4
+      if (param(63).gt.0) wdsizo = 8 ! 64-bit .fld file
+      nrg = lxo
+
       if(ifmpiio) then
         nfileo  = np
         nproc_o = 1
@@ -1047,15 +1049,6 @@ c-----------------------------------------------------------------------
         pid0    = nproc_o*fid0             !  my parent i/o node
         pid1    = min(np-1,pid0+nproc_o-1) !  range of sending procs
       endif
-
-      wdsizo = 4                             ! every proc needs this
-      if (param(63).gt.0) wdsizo = 8         ! 64-bit .fld file
-      if (wdsizo.gt.wdsize) then
-         if(nid.eq.0) write(6,*) 'ABORT: wdsizo > wdsize!'
-         call exitt
-      endif
-
-      nrg = lxo
 
       ! how many elements are present up to rank nid
       nn = nelt
@@ -1281,9 +1274,11 @@ c-----------------------------------------------------------------------
       subroutine full_restart_save(iosave)
 
       integer iosave,save_size,nfld_save
+      logical if_full_pres_tmp
 
       include 'SIZE'
       include 'INPUT'
+      include 'TSTEP'
 
       if (PARAM(27).lt. 0) then
           nfld_save=abs(PARAM(27))  ! For full restart
@@ -1292,14 +1287,23 @@ c-----------------------------------------------------------------------
       endif
       save_size=8  ! For full restart
 
-      call restart_save(iosave,save_size,nfld_save)
+      dtmp = param(63)
+      if_full_pres_tmp = if_full_pres     
+
+      param(63) = 1 ! Enforce 64-bit output
+      if_full_pres = .true. !Preserve mesh 2 pressure
+
+      if (lastep.ne.1) call restart_save(iosave,nfld_save)
+
+      param(63) = dtmp
+      if_full_pres = if_full_pres_tmp 
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine restart_save(iosave,save_size,nfldi)
+      subroutine restart_save(iosave,nfldi)
 
-      integer iosave,save_size,nfldi
+      integer iosave,nfldi
 
 
 c     Save current fields for later restart.
@@ -1307,8 +1311,6 @@ c
 c     Input arguments:
 c
 c       .iosave plays the usual triggering role, like iostep
-c
-c       .save_size = 8 ==> dbl. precision output
 c
 c       .nfldi is the number of rs files to save before overwriting
 c
@@ -1353,29 +1355,13 @@ c                                      ! is the only form used for restart
          write(prefix,3) ks1(mfld)
     3    format('rs',a1)
 
-         iwdsizo = wdsizo
-         wdsizo  = save_size
          p66 = param(66)
-         param(66) = 6                       ! force multi-file out
-
-         npscal1 = npscal+1
-         if (.not.ifheat) npscal1 = 0
-
-         if_full_pres_tmp = if_full_pres     
-         if (save_size.eq.8) if_full_pres = .true. !Preserve mesh 2 pressure
-
-         if (ifmhd) call outpost2(bx,by,bz,pm,t,0      ,prefix)  ! first B
-                    call outpost2(vx,vy,vz,pr,t,npscal1,prefix)  ! then  U
-
-         wdsizo    = iwdsizo  ! Restore output parameters
-
+         param(66) = 6
+         if (ifmhd) call outpost2(bx,by,bz,pm,t,0,prefix)  ! first B
+         call prepost (.true.,prefix)
          param(66) = p66
-         if_full_pres = if_full_pres_tmp
 
       endif
-
-c     if (nid.eq.0) write(6,8) istep,prefix,nfld,nfld2,i2,m1,mt
-c  8  format(i8,' prefix ',a3,5i5)
 
       return
       end

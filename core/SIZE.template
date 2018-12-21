@@ -16,11 +16,12 @@ c
                                      
       parameter (lelg=1000)            ! max number of global elements
       parameter (lpmin=1)              ! min number of MPI ranks 
+      parameter (lelt=lelg/lpmin + 3)  ! max number of local elements per MPI rank
       parameter (ldimt=1)              ! max auxiliary fields (temperature + scalars)
 
       ! OPTIONAL
       parameter (ldimt_proj=1)         ! max auxiliary fields residual projection
-      parameter (lelr=1)               ! max number of elements per restart file
+      parameter (lelr=lelt)            ! max number of local elements per restart file
       parameter (lhis=1)               ! max history/monitoring points
       parameter (maxobj=1)             ! max number of objects
       parameter (lpert=1)              ! max number of perturbations
@@ -33,7 +34,6 @@ c
       parameter (lfdm=0)               ! unused 
       parameter (lelx=1,lely=1,lelz=1) ! global tensor mesh dimensions
 
-      parameter (lelt=lelg/lpmin + 3)  ! max number of local elements per MPI rank
       parameter (lbelt=1)              ! lelt for mhd
       parameter (lpelt=1)              ! lelt for linear stability
       parameter (lcvelt=1)             ! lelt for cvode
