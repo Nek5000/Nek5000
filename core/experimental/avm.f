@@ -1,8 +1,10 @@
       real function avm_vdiff(ix,iy,iz,e,c1,ncut)
 c
-c c1 and ncut a user tunable control parameters. 
-c Set c1 = 1.0 and reduce/increase as much possible/required.
+c c1 and ncut a user tuneable control parameters. 
+c Set c1 = 1.0 and reduce/increase as much possible/required,
+c depending on your application.
 c Typically ncut 1 or 2 works well. 
+c Note, avoid using lx1 < 6! 
 c
       include 'SIZE'
       include 'TOTAL'
@@ -17,8 +19,10 @@ c
       real visc(lx1,ly1,lz1,lelt)
       save visc
 
-      parameter (lt=lx1*ly1*lz1*lelt)
-      common /SCRMG/ r(lt),tx(lt),ty(lt),tz(lt) 
+      common /SCRMG/ r (lx1*ly1*lz1,lelt),
+     $               tx(lx1*ly1*lz1,lelt),
+     $               ty(lx1*ly1*lz1,lelt),
+     $               tz(lx1*ly1*lz1,lelt)
 
       parameter (lm=40)
       parameter (lm2=lm*lm)
@@ -32,6 +36,7 @@ c
       save    icalld
       data    icalld / 0 /
 
+      real h0,h0max
       real viscc(8,lelt)
 
       if (ix*iy*iz*e .ne. 1) then ! use cache
@@ -40,6 +45,7 @@ c
       endif
 
       if (icalld.eq.0) then
+         iffilter(ifield) = .false.
          do i = 1,ldimt1
             ibuild(i) = 0
          enddo
@@ -49,7 +55,6 @@ c
       nxyz = lx1*ly1*lz1
       n    = nxyz*nelv
       c2   = 0.5
-      iffilter(ifield) = .false.
 
       ! compute residual
       if (ifield.eq.1) then
@@ -80,11 +85,15 @@ c
 
       ! evaluate arificial viscosity
       uinf = 1./uinf
-      do i = 1,n
-        h0 = deltaf(i,1,1,1)
-        vmax  = sqrt(vx(i,1,1,1)**2 + vy(i,1,1,1)**2 + vz(i,1,1,1)**2)
-        vismax = c2 * h0 * vmax
-        visc(i,1,1,1) = min(vismax, c1 * h0**2 * abs(r(i)) * uinf)
+      do ie = 1,nelv
+         h0max = vlmax(deltaf(1,1,1,ie),nxyz) 
+      do i = 1,nxyz
+         h0 = deltaf(i,1,1,ie)
+         vmax = sqrt(vx(i,1,1,ie)**2 + vy(i,1,1,ie)**2 
+     $               + vz(i,1,1,ie)**2)
+         vismax = c2 * h0max * vmax
+         visc(i,1,1,ie) = min(vismax, c1*h0**2 * abs(r(i,ie))*uinf)
+      enddo
       enddo
 
       ! make it piecewise constant
@@ -128,8 +137,6 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      real dxc(8,lelt)
-
       real dx(lx1,ly1,lz1,lelt)
       save dx 
 
@@ -142,27 +149,28 @@ c
       if (icalld.eq.0) then
          dinv = 1./ldim
          do ie = 1,nelv
-            volavg = 0
-            do i  = 1,nxyz
-               volavg = volavg + bm1(i,1,1,ie)
-            enddo
-            call cfill(dx(1,1,1,ie),(volavg**dinv)/lx1,nxyz) 
+c            volavg = 0
+c            do i  = 1,nxyz
+c               volavg = volavg + bm1(i,1,1,ie)
+c            enddo
+c            dd = (volavg**dinv)/lx1
+c            call cfill(dx(1,1,1,ie),dd,nxyz) 
+
+            dd = 1e99
+            do 100 k = 1,nz1-1
+            do 100 j = 1,ny1-1
+            do 100 i = 1,nz1-1
+               dd = min(dd,xm1(i+1,j  ,k  ,ie)-xm1(i,j,k,ie))
+               dd = min(dd,ym1(i  ,j+1,k  ,ie)-ym1(i,j,k,ie))
+               dd = min(dd,zm1(i  ,j  ,k+1,ie)-zm1(i,j,k,ie))
+ 100        continue
+            call cfill(dx(1,1,1,ie),dd,nxyz) 
          enddo
-   
-         ! make it P1 continuous
-         call dsop (dx,'max',lx1,ly1,lz1)
-         do ie = 1,nelv
-           dxc(1,ie) = dx(1  ,1  ,1  ,ie)
-           dxc(2,ie) = dx(lx1,1  ,1  ,ie)
-           dxc(3,ie) = dx(1  ,ly1,1  ,ie)
-           dxc(4,ie) = dx(lx1,ly1,1  ,ie)
-   
-           dxc(5,ie) = dx(1  ,1  ,lz1,ie)
-           dxc(6,ie) = dx(lx1,1  ,lz1,ie)
-           dxc(7,ie) = dx(1  ,ly1,lz1,ie)
-           dxc(8,ie) = dx(lx1,ly1,lz1,ie)
-         enddo
-         call map_c_to_f_h1_bilin(dx,dxc)
+
+c         ddmin = glmin(dx,n)
+c         ddmax = glmax(dx,n)
+c         if (nid.eq.0) write(6,*) 'ddmin/ddmax', ddmin, ddmax
+
          icalld = 1
       endif
 

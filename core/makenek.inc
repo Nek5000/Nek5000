@@ -67,8 +67,6 @@ if [ "$PPLIST" == "?" ]; then
   echo "  CVODE       compile with CVODE support for scalars"
   echo "  HYPRE       compile with HYPRE support"
   echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
-  echo "  DPROCMAP    use distributed proc mapping arrays (requires PARRSB)"
-  echo "  PARRSB      activate online paritioner (genmap)"
   exit 1
 fi
 
