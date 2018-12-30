@@ -60,6 +60,7 @@ c
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
          ! compute pressure
+         call copy(prlag,pr,ntot1)
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
          npres=icalld
