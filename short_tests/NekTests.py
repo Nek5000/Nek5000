@@ -269,6 +269,55 @@ class Eddy_EddyUv(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+
+#####################################################################
+
+class eddy_mv(NekTestCase):
+    example_subdir  = 'eddy_mv'
+    case_name        = 'eddy_mv'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '10',
+            lxd       = '14',
+            lx2       = 'lx1-0',
+            lelg      = '256',
+            lx1m      = 'lx1'
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        xerr = self.get_value_from_log('X err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=5.164689E-04, delta=1E-05, label='X err')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        xerr = self.get_value_from_log('X err', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=5.370512E-04, delta=1E-05, label='X err')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
+
 #####################################################################
 
 class Eddy_LegacySize(NekTestCase):
@@ -1232,7 +1281,8 @@ if __name__ == '__main__':
                Eddy_Neknek,
                Eddy_NeknekU,
                Eddy_EddyUv,
-               Eddy_LegacySize, 
+               Eddy_LegacySize,
+               eddy_mv, 
                Benard_Ray9, 
                KovStokes, 
                LowMachTest, 

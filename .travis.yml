@@ -19,6 +19,7 @@ env:
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel
     - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel
     - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel
+    - TEST_CASE=eddy_mv::test_PnPn_Parallel
 
     - TEST_CASE=Ethier::test_PnPn_Parallel
     - TEST_CASE=Ethier::test_PnPn2_Parallel
