@@ -1,18 +1,3 @@
-c
-c    POTENTIAL BUG:
-c
-c    Before, we called set_char_mask for each field that is advected
-c    by advchar:
-c
-c      call set_char_mask(hmsk,cx,cy,cz) ! mask for hyperbolic system 
-c
-c
-c    NOW, we call it only once.
-c
-c    There is a minor inconsistency in this formulation...
-c
-c
-
 c-----------------------------------------------------------------------
 c
 c    Stability limits:
@@ -56,14 +41,14 @@ c-----------------------------------------------------------------------
          if (ifgeom) then ! Moving mesh
             call opsub3(cx,cy,cz,vx,vy,vz,wx,wy,wz)
             call set_conv_char(ct_vx,c_vx,cx,cy,cz,nelc,time,ifnew)
-            call set_char_mask(hmsk,cx,cy,cz) ! mask for hyperbolic system 
+c            call set_char_mask(hmsk,cx,cy,cz) ! mask for hyperbolic system 
          else
             call set_conv_char(ct_vx,c_vx,vx,vy,vz,nelc,time,ifnew)
-            call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
+c            call set_char_mask(hmsk,vx,vy,vz) ! mask for hyperbolic system 
          endif
 
          n=lx1*ly1*lz1*nelv
-         call rone(hmsk,n)          ! TEST: TURN OFF MASK
+         call rone(hmsk,n)            ! TURN OFF MASK
          call set_binv (bmnv, hmsk,n) ! Store binvm1*(hyperbolic mask)
          if(ifmvbd) then
             call set_bdivw(bdivw,hmsk,n) ! Store Bdivw *(hyperbolic mask)
@@ -984,51 +969,6 @@ c        Convert convector F to r-s-t coordinates
 
          endif
       enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_char_mask(mask,u,v,w) ! mask for hyperbolic system 
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
-      include 'SOLN'
-      include 'TSTEP'
-      integer msk(0:1)
-      character      cb*3
-      parameter (lxyz1=lx1*ly1*lz1)
-      common /ctmp1/ work(lxyz1,lelt)
-
-      real mask(lxyz1,1),u(lxyz1,1),v(lxyz1,1),w(lxyz1,1)
-
-      integer e,f
-
-      nfaces= 2*ldim
-      ntot1 = lx1*ly1*lz1*nelv
-      call rzero (work,ntot1)
-      call rone  (mask,NTOT1)
-
-      ifldv = 1
-      do 100 e=1,nelv
-      do 100 f=1,nfaces
-         cb=cbc(f,e,ifldv)
-         if (cb(1:1).eq.'v' .or. cb(1:1).eq.'V' .or.
-     $       cb.eq.'mv ' .or. cb.eq.'MV ') then
-
-           call faccl3 (work(1,e),u(1,e),unx(1,1,f,e),f)
-           call faddcl3(work(1,e),v(1,e),uny(1,1,f,e),f)
-           if (if3d) 
-     $     call faddcl3(work(1,e),w(1,e),unz(1,1,f,e),f)
-
-           call fcaver (vaver,work,e,f)
-
-           if (vaver.lt.0) call facev (mask,e,f,0.0,lx1,ly1,lz1)
-         endif
-         if (cb(1:2).eq.'ws' .or. cb(1:2).eq.'WS') 
-     $   call facev (mask,e,f,0.0,lx1,ly1,lz1)
- 100  continue
-      call dsop(mask,'*',lx1,ly1,lz1)
 
       return
       end

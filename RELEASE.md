@@ -15,12 +15,11 @@
 * Support for GNU 8.x compilers
 * Support for Cray compilers
 * Support for ARM compilers
+* Add AVM regularization for scalars (experimental)
 * FEM_AMG precoditioner (experimental) p40=3
 * SEMG_AMG_HYPRE precoditioner (experimental) p40=2
 * CHT support for generic fld reader
 * Overwrite core routines in usr
-* Fully scaleable memory footprint PPLIST=DPROCMAP (experimental)
-* Online genmap PPLIST=PARRSB (experimental) 
 * Lagrangian phase model - LPM (experimental)
 * Various bug fixes
 
