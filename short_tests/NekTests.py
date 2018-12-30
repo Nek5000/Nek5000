@@ -1247,6 +1247,41 @@ class lpm_two(NekTestCase):
     def tearDown(self):
         self.move_logs()
 
+#####################################################################
+
+class chan2d(NekTestCase):
+    example_subdir  = 'chan2d'
+    case_name        = 'chan2d'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-0',
+            lelg      = '96',
+            lx1m      = 'lx1'
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        xerr = self.get_value_from_log('X err', column=-3, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=1.0005e-08, delta=1E-09, label='X err')
+
+        self.assertDelayedFailures()
+
+    def tearDown(self):
+        self.move_logs()
+
 ###############################################################
 
 if __name__ == '__main__':
@@ -1295,7 +1330,8 @@ if __name__ == '__main__':
                IO_Test,
                InclDef,
                lpm_one,  
-               lpm_two   
+               lpm_two,
+               chan2d   
                ) 
 
     suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(t) for t in testList])
