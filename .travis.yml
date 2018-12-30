@@ -13,16 +13,14 @@ env:
 
     - TEST_CASE=FsHydro::test_PnPn2_Parallel
 
-    # - TEST_CASE=Benard_Ray9::test_PnPn_Parallel
-    # - TEST_CASE=Benard_Ray9::test_PnPn2_Parallel
-
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Parallel
     - TEST_CASE=Eddy_LegacySize::test_PnPn2_Parallel
     - TEST_CASE=Eddy_Rich::test_PnPn2_Parallel
+    - TEST_CASE=eddy_mv::test_PnPn_Parallel
 
     - TEST_CASE=Ethier::test_PnPn_Parallel
     - TEST_CASE=Ethier::test_PnPn2_Parallel
-#    - TEST_CASE=Ethier::test_PnPn2_Parallel PPLIST="PARRSB DPROCMAP" PARALLEL_PROCS=3 
+#    - TEST_CASE=Ethier::test_PnPn2_Parallel PARALLEL_PROCS=3 
 
     - TEST_CASE=KovStokes::test_PnPn2_Parallel
     - TEST_CASE=KovStokes::test_PnPn_Parallel
@@ -45,6 +43,8 @@ env:
 
     - TEST_CASE=lpm_one::test_PnPn_Parallel
     - TEST_CASE=lpm_two::test_PnPn_Parallel
+
+    - TEST_CASE=chan2d::test_PnPn_Parallel
 
 before_install: 
   - export ROOT_DIR=`pwd`
