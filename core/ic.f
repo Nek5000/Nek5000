@@ -194,6 +194,8 @@ C     Ensure that all processors have the same time as node 0.
          endif
       endif
 
+      call projfld_c0 ! ensure fields are contiguous
+
 C print min values
       xxmax = glmin(xm1,ntott)
       yymax = glmin(ym1,ntott)
@@ -2238,6 +2240,7 @@ c      ifgtim  = .true.  ! always get time
       enddo
 
       NPSR = 0
+      NPS  = 0
       do i=1,10 
          if (rdcode1(i).eq.'X') ifgetxr = .true.
          if (rdcode1(i).eq.'U') ifgetur = .true.
@@ -2733,7 +2736,7 @@ c-----------------------------------------------------------------------
          param(67) = 6.00
          call chcopy (initc,fnames(ifile),80)
          call bcast  (initc,80)
-         call restart       (1)
+         call restart(1)
          param(67)=p67
       endif
    
@@ -2748,6 +2751,8 @@ c-----------------------------------------------------------------------
       nxyz1 = lx1*ly1*lz1
       ntott = nelt*nxyz1
       ntotv = nelv*nxyz1
+
+      if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'projfld_c0'
 
 c     if (ifflow.and..not.ifdg)  then  ! Current dg is for scalars only
       if (ifflow)  then
