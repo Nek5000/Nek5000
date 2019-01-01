@@ -2,55 +2,11 @@ c-----------------------------------------------------------------------
       subroutine exact(uu,vv,xx,yy,n,time,visc,u0,v0)
 c
 c     This routine creates initial conditions for an exact solution
-c     to the Navier-Stokes equations based on the paper of Walsh [1],
+c     to the Navier-Stokes equations based on the paper of Walsh,
 c     with an additional translational velocity (u0,v0).
 c     
 c     The computational domain is [0,2pi]^2 with doubly-periodic 
 c     boundary conditions.
-c     
-c     Walsh's solution consists of an array of vortices determined 
-c     as a linear combinations of eigenfunctions of having form:
-c     
-c         cos(pi m x)cos(pi n y), cos(pi m x)sin(pi n y)
-c         sin(pi m x)cos(pi n y), sin(pi m x)sin(pi n y)
-c     
-c     and
-c
-c         cos(pi k x)cos(pi l y), cos(pi k x)sin(pi l y)
-c         sin(pi k x)cos(pi l y), sin(pi k x)sin(pi l y)
-c     
-c     While there are constraints on admissible (m,n),(k,l)
-c     pairings, Walsh shows that there is a large class of
-c     possible pairings that give rise to very complex vortex
-c     patterns.
-c     
-c     Walsh's solution applies either to unsteady Stokes or 
-c     unsteady Navier-Stokes.  The solution is a non-translating
-c     decaying array of vortices that decays at the rate 
-c
-c          exp ( -4 pi^2 (m^2+n^2) visc time ),
-c
-c     with (m^2+n^2) = (k^2+l^2). A nearly stationary state may
-c     be obtained by taking the viscosity to be extremely small,
-c     so the effective decay is negligible.   This limit, however,
-c     leads to an unstable state, thus diminsishing the value of 
-c     Walsh's solution as a high-Reynolds number test case.
-c
-c     It is possible to extend Walsh's solution to a stable convectively-
-c     dominated case by simulating an array of vortices that translate
-c     at arbitrary speed by adding a constant to the initial velocity field.  
-c     This approach provides a good test for convection-diffusion dynamics.
-c     
-c     The approach can also be extended to incompressible MHD with unit
-c     magnetic Prandtl number Pm.
-c     
-c [1] Owen Walsh, "Eddy Solutions of the Navier-Stokes Equations,"
-c     in The Navier-Stokes Equations II - Theory and Numerical Methods,
-c     Proceedings, Oberwolfach 1991, J.G. Heywood, K. Masuda,
-c     R. Rautmann,  S.A. Solonnikov, Eds., Springer-Verlag, pp. 306--309
-c     (1992).
-c
-c     2/23/02; 6/2/09;  pff
 c
 c
       include 'SIZE'
@@ -171,30 +127,22 @@ c
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
 
-      ! test multisession gs_op
-      if (nsessions.eq.2 .and. .not.ifneknekc) then
-        nxyz = nx1*ny1*nz1
-        call gs_setup_ms(ihms,nelv,nx1,ny1,nz1)
-        do iel = 1,nelv
-           ieg = lglel(iel)
-           do ixyz = 1,nxyz
-              ue(ixyz,1,1,iel) = ixyz + nxyz*(ieg-1)
-              if(idsess.eq.0) ue(ixyz,1,1,iel) = -ue(ixyz,1,1,iel)
-           enddo
-        enddo
-        call gs_op_ms(ue,'sum',ihms)
-        dmxs = glmax(ue,n)
-        dmns = glmin(ue,n)
-        dmx  = glmax_ms(dmxs,1)
-        dmn  = glmin_ms(dmns,1)
-        if (dmx.eq.0 .and. dmn.eq.dmx) then
-           if (nid_global.eq.0) write(6,*) 'gs_op_ms test PASSED'
-        else
-           if (nid_global.eq.0) write(6,*) 'gs_op_ms test FAILED'
-        endif
-        call exitt0
-      endif
 
+      ifxyo = .true.
+      ntot = lx1*ly1*lz1*nelv
+      xmx = glmax(xm1,ntot)
+      xmxg = glmax_ms(xm1,ntot)
+      if (abs(xmx-xmxg).gt.1.e-5) then
+       ifusermv = .true.
+       do i=1,nx1*ny1*nz1*nelv
+        xv = xm1(i,1,1,1)
+        yv = ym1(i,1,1,1)
+        zv = 0.
+        call u_meshv(wxv,wyv,wzv,xv,yv,zv)
+        wx(i,1,1,1) = wxv
+        wy(i,1,1,1) = wyv
+       enddo
+      endif
       ifield = 1  ! for outpost
 
       n    = nx1*ny1*nz1*nelv
@@ -215,15 +163,16 @@ c
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
 
-c     Global error calculation
+c    Global error calculation
       if (IFNEKNEK) then 
-        umx_gl = glamax_ms(vx,n)
-        vmx_gl = glamax_ms(vy,n)
-        uex_gl = glamax_ms(ue,n)
-        vex_gl = glamax_ms(ve,n)
-        udx_gl = glamax_ms(ud,n)
-        vdx_gl = glamax_ms(vd,n)
+      umx_gl = glamax_ms(vx,n)
+      vmx_gl = glamax_ms(vy,n)
+      uex_gl = glamax_ms(ue,n)
+      vex_gl = glamax_ms(ve,n)
+      udx_gl = glamax_ms(ud,n)
+      vdx_gl = glamax_ms(vd,n)
       end if  
+
 
       if (nid.eq.0) then
           write(6,11) istep,time,udx,umx,uex,u0,'  X err', session
@@ -235,13 +184,15 @@ c     Global error calculation
      & 'global'
           write(6,11) istep,time,vdx_gl,vmx_gl,vex_gl,v0,'  Y err',
      & 'global'
-   11     format(i5,1p5e14.6,a7,2x,a7)
+   11     format(i5,1p5e14.6,a7,2x,a9)
       endif
+
 
       if (istep.le.5) then        !  Reset velocity to eliminate 
          call copy (vx,ue,n)      !  start-up contributions to
          call copy (vy,ve,n)      !  temporal-accuracy behavior.
       endif
+
 
       return
       end
@@ -256,17 +207,13 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       ie = gllel(ieg)
 
       if (imask(ix,iy,iz,ie).eq.0) then
-       ux=0.0
-       uy=0.0
-       uz=0.0
-       temp=0.0
+       if (ifusermv) call u_meshv(ux,uy,uz,x,y,z)
       else      
-       ux = valint(ix,iy,iz,ie,1)
-       uy = valint(ix,iy,iz,ie,2)
-       uz = valint(ix,iy,iz,ie,ldim)
-       if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
+         ux = valint(ix,iy,iz,ie,1)
+         uy = valint(ix,iy,iz,ie,2)
+         uz = valint(ix,iy,iz,ie,3)
+         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
-
       return
       end
 c-----------------------------------------------------------------------
@@ -305,18 +252,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
     
-c     ngeom - parameter controlling the number of iterations,
-c     set to ngeom=2 by default (no iterations) 
-c     One could change the number of iterations as
-      ngeom = 2
-
-c     ninter - parameter controlling the order of interface extrapolation 
-c     for neknek,
-c     set to ninter=1 by default
-c     One could change it as
-      ninter = 1
-c     Caution: if ninter greater than 1 is chosen, ngeom greater than 2 
-c     should be used for stability
+      ngeom = 3
+      ninter = 3
 
       return
       end
@@ -333,8 +270,6 @@ c-----------------------------------------------------------------------
       call cmult(xm1,twopi,n)
       call cmult(ym1,twopi,n)
 
-c     This routine initializes the mulitdomain coupling          
-      
       return
       end
 c----------------------------------------------------------------------
@@ -342,3 +277,17 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
+      subroutine u_meshv(ux,uy,uz,x,y,z)
+
+      pi = 4.*atan(1.)
+      xc = (x-pi)
+      yc = (y-pi)
+      rc = sqrt(xc**2+yc**2)
+      thv = atan2(yc,xc)
+      omega = 2.*pi*1.
+      ux = omega*rc*sin(thv)
+      uy = -omega*rc*cos(thv)
+
+      return
+      end
+c-----------------------------------------------------------------------

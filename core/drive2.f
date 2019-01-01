@@ -395,20 +395,6 @@ C
          CALL SETINVM
          CALL SETDEF
          CALL SFASTAX
-      ELSEIF (IGEOM.EQ.3) THEN
-c
-c        Take direct stiffness avg of mesh
-c
-         ifieldo = ifield
-         if (.not.ifneknekm) CALL GENCOOR (XM3,YM3,ZM3)
-         CALL GEOM1 (XM3,YM3,ZM3)
-         CALL GEOM2
-         CALL UPDMSYS (1)
-         CALL VOLUME
-         CALL SETINVM
-         CALL SETDEF
-         CALL SFASTAX
-         ifield = ifieldo
       ENDIF
 
       if (nio.eq.0.and.istep.le.1) then
@@ -703,7 +689,13 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
          if (igeom.ge.2) call printdiverr
 
       elseif (iftran) then
@@ -718,7 +710,13 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
          endif
 
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then 
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
 
       else   !  steady Stokes, non-split
 

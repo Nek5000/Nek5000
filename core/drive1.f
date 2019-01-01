@@ -96,12 +96,14 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
+      if (ifneknekc) call setup_neknek_wts 
+
       if(nio.eq.0) write(6,*) 'call usrdat2'
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
       call fix_geom
       
-      if (ifneknekc) call multimesh_create 
+      if (ifneknekc) call setup_neknek
 
       call geom_reset(1)    ! recompute Jacobians, etc.
       call vrdsmsh          ! verify mesh topology
@@ -272,7 +274,10 @@ c-----------------------------------------------------------------------
 
          do igeom=1,ngeom
 
-         if (ifneknekc .and. igeom.gt.2) call neknek_exchange
+         if (ifneknekc .and. igeom.gt.2) then
+            if (ifneknekm.and.igeom.eq.3) call setup_neknek
+            call neknek_exchange
+         endif
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -301,7 +306,10 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknekc .and. igeom.gt.2) call neknek_exchange
+            if (ifneknekc .and. igeom.gt.2) then
+              if (ifneknekm.and.igeom.eq.3) call setup_neknek
+              call neknek_exchange
+            endif
 
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -310,8 +318,6 @@ c-----------------------------------------------------------------------
                if (.not.ifrich) call gengeom (igeom)
                call geneig  (igeom)
             endif
-
-            if (ifneknekm.and.igeom.eq.2) call multimesh_create
 
             if (ifmhd) then
                if (ifheat)      call heat     (igeom)
@@ -363,8 +369,11 @@ c-----------------------------------------------------------------------
          istep = istep+i
          call nek_advance
 
-         if (ifneknekc) call neknek_exchange
-         if (ifneknekc) call chk_outflow
+         if (ifneknekc) then 
+            call neknek_exchange
+            call bcopy
+            call chk_outflow
+         endif
       enddo
 
       return

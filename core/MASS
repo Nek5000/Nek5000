@@ -8,5 +8,9 @@ c
      $    ,volvm1,volvm2,voltm1,voltm2
      $    ,yinvm1(lx1,ly1,lz1,lelt)
      $    ,binvdg(lx1*ly1*lz1,lelt)
+     $    ,bm1ms(lx1,ly1,lz1,lelt)  !weighted mass matrix 
+     $    ,upf(lx1,ly1,lz1,lelt)    !unity partition function
+     $    ,volvm1ms
       common /mass/ bm1,bm2,binvm1,bintm1,bm2inv,baxm1,bm1lag
      $      ,volvm1,volvm2,voltm1,voltm2,yinvm1,binvdg
+     $      ,bm1ms,upf,volvm1ms
