@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from lib.nekTestCase import *
 from unittest import skip
+from shutil import copyfile
 
 import re
 
@@ -1124,13 +1125,43 @@ class IO_Test(NekTestCase):
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
-        self.size_params['lx2'] = 'lx1-2'
         self.config_size()
+
         self.build_nek(usr_file='io_test')
         self.run_nek(step_limit=None)  
-        
+       
         phrase = self.get_phrase_from_log('All I/O tests PASSED')
         self.assertIsNotNullDelayed(phrase, label='All I/O tests PASSED')
+
+        self.assertDelayedFailures()
+
+
+        self.run_genmap(rea_file='io_test_rs')
+        self.build_nek(usr_file='io_test_rs')
+
+        from re import sub
+        cls = self.__class__
+        path = os.path.join(self.examples_root, cls.example_subdir + '/') 
+        cls.case_name = 'io_test_rs' 
+
+        self.config_parfile({'GENERAL' : {'timestepper' : 'bdf3'}})
+        self.config_parfile({'GENERAL' : {'numsteps' : '200'}})
+        self.config_parfile({'GENERAL' : {'writeinterval' : '100'}})
+        self.config_parfile({'GENERAL' : {'userparam01' : '0'}})
+        self.run_nek() 
+        copyfile(path+'io_test_rs0.f00002', path+'ref.fld')
+
+        self.config_parfile({'GENERAL' : {'numsteps' : '100'}})
+        self.config_parfile({'GENERAL' : {'writeinterval' : '100'}})
+        self.config_parfile({'GENERAL' : {'userparam01' : '1'}})
+        self.run_nek()  
+        copyfile(path+'io_test_rs0.f00001', path+'out.fld')
+
+        self.config_parfile({'GENERAL' : {'numsteps' : '0'}})
+        self.run_nek()  
+
+        err = self.get_value_from_log('err max: ', column=-1)
+        self.assertAlmostEqualDelayed(err, target_val=6e-13, delta=1e-13, label='rs err')
 
         self.assertDelayedFailures()
 

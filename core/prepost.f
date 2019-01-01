@@ -1352,8 +1352,9 @@ c                                      ! is the only form used for restart
 
       if (istep.gt.iosav/2  .and.
      $   mod(istep+iosav-iotest,iosav).lt.nfld2) then ! save
-         write(prefix,3) ks1(mfld)
-    3    format('rs',a1)
+         write(prefix,'(A)') 'rs_'
+c         write(prefix,3) ks1(mfld)
+c    3    format('rs',a1)
 
          p66 = param(66)
          param(66) = 6

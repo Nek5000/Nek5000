@@ -142,8 +142,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
 
-      call projfld_c0   ! ensure fields are contiguous
-
       call setprop      ! call again because input has changed in userchk
 
       if (ifcvode .and. nsteps.gt.0) call cv_init
