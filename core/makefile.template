@@ -176,7 +176,7 @@ $(OBJDIR)/interp.o      :$S/interp.f;                   $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/mvmesh.o	:$S/mvmesh.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/induct.o	:$S/induct.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/convect.o	:$S/convect.f;	      		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/convect2.o	:$S/convect2.f;	      		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/convect2.o	:$S/convect2.f;	      		$(FC) -c $(FL0) $< -o $@
 $(OBJDIR)/perturb.o	:$S/perturb.f;	      		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hsmg.o	:$S/hsmg.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gmres.o	:$S/gmres.f;			$(FC) -c $(FL2) $< -o $@

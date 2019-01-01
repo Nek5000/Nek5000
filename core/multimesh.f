@@ -436,8 +436,9 @@ c-----------------------------------------------------------------------
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
 
-      if (nio.eq.0) write(6,*) 
+      if (nio.eq.0) write(6,98) 
      $   ' Multidomain data exchange ... ', nfld_neknek
+ 98   format(12x,a,i3)
 
       etime0 = dnekclock_sync()
       call neknekgsync()
