@@ -1161,7 +1161,7 @@ class IO_Test(NekTestCase):
         self.run_nek()  
 
         err = self.get_value_from_log('err max: ', column=-1)
-        self.assertAlmostEqualDelayed(err, target_val=6e-13, delta=1e-13, label='rs err')
+        self.assertAlmostEqualDelayed(err, target_val=7.4e-12, delta=1e-13, label='rs err')
 
         self.assertDelayedFailures()
 

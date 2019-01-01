@@ -2240,6 +2240,7 @@ c      ifgtim  = .true.  ! always get time
       enddo
 
       NPSR = 0
+      NPS  = 0
       do i=1,10 
          if (rdcode1(i).eq.'X') ifgetxr = .true.
          if (rdcode1(i).eq.'U') ifgetur = .true.
