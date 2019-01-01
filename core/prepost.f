@@ -41,6 +41,7 @@ c     Check for io request in file 'ioinfo'
 
       include 'SIZE'
       include 'TSTEP'
+      include 'INPUT'
 
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
@@ -53,11 +54,17 @@ c     Check for io request in file 'ioinfo'
       save    maxstep
       data    maxstep /999999999/
 
-c      if (iostep.lt.0 .or. timeio.lt.0) return
+      character*132 fname
+      character*1   fname1(132)
+      equivalence  (fname,fname1)
 
       ioinfodmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
-         open(unit=87,file='ioinfo',status='old',err=88)
+         call blank(fname1,size(fname1))
+         len = ltrunc(path,132)
+         call chcopy(fname1,path,len)
+         call chcopy(fname1(len+1),'ioinfo',6)
+         open(unit=87,file=fname,status='old',err=88)
          read(87,*,end=87,err=87) idummy
          if (ioinfodmp.eq.0) ioinfodmp=idummy
          if (idummy.ne.0) then  ! overwrite last i/o request
