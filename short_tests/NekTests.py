@@ -1254,6 +1254,11 @@ class IO_Test(NekTestCase):
     case_name = 'io_test'
 
     def setUp(self):
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
         self.size_params = dict(
             ldim      = '3',
             lx1       = '6',
@@ -1262,23 +1267,15 @@ class IO_Test(NekTestCase):
             lelg      = '100',
             ldimt     = '3',
             lelr      = 'lelg',
+            lx1m      = 'lx1'
         )
-
-        self.build_tools(['genmap'])
-        self.run_genmap()
-
-    @pn_pn_2_parallel
-    def test_PnPn2_Parallel(self):
         self.config_size()
 
         self.build_nek(usr_file='io_test')
         self.run_nek(step_limit=None)  
-       
         phrase = self.get_phrase_from_log('All I/O tests PASSED')
         self.assertIsNotNullDelayed(phrase, label='All I/O tests PASSED')
-
         self.assertDelayedFailures()
-
 
         self.run_genmap(rea_file='io_test_rs')
         self.build_nek(usr_file='io_test_rs')
@@ -1303,10 +1300,32 @@ class IO_Test(NekTestCase):
 
         self.config_parfile({'GENERAL' : {'numsteps' : '0'}})
         self.run_nek()  
+        err0 = self.get_value_from_log('err max: ', column=-1)
 
-        err = self.get_value_from_log('err max: ', column=-1)
-        self.assertAlmostEqualDelayed(err, target_val=7.4e-12, delta=1e-13, label='rs err')
 
+        self.size_params['lx2']='lx1-0'
+        self.config_size()
+        self.build_nek(usr_file='io_test_rs')
+
+        self.config_parfile({'GENERAL' : {'timestepper' : 'bdf3'}})
+        self.config_parfile({'GENERAL' : {'numsteps' : '200'}})
+        self.config_parfile({'GENERAL' : {'writeinterval' : '100'}})
+        self.config_parfile({'GENERAL' : {'userparam01' : '0'}})
+        self.run_nek() 
+        copyfile(path+'io_test_rs0.f00002', path+'ref.fld')
+
+        self.config_parfile({'GENERAL' : {'numsteps' : '100'}})
+        self.config_parfile({'GENERAL' : {'writeinterval' : '100'}})
+        self.config_parfile({'GENERAL' : {'userparam01' : '1'}})
+        self.run_nek()  
+        copyfile(path+'io_test_rs0.f00001', path+'out.fld')
+
+        self.config_parfile({'GENERAL' : {'numsteps' : '0'}})
+        self.run_nek()  
+        err1 = self.get_value_from_log('err max: ', column=-1)
+
+        self.assertAlmostEqualDelayed(err0, target_val=0.0, delta=8e-12, label='rs err PnPn-2')
+        self.assertAlmostEqualDelayed(err1, target_val=0.0, delta=1e-15, label='rs err PnPn  ')
         self.assertDelayedFailures()
 
     def tearDown(self):

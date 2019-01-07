@@ -2737,6 +2737,7 @@ c-----------------------------------------------------------------------
          call chcopy (initc,fnames(ifile),80)
          call bcast  (initc,80)
          call restart(1)
+         call setprop
          param(67)=p67
       endif
    
