@@ -1324,8 +1324,8 @@ class IO_Test(NekTestCase):
         self.run_nek()  
         err1 = self.get_value_from_log('err max: ', column=-1)
 
-        self.assertAlmostEqualDelayed(err0, target_val=0.0, delta=8e-12, label='rs err PnPn-2')
-        self.assertAlmostEqualDelayed(err1, target_val=0.0, delta=1e-15, label='rs err PnPn  ')
+        self.assertAlmostEqualDelayed(err0, target_val=0.0, delta=0.0, label='rs err PnPn-2')
+        self.assertAlmostEqualDelayed(err1, target_val=0.0, delta=0.0, label='rs err PnPn  ')
         self.assertDelayedFailures()
 
     def tearDown(self):

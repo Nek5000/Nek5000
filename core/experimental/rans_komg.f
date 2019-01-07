@@ -7,7 +7,7 @@
       save timel
       data timel /-1.0/
 
-      if(time.ne.timel) then
+      if(time.ne.timel .or. istep.le.2) then
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_eddy
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_eddy
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_eddy
@@ -63,7 +63,7 @@ c-----------------------------------------------------------------------
       real timel
       common /srctime/ timel
 
-      if((time+dt).ne.timel) then
+      if((time+dt).ne.timel .or. istep.le.2) then
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -2644,7 +2644,7 @@ c
       nij = 3
       if (if3d.or.ifaxis) nij=6
 
-      if(time.ne.timel) then
+      if(time.ne.timel .or. istep.le.2) then
 
       if(nid.eq.0 .and. loglevel.gt.2) write(*,*) 'updating StOm '
       call comp_sij_oij     (sij, oij, nij, vx, vy, vz, iflmc, ifdss) ! S'ij=2Sij, O'ij=2Oij

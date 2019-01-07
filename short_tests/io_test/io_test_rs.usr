@@ -8,8 +8,8 @@ c-----------------------------------------------------------------------
 
       e = gllel(ieg)
 
-      udiff =2 + t(ix,iy,iz,e,1)
-      utrans=1.
+      udiff  = 2 + t(ix,iy,iz,e,1)
+      utrans = 1
 
       return
       end
@@ -39,8 +39,6 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       character*80 fnames(3)
-
-      ifxyo = .false.
 
       if (int(uparam(1)).ne.0) then
          call blank(fnames,size(fnames)*80)
@@ -98,6 +96,9 @@ c     This routine to modify element vertices
       include 'SIZE'
       include 'TOTAL'
 
+      ifxyo = .false.
+      if_full_pres = .true.
+
       return
       end
 c-----------------------------------------------------------------------
@@ -111,8 +112,6 @@ c-----------------------------------------------------------------------
       subroutine usrdat3
       include 'SIZE'
       include 'TOTAL'
-
-
 
       if (nsteps.eq.0) then
          call check
