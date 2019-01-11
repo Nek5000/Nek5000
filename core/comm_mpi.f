@@ -14,6 +14,8 @@ c-----------------------------------------------------------------------
       logical ifhigh
       logical mpi_is_initialized
 
+      integer*8 ntags
+
       ! Init MPI
       call mpi_initialized(mpi_is_initialized, ierr)
       if (.not.mpi_is_initialized) call mpi_init(ierr)
@@ -21,8 +23,8 @@ c-----------------------------------------------------------------------
       call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-      if (nval .lt. np_global) then
+      call mpi_comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,ntags,flag,ierr)
+      if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
       endif
