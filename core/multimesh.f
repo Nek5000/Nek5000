@@ -25,7 +25,7 @@ c     Initialize unity partition function to 1
       return
       end
 c-------------------------------------------------------------
-      subroutine setup_neknek
+      subroutine neknek_setup
 
       include 'SIZE'
       include 'TOTAL'
@@ -40,18 +40,19 @@ c-------------------------------------------------------------
 
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
-      call neknekgsync()
-
       if (nsessmax.eq.1) 
      $  call exitti('set nsessmax > 1 in SIZE!$',nsessmax)
+
+      call setup_neknek_wts
 
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
          call nekneksanchk
          call set_intflag
          call neknekmv
-         if (nid.eq.0) write(6,*) 'ext order=', ninter
-         if (nid.eq.0) write(6,*) 'nfld_neknek=', nfld_neknek
+         if (nid.eq.0) write(6,*) 'session id:', idsess
+         if (nid.eq.0) write(6,*) 'extrapolation order:', ninter
+         if (nid.eq.0) write(6,*) 'nfld_neknek:', nfld_neknek
       endif
 
       nfld_min = iglmin_ms(nfld_neknek,1)
@@ -62,8 +63,6 @@ c-------------------------------------------------------------
      $      'WARNING: reset nfld_neknek to ', nfld_neknek
       endif
  
-      call neknekgsync()
-
 c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 
@@ -247,7 +246,6 @@ c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS
 
 c     Get total number of processors and number of p
       npall = 0
-      call neknekgsync()
       do i=1,nsessions
        npall = npall+npsess(i-1)
       enddo
@@ -266,8 +264,6 @@ c     Displace MESH 1
       if (idsess.eq.0) then
          call cadd(xm1,-dxf,ntot)
       endif
-
-      call neknekgsync()
 
 c     Setup findpts    
       tol     = 5e-13
@@ -411,15 +407,12 @@ c     Make sure rcode_all is fine
 
       ipg = iglsum(ip,1)
       nbpg = iglsum(nbp,1)
-      if (nid.eq.0) write(6,*) 
-     $      idsess,ipg,nbpg,'Neknek interface points'
+      if (nid.eq.0) write(6,*) ipg,nbpg,'interface points' 
       npoints_nn = ip
 
       ierror = iglmax_ms(ierror,1)
       if (ierror.eq.1) call exitt
  
-      call neknekgsync()
-
       return
       end
 c-----------------------------------------------------------------------
@@ -580,8 +573,8 @@ c     velocity.
       aqg=glsum(aqg,1) ! sum over all processors for this session
       gamma = 0.
       if (aqg.gt.0) gamma = -dqg/aqg
-      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
-104     format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
+c      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
+c 104  format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
       do e=1,nelv
       do f=1,2*ldim
         if (intflag(f,e).eq.1) then
