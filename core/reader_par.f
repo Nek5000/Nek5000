@@ -1120,6 +1120,9 @@ c
         call exitt
       endif
 
+      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
+     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
+
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
 

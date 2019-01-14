@@ -92,24 +92,21 @@ c     get intflag=1.
 c
 c     Boundary conditions are changed back to 'v' or 't'.
 
-      ifield = 1
-      if (ifheat) ifield = 2
-
       nfaces = 2*ldim
-      nel    = nelfld(ifield)
       
-      nflag=nel*nfaces
+      nflag=nelt*nfaces
       call izero(intflag,nflag)
 
-      do j=1,ifield
+      do j=1,nfield
+         nel = nelfld(j)
       do e=1,nel
       do f=1,nfaces
          cb=cbc(f,e,j)
          if (cb2.eq.'in') then
             intflag(f,e)=1
-            if (j.eq.2) cbc(f,e,j)='t  '
+            if (j.ge.2) cbc(f,e,j)='t  '
             if (j.eq.1) cbc(f,e,j)='v  '
-c           if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
+c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
 c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
             if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
          endif
@@ -220,7 +217,6 @@ c-----------------------------------------------------------------------
 
       imove=1
       if (ifmvbd) imove=0
-      call neknekgsync()
 
       iglmove = iglmin_ms(imove,1)
 
@@ -447,7 +443,7 @@ c     Interpolate using findpts_eval
       if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
       call field_eval(fieldout(1,ldim+1),1,pm1)
       if (nfld_neknek.gt.ldim+1) then 
-        do i=ldim+2,nfld_neknek  !do all passive scalars
+        do i=ldim+2,nfld_neknek
           call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
         enddo
       endif
