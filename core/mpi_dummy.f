@@ -1089,6 +1089,17 @@ c
       return
       end
 
+      subroutine mpi_comm_get_attr(icomm,ikey,ival,iflag,ierr)
+
+      integer*8 ival 
+      logical iflag
+
+      ival =  9 999 999  ! dummy
+ 
+      return
+      end
+c
+
       subroutine mpi_attr_get(icomm,ikey,ival,iflag,ierr)
  
       logical iflag
