@@ -1488,11 +1488,27 @@ c-----------------------------------------------------------------------
       dsjmax = glmax(ddmax,1)
       dsjavg = glsum(ddavg,1)/nelgt 
 
+      ! dx
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         ddmin = min(ddmin,dxmin_e(ie)) 
+         ddmax = max(ddmax,dxmax_e(ie))
+         dtmp  = vlsum(JACM1(1,1,1,ie),nxyz)**1./3
+         ddavg = ddavg + dtmp/(lx1-1) 
+      enddo 
+      dxmin = glmin(ddmin,1)
+      dxmax = glmax(ddmax,1)
+      dxavg = glsum(ddavg,1)/nelgt 
+
       if (nid.eq.0) then
          write(6,*) 'mesh metrics:'
-         write(6,'(A,1p3E9.2)') ' scaled Jacobian min/max/avg:',
+         write(6,'(A,1p3E9.2)') ' GLL grid spacing min/max    :',
+     $   dxmin,dxmax,dxavg
+         write(6,'(A,1p3E9.2)') ' scaled Jacobian  min/max/avg:',
      $   dsjmin,dsjmax,dsjavg
-         write(6,'(A,1p3E9.2)') ' aspect ratio    min/max/avg:',
+         write(6,'(A,1p3E9.2)') ' aspect ratio     min/max/avg:',
      $   darmin,darmax,daravg
          write(6,*)
       endif
@@ -1502,7 +1518,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       real function dist_xyzc(i,j,ie)
 c
-c     distance betwen two element corner points
+c     distance between two element corner points
 c     
       include 'SIZE'
       include 'INPUT'
@@ -1513,4 +1529,115 @@ c
       dist_xyzc = sqrt(dist_xyzc)
 
       return
-      end 
+      end
+c-----------------------------------------------------------------------
+      function dxmin_e(e)
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+
+      integer  e
+
+      d2m = 1.e20
+
+      if (ldim.eq.3) then
+         do k=1,nz1-1
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,k,e) - xm1(i,j,k,e)
+            dy = ym1(i+1,j,k,e) - ym1(i,j,k,e)
+            dz = zm1(i+1,j,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,k,e) - xm1(i,j,k,e)
+            dy = ym1(i,j+1,k,e) - ym1(i,j,k,e)
+            dz = zm1(i,j+1,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j,k+1,e) - xm1(i,j,k,e)
+            dy = ym1(i,j,k+1,e) - ym1(i,j,k,e)
+            dz = zm1(i,j,k+1,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+         enddo
+      else  ! 2D
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,1,e) - xm1(i,j,1,e)
+            dy = ym1(i+1,j,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,1,e) - xm1(i,j,1,e)
+            dy = ym1(i,j+1,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+      endif
+
+      dxmin_e = sqrt(d2m)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dxmax_e(e)
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+
+      integer  e
+
+      d2m = -1.e20
+
+      if (ldim.eq.3) then
+         do k=1,nz1-1
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,k,e) - xm1(i,j,k,e)
+            dy = ym1(i+1,j,k,e) - ym1(i,j,k,e)
+            dz = zm1(i+1,j,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+
+            dx = xm1(i,j+1,k,e) - xm1(i,j,k,e)
+            dy = ym1(i,j+1,k,e) - ym1(i,j,k,e)
+            dz = zm1(i,j+1,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+
+            dx = xm1(i,j,k+1,e) - xm1(i,j,k,e)
+            dy = ym1(i,j,k+1,e) - ym1(i,j,k,e)
+            dz = zm1(i,j,k+1,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+         enddo
+         enddo
+         enddo
+      else  ! 2D
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,1,e) - xm1(i,j,1,e)
+            dy = ym1(i+1,j,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,1,e) - xm1(i,j,1,e)
+            dy = ym1(i,j+1,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+      endif
+
+      dxmax_e = sqrt(d2m)
+
+      return
+      end
+c-----------------------------------------------------------------------

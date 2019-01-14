@@ -134,6 +134,10 @@ c
 c---------------------------------------------------------------
       real function deltaf(ix,iy,iz,iel)
 c
+c     compute characteristic sgs length scale
+c     defined as min of GLL nodes within an elements but many
+c     others possible.
+c
       include 'SIZE'
       include 'TOTAL'
 
@@ -146,31 +150,19 @@ c
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
 
-      if (icalld.eq.0) then
+      if (icalld.eq.0 .or. ifmvbd) then
          dinv = 1./ldim
          do ie = 1,nelv
 c            volavg = 0
 c            do i  = 1,nxyz
 c               volavg = volavg + bm1(i,1,1,ie)
 c            enddo
-c            dd = (volavg**dinv)/lx1
-c            call cfill(dx(1,1,1,ie),dd,nxyz) 
+c            dd = (volavg**dinv)/(lx1-1)
 
-            dd = 1e99
-            do 100 k = 1,nz1-1
-            do 100 j = 1,ny1-1
-            do 100 i = 1,nz1-1
-               dd = min(dd,xm1(i+1,j  ,k  ,ie)-xm1(i,j,k,ie))
-               dd = min(dd,ym1(i  ,j+1,k  ,ie)-ym1(i,j,k,ie))
-               dd = min(dd,zm1(i  ,j  ,k+1,ie)-zm1(i,j,k,ie))
- 100        continue
+            dd = dxmin_e(ie)
+
             call cfill(dx(1,1,1,ie),dd,nxyz) 
          enddo
-
-c         ddmin = glmin(dx,n)
-c         ddmax = glmax(dx,n)
-c         if (nid.eq.0) write(6,*) 'ddmin/ddmax', ddmin, ddmax
-
          icalld = 1
       endif
 

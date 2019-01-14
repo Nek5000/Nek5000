@@ -923,9 +923,6 @@ c set some internals
          endif
       enddo
       if (cv_nfld.gt.0) ifcvode = .true.
-      if (ifcvode.and.ifneknekc) then
-        call exitti('Neknek is not yet supported with CVODE$',0)
-      endif
 
       return
       END
@@ -1122,6 +1119,9 @@ c
      &     'ABORT: Characteristic scheme needs dealiasing!'
         call exitt
       endif
+
+      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
+     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
 
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)

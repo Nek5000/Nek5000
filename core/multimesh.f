@@ -25,7 +25,7 @@ c     Initialize unity partition function to 1
       return
       end
 c-------------------------------------------------------------
-      subroutine setup_neknek
+      subroutine neknek_setup
 
       include 'SIZE'
       include 'TOTAL'
@@ -40,18 +40,19 @@ c-------------------------------------------------------------
 
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
-      call neknekgsync()
-
       if (nsessmax.eq.1) 
      $  call exitti('set nsessmax > 1 in SIZE!$',nsessmax)
+
+      call setup_neknek_wts
 
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
          call nekneksanchk
          call set_intflag
          call neknekmv
-         if (nid.eq.0) write(6,*) 'ext order=', ninter
-         if (nid.eq.0) write(6,*) 'nfld_neknek=', nfld_neknek
+         if (nid.eq.0) write(6,*) 'session id:', idsess
+         if (nid.eq.0) write(6,*) 'extrapolation order:', ninter
+         if (nid.eq.0) write(6,*) 'nfld_neknek:', nfld_neknek
       endif
 
       nfld_min = iglmin_ms(nfld_neknek,1)
@@ -62,8 +63,6 @@ c-------------------------------------------------------------
      $      'WARNING: reset nfld_neknek to ', nfld_neknek
       endif
  
-      call neknekgsync()
-
 c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 
@@ -93,24 +92,21 @@ c     get intflag=1.
 c
 c     Boundary conditions are changed back to 'v' or 't'.
 
-      ifield = 1
-      if (ifheat) ifield = 2
-
       nfaces = 2*ldim
-      nel    = nelfld(ifield)
       
-      nflag=nel*nfaces
+      nflag=nelt*nfaces
       call izero(intflag,nflag)
 
-      do j=1,ifield
+      do j=1,nfield
+         nel = nelfld(j)
       do e=1,nel
       do f=1,nfaces
          cb=cbc(f,e,j)
          if (cb2.eq.'in') then
             intflag(f,e)=1
-            if (j.eq.2) cbc(f,e,j)='t  '
+            if (j.ge.2) cbc(f,e,j)='t  '
             if (j.eq.1) cbc(f,e,j)='v  '
-c           if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
+c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
 c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
             if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
          endif
@@ -221,7 +217,6 @@ c-----------------------------------------------------------------------
 
       imove=1
       if (ifmvbd) imove=0
-      call neknekgsync()
 
       iglmove = iglmin_ms(imove,1)
 
@@ -247,7 +242,6 @@ c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS
 
 c     Get total number of processors and number of p
       npall = 0
-      call neknekgsync()
       do i=1,nsessions
        npall = npall+npsess(i-1)
       enddo
@@ -266,8 +260,6 @@ c     Displace MESH 1
       if (idsess.eq.0) then
          call cadd(xm1,-dxf,ntot)
       endif
-
-      call neknekgsync()
 
 c     Setup findpts    
       tol     = 5e-13
@@ -411,15 +403,12 @@ c     Make sure rcode_all is fine
 
       ipg = iglsum(ip,1)
       nbpg = iglsum(nbp,1)
-      if (nid.eq.0) write(6,*) 
-     $      idsess,ipg,nbpg,'Neknek interface points'
+      if (nid.eq.0) write(6,*) ipg,nbpg,'interface points' 
       npoints_nn = ip
 
       ierror = iglmax_ms(ierror,1)
       if (ierror.eq.1) call exitt
  
-      call neknekgsync()
-
       return
       end
 c-----------------------------------------------------------------------
@@ -454,7 +443,7 @@ c     Interpolate using findpts_eval
       if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
       call field_eval(fieldout(1,ldim+1),1,pm1)
       if (nfld_neknek.gt.ldim+1) then 
-        do i=ldim+2,nfld_neknek  !do all passive scalars
+        do i=ldim+2,nfld_neknek
           call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
         enddo
       endif
@@ -580,8 +569,8 @@ c     velocity.
       aqg=glsum(aqg,1) ! sum over all processors for this session
       gamma = 0.
       if (aqg.gt.0) gamma = -dqg/aqg
-      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
-104     format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
+c      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
+c 104  format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
       do e=1,nelv
       do f=1,2*ldim
         if (intflag(f,e).eq.1) then
