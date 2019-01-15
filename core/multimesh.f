@@ -48,6 +48,7 @@ c-------------------------------------------------------------
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
          call nekneksanchk
+         call setup_neknek_wts
          call set_intflag
          call neknekmv
          if (nid.eq.0) write(6,*) 'ext order=', ninter
