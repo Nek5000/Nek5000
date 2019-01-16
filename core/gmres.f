@@ -171,7 +171,7 @@ c            call outmat(h,m,j,' h    ',j)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
-#ifndef TST_WSCAL
+#ifndef FIXITER
             if (rnorm .lt. tolpss) goto 900  !converged
 #else
             if (iter.gt.param(151)-1) goto 900
@@ -494,7 +494,7 @@ c           enddo
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
-#ifndef TST_WSCAL
+#ifndef FIXITER
             if (rnorm .lt. tolpss) goto 900  !converged
 #else
             if (iter.gt.param(151)-1) goto 900

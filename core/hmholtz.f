@@ -759,7 +759,7 @@ c
 
 
 c        Always take at least one iteration   (for projection) pff 11/23/98
-#ifndef TST_WSCAL
+#ifndef FIXITER
          IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.5)) THEN
 #else
          iter_max = param(150)
