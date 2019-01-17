@@ -38,6 +38,9 @@ c-------------------------------------------------------------
       integer nfld_neknek
       common /inbc/ nfld_neknek
 
+      call fix_geom
+      call geom_reset(1) ! recompute Jacobians, etc.
+
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
       if (nsessmax.eq.1) 
