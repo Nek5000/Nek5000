@@ -3,19 +3,19 @@
       include 'TSTEP'
       include 'RANS_KOMG'
 
-      real timel
-      save timel
-      data timel /-1.0/
+      save ifldla
+      data ifdla /ldimt1/ 
 
-      if(time.ne.timel .or. istep.le.2) then
+      if(ix*iy*iz*iel.eq.1 .and. ifield.le.ifldla) then
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_mut'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_eddy
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_eddy
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_eddy
          if(ifrans_komgSST_lowRe)    call rans_komgSST_lowRe_eddy
          if(ifrans_komg_stndrd_noreg)call rans_komg_stndrd_eddy_noreg
-         timel = time
       endif
 
+      ifldla = ifield
       rans_komg_mut = mut(ix,iy,iz,iel)
 
       return
@@ -60,18 +60,21 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'RANS_KOMG'
 
-      real timel
-      common /srctime/ timel
+      logical ifevalsrc
+      data ifevalsrc /.true./
+      common /komgifsrc/ ifevalsrc
 
-      if((time+dt).ne.timel .or. istep.le.2) then
+      if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
          if(ifrans_komgSST_lowRe)    call rans_komgSST_lowRe_compute
          if(ifrans_komg_stndrd_noreg)call rans_komg_stndrd_compute_noreg
-         timel = time+dt
+         ifevalsrc = .false.
       endif
 
+      if(ifld_k.gt.ifld_omega) ifevalsrc = .true.
       rans_komg_kSrc = kSrc(ix,iy,iz,iel)
 
       return
@@ -82,18 +85,22 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
       include 'RANS_KOMG'
 
-      real timel
-      common /srctime/ timel
+      logical ifevalsrc
+      data ifevalsrc /.true./
+      common /komgifsrc/ ifevalsrc
 
-      if((time+dt).ne.timel) then
+      if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
+         if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
          if(ifrans_komgSST_lowRe)    call rans_komgSST_lowRe_compute
          if(ifrans_komg_stndrd_noreg)call rans_komg_stndrd_compute_noreg
-         timel = time+dt
+         ifevalsrc = .false.
       endif
 
+      if(ifld_omega.gt.ifld_k) ifevalsrc = .true.
       rans_komg_omgSrc = omgSrc(ix,iy,iz,iel)
 
       return
@@ -1555,9 +1562,6 @@ c
      &,w4(lx1*ly1*lz1*lelv)
      &,w5(lx1*ly1*lz1*lelv)
 
-      real timel
-      common /srctime/ timel
-
       integer n,wall_id,ifld_mx
       real coeffs_in(1),ywd_in(1)
       logical ifcoeffs
@@ -2618,10 +2622,6 @@ c
       include 'SIZE'
       include 'TOTAL'
 c
-      real timel
-      save timel
-      data timel /-1.0/
-
       integer e
 
       parameter(lt  =lx1*ly1*lz1*lelv)
@@ -2644,8 +2644,6 @@ c
       nij = 3
       if (if3d.or.ifaxis) nij=6
 
-      if(time.ne.timel .or. istep.le.2) then
-
       if(nid.eq.0 .and. loglevel.gt.2) write(*,*) 'updating StOm '
       call comp_sij_oij     (sij, oij, nij, vx, vy, vz, iflmc, ifdss) ! S'ij=2Sij, O'ij=2Oij
       call comp_sij_oij_mag2(sij, oij, nij, St_mag2, Om_mag2, OiOjSk) ! St_mag2=2S^2=S'^2/2
@@ -2656,10 +2654,6 @@ c                                                                     ! Om_mag2=
      $   call add2   (DivQ(1,e), sij(1,3,e),             lxyz)
          if(iflmc)     call cmult(DivQ(1,e), thqrt,      lxyz)
       enddo
-
-      timel = time
-
-      endif
 
       return
       end
