@@ -4,7 +4,7 @@
       include 'RANS_KOMG'
 
       save ifldla
-      data ifdla /ldimt1/ 
+      data ifldla /ldimt1/ 
 
       if(ix*iy*iz*iel.eq.1 .and. ifield.le.ifldla) then
          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_mut'
@@ -91,7 +91,6 @@ c-----------------------------------------------------------------------
 
       if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
-         if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -372,14 +371,16 @@ c add rho v * del_omw
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0) 
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -657,14 +658,16 @@ c add rho v * del_omw
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -959,14 +962,16 @@ c add rho v * del_omw
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1306,14 +1311,16 @@ c add rho v * del_omw
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1531,14 +1538,16 @@ c no compressibility correction M < 0.25
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1569,8 +1578,6 @@ c
       character*3 bcw
       character*36 mname(6)
 
-      data time1 /-1.0/
-
       data mname
      &/'regularized standard k-omega        '
      &,'regularized low-Re k-omega          '
@@ -1580,6 +1587,8 @@ c
      &,'non-regularized standard k-omega SST'/
 
       n=nx1*ny1*nz1*nelv
+
+      if(nid.eq.0) write(6,*) 'init RANS model'
 
       if(iflomach) then
         if(nid.eq.0) write(6,*)
@@ -1598,8 +1607,8 @@ c
       if(model_id .eq.3) ifrans_komgSST_lowRe        = .TRUE.
       if(model_id .eq.4) ifrans_komg_stndrd_noreg    = .TRUE.
 
-      if(nid.eq.0) write(*,'(a,1x,a)') 
-     &                      'Using model:',mname(model_id+1)
+      if(nid.eq.0) write(*,'(a,a)') 
+     &                      '  model: ',mname(model_id+1)
       ifld_k     = ifld_k_in
       ifld_omega = ifld_omega_in
       ifld_mx=max(ifld_k,ifld_omega)
@@ -1626,7 +1635,7 @@ c     $               should be >=$',ncoeffs)
 
 c solve for omega_pert
       if(wall_id.eq.0) then
-        if(nid.eq.0) write(6,*) 'Using user supplied wall distance'
+        if(nid.eq.0) write(6,*) ' user supplied wall distance'
         call copy(ywd,ywd_in,n)
       else
         bcw    = 'W  '
@@ -1638,6 +1647,8 @@ c solve for omega_pert
       endif
 
       call rans_komg_omegabase
+
+      if(nid.eq.0) write(6,*) 'done :: init RANS'
 
       return
       end
@@ -1972,14 +1983,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2094,14 +2107,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2284,14 +2299,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2481,14 +2498,16 @@ c ------------ end   low Re part of k-omega -------------------
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2600,14 +2619,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      if(nid.eq.0 .and. loglevel.gt.2) then
+      if(loglevel.gt.2) then
         nome_neg =iglsum(nome_neg,1)
         nkey_neg =iglsum(nkey_neg,1)
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
