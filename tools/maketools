@@ -173,7 +173,7 @@ else
  BIGMEM=""
 fi
 
-FFLAGS+=" -DMAXNEL=$MAXNEL"
+FFLAGS+=" -O2 -DMAXNEL=$MAXNEL"
 FFLAGS=`echo $FFLAGS | sed -e "s/-D/$PPPO-D/g"`
 
 export FC=`which $FC`

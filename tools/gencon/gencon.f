@@ -53,9 +53,9 @@ c                                    irnk is # unique points
 
       call periodic_vtx(cell,nv,nelt,irnk,dx,ndim,cbc,bc,nfc,w14,w1)
      
-      npts = nv*nelt
-      call iranku       (cell,nrnk,npts,w1)
-      call self_chk     (cell,nv,nelt,1)    ! check for not self-ptg.
+c      npts = nv*nelt
+c      call iranku       (cell,nrnk,npts,w1)
+c      call self_chk     (cell,nv,nelt,1)    ! check for not self-ptg.
 
       call dmpfile(cell,nv,nelt,nelv,irnk)
 
@@ -983,6 +983,8 @@ c
       integer a(1),p(1)
       integer rank
 
+      write(6,*) 'compressing verticies'
+
       call isort(a,p,n)
 
       rank = 1
@@ -1323,6 +1325,7 @@ c
       save    efaci
       data    efaci / 3 , 2 , 4 , 1 , 5 , 6 /
 
+      logical foundp
 
       write(6,*) 'start periodic vtx:',nel,irnk
 
@@ -1332,11 +1335,13 @@ c
 
       nmn = irnk
       nmx = 0
+      foundp = .false.
       do e=1,nel
       do f=1,nfc
          cb = cbc(f,e)
 c        write(6,*) cb,e,f,' cb'
          if (cb.eq.'P  ') then
+           foundp = .true.
            je = abs(bc(1,f,e))
            jf = bc(2,f,e)
            jf = efaci(jf)
@@ -1381,10 +1386,10 @@ c             bc(1,jf,je) = -bc(1,jf,je) ! pairing is done !!!
       enddo
       enddo
 
-c
+      if (.not.foundp) goto 99
+
 c     Okay -- we now have the updated pointers, time to update
 c     the cell pointers
-c
       npts = nv*nel
       do i=1,npts
          cell(i,1) = jmin(cell(i,1))  ! permuted identity
@@ -1392,17 +1397,14 @@ c
       call iranku      (cell,irnk,npts,iper) ! compress cell list
       call self_chk    (cell,nv,nel,6)       ! check for not self-ptg.
 
-
-c
 c     Reset bc array
-c
       do e=1,nel
       do f=1,nfc
          if (cbc(f,e).eq.'P  ') bc(1,f,e) = abs(bc(1,f,e))
       enddo
       enddo
 
-      write(6,*) 'done periodic vtx'
+ 99   write(6,*) 'done periodic vtx', foundp
 
       return
       end
@@ -1742,9 +1744,6 @@ c     Sort by directions
             i  =   i + ninseg(iseg)
          enddo
  
-c        q=0.0010   ! Smaller is better
-c        q=0.2      ! But generous is more forgiving for bad meshes!
-
          do i=2,n
            if ((dx(j,i)-dx(j,i-1))**2.gt.qq*min(dx(0,i),dx(0,i-1)))
      $        ifseg(i)=.true.
@@ -1785,7 +1784,8 @@ c     Unshuffle geometry:
 c     Reassign cell to hold global index numbering
 
       call icopy     (cell,ind,n)
-      call self_chk  (cell,nvtx,nel,0)       ! check for not self-ptg.
+
+c      call self_chk  (cell,nvtx,nel,0)       ! check for not self-ptg.
 
 
 c     Reassign geometry to match global index numbering
@@ -2007,6 +2007,7 @@ c-----------------------------------------------------------------------
       integer cell(nv,nel),flag
       integer e
 
+      write(6,*) 'performing self_chk'
 
       do e=1,nel
       do i=1,nv
