@@ -23,6 +23,12 @@ function make_3rd_party() {
   fi
   cd $CASEDIR
 
+  if [ $PARMETIS -ne 0 ]; then
+     cd $SOURCE_ROOT_PARMETIS
+     ./install
+  fi
+  cd $CASEDIR
+
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
      ./install
@@ -46,6 +52,8 @@ function clean_3rd_party() {
   cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
+  cd $CASEDIR
+  cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
   cd $CASEDIR
@@ -105,6 +113,9 @@ export SOURCE_ROOT_GSLIB
 
 SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
+
+SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
+export SOURCE_ROOT_PARMETIS
 
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
@@ -287,6 +298,7 @@ CMT=0
 MPIIO=1
 DPROCMAP=0
 PARRSB=0
+PARMETIS=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
@@ -308,6 +320,11 @@ do
      PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI" 
      PARRSB_OPT+=" GSLIBPATH=$SOURCE_ROOT_GSLIB"
      USR_LFLAGS+=" -L$SOURCE_ROOT_PARRSB/lib -lparRSB"
+   fi
+   if [ "$i" == "PARMETIS" ]; then
+     PARMETIS=1
+     USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
+     METIS_INC="$SOURCE_ROOT_PARMETIS/include"
    fi
    if [ "$i" == "CVODE" ]; then 
      CVODE=1
@@ -402,6 +419,16 @@ if [ $HYPRE -ne 0 ]; then
 
   mv .makefile.tmp .makefile
 fi
+
+if [ $PARMETIS -ne 0 ]; then
+  sed -e "s:^METIS_IFLAGS[ ]*=.*:METIS_IFLAGS\:=-I${METIS_INC}:" \
+      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
+      .makefile > .makefile.tmp
+
+  mv .makefile.tmp .makefile
+fi
+
+
 
 if [ "$USR" != "" ]; then
   echo "###########################################################" >> makefile

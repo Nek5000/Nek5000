@@ -1,0 +1,11 @@
+--- metis.h	2013-03-30 11:24:50.000000000 -0500
++++ metisp.h	2019-01-23 06:56:23.805200645 -0600
+@@ -30,7 +30,7 @@
+  GCC does provides these definitions in stdint.h, but it may require some
+  modifications on other architectures.
+ --------------------------------------------------------------------------*/
+-#define IDXTYPEWIDTH 32
++#define IDXTYPEWIDTH 64
+ 
+ 
+ /*--------------------------------------------------------------------------
