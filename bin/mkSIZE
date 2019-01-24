@@ -54,7 +54,7 @@ size_params = {}
 nekSourceRoot = os.path.dirname(os.path.abspath(__file__)) + '/../'
 size_template = nekSourceRoot + 'core/SIZE.template'
 
-print('Scanning {0}.par and {0}.re2 ...'.format(casename))
+print('Scanning {0}.par and {0}.re2 ...'.format(casename))
 par = configparser.ConfigParser(inline_comment_prefixes=('#',';'))
 par.read(casename + '.par')
 par.sections()
@@ -88,10 +88,13 @@ else:
   size_params['lx2']='lx1-2'
 
 # lx1m ###
-if par['PROBLEMTYPE'].getboolean('stressFormulation') or \
-   par['PROBLEMTYPE'].getboolean('variableProperties') and \
-   par['GENERAL'].getboolean('PnPnFormulation') :
-     size_params['lx1m']='lx1'
+try:
+  if par['PROBLEMTYPE'].getboolean('stressFormulation') or \
+     par['PROBLEMTYPE'].getboolean('variableProperties') and \
+     par['GENERAL'].getboolean('PnPnFormulation') :
+       size_params['lx1m']='lx1'
+except:
+  pass
 
 try:
   if par['MESH']['motion'].lower() == 'user' or \
