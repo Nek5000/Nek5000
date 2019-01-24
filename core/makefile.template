@@ -28,6 +28,7 @@ VISIT_IFLAGS=
 VISIT_LFLAGS=
 HYPRE_IFLAGS=
 GSLIB_IFLAGS=
+METIS_IFLAGS=
 
 ################################################################################
 
@@ -52,7 +53,8 @@ reader_rea.o reader_par.o reader_re2.o \
 finiparser.o iniparser.o dictionary.o \
 hpf.o \
 sparse_cholesky.o fcrs.o crs_xxt.o crs_amg.o \
-fem_amg_preco.o crs_hypre.o 
+fem_amg_preco.o crs_hypre.o \
+metis_wrapper.o
 ################################################################################
 # MXM 
 MXM =  
@@ -257,6 +259,7 @@ $(OBJDIR)/sparse_cholesky.o  :$S/sparse_cholesky.c;   $(CC) -c $(cFL2) $(GSLIB_I
 $(OBJDIR)/crs_amg.o          :$S/crs_amg.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/fem_amg_preco.o    :$S/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
+$(OBJDIR)/metis_wrapper.o    :$S/metis_wrapper.c;     $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(METIS_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
