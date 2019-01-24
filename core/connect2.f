@@ -107,7 +107,7 @@ C     End of input data, close read file.
 
  99   do iel = 1,nelt
       do ifc = 1,2*ndim   
-         boundaryIDList(ifc,iel) = bc(5,ifc,iel,1)
+         boundaryID(ifc,iel) = bc(5,ifc,iel,1)
       enddo
       enddo 
 

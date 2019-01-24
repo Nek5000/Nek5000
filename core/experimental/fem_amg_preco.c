@@ -2,23 +2,8 @@
  * Low-Order finite element preconditioner computed with HYPRE's AMG solver
 */
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
-#include "c99.h"
-#include "name.h"
-#include "fail.h"
-#include "types.h"
-#include "mem.h"
-#include "gs_defs.h"
-#include "comm.h"
-#include "gs.h"
-#include "crystal.h"
-#include "sarray_transfer.h"
-#include "sort.h"
-#include "sarray_sort.h"
+#include "gslib.h"
 
 #define fem_amg_setup FORTRAN_UNPREFIXED(fem_amg_setup, FEM_AMG_SETUP)
 #define fem_amg_solve FORTRAN_UNPREFIXED(fem_amg_solve, FEM_AMG_SOLVE)
@@ -92,7 +77,6 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     n_xyz = n_x * n_y * n_z;
     n_xyze = n_x * n_y * n_z * n_elem;
 
-    setbuf(stdout, NULL);
     gsh = gs_hf2c(*gshf);
     comm_init(&comm, gsh->comm.c);
 
@@ -173,7 +157,8 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     if (uparam) {
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[7], 0);
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[8], 1);
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[9], 2);
+    
+    fflush(stdout);HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[9], 2);
     }
 
     HYPRE_BoomerAMGSetMaxRowSum(amg_preconditioner, 1); /* Don't check for maximum row sum */
@@ -187,6 +172,7 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
 
     double time1 = comm_time();
     if (comm.id == 0) printf("fem_amg_setup: done %fs\n",time1-time0);
+    fflush(stdout);
     amg_ready = 1;
 }
 

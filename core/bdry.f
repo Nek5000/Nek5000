@@ -2121,7 +2121,7 @@ c
       do e=1,nelv
       do f=1,2*ndim
       do i=1,n
-         if (boundaryIDList(f,e) .eq. sid_list(i)) then
+         if (boundaryID(f,e) .eq. sid_list(i)) then
             nmember(iobj) = nmember(iobj) + 1
             mem = nmember(iobj)
             ieg = lglel(e)
@@ -2152,7 +2152,7 @@ c
 
       do iel = 1,nelt
       do ifc = 1,2*ndim
-         if (boundaryIDList(ifc,iel).eq.sid) cbc(ifc,iel,ifld) = cbci
+         if (boundaryID(ifc,iel).eq.sid) cbc(ifc,iel,ifld) = cbci
       enddo
       enddo
 

@@ -200,6 +200,8 @@ void iniparser_dump(const dictionary * d, FILE * f)
         if (d->key[i]==NULL) continue ;
         fprintf(f, "%s = [%s]\n", d->key[i], d->val[i]);
     }
+
+    fflush(stdout);
     return ;
 }
 

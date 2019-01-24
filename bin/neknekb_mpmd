@@ -56,6 +56,6 @@ for ((i = 1; i <= $(($NT/2)); i++ )); do
     execstr="$execstr -np $((NP$i)) $casedir/nek5000 :"
   fi
 done
-echo $execstr
+#echo $execstr
 
 eval "mpiexec $execstr"
