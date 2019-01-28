@@ -91,4 +91,4 @@ c
      $       ,ifbcor
 
       integer boundaryID(6,lelt)
-      common /cbbid/ cbboundaryID
+      common /cbbid/ boundaryID
