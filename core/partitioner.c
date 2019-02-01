@@ -6,178 +6,218 @@
 #include "defs.h"
 
 #define MAXNV 8 /* maximum number of vertices per element */
-typedef struct { long long vtx[MAXNV]; long long eid; int proc; } vtx_data;
+typedef struct {long long vtx[MAXNV]; long long eid; int proc;} vtx_data;
 
 
 int parMETIS_partMesh(long long *elo, long long *vlo, int *nelo, 
                       long long *el , long long *vl , const int nel,
-                      const int nv, comm_ext ce)
+                      const int nv, int *opt, comm_ext ce)
 {
-  struct comm comm;
-  struct crystal cr;
-
-  comm_init(&comm,ce);
-  int np = comm.np;
-  int myid = comm.id;
-
   int i, j;
+  int ierrm = METIS_OK;
+  double time, time0;
 
-  comm_barrier(&comm);
-  if(myid == 0) printf("Running parMETIS ... ");
-  fflush(stdout);
+  MPI_Comm comms;
+  struct comm comm;
+  int color = MPI_UNDEFINED;
+  int ibuf;
+
+  struct crystal cr;
+  struct array A; 
+  vtx_data *row;
+
+  long long nell = nel;
+  long long *nelarray;
+  idx_t *elmdist;
+  idx_t *evlptr;
+  real_t *tpwgts;
+  idx_t edgecut = 0;
+  real_t ubvec = 1.02;
+  idx_t *elmwgt = NULL; /* no weights */
+  idx_t *part;
+  idx_t wgtflag = 0;
+  idx_t numflag = 0;
+  idx_t ncon = 1;
+  idx_t ncommonnodes = 2;
+  idx_t nparts;
+  idx_t nelsm;
+  idx_t options[10];
+
+  part = (idx_t*) malloc(nel*sizeof(idx_t));
 
   if (sizeof(idx_t) != sizeof(long long)){
-    if (myid == 0) printf("ERROR: invalid sizeof(idx_t)!\n");
-    return 1;
+    printf("ERROR: invalid sizeof(idx_t)!\n");
+    goto err;
   }
-
   if (nv != 4 && nv != 8){
-    if (myid == 0) printf("ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
-    return 1;
+    printf("ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
+    goto err;
   }
 
-  long long *nelarray = (long long*) malloc(np*sizeof(long long));
-  long long buf = nel;
-  MPI_Allgather(&buf, 1, MPI_LONG_LONG_INT, nelarray, 1, MPI_LONG_LONG_INT, comm.c);
-  idx_t *elmdist = (idx_t*) malloc((np+1)*sizeof(idx_t));
+  if (nel > 0) color = 1;
+  MPI_Comm_split(ce, color, 0, &comms);
+  if (color == MPI_UNDEFINED)
+    goto distribute;
+
+  comm_init(&comm,comms);
+  if (comm.id == 0) 
+    printf("Running parMETIS ... "), fflush(stdout);
+
+  nelarray = (long long*) malloc(comm.np*sizeof(long long));
+  MPI_Allgather(&nell, 1, MPI_LONG_LONG_INT, nelarray, 1, MPI_LONG_LONG_INT, comm.c);
+  elmdist = (idx_t*) malloc((comm.np+1)*sizeof(idx_t));
   elmdist[0] = 0;
-  for (i=0; i<np; ++i) elmdist[i+1] = elmdist[i] + (idx_t)nelarray[i];
+  for (i=0; i<comm.np; ++i)
+    elmdist[i+1] = elmdist[i] + (idx_t)nelarray[i];
   free(nelarray); 
 
-  idx_t *evlptr = (idx_t*) malloc((nel+1)*sizeof(idx_t));
+  evlptr = (idx_t*) malloc((nel+1)*sizeof(idx_t));
   evlptr[0] = 0;
-  for (i=0; i<nel; ++i) evlptr[i+1] = evlptr[i] + nv;
-  idx_t nelsm = elmdist[myid+1]- elmdist[myid];
-  //printf("nelsm %d %d %d\n", elmdist[myid+1], elmdist[myid], nelsm);
+  for (i=0; i<nel; ++i) 
+    evlptr[i+1] = evlptr[i] + nv;
+  nelsm = elmdist[comm.id+1] - elmdist[comm.id];
   evlptr[nelsm]--;
 
-  idx_t *elmwgt = NULL;
-  idx_t wgtflag = 0; // no weights 
-  idx_t numflag = 0; // all IDs start from one (Fortran-style)
-  idx_t ncon = 1;
-
-  idx_t ncommonnodes = 2; // face vertices
   if (nv == 8) ncommonnodes = 4;
-  idx_t nparts = np; 
-  
-  real_t *tpwgts = (real_t*) malloc(ncon*nparts*sizeof(real_t));
-  for (i=0; i<ncon*nparts; ++i){
-    tpwgts[i] = 1./(real_t)nparts;
-  }
+  nparts = comm.np;
 
-  real_t ubvec = 1.02; //UNBALANCE_FRACTION;
-
-  idx_t options[10];
   options[0] = 1;
   options[PMV3_OPTION_DBGLVL] = 0;
-  options[PMV3_OPTION_SEED] = 0;
-  idx_t edgecut = 0;
+  options[PMV3_OPTION_SEED]   = 0;
+  if (opt[0] != 0) {
+    options[PMV3_OPTION_DBGLVL] = opt[1]; 
+    if (opt[2] != 0) {
+      options[3] = PARMETIS_PSR_UNCOUPLED;
+      nparts = opt[2];
+    }
+  }  
 
-  idx_t *part = (idx_t*) malloc(nel*sizeof(idx_t));
+  tpwgts = (real_t*) malloc(ncon*nparts*sizeof(real_t));
+  for (i=0; i<ncon*nparts; ++i)
+    tpwgts[i] = 1./(real_t)nparts;
 
-  int ierr;
+  if (options[3] == PARMETIS_PSR_UNCOUPLED)
+    for (i=0; i<nel; ++i) 
+      part[i] = comm.id;
 
-  comm_barrier(&comm); double t0 = comm_time();
-  ierr = ParMETIS_V3_PartMeshKway(elmdist,
-                                  evlptr, 
-                                  (idx_t*)vl,
-                                  elmwgt,
-                                  &wgtflag,
-                                  &numflag,
-                                  &ncon,
-                                  &ncommonnodes,
-                                  &nparts,
-                                  tpwgts,
-                                  &ubvec,
-                                  options,
-                                  &edgecut,
-                                  part,
-                                  &comm.c);
+  comm_barrier(&comm); 
+  time0 = comm_time();
+  ierrm = ParMETIS_V3_PartMeshKway(elmdist,
+                                   evlptr, 
+                                   (idx_t*)vl,
+                                   elmwgt,
+                                   &wgtflag,
+                                   &numflag,
+                                   &ncon,
+                                   &ncommonnodes,
+                                   &nparts,
+                                   tpwgts,
+                                   &ubvec,
+                                   options,
+                                   &edgecut,
+                                   part,
+                                   &comm.c);
 
-  if (ierr == METIS_OK) ierr = 0;
+  time = comm_time() - time0;
+  if (comm.id == 0) 
+    printf("%lf sec\n", time), fflush(stdout);
 
   free(elmdist);
   free(evlptr);
   free(tpwgts);
+  MPI_Comm_free(&comms);
+  comm_free(&comm);
 
-  // redistribute data for target proc 
-  crystal_init(&cr,&comm);
+distribute: 
+  comm_init(&comm,ce);
+  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf); 
+  if (ierrm != METIS_OK) goto err;
 
-  struct array A; 
-  vtx_data *row;
   array_init(vtx_data, &A, nel), A.n = nel;
   for(row = A.ptr, i = 0; i < A.n; ++i) {
     for(j = 0; j < nv; ++j) row[i].vtx[j] = vl[i*nv+j];  
     row[i].eid = el[i];
     row[i].proc = part[i];
-    //printf("send nid=%d, eid=%d proc=%d\n", myid, row[i].eid, row[i].proc);
   }
-
   free(part);
+
+  crystal_init(&cr,&comm);
   sarray_transfer(vtx_data, &A, proc, 0, &cr);
 
-  if (*nelo < A.n){
-    printf("ERROR: nelo too small to hold resulting parition!\n");
-    return 1;
-  }
+  ierrm = 0;
+  if (A.n > *nelo) ierrm = 1;
+  comm_allreduce(&comm, gs_int, gs_add, &ierrm, 1, &ibuf);
+
   *nelo = A.n;
 
-  for(row = A.ptr, i = 0; i < *nelo; ++i) {
-    for(j = 0; j < nv; ++j) vlo[i*nv+j] = row[i].vtx[j];  
-    elo[i] = row[i].eid;
-    //printf("recv nid=%d, elo=%d\n", myid, elo[i]);
+  if (ierrm > 0) {
+    if (comm.id == 0)
+      printf("ERROR: resulting parition requires lelt=%d!\n", *nelo);
+    goto err;
   }
 
-  comm_barrier(&comm); double time = comm_time() - t0;
-  if(myid == 0) printf("%lf sec\n", time);
+  for (row = A.ptr, i = 0; i < *nelo; ++i) {
+    for (j = 0; j < nv; ++j) 
+      vlo[i*nv+j] = row[i].vtx[j];  
+    elo[i] = row[i].eid;
+  }
 
   array_free(&A);
   crystal_free(&cr);
   comm_free(&comm);
-                                  
-  return ierr;
+
+  return 0;
+                                 
+err:
+  fflush(stdout);
+  return 1;
 }
 
 #define fparMETIS_partMesh FORTRAN_UNPREFIXED(fparmetis_partmesh,FPARMETIS_PARTMESH)
 void fparMETIS_partMesh(long long *egl, long long *vl, int *negl,
                         long long *eglcon, long long *vlcon, int *neglcon,
-                        int *nve, int *comm, int *err)
+                        int *nve, int *opt, int *comm, int *err)
 {
   *err = 1;
+  comm_ext c;
 
 #if defined(MPI)
-  comm_ext c = MPI_Comm_f2c(*comm);
+  c = MPI_Comm_f2c(*comm);
 #else
-  comm_ext c = 0;
+  c = 0;
 #endif
 
   *err = parMETIS_partMesh(egl, vl, negl,
                            eglcon, vlcon, *neglcon,
-                           *nve, c);
+                           *nve, opt, c);
 }
 #endif
 
 void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 {
-  struct comm comm;
-  comm_init(&comm,ce);
-
-  int np = comm.np;
-  int id = comm.id;
-
   int i,j;
-
+  int np, id;
   int numPoints = nel*nv;
-  long long *data= (long long*) malloc(numPoints*sizeof(long long));
+  struct gs_data *gsh;
+  buffer buf;
+  long long *data;
+  int neighborsCount = 0;
+  int nelMin, nelMax;
+  int ncMin, ncMax, ncSum;
+  int b;
+  struct comm comm;
+
+  comm_init(&comm,ce);
+  np = comm.np;
+  id = comm.id;
+
+  data= (long long*) malloc(numPoints*sizeof(long long));
   for(i = 0; i < numPoints; i++) data[i] = vtx[i]; 
 
-  struct gs_data *gsh;
   gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
 
-  buffer buf;
   buffer_init(&buf, 1024);
 
-  int neighborsCount = 0;
   for(i = 0; i < np; i++) {
     if(i != id) {
       for(j = 0; j < numPoints; j++) {
@@ -203,30 +243,28 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   free(data);
   buffer_free(&buf);
 
-  int ncMax = neighborsCount;
-  int ncMin = neighborsCount;
-  int ncSum = neighborsCount;
+  ncMax = neighborsCount;
+  ncMin = neighborsCount;
+  ncSum = neighborsCount;
+  nelMax = nel;
+  nelMin = nel;
 
-  int b;
-  comm_allreduce(&comm, gs_int, gs_max, &ncMax, 1, &b);
-  comm_allreduce(&comm, gs_int, gs_min, &ncMin, 1, &b);
-  comm_allreduce(&comm, gs_int, gs_add, &ncSum, 1, &b);
-
-  int nelMax = nel, nelMin = nel;
+  comm_allreduce(&comm, gs_int, gs_max, &ncMax , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_min, &ncMin , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_add, &ncSum , 1, &b);
   comm_allreduce(&comm, gs_int, gs_max, &nelMax, 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nelMin, 1, &b);
-  double imb = (double)nelMax/nelMin;
 
-  if(id == 0) {
-    printf(" Max neighbors: %d",ncMax);
-    printf(" | Min neighbors: %d",ncMin);
-    printf(" | Avg neighbors: %lf\n",(double)ncSum/np);
-    printf(" Max elements: %d",nelMax);
-    printf(" | Min elements: %d",nelMin);
-    printf(" | Balance: %lf\n",imb);
+  if (id == 0) {
+    printf(
+      " Max neighbors: %d | Min neighbors: %d | Avg neighbors: %lf\n",
+      ncMax, ncMin, (double)ncSum/np);
+    printf(
+      " Max elements: %d | Min elements: %d | Balance: %lf\n",
+      nelMax, nelMin, (double)nelMax/nelMin);
+    fflush(stdout);
   }
 
-  fflush(stdout);
   comm_free(&comm);
 }
 
