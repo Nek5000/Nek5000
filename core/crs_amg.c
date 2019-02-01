@@ -715,12 +715,11 @@ static ulong read_level_data(struct crs_data *data, struct file f)
   int updt=1;
   int code=0;
   if(data->comm.id==0) {
-//Check header for newest amg_matlab code.
     double hdr; dread(&hdr,1,f,&code);
     if(code==0) {
       printf("AMG version %3.2f\n",hdr);
       if(hdr!=2.01) {
-        printf("Update amg_matlab tool and create new .dat files before re-running\n"); 
+        printf("Outdates AMG dat files\n"); 
         updt=0;
      }
       double t; dread(&t,1,f,&code);

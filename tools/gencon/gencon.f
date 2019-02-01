@@ -1050,13 +1050,13 @@ c      ifco2 = .false. ! force ASCII for debugging
       endif
 
       if (ifco2) then
-         do e=1,nelv
+         do e=1,nelt
             iwrk(1) = e
             call icopy(iwrk(2),cell(1,e),nv)
             call byte_write(iwrk,nv+1,ierr)
          enddo
       else
-         do e=1,nelv
+         do e=1,nelt
             write(29,2) e,(cell(k,e),k=1,nv)
     2       format(9i12)
          enddo

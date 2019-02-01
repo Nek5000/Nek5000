@@ -10,8 +10,14 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
 c
-      etime0 = dnekclock_sync()
+      if (nio.eq.0) then
+         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
+ 12      format(1X,A,4I12,/,/)
+         write(6,*)
+      endif
 
+      etime0 = dnekclock_sync()
       if(nio.eq.0) write(6,'(A)') ' partioning elements to MPI ranks'
 
       MFIELD=2
@@ -163,6 +169,8 @@ c-----------------------------------------------------------------------
       integer iwork(lelt)
       common /ctmp0/ eid8, vtx8, iwork
 
+      integer opt_parrsb(3), opt_parmetis(10)
+
 #if defined(PARRSB) || defined(PARMETIS)
 
       call read_con(wk,size(wk),neli,nvi,nelgti,nelgvi)
@@ -172,41 +180,100 @@ c-----------------------------------------------------------------------
      $   call exitti('nelgt for mesh/con differs!$',0)
       if (nelgvi .ne. nelgv)
      $   call exitti('nelgt for mesh/con differs!$',0)
-      if (nelgt .ne. nelgv)
-     $   call exitti('No support for CHT yet!$',0)
       if (neli .gt. lelt)
      $   call exitti('neli > lelt!$',neli)
 
+c fluid elements
+      j  = 0
       ii = 0
       do i = 1,neli
-         eid8(i) = wk(ii+1)
-         call icopy48(vtx8((i-1)*nlv+1),wk(ii+2),nlv)
+         if (wk(ii+1) .le. nelgv) then
+            j = j + 1
+            eid8(j) = wk(ii+1)
+            call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+         endif
          ii = ii + (nlv+1)
       enddo
+      neliv = j
 
-      nelv = lelv
+      nelo = lelv
 #ifdef PARRSB
-      call fparRSB_partMesh(eid8,vtx8,nelv,
-     $                      eid8,vtx8,neli,
-     $                      nlv,nekcomm,ierr)
+      opt_parrsb(1) = 1 ! custom
+      opt_parrsb(2) = 2 ! dbg level
+      opt_parrsb(3) = 0 ! print statistics
+      call fparRSB_partMesh(eid8,vtx8,nelo,
+     $                      eid8,vtx8,neliv,
+     $                      nlv,opt_parrsb,nekcomm,ierr)
       call err_chk(ierr,'parRSB failed!$')
 #elif PARMETIS
-      call fparMETIS_partMesh(eid8,vtx8,nelv,
-     $                        eid8,vtx8,neli,
-     $                        nlv,nekcomm,ierr)
+      opt_parmetis(1) = 1  ! custom
+      opt_parmetis(2) = 0  ! dbg level
+      opt_parmetis(3) = np ! nparts
+      call fparMETIS_partMesh(eid8,vtx8,nelo,
+     $                        eid8,vtx8,neliv,
+     $                        nlv,opt_parmetis,nekcomm,ierr)
       call err_chk(ierr,'parMETIS failed!$')
 #endif
-
+      nelv = nelo
       nelt = nelv
-      if (nelt .gt. lelt) call exitti('nelt > lelt!$',nelt)
-
+      ierr = 0 
+      if (nelv .gt. lelv) ierr = 1
+      call err_chk(ierr,'nelv > lelv!$')
+ 
       do i = 1,nelv
          lglel(i) = eid8(i)
       enddo
-      call isort(lglel,iwork,nelt)
-      do i = 1,nelt
+      call isort(lglel,iwork,nelv)
+      do i = 1,nelv
          call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
+
+c solid elements
+      if (nelgt.ne.nelgv) then
+         j  = 0
+         ii = 0
+         do i = 1,neli
+            if (wk(ii+1) .gt. nelgv) then
+               j = j + 1
+               eid8(j) = wk(ii+1)
+               call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            endif
+            ii = ii + (nlv+1)
+         enddo
+         nelit = j
+
+         nelo = lelt
+#ifdef PARRSB
+         opt_parrsb(1) = 1 ! custom
+         opt_parrsb(2) = 2 ! dbg level
+         opt_parrsb(3) = 0 ! print statistics
+         call fparRSB_partMesh(eid8,vtx8,nelo,
+     $                         eid8,vtx8,nelit,
+     $                         nlv,opt_parrsb,nekcomm,ierr)
+         call err_chk(ierr,'parRSB failed!$')
+#elif PARMETIS
+         opt_parmetis(1) = 1  ! custom
+         opt_parmetis(2) = 0  ! dbg level
+         opt_parmetis(3) = np ! nparts
+         call fparMETIS_partMesh(eid8,vtx8,nelo,
+     $                           eid8,vtx8,nelit,
+     $                           nlv,opt_parmetis,nekcomm,ierr)
+         call err_chk(ierr,'parMETIS failed!$')
+#endif
+         nelt = nelv + nelo
+         ierr = 0 
+         if (nelt .gt. lelt) ierr = 1
+         call err_chk(ierr,'nelt > lelt!$')
+    
+         do i = 1,nelo
+            lglel(nelv+i) = eid8(i)
+         enddo
+         call isort(lglel(nelv+1),iwork,nelo) ! sort locally by global element id
+         do i = 1,nelo
+            call icopy84(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
+         enddo
+      endif
+
 #ifdef DPROCMAP
       do i = 1,nelt
          ieg = lglel(i)
