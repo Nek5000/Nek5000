@@ -1,4 +1,4 @@
-# Release v19.0-rc1
+# Release v19.0-rc2
 
 ## What is new? 
 
@@ -21,6 +21,7 @@
 * CHT support for generic fld reader
 * Overwrite core routines in usr
 * Lagrangian phase model - LPM (experimental)
+* Support parMetis partitioner
 * Various bug fixes
 
 ## What you may have to change to be compatible 
