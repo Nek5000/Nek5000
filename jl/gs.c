@@ -379,9 +379,11 @@ static const uint *flagged_primaries_map(const struct array *nz, uint *mem_size)
   const struct nonzero_id *row, *end;
   for(row=nz->ptr,end=row+nz->n;row!=end;++row)
     if(row->i==row->primary && row->flag==1) ++count;
+  count++;
   p = map = tmalloc(uint,count); *mem_size += count*sizeof(uint);
   for(row=nz->ptr,end=row+nz->n;row!=end;++row)
     if(row->i==row->primary && row->flag==1) *p++ = row->i;
+  *p++ = -(uint)1;
   *p = -(uint)1;
   return map;
 }
