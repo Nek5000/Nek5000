@@ -31,7 +31,7 @@ static void scan_imp(void *scan, const struct comm *com, gs_dom dom, gs_op op,
     c<<=1, n>>=1;
     if(id>=base+n) c|=1, base+=n, n+=(odd&1);
   }
-  gs_init_array(scan,vn,dom,op,0);
+  gs_init_array(scan,vn,dom,op);
   memcpy(red,v,vsize);
   while(n<np) {
     if(c&1) n-=(odd&1), base-=n;

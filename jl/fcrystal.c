@@ -67,18 +67,18 @@
 #undef   crystal_free
 #define ccrystal_free  PREFIXED_NAME(crystal_free)
 
-#define fcrystal_setup           \
-  FORTRAN_NAME(crystal_setup          ,CRYSTAL_SETUP          )
-#define fcrystal_ituple_sort     \
-  FORTRAN_NAME(crystal_ituple_sort    ,CRYSTAL_ITUPLE_SORT    )
-#define fcrystal_tuple_sort      \
-  FORTRAN_NAME(crystal_tuple_sort     ,CRYSTAL_TUPLE_SORT     )
-#define fcrystal_ituple_transfer \
-  FORTRAN_NAME(crystal_ituple_transfer,CRYSTAL_ITUPLE_TRANSFER)
-#define fcrystal_tuple_transfer  \
-  FORTRAN_NAME(crystal_tuple_transfer ,CRYSTAL_TUPLE_TRANSFER )
-#define fcrystal_free            \
-  FORTRAN_NAME(crystal_free           ,CRYSTAL_FREE           )
+//#define fcrystal_setup           \
+//  FORTRAN_NAME(crystal_setup          ,CRYSTAL_SETUP          )
+//#define fcrystal_ituple_sort     \
+//  FORTRAN_NAME(crystal_ituple_sort    ,CRYSTAL_ITUPLE_SORT    )
+//#define fcrystal_tuple_sort      \
+//  FORTRAN_NAME(crystal_tuple_sort     ,CRYSTAL_TUPLE_SORT     )
+//#define fcrystal_ituple_transfer \
+//  FORTRAN_NAME(crystal_ituple_transfer,CRYSTAL_ITUPLE_TRANSFER)
+//#define fcrystal_tuple_transfer  \
+//  FORTRAN_NAME(crystal_tuple_transfer ,CRYSTAL_TUPLE_TRANSFER )
+//#define fcrystal_free            \
+//  FORTRAN_NAME(crystal_free           ,CRYSTAL_FREE           )
 
 static struct crystal **handle_array = 0;
 static int handle_max = 0;

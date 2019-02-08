@@ -13,8 +13,7 @@ void die(int status)
 #ifdef NO_NEK_EXITT
   if(comm_gbl_id==0) exit(status); else for(;;) ;
 #else
-  //*nek_exitt();
-  exit(1);
+  nek_exitt();
 #endif  
 }
 
