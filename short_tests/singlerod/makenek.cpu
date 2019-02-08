@@ -11,7 +11,7 @@ F77="mpif77"
 CC="mpicc"
 
 # pre-processor list (set to "?" to get a list of available symbols)
-#PPLIST="AMG" 
+PPLIST="AMG" 
 
 # generic compiler flags
 G="-mcmodel=medium"
@@ -64,5 +64,5 @@ fi
 # do some checks and create makefile
 source $SOURCE_ROOT_CORE/makenek.inc
 # compile
-make -j -f makefile 2>&1 | tee compiler.gpu.output
+make -j -f makefile 2>&1 | tee compiler.cpu.output
 exit 0

@@ -1664,14 +1664,18 @@ static uint local_setup(struct gs_data *gsh, const struct array *nz)
 
   s = 0;
   gsh->map_local[0] = local_map(nz,1, &s);
+    print_map(gsh->map_local[0],"map_loc       0", 400, &gsh->comm);
   gs_flatmap_setup(gsh->map_local[0],&(gsh->map_localf[0]),&(gsh->mf_nt[0]),&(gsh->m_size[0]));
+    print_map(gsh->map_local[0],"map_loc_flat  0", 400, &gsh->comm);
 
 
   mem_size += s;
   //fprintf(stderr,"%s: map[0:%d]     -> %lX : %lX\n",hname,s/4,gsh->map_local[0],((void*)gsh->map_local[0])+s);
   s = 0;
   gsh->map_local[1] = local_map(nz,0, &s);
+    print_map(gsh->map_local[1],"map_loc       1", 400, &gsh->comm);
   gs_flatmap_setup(gsh->map_local[1],&(gsh->map_localf[1]),&(gsh->mf_nt[1]),&(gsh->m_size[1]));
+    print_map(gsh->map_local[1],"map_loc_flat  1", 400, &gsh->comm);
   mem_size += s;
   //fprintf(stderr,"%s: t_map[0:%d]   -> %lX : %lX\n",hname,s/4,gsh->map_local[1],((void*)gsh->map_local[1])+s);
   s = 0;

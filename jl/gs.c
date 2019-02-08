@@ -1081,11 +1081,31 @@ void gs_many(void *const*u, unsigned vn, gs_dom dom, gs_op op,
 ------------------------------------------------------------------------------*/
 typedef enum {gs_auto, gs_pairwise, gs_crystal_router, gs_all_reduce} gs_method;
 
+void print_map(const uint *map, char *str, int max_times, struct comm *comm)
+{
+  // Testing routine to print out the map
+  static int iprtcnt=1;
+
+  if (!map) return;          // exclude empty pointer
+  if (iprtcnt>max_times) return;
+  if (comm) { 
+    if (comm->id!=0) return; // only print if nid=0
+  }
+  for (int i=0;i<sizeof(map);i++){
+    printf("chkmap: i=%2d, var=%15u, called by %2d-th \"%10s\" \n"
+          ,i,map[i],iprtcnt,str);
+  }
+  printf("chkmap  \n");
+  iprtcnt++;
+}
+
 static uint local_setup(struct gs_data *gsh, const struct array *nz)
 {
   uint mem_size = 0;
   gsh->map_local[0] = local_map(nz,1, &mem_size);
+    print_map(gsh->map_local[0],"map_loc  0 (amg)", 320, &gsh->comm);
   gsh->map_local[1] = local_map(nz,0, &mem_size);
+    print_map(gsh->map_local[1],"map_loc  1 (amg)", 320, &gsh->comm);
   gsh->flagged_primaries = flagged_primaries_map(nz, &mem_size);
   return mem_size;
 }
