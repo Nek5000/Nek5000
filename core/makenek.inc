@@ -50,6 +50,8 @@ APATH_SRC=`cd $SOURCE_ROOT_CORE; pwd`
 SOURCE_ROOT_CORE=$APATH_SRC
 APATH_SRC=`cd $SOURCE_ROOT_JL; pwd`
 SOURCE_ROOT_JL=$APATH_SRC
+APATH_SRC=`cd $SOURCE_ROOT_JLacc; pwd`
+SOURCE_ROOT_JLacc=$APATH_SRC
 APATH_SRC=`cd $SOURCE_ROOT_CMT; pwd`
 SOURCE_ROOT_CMT=$APATH_SRC
 
@@ -264,6 +266,7 @@ sed -e "s?^FC[ ]*=.*?FC\:=$F77?" \
 -e "s?^USR_LFLAGS[ ]*=.*?USR_LFLAGS\:=$USR_LFLAGS?" \
 -e "s:^S[ ]*=.*:S\:=${SOURCE_ROOT_CORE}:" \
 -e "s:^SCMT[ ]*=.*:SCMT\:=${SOURCE_ROOT_CMT}:" \
+-e "s:^Jacc[ ]*=.*:Jacc\:=${SOURCE_ROOT_JLacc}:" \
 -e "s:^J[ ]*=.*:J\:=${SOURCE_ROOT_JL}:" $SOURCE_ROOT_CORE/makefile.template >.makefile
 
 if [ "$IFVISIT" == "true" -o "$IFVISIT" == "yes" ]; then

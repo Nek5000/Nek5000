@@ -22,31 +22,22 @@
 
 void gs_gather_array(void *out, const void *in, uint n,
                      gs_dom dom, gs_op op);
-void gs_init_array(void *out, uint n, gs_dom dom, gs_op op,int acc);
+void gs_init_array(void *out, uint n, gs_dom dom, gs_op op);
 
 typedef void gs_gather_fun(
   void *out, const void *in, const unsigned vn,
-  const uint *map, gs_dom dom, gs_op op, int dstride,
-  int mf_nt, int *mapf, int m_size, int acc);
+  const uint *map, gs_dom dom, gs_op op);
 typedef void gs_scatter_fun(
   void *out, const void *in, const unsigned vn,
-  const uint *map, gs_dom dom, int dstride, int mf_nt,
-  int *mapf, int m_size, int acc);
+  const uint *map, gs_dom dom);
 typedef void gs_init_fun(
   void *out, const unsigned vn,
-  const uint *map, gs_dom dom, gs_op op, int dstride, int mf_nt,
-  int *mapf, int m_size, int acc);
+  const uint *map, gs_dom dom, gs_op op);
 
 extern gs_gather_fun gs_gather, gs_gather_vec, gs_gather_many,
                      gs_gather_vec_to_many;
 extern gs_scatter_fun gs_scatter, gs_scatter_vec, gs_scatter_many,
                       gs_scatter_many_to_vec, gs_scatter_vec_to_many;
 extern gs_init_fun gs_init, gs_init_vec, gs_init_many;
-
-#ifdef _OPENACC
-extern gs_gather_fun  gs_gather_many_acc,  gs_gather_vec_to_many_acc;
-extern gs_scatter_fun gs_scatter_many_acc, gs_scatter_many_to_vec_acc;
-extern gs_init_fun    gs_init_many_acc;
-#endif
 
 #endif
