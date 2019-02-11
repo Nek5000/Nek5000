@@ -452,10 +452,6 @@ c-----------------------------------------------------------------------
 !$acc update device(mg_g)
 !$acc update device(mg_imask)
 
-         icalled=1
-
-      endif
-
 !$acc update device(mg_work)
 !$acc update device(mg_work2)
 !$acc update device(mg_worke)
@@ -464,6 +460,10 @@ c-----------------------------------------------------------------------
 !$acc update device(p_mg_h1)
 !$acc update device(p_mg_b)
 !$acc update device(p_mg_msk)
+
+         icalled=1
+
+      endif
 #endif
 
       return
@@ -510,10 +510,10 @@ c-----------------------------------------------------------------------
 
 !$ACC update host(a) if (mode.eq.1)  !copies the data from device to host
       if (nid.eq.0) then
-!         do i=1,n
-!            write(6,10) text,i,a(i)
-!         enddo
-! 10      format(a4,i300,1p1e15.4)
+          do i=1,n
+             write(6,10) text,i,a(i)
+          enddo
+  10      format(a4,i300,1p1e15.4)
           write(6,102) text, (a(i), i=1,4)
       endif
   102    format(a4,2x,1p4e15.4)
