@@ -174,6 +174,7 @@ c-----------------------------------------------------------------------
       include 'HSMG'
 
 #if 1
+
 !$acc enter data copyin(mg_nx)
 !$acc enter data copyin(mg_ny,mg_nz)
 !$acc enter data copyin(mg_nh,mg_nhz)
@@ -216,6 +217,7 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
 #endif
+
 #if 0
 !$acc enter data copyin(mg_mask)
 !$acc enter data copyin(mg_solve_e)
@@ -249,6 +251,7 @@ c-----------------------------------------------------------------------
      $ ,             h2    (lx1,ly1,lz1,lelv)
 
 #if 1
+
 !$acc enter data copyin(h1,h2,respr,pmask,res1,res2,res3)
 !$acc enter data copyin(dv1,dv2,dv3)
  
@@ -292,22 +295,31 @@ c-----------------------------------------------------------------------
       common /hsmgw/ work(0:lwk-1),work2(0:lwk-1)
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $             , w2   (lx1,ly1,lz1,lelt)
+      integer icalled
+      save    icalled
+      data    icalled/0/
 
 #if 1
+
+      if (icalled.eq.0) then
+
 !$acc enter data create(work,work2)
 !$acc enter data copyin(mg_mask,mg_imask,pmask)
 !$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
 !$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
-c     if (istep.eq.1) then
+
 !$acc enter data copyin(h_gmres,w_gmres,v_gmres,z_gmres)
 !$acc enter data copyin(c_gmres,s_gmres,x_gmres,gamma_gmres)
 !$acc enter data copyin(r_gmres)
 !$acc enter data copyin(ml_gmres,mu_gmres)
-c     endif
 
 !$acc enter data create(e,w,r)
 !$acc enter data create(w1,w2)
 !$acc enter data create(wk1,wk2)
+
+        icalled=1
+
+      endif
 
 #endif
 
@@ -335,10 +347,18 @@ c-----------------------------------------------------------------------
       common /ctmp0/ w1   (lx1,ly1,lz1,lelt)
      $ ,             w2   (lx1,ly1,lz1,lelt)
 
+      integer icalled
+      save    icalled
+      data    icalled/0/
+
 #if 1
-!$acc exit data delete(work,work2)
-!$acc exit data delete(w1,w2)
-!$acc exit data delete(e,w,r)
+
+ccc...if (icalled.eq.0) then
+ccc...!$acc exit data delete(work,work2)
+ccc...!$acc exit data delete(w1,w2)
+ccc...!$acc exit data delete(e,w,r)
+ccc...    icalled = 1
+ccc...endif
 
       if (istep.eq.nstep) then
 !$acc exit data copyout(h_gmres,w_gmres,v_gmres,z_gmres)
@@ -389,7 +409,14 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'HSMG'
 
+      integer icalled
+      save    icalled
+      data    icalled/0/
+
 #if 1
+
+      if (icalled.eq.0) then
+
 !$acc update device(mg_nx)
 !$acc update device(mg_ny,mg_nz)
 !$acc update device(mg_nh,mg_nhz)
@@ -423,11 +450,15 @@ c-----------------------------------------------------------------------
 !$acc update device(mg_h2)
 !$acc update device(mg_b)
 !$acc update device(mg_g)
+!$acc update device(mg_imask)
+
+         icalled=1
+
+      endif
+
 !$acc update device(mg_work)
 !$acc update device(mg_work2)
 !$acc update device(mg_worke)
-
-!$acc update device(mg_imask)
 
 !$acc update device(mg_h1_n)
 !$acc update device(p_mg_h1)
@@ -850,16 +881,10 @@ c
 
       include 'MVGEOM'
 
-      call chck('abb')
       call makeuf_acc    ! paul and som
-      call chck('bbb')
       if (ifnav .and..not.ifchar) call advab_acc
-      call chck('cbb')
       call makeabf_acc
-      call chck('dbb')
       call makebdf_acc
-
-      call chck('ebb')
 
       return
       end
@@ -940,11 +965,8 @@ C---------------------------------------------------------------
 
       n = lx1*ly1*lz1*nelv
 
-      call chck('a11')
       call convop_acc(ta1,vx)
-      call chck('b11')
       call convop_acc(ta2,vy)
-      call chck('c11')
       call convop_acc(ta3,vz)
 
 
@@ -1228,7 +1250,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       character*3 s3
 
-c     write(6,*) 'checker: ',s3
+      write(6,*) 'checker: ',s3
 
       return
       end
@@ -1547,13 +1569,10 @@ c-----------------------------------------------------------------------
       real jggl(lxd,lx1),dggl(lxd,lx1)
       save jggl,dggl
 
-      call chck('q11')
 
       if (icalld.eq.0) then
          tadvc=0.0
          call get_jggl(jggl,dggl) ! run on CPU and then acc copyin after
-      call chck('q21')
-      call chck('q31')
       endif
 
 !$acc data copy(jggl,dggl)
@@ -1561,11 +1580,7 @@ c-----------------------------------------------------------------------
       nadvc=icalld
       etime1=dnekclock()
 
-      call chck('q41')
-
       call convop_fst_3d_acc(du,u,vxd,vyd,vzd,bm1,jggl,dggl)
-
-      call chck('q51')
 
       tadvc=tadvc+(dnekclock()-etime1)
 !$acc end data
@@ -1598,7 +1613,6 @@ c     du = J   ( C . grad Ju)
 
       integer e,p,q,r
 
-      call chck('p11')
 
 !$acc parallel loop present(du,u,c1,c2,c3,b,jj,dd) gang
 !$acc&              private(wk1,wk2,wk3,wk4,wk5,wk6)
