@@ -1,0 +1,25 @@
+
+===============
+Timing history
+===============
+
+Initial full GPU version (oct,2017:
+singlerod.log.gpu              (base)[scale]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 1.3037E+03 6.4104E+00
+
+Some optimization: first pass  on titan (feb 11, 2019)
+singlerod_log_opt1_titan_gpu1  (2.6x)       :Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 5.0362E+02 2.4504E+00
+singlerod_log_opt2_titan_gpu1  (2.6x)       :Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 5.0086E+02 2.4393E+00
+
+Some optimization: second pass on summit (feb 11, 2019)
+singlerod_log_opt3_titan_gpu1  (2.6x)[1/1.0]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 5.0101E+02 2.4378E+00
+singlerod_log_opt3_titan_gpu2  (3.7x)[1/1.4]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 3.5300E+02 1.7133E+00
+singlerod_log_opt3_titan_gpu4  (4.7x)[1/1.8]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 2.8004E+02 1.3660E+00
+
+singlerod_log_opt3_summit_gpu1 (5.4x)[1/1.0]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 2.3966E+02 1.1805E+00
+singlerod_log_opt3_summit_gpu2 (5.5x)[1/1.0]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 2.3679E+02 1.1428E+00
+singlerod_log_opt3_summit_gpu4 (6.2x)[1/1.1]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 2.0864E+02 1.0032E+00
+singlerod_log_opt3_summit_gpu6 (6.4x)[1/1.1]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 2.0140E+02 9.7069E-01
+singlerod_log_opt3_summit_gpu8 (6.5x)[1/1.2]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 1.9857E+02 9.4994E-01
+singlerod_log_opt3_summit_gpu12(6.8x)[1/1.2]:Step    200, t= 3.0000000E-01, DT= 1.5000000E-03, C=  0.268 1.9056E+02 9.1146E-01
+
+

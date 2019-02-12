@@ -216,6 +216,11 @@ c-----------------------------------------------------------------------
 !$acc enter data copyin(p_mg_h1)
 !$acc enter data copyin(p_mg_b)
 !$acc enter data copyin(p_mg_msk)
+
+!$acc enter data copyin(mg_mask,mg_imask,pmask)
+!$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
+!$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
+
 #endif
 
 #if 0
@@ -303,23 +308,19 @@ c-----------------------------------------------------------------------
 
       if (icalled.eq.0) then
 
+!$acc enter data create(e,w,r)
+!$acc enter data create(w1,w2)
+!$acc enter data create(wk1,wk2)
 !$acc enter data create(work,work2)
-!$acc enter data copyin(mg_mask,mg_imask,pmask)
-!$acc enter data copyin(mg_jht,mg_jh,mg_rstr_wt,mg_schwarz_wt)
-!$acc enter data copyin(mg_work,mg_fast_s,mg_fast_d)
+
+         icalled=1
+
+      endif
 
 !$acc enter data copyin(h_gmres,w_gmres,v_gmres,z_gmres)
 !$acc enter data copyin(c_gmres,s_gmres,x_gmres,gamma_gmres)
 !$acc enter data copyin(r_gmres)
 !$acc enter data copyin(ml_gmres,mu_gmres)
-
-!$acc enter data create(e,w,r)
-!$acc enter data create(w1,w2)
-!$acc enter data create(wk1,wk2)
-
-        icalled=1
-
-      endif
 
 #endif
 
@@ -352,13 +353,6 @@ c-----------------------------------------------------------------------
       data    icalled/0/
 
 #if 1
-
-ccc...if (icalled.eq.0) then
-ccc...!$acc exit data delete(work,work2)
-ccc...!$acc exit data delete(w1,w2)
-ccc...!$acc exit data delete(e,w,r)
-ccc...    icalled = 1
-ccc...endif
 
       if (istep.eq.nstep) then
 !$acc exit data copyout(h_gmres,w_gmres,v_gmres,z_gmres)

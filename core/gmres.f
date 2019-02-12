@@ -388,9 +388,9 @@ c           call copy(r,res,n)
          else
             !update residual
             call copy_acc  (r_gmres,res,n)               ! r = res
-            call ax    (w_gmres,x_gmres,h1,h2,n)     ! w = A x
+            call ax    (w_gmres,x_gmres,h1,h2,n)         ! w = A x
             call add2s2_acc(r_gmres,w_gmres,-1.,n)       ! r = r - w
-                                                     !      -1
+                                                         !      -1
             call col2_acc  (r_gmres,ml_gmres,n)          ! r = L   r
          endif
 
@@ -412,19 +412,16 @@ c        construct or acc routine"
          temp_ptr1(1) = temp
 !$ACC END KERNELS
 
-      call gop_acc(temp_ptr1,temp_ptr2,'+  ',1)
+         call gop_acc(temp_ptr1,temp_ptr2,'+  ',1)
 
 !$ACC KERNELS
-      gamma_gmres(1) = sqrt(temp_ptr1(1))
+         gamma_gmres(1) = sqrt(temp_ptr1(1))
 !$ACC END KERNELS
 
 !$ACC END DATA
 
-c!$acc update host(gamma_gmres(1))
 !$acc update host(gamma_gmres)
-      temp = gamma_gmres(1)
-c     write (6,*) 'temp=',temp
-
+         temp = gamma_gmres(1)
 #else
          gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r)
          temp = gamma_gmres(1)
