@@ -18,7 +18,7 @@ PPLIST=""
 CFLAGS="-DNEW_GS_LOOPS"
 
 # For GPU profiling tools:
-G="-mcmodel=medium -acc -ta=nvidia:cc70,cuda9.2"
+G="-mcmodel=large -acc -ta=nvidia:cc70,cuda9.2"
 
 # linking flags
 USR_LFLAGS="-mcmodel=large -acc -ta=nvidia:cc70,cuda9.2"

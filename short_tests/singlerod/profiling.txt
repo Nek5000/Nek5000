@@ -1,0 +1,80 @@
+[02/12/2019: singlerod profiling performed by YuHsiang on Titan/Summit]
+
+singlerod, lx1=8, 5 steps, 1 GPU
+
+Titan,
+  titan, AMG=T
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   29.08%  2.07709s      3189  651.33us     895ns  2.8180ms  [CUDA memcpy HtoD]
+                   20.40%  1.45721s      3456  421.65us  1.2800us  2.5505ms  [CUDA memcpy DtoH]
+                   11.02%  787.00ms       204  3.8578ms  1.0787ms  6.6489ms  hsmg_do_fast_acc_1111_gpu
+                    3.60%  257.43ms       227  1.1340ms  1.1311ms  1.1371ms  global_div3_acc_604_gpu
+                    3.51%  250.92ms      1029  243.85us  156.54us  351.46us  hsmg_extrude_541_gpu
+                    3.34%  238.50ms       227  1.0507ms  1.0486ms  1.0523ms  global_grad3_acc_554_gpu
+                    2.97%  212.20ms      1098  193.26us  188.93us  200.32us  hmh_gmres_496_gpu
+                    2.70%  192.54ms      1098  175.36us  173.98us  177.28us  hmh_gmres_507_gpu
+                    2.61%  186.43ms       227  821.26us  815.84us  827.71us  axhelm_acc_621_gpu
+                    2.32%  165.82ms      2166  76.555us  1.6320us  297.98us  scatter_double_144_gpu
+                    2.28%  162.52ms      2166  75.033us  1.5680us  297.25us  gather_double_add_144_gpu
+                    1.90%  135.92ms        15  9.0612ms  9.0506ms  9.0687ms  sumab_acc_778_gpu
+                    1.44%  102.56ms       591  173.53us  114.34us  177.98us  col2_acc_2055_gpu
+                    1.42%  101.48ms        15  6.7652ms  6.7490ms  6.7869ms  convop_fst_3d_acc_1611_gpu
+
+  titan, AMG=F
+======== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   30.17%  2.07661s      2963  700.85us     895ns  2.8188ms  [CUDA memcpy HtoD]
+                   21.17%  1.45711s      3221  452.38us  1.2800us  2.5600ms  [CUDA memcpy DtoH]
+                   10.41%  716.57ms       186  3.8525ms  1.0781ms  6.6433ms  hsmg_do_fast_acc_1111_gpu
+                    3.59%  247.02ms       218  1.1331ms  1.1302ms  1.1363ms  global_div3_acc_604_gpu
+                    3.33%  229.10ms       939  243.98us  156.45us  351.33us  hsmg_extrude_541_gpu
+                    3.33%  228.91ms       218  1.0501ms  1.0484ms  1.0518ms  global_grad3_acc_554_gpu
+                    2.60%  178.96ms       218  820.89us  814.69us  826.62us  axhelm_acc_621_gpu
+                    2.57%  177.20ms       917  193.24us  189.28us  199.74us  hmh_gmres_496_gpu
+                    2.34%  160.81ms       917  175.37us  174.05us  177.06us  hmh_gmres_507_gpu
+                    2.23%  153.63ms      2004  76.659us  1.6320us  295.33us  scatter_double_144_gpu
+                    2.18%  150.34ms      2004  75.021us  1.6000us  296.80us  gather_double_add_144_gpu
+                    1.97%  135.89ms        15  9.0591ms  9.0490ms  9.0703ms  sumab_acc_778_gpu
+                    1.47%  101.41ms        15  6.7604ms  6.7438ms  6.7864ms  convop_fst_3d_acc_1611_gpu
+                    1.42%  97.785ms       564  173.38us  114.27us  178.14us  col2_acc_2055_gpu
+Summit,
+   summit, AMG=T
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   26.80%  347.54ms      3433  101.23us  1.2160us  372.57us  [CUDA memcpy HtoD]
+                   23.79%  308.55ms      3761  82.040us  1.5990us  362.94us  [CUDA memcpy DtoH]
+                    5.70%  73.978ms       204  362.64us  139.26us  618.94us  hsmg_do_fast_acc_1111_gpu
+                    4.92%  63.829ms        15  4.2553ms  4.0173ms  4.4946ms  sumab_acc_778_gpu
+                    4.14%  53.755ms      1029  52.240us  11.616us  117.63us  hsmg_extrude_541_gpu
+                    3.30%  42.767ms      1098  38.949us  37.888us  45.695us  hmh_gmres_496_gpu
+                    3.30%  42.746ms      1098  38.930us  35.456us  40.000us  hmh_gmres_507_gpu
+                    2.92%  37.887ms       227  166.90us  164.38us  170.14us  axhelm_acc_621_gpu
+                    2.89%  37.431ms      2166  17.281us     896ns  72.000us  scatter_double_144_gpu
+                    2.67%  34.610ms      2166  15.978us     832ns  65.695us  gather_double_add_144_gpu
+                    2.14%  27.714ms       227  122.09us  117.50us  127.30us  global_div3_acc_604_gpu
+                    1.77%  22.899ms       591  38.746us  25.856us  44.543us  col2_acc_2055_gpu
+                    1.28%  16.540ms       227  72.864us  67.775us  79.488us  global_grad3_acc_554_gpu
+                    1.17%  15.110ms       227  66.565us  65.792us  67.648us  axhelm_acc_652_gpu
+                    1.16%  15.052ms      1098  13.708us  12.320us  15.520us  hmh_gmres_497_gpu__red
+
+
+  summit, AMG=F
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   27.76%  347.11ms      3207  108.23us  1.2160us  372.41us  [CUDA memcpy HtoD]
+                   24.64%  308.09ms      3526  87.375us  1.6000us  360.93us  [CUDA memcpy DtoH]
+                    5.38%  67.206ms       186  361.32us  139.87us  619.42us  hsmg_do_fast_acc_1111_gpu
+                    5.09%  63.596ms        15  4.2397ms  4.0457ms  4.4860ms  sumab_acc_778_gpu
+                    3.92%  48.954ms       939  52.134us  11.552us  116.67us  hsmg_extrude_541_gpu
+                    2.91%  36.400ms       218  166.97us  164.51us  170.91us  axhelm_acc_621_gpu
+                    2.85%  35.668ms       917  38.896us  35.392us  39.968us  hmh_gmres_507_gpu
+                    2.83%  35.358ms       917  38.558us  37.471us  45.119us  hmh_gmres_496_gpu
+                    2.77%  34.656ms      2004  17.293us     928ns  70.944us  scatter_double_144_gpu
+                    2.57%  32.073ms      2004  16.004us     864ns  65.088us  gather_double_add_144_gpu
+                    2.13%  26.619ms       218  122.11us  118.14us  130.66us  global_div3_acc_604_gpu
+                    1.75%  21.838ms       564  38.720us  25.984us  44.384us  col2_acc_2055_gpu
+                    1.27%  15.824ms       218  72.587us  68.224us  80.223us  global_grad3_acc_554_gpu
+                    1.16%  14.511ms       218  66.563us  65.599us  67.615us  axhelm_acc_652_gpu
+                    1.01%  12.624ms       917  13.766us  12.448us  15.232us  hmh_gmres_497_gpu__red
+                    1.01%  12.601ms        15  840.07us  823.45us  865.05us  convop_fst_3d_acc_1611_gpu
+
+
+
