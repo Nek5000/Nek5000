@@ -531,7 +531,7 @@ c
       call bcdirvc (vxp(1,jp),vyp(1,jp),vzp(1,jp)
      $             ,v1mask,v2mask,v3mask)
       call extrapprp(prextr)
-      call opgradt(resv1,resv2,resv3,prp(1,jp))
+      call opgradt(resv1,resv2,resv3,prextr)
       call opadd2(resv1,resv2,resv3,bfxp(1,jp),bfyp(1,jp),bfzp(1,jp))
       call ophx  (w1,w2,w3,vxp(1,jp),vyp(1,jp),vzp(1,jp),h1,h2)
       call opsub2(resv1,resv2,resv3,w1,w2,w3)
