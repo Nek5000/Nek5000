@@ -320,6 +320,7 @@ do
      PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI" 
      PARRSB_OPT+=" GSLIBPATH=$SOURCE_ROOT_GSLIB"
      USR_LFLAGS+=" -L$SOURCE_ROOT_PARRSB/lib -lparRSB"
+     PARRSB_INC="$SOURCE_ROOT_PARRSB/include"
    fi
    if [ "$i" == "PARMETIS" ]; then
      PARMETIS=1
@@ -421,13 +422,20 @@ if [ $HYPRE -ne 0 ]; then
 fi
 
 if [ $PARMETIS -ne 0 ]; then
-  sed -e "s:^METIS_IFLAGS[ ]*=.*:METIS_IFLAGS\:=-I${METIS_INC}:" \
+  sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${METIS_INC}:" \
       -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
       .makefile > .makefile.tmp
 
   mv .makefile.tmp .makefile
 fi
 
+if [ $PARRSB -ne 0 ]; then
+  sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${PARRSB_INC}:" \
+      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
+      .makefile > .makefile.tmp
+
+  mv .makefile.tmp .makefile
+fi
 
 
 if [ "$USR" != "" ]; then

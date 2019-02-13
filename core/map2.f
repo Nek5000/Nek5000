@@ -196,25 +196,11 @@ c fluid elements
       enddo
       neliv = j
 
-      nelo = lelv
-#ifdef PARRSB
-      opt_parrsb(1) = 1 ! custom
-      opt_parrsb(2) = 2 ! dbg level
-      opt_parrsb(3) = 0 ! print statistics
-      call fparRSB_partMesh(eid8,vtx8,nelo,
-     $                      eid8,vtx8,neliv,
-     $                      nlv,opt_parrsb,nekcomm,ierr)
-      call err_chk(ierr,'parRSB failed!$')
-#elif PARMETIS
-      opt_parmetis(1) = 1  ! custom
-      opt_parmetis(2) = 0  ! dbg level
-      opt_parmetis(3) = np ! nparts
-      call fparMETIS_partMesh(eid8,vtx8,nelo,
-     $                        eid8,vtx8,neliv,
-     $                        nlv,opt_parmetis,nekcomm,ierr)
-      call err_chk(ierr,'parMETIS failed!$')
-#endif
-      nelv = nelo
+      nel = neliv
+      call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+      call err_chk(ierr,'partMesh fluid failed!$')
+
+      nelv = nel
       nelt = nelv
       ierr = 0 
       if (nelv .gt. lelv) ierr = 1
@@ -242,34 +228,20 @@ c solid elements
          enddo
          nelit = j
 
-         nelo = lelt
-#ifdef PARRSB
-         opt_parrsb(1) = 1 ! custom
-         opt_parrsb(2) = 2 ! dbg level
-         opt_parrsb(3) = 0 ! print statistics
-         call fparRSB_partMesh(eid8,vtx8,nelo,
-     $                         eid8,vtx8,nelit,
-     $                         nlv,opt_parrsb,nekcomm,ierr)
-         call err_chk(ierr,'parRSB failed!$')
-#elif PARMETIS
-         opt_parmetis(1) = 1  ! custom
-         opt_parmetis(2) = 0  ! dbg level
-         opt_parmetis(3) = np ! nparts
-         call fparMETIS_partMesh(eid8,vtx8,nelo,
-     $                           eid8,vtx8,nelit,
-     $                           nlv,opt_parmetis,nekcomm,ierr)
-         call err_chk(ierr,'parMETIS failed!$')
-#endif
-         nelt = nelv + nelo
+         nel = nelit
+         call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+         call err_chk(ierr,'partMesh solid failed!$')
+
+         nelt = nelv + nel
          ierr = 0 
          if (nelt .gt. lelt) ierr = 1
          call err_chk(ierr,'nelt > lelt!$')
     
-         do i = 1,nelo
+         do i = 1,nel
             lglel(nelv+i) = eid8(i)
          enddo
-         call isort(lglel(nelv+1),iwork,nelo) ! sort locally by global element id
-         do i = 1,nelo
+         call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
+         do i = 1,nel
             call icopy84(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
          enddo
       endif
