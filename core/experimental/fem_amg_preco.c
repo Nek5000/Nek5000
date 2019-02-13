@@ -2,23 +2,8 @@
  * Low-Order finite element preconditioner computed with HYPRE's AMG solver
 */
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
-#include "c99.h"
-#include "name.h"
-#include "fail.h"
-#include "types.h"
-#include "mem.h"
-#include "gs_defs.h"
-#include "comm.h"
-#include "gs.h"
-#include "crystal.h"
-#include "sarray_transfer.h"
-#include "sort.h"
-#include "sarray_sort.h"
+#include "gslib.h"
 
 #define fem_amg_setup FORTRAN_UNPREFIXED(fem_amg_setup, FEM_AMG_SETUP)
 #define fem_amg_solve FORTRAN_UNPREFIXED(fem_amg_solve, FEM_AMG_SOLVE)
@@ -73,7 +58,7 @@ double HYPREsettings[NPARAM];
 void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_, 
                    const sint *n_elem_, const sint *n_dim_, 
                    double *x_m_, double *y_m_, double *z_m_, 
-                   double *pmask_, double *binv_,
+                   double *pmask_, double *binv_, const sint *nullspace,
                    const sint *gshf, double *param)
 {
     precond_type = 1;
@@ -92,7 +77,6 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
     n_xyz = n_x * n_y * n_z;
     n_xyze = n_x * n_y * n_z * n_elem;
 
-    setbuf(stdout, NULL);
     gsh = gs_hf2c(*gshf);
     comm_init(&comm, gsh->comm.c);
 
@@ -142,46 +126,53 @@ void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
 
     HYPRE_BoomerAMGCreate(&amg_preconditioner);
 
-    HYPREsettings[0] = 10;    /* Falgout      */
-    HYPREsettings[1] = 6;     /* Extended+i   */
-    HYPREsettings[2] = 3;     /* SOR          */
-    HYPREsettings[3] = 1;     /* V-cycles     */
-    HYPREsettings[4] = 0.25;  /* threshold    */
-    HYPREsettings[5] = 0.05;  /* default NonGalerkinTol */
-    HYPREsettings[6] = 0.01;  /* 2nd level NonGalerkinTol */
-    HYPREsettings[7] = 0.05;  /* 3nd level NonGalerkinTol */
+    int uparam = (int) param[0];
 
     int i;
-    if (param[0] != 0) {
+    if (uparam) {
        for (i=1; i < NPARAM; i++) { 
            HYPREsettings[i-1] = param[i];
            if (comm.id == 0) 
               printf("Custom HYPREsettings[%d]: %.2f\n", i, HYPREsettings[i-1]); 
        }
+    } else {
+      HYPREsettings[0] = 10;    /* HMIS                       */
+      HYPREsettings[1] = 6;     /* Extended+i                 */
+      HYPREsettings[2] = 3;     /* SOR is default smoother    */
+      HYPREsettings[3] = 3;     /* SOR smoother for crs level */
+      HYPREsettings[4] = 1;
+      HYPREsettings[5] = 0.25;
+      HYPREsettings[6] = 0.1;
+    }
+
+    HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, HYPREsettings[0]); 
+    HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
+    if (*nullspace == 1 || (int) param[0] != 0) {
+       HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
+       HYPRE_BoomerAMGSetCycleRelaxType(amg_preconditioner, HYPREsettings[3], 3); /* Coarse grid solver */
+       HYPRE_BoomerAMGSetCycleNumSweeps(amg_preconditioner, HYPREsettings[4], 3); /* Number of sweeps at coarse level */
+    }
+    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, HYPREsettings[5]);
+    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[6]);
+    if (uparam) {
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[7], 0);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[8], 1);
+    
+    fflush(stdout);HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[9], 2);
     }
 
     HYPRE_BoomerAMGSetMaxRowSum(amg_preconditioner, 1); /* Don't check for maximum row sum */
-    HYPRE_BoomerAMGSetCoarsenType(amg_preconditioner, HYPREsettings[0]); 
-    HYPRE_BoomerAMGSetInterpType(amg_preconditioner, HYPREsettings[1]);   
-    HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4); /* Max number of elements per row for interpolation */
-    HYPRE_BoomerAMGSetAggNumLevels(amg_preconditioner, 0); /* 0 for no-aggressive coarsening */
-    HYPRE_BoomerAMGSetStrongThreshold(amg_preconditioner, HYPREsettings[4]);/* Strength threshold */
-    HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50); /* maximum number of rows in coarse level */
-    HYPRE_BoomerAMGSetRelaxType(amg_preconditioner, HYPREsettings[2]);
-    HYPRE_BoomerAMGSetMaxIter(amg_preconditioner, HYPREsettings[3]);
-    HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); /* convergence tolerance */
-
-    HYPRE_BoomerAMGSetNonGalerkinTol(amg_preconditioner, HYPREsettings[5]); 
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, 0.0 , 0);
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[6], 1);
-    HYPRE_BoomerAMGSetLevelNonGalerkinTol(amg_preconditioner, HYPREsettings[7], 2);
-
+    HYPRE_BoomerAMGSetPMaxElmts(amg_preconditioner, 4);
+    HYPRE_BoomerAMGSetMaxCoarseSize(amg_preconditioner, 50);
+    HYPRE_BoomerAMGSetMaxIter(amg_preconditioner,1);
+    HYPRE_BoomerAMGSetTol(amg_preconditioner, 0); 
     HYPRE_BoomerAMGSetPrintLevel(amg_preconditioner, 1);
 
     HYPRE_BoomerAMGSetup(amg_preconditioner, A_fem, NULL, NULL);
 
     double time1 = comm_time();
     if (comm.id == 0) printf("fem_amg_setup: done %fs\n",time1-time0);
+    fflush(stdout);
     amg_ready = 1;
 }
 
@@ -1030,7 +1021,7 @@ void mem_free_2D_double(double ***array, int n, int m)
 void fem_amg_setup(const sint *n_x_, const sint *n_y_, const sint *n_z_,
                    const sint *n_elem_, const sint *n_dim_,
                    double *x_m_, double *y_m_, double *z_m_,
-                   double *pmask_, double *binv_,
+                   double *pmask_, double *binv_, const sint *nullspace,
                    const sint *gshf)
 {
      fail(1,__FILE__,__LINE__,"please recompile with HYPRE support");

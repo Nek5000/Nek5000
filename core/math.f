@@ -1,4 +1,20 @@
 c-----------------------------------------------------------------------
+      subroutine icopy48(a,b,n)
+      integer*8 a(1)
+      integer*4 b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine icopy84(a,b,n)
+      integer*4 a(1)
+      integer*8 b(1)
+      do 100 i = 1, n
+ 100     a(i) = b(i)
+      return
+      end
+c-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
       CHARACTER*1 A(1)
       CHARACTER*1 BLNK

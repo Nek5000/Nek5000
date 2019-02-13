@@ -55,15 +55,18 @@ C> @file outflow_bc.f Dirichlet states for outflow boundary conditions
          pl= facew(l,f,e,ipr) ! P- here
          wbc(l,f,e,icpf)=facew(l,f,e,icpf)
          wbc(l,f,e,icvf)=facew(l,f,e,icvf)
-         cp=facew(l,f,e,icpf)/rho
          cv=facew(l,f,e,icvf)/rho
+! JH080118 FIX THIS fOR NEW JWL CODE
+         cp=cpgref
 c        fs = 0.0
          if(outflsub)then
             pres= pinfty
+            idbc=1
          else
             pres= facew(l,f,e,ipr)
+            idbc=0
          endif
-         call BcondOutflowPerf(1,pres,sxn,syn,szn,cp,molarmass,
+         call BcondOutflowPerf(idbc,pres,sxn,syn,szn,cp,molarmass,
      >                         rho,rhou,rhov,rhow,rhoe,pl,
      >                         rhob,rhoub,rhovb,rhowb,rhoeb )
          wbc(l,f,e,irho)=rhob

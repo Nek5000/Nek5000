@@ -171,7 +171,7 @@ c            call outmat(h,m,j,' h    ',j)
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
-#ifndef TST_WSCAL
+#ifndef FIXITER
             if (rnorm .lt. tolpss) goto 900  !converged
 #else
             if (iter.gt.param(151)-1) goto 900
@@ -403,7 +403,7 @@ c . . . . . Overlapping Schwarz + coarse-grid . . . . . . .
 
 c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             if (ifmgrid) then
-               if (param(40).eq.0 .or. param(40).eq.1) then
+               if (param(40).ge.0 .and. param(40).le.2) then
                   call h1mg_solve(z_gmres(1,j),w_gmres,if_hyb) ! z  = M   w
                else if (param(40).eq.3) then
                   call fem_amg_solve(z_gmres(1,j),w_gmres)
@@ -494,7 +494,7 @@ c           enddo
      $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
    66       format(i5,1p4e12.5,i8,' Divergence')
 
-#ifndef TST_WSCAL
+#ifndef FIXITER
             if (rnorm .lt. tolpss) goto 900  !converged
 #else
             if (iter.gt.param(151)-1) goto 900

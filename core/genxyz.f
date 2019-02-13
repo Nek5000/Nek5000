@@ -1433,3 +1433,211 @@ c     it too should be updated.
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mesh_metrics
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nedge = 4 + 8*(ldim-2))
+      real ledg(nedge)
+
+      nxyz = nx1*ny1*nz1
+      ntot = nxyz*nelt
+
+      ! aspect ratio
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         ledg(1) = dist_xyzc(1,2,ie)
+         ledg(2) = dist_xyzc(1,4,ie)
+         ledg(3) = dist_xyzc(2,3,ie)
+         ledg(4) = dist_xyzc(4,3,ie)
+         if (ndim.eq.3) then
+            ledg(5)  = dist_xyzc(1,5,ie)
+            ledg(6)  = dist_xyzc(2,6,ie)
+            ledg(7)  = dist_xyzc(4,8,ie)
+            ledg(8)  = dist_xyzc(3,7,ie)
+
+            ledg(9)  = dist_xyzc(5,6,ie)
+            ledg(10) = dist_xyzc(5,8,ie)
+            ledg(11) = dist_xyzc(8,7,ie)
+            ledg(12) = dist_xyzc(6,7,ie)
+         endif
+
+         dratio = vlmax(ledg,nedge)/vlmin(ledg,nedge)
+         ddmin  = min(ddmin,dratio)
+         ddmax  = max(ddmax,dratio)
+         ddavg  = ddavg + dratio 
+      enddo 
+      darmin = glmin(ddmin,1)
+      darmax = glmax(ddmax,1)
+      daravg = glsum(ddavg,1)/nelgt
+
+      ! scaled Jac
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         dratio = vlmin(JACM1(1,1,1,ie),nxyz)/
+     $            vlmax(JACM1(1,1,1,ie),nxyz)
+         ddmin = min(ddmin,dratio)
+         ddmax = max(ddmax,dratio)
+         ddavg = ddavg + dratio 
+      enddo 
+      dsjmin = glmin(ddmin,1)
+      dsjmax = glmax(ddmax,1)
+      dsjavg = glsum(ddavg,1)/nelgt 
+
+      ! dx
+      ddmin = 1e20
+      ddmax = -1
+      ddavg = 0 
+      do ie = 1,nelt
+         ddmin = min(ddmin,dxmin_e(ie)) 
+         ddmax = max(ddmax,dxmax_e(ie))
+         dtmp  = vlsum(JACM1(1,1,1,ie),nxyz)**1./3
+         ddavg = ddavg + dtmp/(lx1-1) 
+      enddo 
+      dxmin = glmin(ddmin,1)
+      dxmax = glmax(ddmax,1)
+      dxavg = glsum(ddavg,1)/nelgt 
+
+      if (nid.eq.0) then
+         write(6,*) 'mesh metrics:'
+         write(6,'(A,1p3E9.2)') ' GLL grid spacing min/max    :',
+     $   dxmin,dxmax,dxavg
+         write(6,'(A,1p3E9.2)') ' scaled Jacobian  min/max/avg:',
+     $   dsjmin,dsjmax,dsjavg
+         write(6,'(A,1p3E9.2)') ' aspect ratio     min/max/avg:',
+     $   darmin,darmax,daravg
+         write(6,*)
+      endif
+ 
+      return
+      end
+c-----------------------------------------------------------------------
+      real function dist_xyzc(i,j,ie)
+c
+c     distance between two element corner points
+c     
+      include 'SIZE'
+      include 'INPUT'
+
+      dist_xyzc = (xc(i,ie) - xc(j,ie))**2
+      dist_xyzc = dist_xyzc + (yc(i,ie) - yc(j,ie))**2
+      if(ndim.eq.3) dist_xyzc = dist_xyzc + (zc(i,ie) - zc(j,ie))**2
+      dist_xyzc = sqrt(dist_xyzc)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dxmin_e(e)
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+
+      integer  e
+
+      d2m = 1.e20
+
+      if (ldim.eq.3) then
+         do k=1,nz1-1
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,k,e) - xm1(i,j,k,e)
+            dy = ym1(i+1,j,k,e) - ym1(i,j,k,e)
+            dz = zm1(i+1,j,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,k,e) - xm1(i,j,k,e)
+            dy = ym1(i,j+1,k,e) - ym1(i,j,k,e)
+            dz = zm1(i,j+1,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j,k+1,e) - xm1(i,j,k,e)
+            dy = ym1(i,j,k+1,e) - ym1(i,j,k,e)
+            dz = zm1(i,j,k+1,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+         enddo
+      else  ! 2D
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,1,e) - xm1(i,j,1,e)
+            dy = ym1(i+1,j,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,1,e) - xm1(i,j,1,e)
+            dy = ym1(i,j+1,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+      endif
+
+      dxmin_e = sqrt(d2m)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      function dxmax_e(e)
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'INPUT'
+
+      integer  e
+
+      d2m = -1.e20
+
+      if (ldim.eq.3) then
+         do k=1,nz1-1
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,k,e) - xm1(i,j,k,e)
+            dy = ym1(i+1,j,k,e) - ym1(i,j,k,e)
+            dz = zm1(i+1,j,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+
+            dx = xm1(i,j+1,k,e) - xm1(i,j,k,e)
+            dy = ym1(i,j+1,k,e) - ym1(i,j,k,e)
+            dz = zm1(i,j+1,k,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+
+            dx = xm1(i,j,k+1,e) - xm1(i,j,k,e)
+            dy = ym1(i,j,k+1,e) - ym1(i,j,k,e)
+            dz = zm1(i,j,k+1,e) - zm1(i,j,k,e)
+            d2 = dx*dx + dy*dy + dz*dz
+            d2m = max(d2m,d2)
+         enddo
+         enddo
+         enddo
+      else  ! 2D
+         do j=1,ny1-1
+         do i=1,nx1-1
+            dx = xm1(i+1,j,1,e) - xm1(i,j,1,e)
+            dy = ym1(i+1,j,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+
+            dx = xm1(i,j+1,1,e) - xm1(i,j,1,e)
+            dy = ym1(i,j+1,1,e) - ym1(i,j,1,e)
+            d2 = dx*dx + dy*dy
+            d2m = min(d2m,d2)
+         enddo
+         enddo
+      endif
+
+      dxmax_e = sqrt(d2m)
+
+      return
+      end
+c-----------------------------------------------------------------------

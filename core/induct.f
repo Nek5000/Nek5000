@@ -892,7 +892,7 @@ c
       ifield = 1
       call sethlm   (h1,h2,intype)
 
-      call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       call opadd2   (vx,vy,vz,dv1,dv2,dv3)
 
@@ -906,7 +906,7 @@ c
       ifield = ifldmhd
       call sethlm   (h1,h2,intype)
 
-      call ophinv   (dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxh)
+      call ophinv   (dv1,dv2,dv3,besv1,besv2,besv3,h1,h2,tolhv,nmxv)
       call opadd2   (bx,by,bz,dv1,dv2,dv3)
 
       call incomprn (bx,by,bz,pm) ! project B onto div-free space
@@ -1515,90 +1515,6 @@ c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
                bmy(i,1,1,e) = bmy(i,1,1,e) + tmp*( fy(i) - gy(i) )
             enddo
          enddo
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine set_dealias_rx
-C
-C     Eulerian scheme, add convection term to forcing function
-C     at current time step.
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
-      include 'TSTEP' ! for istep
-
-      common /dealias1/ zd(lxd),wd(lxd)
-      integer e
-
-      integer ilstep
-      save    ilstep
-      data    ilstep /-1/
-
-      if (.not.ifgeom.and.ilstep.gt.1) return  ! already computed
-      if (ifgeom.and.ilstep.eq.istep)  return  ! already computed
-      ilstep = istep
-
-      nxyz1 = lx1*ly1*lz1
-      nxyzd = lxd*lyd*lzd
-
-      call zwgl (zd,wd,lxd)  ! zwgl -- NOT zwgll!
-
-      if (if3d) then
-c
-         do e=1,nelv
-
-c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
-
-            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,3,e),rzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,4,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,5,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,6,e),szm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,7,e),txm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,8,e),tym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,9,e),tzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-
-            l = 0
-            do k=1,lzd
-            do j=1,lyd
-            do i=1,lxd
-               l = l+1
-               w = wd(i)*wd(j)*wd(k)
-               do ii=1,9
-                  rx(l,ii,e) = w*rx(l,ii,e)
-               enddo
-            enddo
-            enddo
-            enddo
-         enddo
-
-      else ! 2D
-c
-         do e=1,nelv
-
-c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
-
-            call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,2,e),rym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,3,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,4,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-
-            l = 0
-            do j=1,lyd
-            do i=1,lxd
-               l = l+1
-               w = wd(i)*wd(j)
-               do ii=1,4
-                  rx(l,ii,e) = w*rx(l,ii,e)
-               enddo
-            enddo
-            enddo
-         enddo
-
       endif
 
       return

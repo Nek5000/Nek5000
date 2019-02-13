@@ -1383,6 +1383,10 @@ c     loading objects one at a time.
 
          call substitute_el(xyzbox,nelo)
 
+c        one cannot set properly nelv, but the temperature mesh can be set
+c        requred by cell_cell_connectivity
+         nelt=nel
+
       endif
 
       return

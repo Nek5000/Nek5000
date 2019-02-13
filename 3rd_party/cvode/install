@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
+VER=2.7.0
+
 if [ "$1" == "clean" ]; then
-  rm -rf sundials-2.7.0 lib include 2>/dev/null 
+  rm -rf sundials lib include 2>/dev/null 
   exit 0
 fi
 
@@ -10,17 +12,18 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
   exit 0
 fi
 
-if [ ! -f sundials-2.7.0.tar.gz ]; then
-  wget -O sundials-2.7.0.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-2.7.0.tar.gz
-  tar -zxvf *.tar.gz
+if [ ! -f sundials-$VER.tar.gz ]; then
+  wget --no-check-certificate -O sundials-$VER.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-$VER.tar.gz
 fi
 
-tar -zxf *.tar.gz
-
-cd sundials*
+rm -rf sundials 2>/dev/null
+mkdir sundials
+tar -zxvf sundials-$VER.tar.gz -C ./sundials --strip-components=1
+cd sundials
 mkdir -p build
 cd build
 
+set -x
 cmake \
 -DBUILD_ARKODE=OFF \
 -DBUILD_CVODES=OFF \
@@ -38,5 +41,6 @@ cmake \
 -DMPI_MPICC=`which $CC` \
 -DMPI_MPIF77=`which $FC` \
 ..
+set +x
 
 make install -j4

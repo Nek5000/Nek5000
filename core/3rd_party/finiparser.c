@@ -41,7 +41,7 @@ static dictionary *dic=NULL;
 static char *token[ntokenmax];
 
 
-char *addchar0(char * str,int str_len)
+char *addchar0(char *str,int str_len)
 {
     int i, real_len;
     char *newstr;
@@ -72,11 +72,15 @@ void finiparser_find(int* out,char *key,int* ifnd,int key_len)
 {
     int tmp;
     *ifnd = 0;
-    tmp = iniparser_find_entry(dic,addchar0(key,key_len));
+    char *key_;
+
+    key_ = addchar0(key,key_len);
+    tmp = iniparser_find_entry(dic,key_);
     if (tmp == 1) {
        *out = tmp;
        *ifnd = 1;
     }
+    free(key_);
     return;
 }
 
@@ -114,8 +118,12 @@ void finiparser_getPair(char *key,char *val,int *id,int *ifnd,int key_len, int v
 void finiparser_load(char * fname,int* ierr,int fname_len)
 {
     *ierr = 0;
-    dic = iniparser_load(addchar0(fname,fname_len)); 
+    char *fname_;
+
+    fname_ = addchar0(fname,fname_len); 
+    dic = iniparser_load(fname_); 
     if (dic == NULL) *ierr = 1;
+    free(fname_);
     return;
 }
 
@@ -130,11 +138,13 @@ void finiparser_getString(char *out,char *key,int *ifnd,int out_len,int key_len)
     int i;
     const char* str;
     int real_out_len;
+    char *key_;
 
     *ifnd = 0;
     for (i=0; i<out_len; i++) out[i] = ' ';
 
-    str = iniparser_getstring(dic,addchar0(key,key_len),NULL);
+    key_ = addchar0(key,key_len);
+    str = iniparser_getstring(dic,key_,NULL);
     if (str != NULL) {
        real_out_len = strlen(str);
        if(real_out_len <= out_len) {
@@ -142,32 +152,39 @@ void finiparser_getString(char *out,char *key,int *ifnd,int out_len,int key_len)
          *ifnd = 1;
        } 
     }
+    free(key_);
     return;
 }
 
 void finiparser_getBool(int* out,char *key,int* ifnd,int key_len)
 {
     int tmp;
+    char *key_;
 
     *ifnd = 0;
-    tmp = iniparser_getboolean(dic,addchar0(key,key_len),-1);
+    key_ = addchar0(key,key_len);
+    tmp = iniparser_getboolean(dic,key_,-1);
     if (tmp != -1) { 
        *out = tmp;
        *ifnd = 1;
     }
+    free(key_);
     return;
 }
 
 void finiparser_getDbl(double* out,char *key,int *ifnd,int key_len)
 {
     const char* str;
+    char *key_;
 
     *ifnd = 0;
-    str = iniparser_getstring(dic,addchar0(key,key_len),NULL);
+    key_ = addchar0(key,key_len);
+    str = iniparser_getstring(dic,key_,NULL);
     if (str != NULL) {
        *out = atof(str);
        *ifnd = 1;
     }
+    free(key_);
     return;
 }
 
@@ -186,13 +203,15 @@ void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int
 {
     const char *str;
     char *newstr;
-    char *d;
+    char *d, *key_;
     int i;
 
     *icounter = 0;
 
     d = addchar0(delim,delim_len);
-    str = iniparser_getstring(dic,addchar0(key,key_len),NULL);
+    key_ = addchar0(key,key_len); 
+    str = iniparser_getstring(dic,key_,NULL);
+    free(key_);
     if (str == NULL) return;
 
     newstr = (char *) malloc((strlen(str)+1)*sizeof(char));
@@ -205,6 +224,8 @@ void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int
            token[++i] = strtok(NULL,d);
     }
     *icounter = i;
-    
-   return;
+    free(newstr);
+    free(d);  
+
+    return;
 }

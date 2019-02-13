@@ -1,9 +1,17 @@
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+      ifxyo = .true.
+      if (istep.gt.1) ifxyo=.false.
+      return
+      end
+
+!-----------------------------------------------------------------------
+
+      subroutine cmtchk
+      include 'SIZE'
+      include 'TOTAL'
       include 'CMTDATA'
-      parameter (lt=lx1*ly1*lz1*lelt)
-      common /mystuff/ vrt(lt,3),wk1(lt),wk2(lt)
       
       scale = 1.
       nxyz=nx1*ny1*nz1
@@ -11,14 +19,9 @@
       if (mod(istep,1000).eq.0)
      >   call l2norm_2d_vortex
       endif
-      ifxyo = .true.
 
 ! sigh. need settime to bend to my will
       time=time_cmt
-      dt=dt_cmt
-
-      if (mod(istep,iostep).eq.0) call comp_vort3(vrt,wk1,wk2,vx,vy,vz)
-      if (mod(istep,iostep).eq.0) call outpost(vx,vy,vz,vrt,t,'vrt')
 
       return
       end
@@ -125,23 +128,17 @@ c-----------------------------------------------------------------------
       uxinf = 1.0
       uyinf = 0.0
       Tempinf = 1.0
-      varsic(1) = phi*(Tempinf-(gmaref-1.0)*bvort**2/(16.0*gmaref
+      rho = (Tempinf-(gmaref-1.0)*bvort**2/(16.0*gmaref
      >           *pi**2)* exp(2.0*(1.0-r2)))**(1.0/(gmaref-1.0))
-      varsic(2) = varsic(1)*(uxinf-bvort*exp((1.0-r2))*y/(2.0*pi))
-      varsic(3) = varsic(1)*(uyinf+bvort*exp((1.0-r2))*x/(2.0*pi))
-      varsic(4) = 0.0
-      varsic(5) = varsic(1)**gmaref/(gmaref-1.) +
-     >            0.5*(varsic(2)**2+varsic(3)**2+varsic(4)**2)/varsic(1)
-      rho= varsic(1)/phi
+      ux = uxinf-bvort*exp((1.0-r2))*y/(2.0*pi)
+      uy = uyinf+bvort*exp((1.0-r2))*x/(2.0*pi)
+      uz = 0.0
       temp=Tempinf-(gmaref-1.0)*bvort**2/(16.0*gmaref*pi**2)*
      >           exp(2.0*(1.0-r2))
       pres=MixtPerf_P_DRT(rho,rgasref,temp)
-      ux = varsic(2)/varsic(1)
-      uy = varsic(3)/varsic(1)
-      uz = varsic(4)/varsic(1)
-!     call cmt_userEOS(ix,iy,iz,eg)
       cp=cpgref
       cv=cvgref
+      e_internal=cvgref*temp
       return
       end
 c-----------------------------------------------------------------------
@@ -234,7 +231,7 @@ c
       include 'TSTEP'
       include 'CMTDATA'
 
-      real  sumcvars_l2(5), l2_normscvars(5)
+      real  sumcvars_l2(5), l2_normscvars(5),varsic(5)
       integer e,eq
       integer nloop
       real bvort,uxinf,uyinf,tempinf
@@ -248,7 +245,7 @@ c
       enddo
       pi = 4.0*atan(1.0)
       phigic = 1.0
-      num_steps = int(1/dt_cmt)
+      num_steps = int(1.0/dt)
       xctrnew = xctr + uxinf*time_cmt
       yctrnew = yctr + uyinf*time_cmt
       nloop = int(int(uxinf*time_cmt)/10) + 1

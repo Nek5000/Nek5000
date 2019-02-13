@@ -186,12 +186,17 @@ C
              NELFLD(IFIELD) = NELV
          ENDIF
  100  CONTINUE
-C
-      NMXH   = 1000
-      if (iftran) NMXH   = 100
-      NMXP   = 1000 !  (for testing) 100 !  2000
-      NMXE   = 100 !  1000
-      NMXNL  = 10  !  100
+
+      ! Maximum iteration counts for linear solver
+      NMXV   = 1000
+      if (iftran) NMXV = 200
+      NMXH   =  NMXV ! not used anymore
+      NMXP   = 1000
+      do ifield = 2,ldimt+1
+         NMXT(ifield-1) = 200 
+      enddo 
+      NMXE   = 100
+      NMXNL  = 10 
 C
       PARAM(86) = 0 ! No skew-symm. convection for now
 C
@@ -390,21 +395,6 @@ C
          CALL SETINVM
          CALL SETDEF
          CALL SFASTAX
-         IF (ISTEP.GE.1) CALL EINIT
-      ELSEIF (IGEOM.EQ.3) THEN
-c
-c        Take direct stiffness avg of mesh
-c
-         ifieldo = ifield
-         if (.not.ifneknekm) CALL GENCOOR (XM3,YM3,ZM3)
-         CALL GEOM1 (XM3,YM3,ZM3)
-         CALL GEOM2
-         CALL UPDMSYS (1)
-         CALL VOLUME
-         CALL SETINVM
-         CALL SETDEF
-         CALL SFASTAX
-         ifield = ifieldo
       ENDIF
 
       if (nio.eq.0.and.istep.le.1) then
@@ -699,7 +689,13 @@ c                - Incompressibe or Weakly compressible (div u .ne. 0).
 
          call plan4 (igeom)                                           
          if (igeom.ge.2) call chkptol         ! check pressure tolerance 
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
          if (igeom.ge.2) call printdiverr
 
       elseif (iftran) then
@@ -714,7 +710,13 @@ c        call plan1 (igeom)       !  Orig. NEKTON time stepper
          endif
 
          if (igeom.ge.2) call chkptol         ! check pressure tolerance
-         if (igeom.ge.2) call vol_flow        ! check for fixed flow rate
+         if (igeom.eq.ngeom) then 
+           if (ifneknekc) then
+              call vol_flow_ms    ! check for fixed flow rate
+           else
+              call vol_flow       ! check for fixed flow rate
+           endif
+         endif
 
       else   !  steady Stokes, non-split
 
@@ -1777,7 +1779,7 @@ c
       call rzero    (h2,ntot1)
 c
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 C
 C     Compute velocity
@@ -1788,7 +1790,7 @@ C
 c
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 C
       return
       end
@@ -1841,7 +1843,7 @@ c
       endif
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxv)
       call ssnormd  (vxc,vyc,vzc)
 c
 c     Compute pressure  (from "incompr")
@@ -1911,7 +1913,7 @@ c     Compute pressure
       call ctolspl  (tolspl,respr)
 
       call hmholtz  ('PRES',prc,respr,h1,h2,pmask,vmult,
-     $                             imesh,tolspl,nmxh,1)
+     $                             imesh,tolspl,nmxp,1)
       call ortho    (prc)
 
 C     Compute velocity
@@ -1929,7 +1931,7 @@ C     Compute velocity
 
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       if (ifexplvis) call redo_split_vis ! restore vdiff
 
@@ -2014,3 +2016,31 @@ c     istpp = istep+2033+1250
       return
       end
 C-----------------------------------------------------------------------
+      subroutine prinit
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      if(nio.eq.0) write(6,*) 'initialize pressure solver'
+      isolver = param(40)
+
+      if (isolver.eq.0) then      ! semg_xxt
+         if (nelgt.gt.350000)
+     $   call exitti('problem size too large for XXT solver!$',0)
+         call set_overlap
+      else if (isolver.eq.1) then ! semg_amg
+         call set_overlap
+      else if (isolver.eq.2) then ! semg_amg_hypre
+         call set_overlap
+      else if (isolver.eq.3) then ! fem_amg_hypre
+         null_space = 0
+         if (ifvcor) null_space = 1 
+         call fem_amg_setup(nx1,ny1,nz1,
+     $                      nelv,ndim,
+     $                      xm1,ym1,zm1,
+     $                      pmask,binvm1,null_space,
+     $                      gsh_fld(1),fem_amg_param)
+      endif
+
+      return 
+      end

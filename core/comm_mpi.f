@@ -14,6 +14,8 @@ c-----------------------------------------------------------------------
       logical ifhigh
       logical mpi_is_initialized
 
+      integer*8 ntags
+
       ! Init MPI
       call mpi_initialized(mpi_is_initialized, ierr)
       if (.not.mpi_is_initialized) call mpi_init(ierr)
@@ -21,8 +23,8 @@ c-----------------------------------------------------------------------
       call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_attr_get(MPI_COMM_WORLD,MPI_TAG_UB,nval,flag,ierr)
-      if (nval.lt.(10000+lp)) then
+      call mpi_comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,ntags,flag,ierr)
+      if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
       endif
@@ -111,7 +113,7 @@ c     Assign key for splitting into multiple groups
 
       ! setup intercommunication 
       if (ifneknekc) then
-         if (nessions.gt.2) call exitti(
+         if (nsessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',
      $     nsessions)
 
@@ -179,9 +181,6 @@ c---------------------------------------------------------------------
          call exitti('MPI integer8 size does not match$',isize_mpi)
       endif
 
-      if (np.gt.lp)
-     $   call exitti('Increase LPMAX or run with fewer processors!$',np)
-
       PID = 0
       NULLPID=0
       NODE0=0
@@ -200,7 +199,7 @@ C     Test timer accuracy
          write(6,*) 'Number of processors:',np
          WRITE(6,*) 'REAL    wdsize      :',WDSIZE
          WRITE(6,*) 'INTEGER wdsize      :',ISIZE
-         WRITE(6,'(A,1pE8.2)') ' Timer accuracy      : ',edif
+         WRITE(6,'(A,1pE9.2)') ' Timer accuracy      : ',edif
          WRITE(6,*) ' '
       endif
 

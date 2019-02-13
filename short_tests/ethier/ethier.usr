@@ -1,3 +1,4 @@
+c
 c  Exact fully 3D Navier-Stokes benchmark
 c   
 c  Reference:
@@ -120,8 +121,6 @@ c-----------------------------------------------------------------------
       n  = nelv*nx1*ny1*nz1
       n2 = nelv*nx2*ny2*nz2
 
-      write(6,*) nid, ifheat
-
       if (mod(istep,100).ne.0) return
 
       call exactu(uxe,uye,uze,xm1,ym1,zm1,n)
@@ -157,7 +156,7 @@ c-----------------------------------------------------------------------
 
          ! test interpolation wrapper
          nxm = 2 ! mesh is quadratic
-         call interp_setup(0.0,nxm,intp_h)
+         call interp_setup(intp_h,0.0,nxm,nelt)
          nint = n
          call copy (xint,XM1,nint)
          call copy (yint,YM1,nint)

@@ -263,7 +263,7 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       else      
        ux = valint(ix,iy,iz,ie,1)
        uy = valint(ix,iy,iz,ie,2)
-       uz = valint(ix,iy,iz,ie,3)
+       uz = valint(ix,iy,iz,ie,ldim)
        if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
 

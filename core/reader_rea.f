@@ -10,7 +10,6 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
-      INCLUDE 'ZPER'
 
       character*132 string(100)
 
@@ -97,11 +96,13 @@ c
 C
 C     Read logical equation type descriptors....
 C
-      IFTMSH(0) = .false.
+      IFTMSH(0)    = .false.
       IFPROJFLD(0) = .false.
+      IFDGFLD(0)   = .false.
       do i=1,NPSCL2
          IFTMSH(i)    = .false.
          IFADVC(i)    = .false. 
+         IFDGFLD(i)   = .false.
          IFFILTER(i)  = .false.
          IFDIFF(i)    = .true.
          IFDEAL(i)    = .true. ! still depends on param(99)
@@ -305,23 +306,6 @@ C
             param(19) = 0.0
          endif
       endif
-c
-c     Check here for global fast diagonalization method or z-homogeneity.
-c     This is here because it influence the mesh read, which follows.
-      nelx   = abs(param(116))   ! check for global tensor-product structure
-      nely   = abs(param(117))
-      nelz   = abs(param(118))
-      n_o    = 0
-
-      if (n_o.eq.0) then
-         ifzper=.false.
-         ifgfdm=.false.
-         if (nelz.gt.0) ifzper=.true.
-         if (nelx.gt.0) ifgfdm=.true.
-         if (nelx.gt.0) ifzper=.false.
-      endif
-
-
 C
 C     Do some checks
 C
@@ -411,12 +395,6 @@ C
          call exitt
       endif
 
-      if (ifgfdm.and.ifsplit) call exitti
-     $  ('ERROR: FDM (p116>0) requires lx2=lx1-2 in SIZE$',lx2)
-
-      if (ifgfdm.and.lfdm.eq.0) call exitti
-     $  ('ERROR: FDM requires lfdm=1 in SIZE$',lfdm)
-
 c      if (ifsplit .and. ifstrs) then
 c         if(nid.eq.0) write(6,*) 
 c     $   'ABORT: Stress formulation in Pn-Pn is not supported'
@@ -428,6 +406,9 @@ c      endif
      $   'ABORT: MHD in Pn-Pn is not supported'
          call exitt
       endif
+
+      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
+     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
 
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
@@ -496,8 +477,10 @@ c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(67) = 6
 
       param(59) = 1 ! No fast operator eval, ADJUSTED IN USR FILE ONLY
-    
+      param(33) = 0
+
       fem_amg_param(1) = 0
+      crs_param(1) = 0
 
       filterType = 0
       if (param(103).gt.0) then 
