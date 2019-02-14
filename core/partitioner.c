@@ -155,81 +155,6 @@ err:
 }
 #endif
 
-void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
-{
-  int i,j;
-  int np, id;
-  int numPoints = nel*nv;
-  struct gs_data *gsh;
-  buffer buf;
-  long long *data;
-  int neighborsCount = 0;
-  int nelMin, nelMax;
-  int ncMin, ncMax, ncSum;
-  int b;
-  struct comm comm;
-
-  comm_init(&comm,ce);
-  np = comm.np;
-  id = comm.id;
-
-  data= (long long*) malloc(numPoints*sizeof(long long));
-  for(i = 0; i < numPoints; i++) data[i] = vtx[i]; 
-
-  gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
-
-  buffer_init(&buf, 1024);
-
-  for(i = 0; i < np; i++) {
-    if(i != id) {
-      for(j = 0; j < numPoints; j++) {
-        data[j] = -1;
-      }
-    } else {
-      for(j = 0; j < numPoints; j++) {
-        data[j] = id + 1;
-      }
-    }
-
-    gs(data, gs_long, gs_max, 0, gsh, &buf);
-
-    for(j = 0; j < numPoints; j++) {
-      if(data[j] > 0) {
-        neighborsCount++;
-        break;
-      }
-    }
-  }
-
-  gs_free(gsh);
-  free(data);
-  buffer_free(&buf);
-
-  ncMax = neighborsCount;
-  ncMin = neighborsCount;
-  ncSum = neighborsCount;
-  nelMax = nel;
-  nelMin = nel;
-
-  comm_allreduce(&comm, gs_int, gs_max, &ncMax , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_min, &ncMin , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_add, &ncSum , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_max, &nelMax, 1, &b);
-  comm_allreduce(&comm, gs_int, gs_min, &nelMin, 1, &b);
-
-  if (id == 0) {
-    printf(
-      " Max neighbors: %d | Min neighbors: %d | Avg neighbors: %lf\n",
-      ncMax, ncMin, (double)ncSum/np);
-    printf(
-      " Max elements: %d | Min elements: %d | Balance: %lf\n",
-      nelMax, nelMin, (double)nelMax/nelMin);
-    fflush(stdout);
-  }
-
-  comm_free(&comm);
-}
-
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
 void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell, 
                const int *nve, comm_ext *fcomm, int *rtval) 
@@ -247,6 +172,15 @@ void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell,
 
   nel  = *nell;
   nv   = *nve;
+  comm_init(&comm, MPI_Comm_f2c(*fcomm));
+
+#if defined(MPI)
+  comm_ext cext = MPI_Comm_f2c(*fcomm);
+#else
+  comm_ext cext = 0;
+#endif
+  comm_init(&comm, cext);
+
   comm_init(&comm, MPI_Comm_f2c(*fcomm));
 
   part = (int*) malloc(nel * sizeof(int));
@@ -308,6 +242,96 @@ void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell,
 err:
   fflush(stdout);
   *rtval = 1;
+}
+
+void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
+{
+  int i,j;
+
+  struct comm comm;
+  int np, id;
+
+  int Nmsg;
+  int *Ncomm;
+
+  int nelMin, nelMax;
+  int ncMin, ncMax, ncSum;
+  int nsMin, nsMax, nsSum;
+  int nssMin, nssMax, nssSum;
+
+  struct gs_data *gsh;
+  int b;
+
+  int numPoints;
+  long long *data;
+
+  comm_init(&comm,ce);
+  np = comm.np;
+  id = comm.id;
+
+  numPoints = nel*nv;
+  data = (long long*) malloc(numPoints*sizeof(long long));
+  for(i = 0; i < numPoints; i++) data[i] = vtx[i];
+
+  gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
+
+  pw_data_nmsg(gsh, &Nmsg);
+  Ncomm = (int *) malloc(Nmsg*sizeof(int));
+  pw_data_size(gsh, Ncomm);
+
+  gs_free(gsh);
+  free(data);
+
+  ncMax = Nmsg;
+  ncMin = Nmsg;
+  ncSum = Nmsg;
+  comm_allreduce(&comm, gs_int, gs_max, &ncMax , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_min, &ncMin , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_add, &ncSum , 1, &b);
+
+  nsMax = Ncomm[0];
+  nsMin = Ncomm[0];
+  nsSum = Ncomm[0];
+  for (i=1; i<Nmsg; ++i){
+    nsMax = Ncomm[i] > Ncomm[i-1] ? Ncomm[i] : Ncomm[i-1];
+    nsMin = Ncomm[i] < Ncomm[i-1] ? Ncomm[i] : Ncomm[i-1];
+    nsSum += Ncomm[i];
+  }
+  comm_allreduce(&comm, gs_int, gs_max, &nsMax , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_min, &nsMin , 1, &b);
+
+  nssMin = nsSum;
+  nssMax = nsSum;
+  nssSum = nsSum;
+  comm_allreduce(&comm, gs_int, gs_max, &nssMax , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
+  comm_allreduce(&comm, gs_int, gs_add, &nssSum , 1, &b);
+
+  nsSum = nsSum/Nmsg;   
+  comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
+
+  nelMax = nel;
+  nelMin = nel;
+  comm_allreduce(&comm, gs_int, gs_max, &nelMax, 1, &b);
+  comm_allreduce(&comm, gs_int, gs_min, &nelMin, 1, &b);
+
+  if (id == 0) {
+    printf(
+      " Max neighbors: %d | Min neighbors: %d | Avg neighbors: %lf\n",
+      ncMax, ncMin, (double)ncSum/np);
+   printf(
+      " Max nvolume: %d | Min nvolume: %d | Avg nvolume: %lf\n",
+      nsMax, nsMin, (double)nsSum/np);
+    printf(
+      " Max volume: %d | Min volume: %d | Avg volume: %lf\n",
+      nssMax, nssMin, (double)nssSum/np);
+    printf(
+      " Max elements: %d | Min elements: %d | Balance: %lf\n",
+      nelMax, nelMin, (double)nelMax/nelMin);
+    fflush(stdout);
+  }
+
+  comm_free(&comm);
 }
 
 #define fprintPartStat FORTRAN_UNPREFIXED(printpartstat,PRINTPARTSTAT)
