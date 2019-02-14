@@ -172,7 +172,6 @@ void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell,
 
   nel  = *nell;
   nv   = *nve;
-  comm_init(&comm, MPI_Comm_f2c(*fcomm));
 
 #if defined(MPI)
   comm_ext cext = MPI_Comm_f2c(*fcomm);
@@ -180,8 +179,6 @@ void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell,
   comm_ext cext = 0;
 #endif
   comm_init(&comm, cext);
-
-  comm_init(&comm, MPI_Comm_f2c(*fcomm));
 
   part = (int*) malloc(nel * sizeof(int));
 
@@ -268,6 +265,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_init(&comm,ce);
   np = comm.np;
   id = comm.id;
+
+  if (np == 1) return;
 
   numPoints = nel*nv;
   data = (long long*) malloc(numPoints*sizeof(long long));
