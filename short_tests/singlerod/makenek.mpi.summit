@@ -14,13 +14,10 @@ CC="mpicc"
 PPLIST="" 
 
 # generic compiler flags
-CFLAGS="-DNEW_GS_LOOPS"
-
-# For GPU profiling tools:
-G="-mcmodel=large -acc -ta=nvidia:cc70,cuda9.2"
+G="-mcmodel=medium"
 
 # linking flags
-USR_LFLAGS="-mcmodel=large -acc -ta=nvidia:cc70,cuda9.2"
+USR_LFLAGS="-mcmodel=medium"
 
 ###############################################################################
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
