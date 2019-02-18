@@ -1441,7 +1441,8 @@ c     then recompute base flow solution corresponding to unit forcing:
          ifcomp=.false.  ! If here, then vdiff/vtrans unchanged.
    20    continue
       endif
-
+      call gllog(ifcomp,.true.)
+      
       call copy(vdc(1,1),vdiff (1,1,1,1,1),ntot1)
       call copy(vdc(1,2),vtrans(1,1,1,1,1),ntot1)
       dt_vflow = dt
