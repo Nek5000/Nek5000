@@ -4,7 +4,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'PARALLEL' 
       include 'TSTEP' 
-      include 'INPUT' 
+      include 'INPUT'
+
+      logical flag
     
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
  
