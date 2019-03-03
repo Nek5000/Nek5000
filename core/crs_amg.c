@@ -5,18 +5,7 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <limits.h>
-#include "c99.h"
-#include "name.h"
-#include "types.h"
-#include "fail.h"
-#include "mem.h"
-#include "sort.h"
-#include "sarray_sort.h"
-#include "gs_defs.h"
-#include "comm.h"
-#include "crystal.h"
-#include "sarray_transfer.h"
-#include "gs.h"
+#include "gslib.h"
 
 #define crs_setup PREFIXED_NAME(crs_amg_setup)
 #define crs_solve PREFIXED_NAME(crs_amg_solve)

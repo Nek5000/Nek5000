@@ -157,7 +157,7 @@ err:
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
 void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell, 
-               const int *nve, comm_ext *fcomm, int *rtval) 
+               const int *nve, int *fcomm, int *rtval) 
 {
   struct comm comm;
   struct crystal cr;
