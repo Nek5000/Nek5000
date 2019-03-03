@@ -76,12 +76,12 @@ c-----------------------------------------------------------------------
  23   continue
       call err_chk(ierr,' Error while reading SESSION.NAME!$')
 
-      call bcast(nsessions,ISIZE)
-      call bcast(ifneknekc,LSIZE)
+      call mpi_bcast(nsessions,ISIZE,MPI_BYTE,0,comm,ierr)
+      call mpi_bcast(ifneknekc,LSIZE,MPI_BYTE,0,comm,ierr) 
       do n = 0,nsessions-1
-         call bcast(npsess(n),ISIZE)
-         call bcast(session_mult(n),132*CSIZE)
-         call bcast(path_mult(n),132*CSIZE)
+         call mpi_bcast(npsess(n),ISIZE,MPI_BYTE,0,comm,ierr)
+         call mpi_bcast(session_mult(n),132*CSIZE,MPI_BYTE,0,comm,ierr)
+         call mpi_bcast(path_mult(n),132*CSIZE,MPI_BYTE,0,comm,ierr)
       enddo
 
       if (nsessions .gt. 1) ifneknek = .true.
@@ -138,9 +138,6 @@ c     Assign key for splitting into multiple groups
       
          ifhigh=.true.
          call mpi_intercomm_merge(intercomm, ifhigh, newcommg, ierr)
-
-         ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
-         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
       endif 
 
       return

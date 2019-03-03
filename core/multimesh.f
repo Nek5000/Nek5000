@@ -50,6 +50,8 @@ c-------------------------------------------------------------
 
       if (icalld.eq.0) then
          nfld_neknek = ldim+nfield
+         ninter = 1
+         ngeom = 2
          call nekneksanchk
          call set_intflag
          call neknekmv
