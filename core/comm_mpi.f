@@ -24,6 +24,7 @@ c-----------------------------------------------------------------------
       if (.not.mpi_is_initialized) call mpi_init(ierr)
 
       call mpi_comm_dup(comm,newcommg,ierr)
+      newcomm = newcommg
       nekcomm = newcommg 
 
       call mpi_comm_size(nekcomm,np_global,ierr)
@@ -40,7 +41,6 @@ c-----------------------------------------------------------------------
       nid         = nid_global
       ifneknek    = .false.
       ifneknekc   = .false. ! session are uncoupled
-      ifneknekm   = .false. ! not moving
       nsessions   = 1
 
       ierr = 0
@@ -80,6 +80,10 @@ c-----------------------------------------------------------------------
       call err_chk(ierr,' Error while reading SESSION.NAME!$')
 
       call bcast(nsessions,ISIZE)
+      if (nsessions .gt. nsessmax) 
+     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
+      if (nsessions .gt. 1) ifneknek = .true.
+
       call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
          call bcast(npsess(n),ISIZE)
@@ -87,17 +91,11 @@ c-----------------------------------------------------------------------
          call bcast(path_mult(n),132*CSIZE)
       enddo
 
-      if (nsessions .gt. 1) ifneknek = .true.
-
-      if (nsessions .gt. nsessmax) 
-     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
-
       ! single session run
       if (.not.ifneknek) then
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
-         newcomm   = newcommg
          return
       endif
  
@@ -118,13 +116,11 @@ c     Assign key for splitting into multiple groups
          if (nid_global.ge.nid_global_root(n).and.
      &       nid_global.lt.nid_global_root_next) idsess = n
       enddo
-
       call mpi_comm_split(comm,idsess,nid,newcomm,ierr)
  
       session = session_mult(idsess)
       path    = path_mult   (idsess)
 
-      ! setup intercommunication 
       if (ifneknekc) then
          if (nsessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',

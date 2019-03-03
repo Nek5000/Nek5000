@@ -56,7 +56,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call setupcomm(comm,newcomm,newcommg,'','')
       intracomm   = newcomm   ! within a session
-      nekcomm     = intracomm
+      nekcomm     = newcomm
       iglobalcomm = newcommg  ! across all sessions
       call iniproc()
 

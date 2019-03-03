@@ -52,6 +52,7 @@ c     Set default logicals
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
+      ifneknekm = .false.
       if_full_pres = .false.
 
 c     Turn off (on) diagnostics for communication
