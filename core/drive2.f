@@ -52,7 +52,6 @@ c     Set default logicals
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
-      ifneknekm = .false.
       if_full_pres = .false.
 
 c     Turn off (on) diagnostics for communication
@@ -155,6 +154,7 @@ C------------------------------------------------------------------------
       include 'GEOM'
       include 'DEALIAS'
       include 'TSTEP'
+      include 'NEKNEK'
 C
 C     Geometry on Mesh 3 or 1?
 C
@@ -275,12 +275,15 @@ C     Initialize time step array.
 C
       NBD    = 0
       CALL RZERO (DTLAG,10)
-C
-C     Useful constants
-C
+
+      ! neknek 
+      ifneknekm = .false.
+      ninter = 1
+      nfld_neknek = ndim + nfield
+
       one = 1.
       PI  = 4.*ATAN(one)
-C
+
       RETURN
       END
 C
