@@ -1,19 +1,4 @@
-cc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-cc
-cc   Author: Prabal Negi
-cc   Email : negi@mech.kth.se 
-cc   Description: High pass filtering for stabilization of SEM
-cc   Last Modified: 27/09/2017 
-cc
-cc   Note: 'implicit none' have been commented out from all routines
-cc          to maintain backward compatibility.
-cc
-cc%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-cc----------------------------------------------------------------------  
-c     Main interface for high-pass filter
       subroutine MAKE_HPF
-
-c      implicit none
 
       include 'SIZE'
       include 'SOLN'
@@ -55,7 +40,6 @@ c----------------------------------------
       hpf_chi = -1.0*abs(param(103))
 c     Boyd transform to preserve element boundary values is 
 c     linearly unstable when used as forcing.
-c     keep parameter as false unless you know what you are doing.
       hpf_ifboyd = .false.      
 
       nel = nelv

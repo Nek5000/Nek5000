@@ -1,11 +1,13 @@
 c-----------------------------------------------------------------------
-      subroutine setupcomm()
+      subroutine setupcomm(comm,newcomm,newcommg,path_in,session_in)
       include 'mpif.h'
       include 'SIZE'
       include 'PARALLEL' 
       include 'TSTEP' 
       include 'INPUT'
 
+      integer comm, newcomm, newcommg
+      character session_in*(*), path_in*(*)
       logical flag
     
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
@@ -18,14 +20,18 @@ c-----------------------------------------------------------------------
 
       integer*8 ntags
 
-      ! Init MPI
       call mpi_initialized(mpi_is_initialized, ierr)
       if (.not.mpi_is_initialized) call mpi_init(ierr)
-      call mpi_comm_size(MPI_COMM_WORLD,np_global,ierr)
-      call mpi_comm_rank(MPI_COMM_WORLD,nid_global,ierr)
+
+      call mpi_comm_dup(comm,newcommg,ierr)
+      newcomm = newcommg
+      nekcomm = newcommg 
+
+      call mpi_comm_size(nekcomm,np_global,ierr)
+      call mpi_comm_rank(nekcomm,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,ntags,flag,ierr)
+      call mpi_comm_get_attr(nekcomm,MPI_TAG_UB,ntags,flag,ierr)
       if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
@@ -33,33 +39,39 @@ c-----------------------------------------------------------------------
 
       ! set defaults
       nid         = nid_global
-      nekcomm     = MPI_COMM_WORLD
-      iglobalcomm = MPI_COMM_WORLD 
       ifneknek    = .false.
       ifneknekc   = .false. ! session are uncoupled
-      ifneknekm   = .false. ! not moving
       nsessions   = 1
 
       ierr = 0
       nlin = 0
       if (nid .eq. 0) then
-         write(6,*) 'Reading session file ...'
-         open (unit=8,file='SESSION.NAME',status='old',err=24)
- 21      read (8,*,END=22)
-         nlin = nlin + 1 
-         goto 21
- 22      rewind(8)
-         if (nlin.gt.2) read(8,*,err=24) nsessions
-         if (nsessions.gt.1) read(8,*,err=24) ifneknekc
-         do n=0,nsessions-1
-            call blank(session_mult(n),132)
-            call blank(path_mult(n)   ,132)
-            read(8,11,err=24) session_mult(n)
-            read(8,11,err=24) path_mult(n)
-            if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
-         enddo
- 11      format(a132)
-         close(8)
+         l = ltrunc(session_in,len(session_in))
+         if (l .gt. 0) then
+            call blank(session_mult(0),132)
+            call chcopy(session_mult(0), session_in, l)
+            l = ltrunc(path_in,len(path_in))
+            call blank(path_mult(0)   ,132)
+            call chcopy(path_mult(0), path_in, l)
+         else
+           write(6,*) 'Reading session file ...'
+           open (unit=8,file='SESSION.NAME',status='old',err=24)
+ 21        read (8,*,END=22)
+           nlin = nlin + 1 
+           goto 21
+ 22        rewind(8)
+           if (nlin.gt.2) read(8,*,err=24) nsessions
+           if (nsessions.gt.1) read(8,*,err=24) ifneknekc
+           do n=0,nsessions-1
+              call blank(session_mult(n),132)
+              call blank(path_mult(n)   ,132)
+              read(8,11,err=24) session_mult(n)
+              read(8,11,err=24) path_mult(n)
+              if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
+           enddo
+ 11        format(a132)
+           close(8)
+         endif
          write(6,*) 'Number of sessions:',nsessions
          goto 23
  24      ierr = 1
@@ -68,6 +80,10 @@ c-----------------------------------------------------------------------
       call err_chk(ierr,' Error while reading SESSION.NAME!$')
 
       call bcast(nsessions,ISIZE)
+      if (nsessions .gt. nsessmax) 
+     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
+      if (nsessions .gt. 1) ifneknek = .true.
+
       call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
          call bcast(npsess(n),ISIZE)
@@ -75,18 +91,11 @@ c-----------------------------------------------------------------------
          call bcast(path_mult(n),132*CSIZE)
       enddo
 
-      if (nsessions .gt. 1) ifneknek = .true.
-
-      if (nsessions .gt. nsessmax) 
-     &   call exitti('nsessmax in SIZE too low!$',nsessmax)
-
       ! single session run
       if (.not.ifneknek) then
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
-         call mpi_comm_dup(mpi_comm_world,iglobalcomm,ierr)
-         intracomm = iglobalcomm
          return
       endif
  
@@ -107,31 +116,15 @@ c     Assign key for splitting into multiple groups
          if (nid_global.ge.nid_global_root(n).and.
      &       nid_global.lt.nid_global_root_next) idsess = n
       enddo
-
-      call mpi_comm_split(mpi_comm_world,idsess,nid,intracomm,ierr)
+      call mpi_comm_split(comm,idsess,nid,newcomm,ierr)
  
       session = session_mult(idsess)
       path    = path_mult   (idsess)
 
-      ! setup intercommunication 
       if (ifneknekc) then
          if (nsessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',
      $     nsessions)
-
-         if (idsess.eq.0) idsess_neighbor=1
-         if (idsess.eq.1) idsess_neighbor=0
- 
-         call mpi_intercomm_create(intracomm,0,mpi_comm_world, 
-     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
-
-         np_neighbor=npsess(idsess_neighbor)
-      
-         ifhigh=.true.
-         call mpi_intercomm_merge(intercomm, ifhigh, iglobalcomm, ierr)
-
-         ngeom = 2  ! Initialize NEKNEK interface subiterations to 2.
-         ninter = 1 ! Initialize NEKNEK interface extrapolation order to 1.
       endif 
 
       return

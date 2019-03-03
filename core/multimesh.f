@@ -38,9 +38,6 @@ c-------------------------------------------------------------
       integer nfld_neknek
       common /inbc/ nfld_neknek
 
-      call fix_geom
-      call geom_reset(1) ! recompute Jacobians, etc.
-
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
       if (nsessmax.eq.1) 
@@ -49,23 +46,25 @@ c-------------------------------------------------------------
       call setup_neknek_wts
 
       if (icalld.eq.0) then
-         nfld_neknek = ldim+nfield
-         call nekneksanchk
+         ! just in case we call setup from usrdat2 
+         call fix_geom
+         call geom_reset(1)
+
          call set_intflag
          call neknekmv
          if (nid.eq.0) write(6,*) 'session id:', idsess
          if (nid.eq.0) write(6,*) 'extrapolation order:', ninter
          if (nid.eq.0) write(6,*) 'nfld_neknek:', nfld_neknek
+
+         nfld_min = iglmin_ms(nfld_neknek,1)
+         nfld_max = iglmax_ms(nfld_neknek,1)
+         if (nfld_min .ne. nfld_max) then
+            nfld_neknek = nfld_min 
+            if (nid.eq.0) write(6,*)
+     $         'WARNING: reset nfld_neknek to ', nfld_neknek
+         endif
       endif
 
-      nfld_min = iglmin_ms(nfld_neknek,1)
-      nfld_max = iglmax_ms(nfld_neknek,1)
-      if (nfld_min .ne. nfld_max) then
-         nfld_neknek = nfld_min 
-         if (nid.eq.0) write(6,*)
-     $      'WARNING: reset nfld_neknek to ', nfld_neknek
-      endif
- 
 c     Figure out the displacement for the first mesh 
       call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
 

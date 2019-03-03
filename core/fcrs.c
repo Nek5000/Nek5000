@@ -2,16 +2,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "c99.h"
-#include "name.h"
-#include "fail.h"
-#include "types.h"
-#include "mem.h"
-#include "comm.h"
+#include "gslib.h"
 #include "crs.h"
 
 /*--------------------------------------------------------------------------
-   FORTRAN Interface to coarse solver
+   FORTRAN wrapper interface to coarse solver
   --------------------------------------------------------------------------*/
 
 #undef crs_xxt_setup

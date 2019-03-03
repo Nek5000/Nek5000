@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine nek_init(comm_out)
+      subroutine nek_init(comm)
 c
       include 'SIZE'
       include 'TOTAL'
@@ -24,7 +24,7 @@ c      COMMON /SCRCH/ DUMMY7(LX1,LY1,LZ1,LELT,2)
 c      COMMON /SCRSF/ DUMMY8(LX1,LY1,LZ1,LELT,3)
 c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
-      integer comm_out
+      integer comm
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
   
       common /rdump/ ntdump
@@ -54,9 +54,10 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       ! set word size for CHARACTER
       csize = sizeof(ctest)
 
-      call setupcomm()
-      nekcomm  = intracomm
-      comm_out = nekcomm
+      call setupcomm(comm,newcomm,newcommg,'','')
+      intracomm   = newcomm   ! within a session
+      nekcomm     = newcomm
+      iglobalcomm = newcommg  ! across all sessions
       call iniproc()
 
       etimes = dnekclock()

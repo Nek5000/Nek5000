@@ -246,6 +246,8 @@ esac
 rm -f $CASENAME.f nek5000 2>/dev/null
 rm -f ./obj/subuser.o 2>/dev/null
 
+LONGLONGINT=1
+
 # Check if the compiler adds an underscore to external functions
 UNDERSCORE=0
 cat > test_underscore.f << _ACEOF
@@ -281,6 +283,10 @@ fi
 
 if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
+fi 
+
+if [ $LONGLONGINT -ne 0 ]; then
+  PPLIST="${PPLIST} GLOBAL_LONG_LONG"
 fi 
 
 if [ $PROFILING -ne 0 ]; then
@@ -351,14 +357,10 @@ do
 done
 
 # gslib build options
-GSLIB_PREFIX="gslib_"
-GSLIB_FPREFIX="fgslib_"
 GSLIB_OPT+=" DESTDIR=.."
 GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
-GSLIB_OPT+=" PREFIX=$GSLIB_PREFIX FPREFIX=$GSLIB_FPREFIX"
-GSLIB_IFLAGS="-DPREFIX=$GSLIB_PREFIX -DFPREFIX=$GSLIB_FPREFIX -DGLOBAL_LONG_LONG"
-GSLIB_IFLAGS+=" -I$SOURCE_ROOT_GSLIB/include"
+GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
 # tweak makefile template 
