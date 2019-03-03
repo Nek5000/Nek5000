@@ -55,9 +55,9 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       csize = sizeof(ctest)
 
       call setupcomm(comm,newcomm,newcommg,'','')
-      intracomm   = newcomm
-      iglobalcomm = newcommg
+      intracomm   = newcomm   ! within a session
       nekcomm     = intracomm
+      iglobalcomm = newcommg  ! across all sessions
       call iniproc()
 
       etimes = dnekclock()

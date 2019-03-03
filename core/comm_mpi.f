@@ -20,14 +20,17 @@ c-----------------------------------------------------------------------
 
       integer*8 ntags
 
-      ! Init MPI
       call mpi_initialized(mpi_is_initialized, ierr)
       if (.not.mpi_is_initialized) call mpi_init(ierr)
-      call mpi_comm_size(comm,np_global,ierr)
-      call mpi_comm_rank(comm,nid_global,ierr)
+
+      call mpi_comm_dup(comm,newcommg,ierr)
+      nekcomm = newcommg 
+
+      call mpi_comm_size(nekcomm,np_global,ierr)
+      call mpi_comm_rank(nekcomm,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_comm_get_attr(comm,MPI_TAG_UB,ntags,flag,ierr)
+      call mpi_comm_get_attr(nekcomm,MPI_TAG_UB,ntags,flag,ierr)
       if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
@@ -76,12 +79,12 @@ c-----------------------------------------------------------------------
  23   continue
       call err_chk(ierr,' Error while reading SESSION.NAME!$')
 
-      call mpi_bcast(nsessions,ISIZE,MPI_BYTE,0,comm,ierr)
-      call mpi_bcast(ifneknekc,LSIZE,MPI_BYTE,0,comm,ierr) 
+      call bcast(nsessions,ISIZE)
+      call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
-         call mpi_bcast(npsess(n),ISIZE,MPI_BYTE,0,comm,ierr)
-         call mpi_bcast(session_mult(n),132*CSIZE,MPI_BYTE,0,comm,ierr)
-         call mpi_bcast(path_mult(n),132*CSIZE,MPI_BYTE,0,comm,ierr)
+         call bcast(npsess(n),ISIZE)
+         call bcast(session_mult(n),132*CSIZE)
+         call bcast(path_mult(n),132*CSIZE)
       enddo
 
       if (nsessions .gt. 1) ifneknek = .true.
@@ -94,8 +97,7 @@ c-----------------------------------------------------------------------
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
-         call mpi_comm_dup(comm,newcommg,ierr)
-         newcomm = newcommg
+         newcomm   = newcommg
          return
       endif
  
@@ -127,17 +129,6 @@ c     Assign key for splitting into multiple groups
          if (nsessions.gt.2) call exitti(
      &     'More than 2 coupled sessions are currently not supported!$',
      $     nsessions)
-
-         if (idsess.eq.0) idsess_neighbor=1
-         if (idsess.eq.1) idsess_neighbor=0
- 
-         call mpi_intercomm_create(newcomm,0,comm, 
-     &     nid_global_root(idsess_neighbor), 10,intercomm,ierr)
-
-         np_neighbor=npsess(idsess_neighbor)
-      
-         ifhigh=.true.
-         call mpi_intercomm_merge(intercomm, ifhigh, newcommg, ierr)
       endif 
 
       return
