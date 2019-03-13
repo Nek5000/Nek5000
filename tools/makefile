@@ -17,7 +17,7 @@ all:
           export CFLAGS+=" ${BIGMEM}" ;          \
           if [ "$$i" == "exo2nek" ]; then        \
              export FFLAGS+=" ${R8}" ;           \
-             if [ ! -z $(DOALL) ]; then          \
+             if [ ${DOALL} -ne 1 ]; then          \
                 continue;                        \
              fi ;                                \
           fi ;                                   \
