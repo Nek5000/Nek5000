@@ -1012,10 +1012,10 @@ class MvCylCvode(NekTestCase):
         self.run_nek()
 
         err3 = self.get_value_from_log('err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(err3, target_val=4.128154e-05, delta=1e-6, label='err p0th')
+        self.assertAlmostEqualDelayed(err3, target_val=3.522974e-05, delta=1e-6, label='err p0th')
 
         err2 = self.get_value_from_log('err', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(err2, target_val=0.6348537E-06, delta=1e-7, label='err dp/dt')
+        self.assertAlmostEqualDelayed(err2, target_val=6.348537E-07, delta=1e-8, label='err dp/dt')
 
         self.assertDelayedFailures()
 

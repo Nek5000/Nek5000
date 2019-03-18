@@ -115,6 +115,7 @@ c----------------------------------------------------------------------
                call cfill(cv_atol_(1,1,1,1,i-1),atol(i),ntot)
             endif
          enddo
+         call cvpack(cv_atol,cv_atol_,.false.)
       endif
 
       ! initialize vector module
