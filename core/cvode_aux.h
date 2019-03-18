@@ -1,13 +1,12 @@
-      subroutine cvunpack(w1,w1p,y)
+      subroutine cvunpack(w1,y)
 c
-c     copy the internal cvode vector y to nek array w1 and w1p 
+c     copy the internal cvode vector y to nek array w1 
 c
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
 
       real w1(lx1,ly1,lz1,lelt,*)
-      real w1p
       real y(*)
 
       nxyz = lx1*ly1*lz1
@@ -22,17 +21,12 @@ c
            endif
         enddo
 
-      if (ifdp0dt) then
-         w1p = y(j)
-         j = j + 1 
-      endif
-
       return
       end
 c----------------------------------------------------------------------
-      subroutine cvpack(y,w1,w1p,ifrhs)
+      subroutine cvpack(y,w1,ifrhs)
 c
-c     copy the nek array w1 and w1p to the internal cvode vector y
+c     copy the nek array w1 to the internal cvode vector y
 c     note: assumes temperature is stored in ifield=2 (only for ifdp0dt)
 c
       include 'SIZE'
@@ -41,7 +35,6 @@ c
 
       real y(*)
       real w1(lx1,ly1,lz1,lelt,*)
-      real w1p
       logical ifrhs
 
       common /scrsf/ dtmp(lx1,ly1,lz1,lelt)
@@ -69,11 +62,5 @@ c
          endif
       enddo
 
-      if (ifdp0dt) then
-         y(j) = w1p
-         if (ifrhs) y(j) = w1p
-      endif
-
       return
       end
-

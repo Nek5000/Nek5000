@@ -88,8 +88,8 @@ c     Solution data for magnetic field
       real qtl(lx2,ly2,lz2,lelt), usrdiv(lx2,ly2,lz2,lelt)
       common /diverg/ qtl, usrdiv
 
-      real p0th, dp0thdt, gamma0
-      common /p0therm/ p0th, dp0thdt, gamma0
+      real p0th, dp0thdt, gamma0, p0thn, p0thlag(2)
+      common /p0therm/ p0th, dp0thdt, gamma0, p0thn, p0thlag
 
       real  v1mask (lx1,ly1,lz1,lelv)
      $     ,v2mask (lx1,ly1,lz1,lelv)

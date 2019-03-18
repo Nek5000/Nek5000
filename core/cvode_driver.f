@@ -45,7 +45,6 @@ c----------------------------------------------------------------------
            cv_nlocal = cv_nlocal + ntot
          endif
       enddo
-      if (ifdp0dt) cv_nlocal = cv_nlocal + 1
 
       ! check array size is large enough
       if (cv_nlocal .gt. cv_lysize) then
@@ -116,7 +115,6 @@ c----------------------------------------------------------------------
                call cfill(cv_atol_(1,1,1,1,i-1),atol(i),ntot)
             endif
          enddo
-         call cvpack(cv_atol,cv_atol_,atol(2),.false.)
       endif
 
       ! initialize vector module
@@ -132,7 +130,7 @@ c----------------------------------------------------------------------
       endif
 
       ! initialize cvode
-      call cvpack(y0,t,p0th,.false.)
+      call cvpack(y0,t,.false.)
       call fcvmalloc(time, y0, cv_meth, itmeth, cv_iatol,
      &               cv_rtol, cv_atol, iout, rout, ipar, rpar, ier)
       if (ier.ne.0) then
@@ -268,7 +266,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
 
       if (cv_itask.eq.3) then
         if(istep.gt.1) then 
-          call cvpack(y,t,p0th,.false.)
+          call cvpack(y,t,.false.)
           call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
           if (ier .ne. 0) then
             write(*,'(a,i3)') 'ABORT: fcvsetrin ier=', ier
@@ -287,7 +285,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
          if (nid.eq.0) then
             write(*,'(a)') ' Restart integrator and try again  ...'
          endif
-         call cvpack(y,t,p0th,.false.)
+         call cvpack(y,t,.false.)
          call fcvreinit(timef,y,cv_iatol,cv_rtol,cv_atol,ier)
          cv_timel = 0
          call cv_rstat
@@ -303,7 +301,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       endif
 
       cv_istep = cv_istep + 1 
-      call cvunpack(t,p0th,y)
+      call cvunpack(t,y)
 
       ! restore velocities               
       call copy(vx,vx_,ntot)             
@@ -476,7 +474,7 @@ c
          cv_timel = time          
       endif
 
-      call cvunpack(t,p0th,y)          
+      call cvunpack(t,y)          
 
       if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'fcvfun',
      $                                 ifdqj
@@ -529,7 +527,7 @@ c
          endif
       enddo
 
-      call cvpack(ydot,ydott,dp0thdt,.true.)
+      call cvpack(ydot,ydott,.true.)
 
       tcvf = tcvf + dnekclock()-etime1 
       ncvf = ncvf + 1 
@@ -568,13 +566,16 @@ c----------------------------------------------------------------------
       cv_dtlag(3) = dtlag(3)
 
       call rzero(cv_abmsh,3)
-      call setabbd (cv_abmsh,cv_dtlag,nabmsh,1)
+      call setabbd(cv_abmsh,cv_dtlag,nabmsh,1)
       do i = 1,3
          cv_abmsh(i) = cv_dtNek*cv_abmsh(i) 
       enddo
 
       call rzero(cv_ab,3)
-      call setabbd (cv_ab,cv_dtlag,nbd,nbd)
+      call setabbd(cv_ab,cv_dtlag,nbd,nbd)
+
+      call rzero(cv_bd,4)
+      call setbd(cv_bd,cv_dtlag,nbd)
 
       return
       end

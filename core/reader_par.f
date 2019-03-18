@@ -1108,20 +1108,11 @@ c
          call exitt
       endif
 
-      if (ifdp0dt .and. .not.ifcvode) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying p0 requires CVODE!'
-         call exitt
-      endif
-
       if (ifchar .and. param(99).lt.0) then
         if (nid.eq.0) write(6,*) 
      &     'ABORT: Characteristic scheme needs dealiasing!'
         call exitt
       endif
-
-      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
 
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
