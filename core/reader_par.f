@@ -259,9 +259,6 @@ c set parameters
          call finiparser_getDbl(d_out,'general:numSteps',ifnd)
          if (ifnd .eq. 1) then 
             param(11) = d_out 
-         else
-            write(6,*) 'general:numSteps not found!'
-            goto 999
          endif
       endif
 

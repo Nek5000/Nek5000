@@ -150,8 +150,7 @@ c
       call opadd2cm (wa1,wa2,wa3,ta1,ta2,ta3,scale)
 
 c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
-      iftest = 0
-      if (ifstrs .and. iftest.eq.1) then
+      if (ifstrs .and. ifvvisp) then
          call opgrad   (ta1,ta2,ta3,vdiff)
          call invcol2  (ta1,vdiff,ntot1)
          call invcol2  (ta2,vdiff,ntot1)
