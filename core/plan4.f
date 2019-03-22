@@ -150,7 +150,7 @@ c
       call opadd2cm (wa1,wa2,wa3,ta1,ta2,ta3,scale)
 
 c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
-      if (ifstrs) then
+      if (ifstrs .and. ifvvisp) then
          call opgrad   (ta1,ta2,ta3,vdiff)
          call invcol2  (ta1,vdiff,ntot1)
          call invcol2  (ta2,vdiff,ntot1)
@@ -596,7 +596,7 @@ c - - Assemble RHS of T-eqn
          call copy(w2,w1,ntot)
          call col2(w1,bm1,ntot)
   
-         p0alph1 = p0th / glsum(w1,ntot)
+         p0alph1 = 1. / glsum(w1,ntot)
   
          call copy   (w1,qtl,ntot)
          call col2   (w1,bm1,ntot)
@@ -604,12 +604,26 @@ c - - Assemble RHS of T-eqn
          termQ = glsum(w1,ntot)
          if (ifcvfun) then
             termV = glcflux(vx,vy,vz)
+            prhs  = p0alph1*(termQ - termV)
+            pcoef =(cv_bd(1) - cv_dtNek*prhs)
+            call add3s2(Saqpq,p0thn,p0thlag(1),cv_bd(2),cv_bd(3),1)
+            if(nbd.eq.3) call add2s2(Saqpq,p0thlag(2),cv_bd(4),1)
+            p0th  = Saqpq / pcoef
          else
             termV = glcflux(vx_e,vy_e,vz_e)
+            prhs  = p0alph1*(termQ - termV)
+            pcoef =(bd(1) - dt*prhs)
+            call add3s2(Saqpq,p0thn,p0thlag(1),bd(2),bd(3),1)
+            if(nbd.eq.3) call add2s2(Saqpq,p0thlag(2),bd(4),1)
+            p0th  = Saqpq / pcoef
+            p0thlag(2) = p0thlag(1)
+            p0thlag(1) = p0thn
+            p0thn      = p0th
          endif
-         dp0thdt = p0alph1*(termQ - termV)
 
-         dd =-dp0thdt/p0th
+         dp0thdt= prhs*p0th
+
+         dd =-prhs
          call cmult(w2,dd,ntot)
          call add2 (qtl,w2,ntot)
       endif

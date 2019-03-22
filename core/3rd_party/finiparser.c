@@ -224,7 +224,6 @@ void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int
            token[++i] = strtok(NULL,d);
     }
     *icounter = i;
-    free(newstr);
     free(d);  
 
     return;

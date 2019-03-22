@@ -1743,7 +1743,6 @@ C-----------------------------------------------------------------------
       INTEGER IR(ldim),IC(ldim)
       REAL BD(1),DTBD(1)
 C
-      CALL RZERO (BD,10)
       IF (NBD.EQ.1) THEN
          BD(1) = 1.
          BDF   = 1.

@@ -145,7 +145,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call dofcnt
 
-      jp = 0            ! Set perturbation field count to 0 for baseline flow
+      jp = 0  ! Set perturbation field count to 0 for baseline flow
+      p0thn = p0th
 
       call in_situ_init()
 

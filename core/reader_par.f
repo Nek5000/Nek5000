@@ -259,9 +259,6 @@ c set parameters
          call finiparser_getDbl(d_out,'general:numSteps',ifnd)
          if (ifnd .eq. 1) then 
             param(11) = d_out 
-         else
-            write(6,*) 'general:numSteps not found!'
-            goto 999
          endif
       endif
 
@@ -1108,20 +1105,11 @@ c
          call exitt
       endif
 
-      if (ifdp0dt .and. .not.ifcvode) then
-         if(nid.eq.0) write(6,*) 
-     $   'ABORT: Varying p0 requires CVODE!'
-         call exitt
-      endif
-
       if (ifchar .and. param(99).lt.0) then
         if (nid.eq.0) write(6,*) 
      &     'ABORT: Characteristic scheme needs dealiasing!'
         call exitt
       endif
-
-      if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
 
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)

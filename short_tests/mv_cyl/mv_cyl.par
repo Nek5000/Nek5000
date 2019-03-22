@@ -6,7 +6,6 @@ timestepper = bdf3
 writecontrol = runTime
 writeinterval = 0.1
 userparam01 = 1
-numsteps = 1e3
 
 [PROBLEMTYPE]
 equation = lowMachNS
@@ -29,6 +28,5 @@ solver = cvode
 absolutetol = 1e-12
 
 [CVODE]
-relativetol = 1e-12
+relativetol = 1e-10
 dtmax = 1e-3
-

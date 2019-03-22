@@ -45,17 +45,15 @@ C--------------------------------------------------------------------
 
 c     Set default logicals
 
-      IFDOIT    = .FALSE.
-      IFCVODE   = .false.
-      IFEXPLVIS = .false.
+      ifdoit    = .false.
+      ifcvode   = .false.
+      ifexplvis = .false.
+      ifvvisp   = .true.
 
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.
 
       if_full_pres = .false.
-
-c     Turn off (on) diagnostics for communication
-      IFGPRNT= .FALSE.
 
       CALL RZERO (PARAM,200)
 C
@@ -83,6 +81,8 @@ C
       NTOT=lx2*ly2*lz2*LELT
       CALL RZERO(USRDIV,NTOT)
       CALL RZERO(QTL,NTOT)
+
+      NSTEPS = 0
 
       RETURN
       END

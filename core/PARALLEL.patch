@@ -16,6 +16,3 @@ index 212b297..1b6d207 100644
       $       ,nelgv,nelgt
 -      common /hcglb/ nvtot,nelg,lglel,gllel,gllnid,nelgv,nelgt
 +      common /hcglb/ nvtot,nelg,lglel,nelgv,nelgt
- 
-       logical         ifgprnt
-       common /diagl/  ifgprnt
