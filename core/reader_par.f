@@ -502,15 +502,22 @@ c        stabilization type: none, explicit or hpfrt
             write(6,*) 'is required for general:filtering!'
             goto 999
          endif
-         call finiparser_getDbl(d_out,'general:filterCutoffRatio',ifnd)
+         call finiparser_getDbl(d_out,'general:filterModes',ifnd)
          if (ifnd .eq. 1) then
-            dtmp = anint(lx1*(1.0 - d_out)) 
-            param(101) = max(dtmp-1,0.0)
-            if (abs(1.0 - d_out).lt.0.01) filterType = 0
+            param(101) = int(d_out) - 1
+            if (int(param(101)).eq.0) filterType = 0
          else
-            write(6,*) 'general:filterCutoffRatio'
-            write(6,*) 'is required for general:filtering!'
-            goto 999
+            call finiparser_getDbl
+     $           (d_out,'general:filterCutoffRatio',ifnd)
+            if (ifnd .eq. 1) then
+              dtmp = anint(lx1*(1.0 - d_out)) 
+              param(101) = max(dtmp-1,0.0)
+              if (abs(1.0 - d_out).lt.0.01) filterType = 0
+            else 
+              write(6,*) 'general:filterCutoffRatio or filterModes'
+              write(6,*) 'is required for general:filtering!'
+              goto 999
+            endif
          endif
  101     continue 
       endif

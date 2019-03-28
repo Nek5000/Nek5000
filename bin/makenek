@@ -1,16 +1,16 @@
 #!/bin/bash
 #-------------------------------------------------------------------------------
-# Nek5000 config file
+# Nek5000 config
 #-------------------------------------------------------------------------------
 
 # source path 
-#NEK_SOURCE_ROOT="$HOME/Nek5000" 
+NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
 #CC="mpicc"
 
-# pre-processor list (set to "?" to get a list of available symbols)
+# config options (set to "?" to get a list)
 #PPLIST="?" 
 
 #-------------------------------------------------------------------------------
@@ -49,33 +49,7 @@
 ###############################################################################
 set -e
 
-# assign version tag
-mver=18.0.0
-
-# set defaults
-: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
-: ${FC:="mpif77"}
-: ${CC:="mpicc"}
-: ${MPI:=1}
-: ${PROFILING:=1}
-: ${VISIT:=0}
-: ${PPLIST:=""}
-
-# overwrite source path with optional 2nd argument
-if [ -d $2 ] && [ $# -eq 2 ]; then
-  NEK_SOURCE_ROOT="$2"
-fi
-
-NEK_SOURCE_ROOT=`cd $NEK_SOURCE_ROOT; pwd`
-echo 'using source path:' $NEK_SOURCE_ROOT
-
-# create makefile
+mver=19.0.0
 source $NEK_SOURCE_ROOT/core/makenek.inc
-
-set -o pipefail
-# compile 3rd_party code
-make_3rd_party 2>&1 | tee -a compiler.out
-make -j4 -f makefile 2>&1 | tee -a compiler.out
-set +o pipefail
-
-exit 0
+build_nek $@
+exit $?

@@ -1,8 +1,14 @@
-function make_3rd_party() {
-  if [ $NOCOMPILE -ne 0 ]; then
-    return 0
+trap onexit EXIT
+
+function onexit() {
+  if [ $? -ne 1 ]; then
+     printf "\nsee build.log for details\n"
   fi
-  echo "build 3rd-party software ..."
+}
+
+function build_3rdparty() {
+  printf "building 3rd-party dependencies ... "
+  set -o pipefail
 
   CFLAGS_=$CFLAGS
   if ! echo $CFLAGS | grep -q '\-O' ; then 
@@ -14,30 +20,30 @@ function make_3rd_party() {
   fi 
 
   cd $SOURCE_ROOT_GSLIB
-  ./install
+  ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
-     ./install
+     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $PARMETIS -ne 0 ]; then
      cd $SOURCE_ROOT_PARMETIS
-     ./install
+     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
-     ./install
+     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $HYPRE -ne 0 ]; then
      cd $SOURCE_ROOT_HYPRE
-     ./install
+     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
@@ -45,10 +51,13 @@ function make_3rd_party() {
   export CFLAGS
   FFLAGS=$FFLAGS_
   export FFLAGS
+
+  printf "done\n"
+  set +o pipefail
 }
 
-function clean_3rd_party() {
-  echo "cleaning 3rd-party software ..."
+function clean_3rdparty() {
+  echo "cleaning 3rd-party dependencies ..."
   cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
@@ -61,51 +70,80 @@ function clean_3rd_party() {
   cd $CASEDIR
 }
 
-# This include file is used by the makenek script
-# to automatically create a makefile for Nek5000 
-# ------------------------------------------------
+function build_nek() {
 
-echo "makenek - automatic build tool for Nek5000"
-
-if [ "$PPLIST" == "?" ]; then
-  echo "available pre-processor symbols:" 
-  echo "  NOMPIIO     deactivate MPI-IO support"
-  echo "  BGQ         use BGQ optimized mxm"
-  echo "  XSMM        use libxsmm for mxm"
-  echo "  CVODE       compile with CVODE support for scalars"
-  echo "  HYPRE       compile with HYPRE support"
-  echo "  VENDOR_BLAS use VENDOR BLAS/LAPACK"
-  exit 1
-fi
+# set defaults
+: ${FC:="mpif77"}
+: ${CC:="mpicc"}
+: ${MPI:=1}
+: ${PROFILING:=1}
+: ${VISIT:=0}
+: ${PPLIST:=""}
 
 # first do some checks ...
-if [ "$1" == "-h" ]; then
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
+  echo "Build tool for Nek5000"
+  echo "Usage: makenek [.usr filename ] [-nocompile]" 
+  echo "       makenek lib"
+  echo "       makenek 3rdparty"
+  echo "       makenek clean"
   echo ""
-  echo "usage: makenek [.usr filename | clean] < -nocompile >"
-  echo ""
-  exit 1
+  echo "The following PPLIST config options are available:" 
+  echo "  NOMPIIO       disable MPI-IO"
+  echo "  BGQ           use BGQ optimized mxm"
+  echo "  XSMM          use libxsmm for mxm"
+  echo "  CVODE         enable CVODE support"
+  echo "  HYPRE         enable HYPRE support"
+  echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
+  return 0
 fi
+
+echo 'using source path:' $NEK_SOURCE_ROOT
+
+rm -rf build.log
+nargs=$#
+
+NOCOMPILE=0
+if [ "$1" == "-nocompile" ]; then
+  NOCOMPILE=1
+  nargs=0
+fi 
+if [ "$2" == "-nocompile" ]; then
+  NOCOMPILE=1
+fi 
+
+ONLYDEP=0
+if [ "$1" == "3rdparty" ]; then
+  ONLYDEP=1
+  nargs=0
+fi 
+
+ONLYLIB=0
+if [ "$1" == "lib" ]; then
+  ONLYLIB=1
+  nargs=0
+fi 
 
 CASEDIR=`pwd`
 CASENAME=$1
-if [ $# -eq 0 ]; then
+if [ $nargs -eq 0 ]; then
    NCASEFILES=`find *.usr 2>/dev/null| wc -l`
    if [ $NCASEFILES == "0" ]; then
      echo "FATAL ERROR: Cannot find .usr file!"
-     exit 1
+     return 1
    elif [ $NCASEFILES != "1" ]; then
      echo "FATAL ERROR: Found multiple .usr files!"
      echo "Please use makenek [.usr filename]"
-     exit 1
+     return 1
    else
      CASENAME=`find *.usr | sed 's/\.usr$//g'`
    fi
 fi
 
-if [ "$mver" != "18.0.0" ]; then
+if [ "$mver" != "19.0.0" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped with your Nek source."
-  exit 1
+  return 1
 fi
 
 SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
@@ -125,37 +163,32 @@ export SOURCE_ROOT_HYPRE
 
 if [[ $1 = "clean" ]]; then
   while true; do
-    read -p "do you want to clean all 3rd party software? [N]" yn
+    read -p "do you want to clean all 3rd party dependencies? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rd_party; 
-        make clean;
+        clean_3rdparty; 
+        if [ -f makefile ]; then make clean; fi
         break ;;
       * ) 
-        make clean;
+        if [ -f makefile ]; then make clean; fi
         break ;;
     esac
   done
-  rm -rf compiler.out
+  rm -rf build.log
   rm -rf makefile
   rm -rf .state
-  exit 0
+  return 0
 fi
-
-NOCOMPILE=0
-if [[ "$2" == "-nocompile" ]]; then
-  NOCOMPILE=1
-fi 
 
 if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
-   exit 1
+   return 1
 fi
 
 if [ -f SIZEu ]; then
    if [ -f SIZE ]; then
       echo "FATAL ERROR: found SIZEu and SIZE!"
-      exit 1
+      return 1
    fi
    NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
    mv -v SIZEu SIZE
@@ -163,25 +196,25 @@ fi
 
 if [ ! -f SIZE ]; then
    echo "FATAL ERROR: Cannot find SIZE!"
-   exit 1
+   return 1
 fi
 
 if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $NEK_SOURCE_ROOT/core/makefile.template!"
-  exit 1
+  return 1
 fi
 
 # test if FC compiler exists
 if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
-  exit 1
+  return 1
 fi
 
 
 # test if C compiler exists
 if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
-  exit 1
+  return 1
 fi
 
 # trying to figure which compiler the wrapper is using 
@@ -290,11 +323,7 @@ if [ $LONGLONGINT -ne 0 ]; then
 fi 
 
 if [ $PROFILING -ne 0 ]; then
-  if [ $MPI -ne 0 ]; then
-    PPLIST="${PPLIST} TIMER"
-  else
-    PPLIST="${PPLIST} TIMER"
-  fi
+  PPLIST="${PPLIST} TIMER"
 fi
 
 PPLIST="${PPLIST}"
@@ -363,8 +392,23 @@ GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
-# tweak makefile template 
-echo "generating makefile ..."
+export FC
+export CC
+export NEK_WARN 
+export MPI
+export MPIO
+export FFLAGS
+export CFLAGS
+export UNDERSCORE
+export GSLIB_OPT
+export PARRSB_OPT
+
+if [ $ONLYDEP -eq 1 ]; then
+  build_3rdparty
+  return 0 
+fi 
+
+printf "generating makefile ... "
 rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
@@ -450,9 +494,11 @@ if [ -f .makefile ]; then
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
+  printf "done\n"
 else
-  echo "ERROR: Nek Makefile could not be created!"
-  exit 1 
+  echo "ERROR: Makefile could not be created!"
+  printf "failed!\n"
+  return 1 
 fi
 \rm .makefile 2>/dev/null
 
@@ -541,19 +587,8 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 fi
 
-export FC
-export CC
-export NEK_WARN 
-export MPI
-export MPIO
-export FFLAGS
-export CFLAGS
-export UNDERSCORE
-export GSLIB_OPT
-export PARRSB_OPT
-
 if [ $NOCOMPILE -ne 0 ]; then
-  exit 0
+  return 0
 fi
 
 declare -a varlist=(
@@ -571,10 +606,10 @@ if [ -f .state ]; then
       echo "configuration change detected, forcing full rebuild"
       rm -rf .state
       while true; do
-        read -p "do you want to rebuild all 3rd party software? [N]" yn
+        read -p "do you want to rebuild all 3rd party dependencies? [N]" yn
         case $yn in
           [Yy]* )
-            clean_3rd_party;
+            clean_3rdparty;
             break ;;
           * )
            break ;;
@@ -591,3 +626,32 @@ for i in "${varlist[@]}"
 do
   echo "$i=${!i}" >> .state
 done ;
+
+set -o pipefail
+
+
+if [ $ONLYLIB -eq 1 ]; then
+  printf "compiling ... " 
+  make -j4 -f makefile lib 2>&1 | tee -a build.log >/dev/null
+  sync
+  if test -f ./libnek5000.a; then
+    printf "done\n" 
+  else
+    printf "failed\n" 
+  fi
+else
+  build_3rdparty
+  sync
+  printf "compiling ... " 
+  make -j4 -f makefile 2>&1 | tee -a build.log >/dev/null
+  sync
+  if test -f ./nek5000; then
+    printf "done\n" 
+  else
+    printf "failed\n" 
+    return 2
+  fi
+fi
+set +o pipefail
+return 0
+}

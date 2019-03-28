@@ -77,6 +77,7 @@ class Axi(NekTestCase):
             lxd       = '9',
             lx2       = 'lx1-2',
             lelg      = '500',
+            lx1m      = 'lx1',
         )
 
         self.build_tools(['genmap'])
@@ -90,10 +91,9 @@ class Axi(NekTestCase):
         self.run_nek(step_limit=None)
 
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(errmx, target_val=2.639593E-15, delta=1E-15, label='L2 err')
-
+        self.assertAlmostEqualDelayed(errmx, target_val=3.173174E-15, delta=1E-15, label='L2 err')
         errl2 = self.get_value_from_log('err ', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(errl2, target_val=1.043610E-14, delta=1E-15, label='MAX err')
+        self.assertAlmostEqualDelayed(errl2, target_val=1.443290E-14, delta=1E-15, label='MAX err')
 
         self.assertDelayedFailures()
 

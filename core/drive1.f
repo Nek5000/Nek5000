@@ -190,10 +190,8 @@ c-----------------------------------------------------------------------
 #ifdef TIMER
       itime = 1
 #endif
-      call nek_comm_settings(isyc,itime)
 
       ! start measurements
-      call nek_comm_startstat()
       dtmp = dnekgflops()
 
       istep  = 0
@@ -213,9 +211,6 @@ c-----------------------------------------------------------------------
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1
-
-
-      call nek_comm_settings(isyc,0)
 
       call comment
 

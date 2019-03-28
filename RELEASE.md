@@ -39,8 +39,6 @@
 ## Known Bugs 
 
 [562](https://github.com/Nek5000/Nek5000/issues/562),
-[474](https://github.com/Nek5000/Nek5000/issues/474),
-[407](https://github.com/Nek5000/Nek5000/issues/407),
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors

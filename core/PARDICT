@@ -101,7 +101,7 @@ c
      &  pardictkey(94) / 'GENERAL:POLYNOMIALORDERDEALIAS' /
      &  pardictkey(95) / 'GENERAL:PNPNFORMULATION' /
      &  pardictkey(96) / 'GENERAL:MINNUMPROCESSES' /
-     &  pardictkey(97) / 'GENERAL:MAXNUMPROCESSES' /
-     &  pardictkey(98) / 'GENERAL:MAXNUMSESSIONS' /
-     &  pardictkey(99) / 'GENERAL:MAXNUMELEMENTS' /
-     &  pardictkey(100)/ 'GENERAL:MAXNUMHISTORYPOINTS' /
+     &  pardictkey(97) / 'GENERAL:MAXNUMSESSIONS' /
+     &  pardictkey(98) / 'GENERAL:MAXNUMELEMENTS' /
+     &  pardictkey(99) / 'GENERAL:MAXNUMHISTORYPOINTS' /
+     &  pardictkey(100)/ 'GENERAL:FILTERMODES' /
