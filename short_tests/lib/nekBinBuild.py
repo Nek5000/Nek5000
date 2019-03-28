@@ -11,30 +11,27 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     print('    Using CC "{0}"'.format(cc))
 
     maketools_in  = os.path.join(tools_root, 'maketools')
-    maketools_log = os.path.join(tools_root, 'maketools.out')
 
     my_env = os.environ.copy()
     if f77: my_env["FC"] = f77
     if cc:  my_env["CC"] = cc 
     my_env["bin_nek_tools"] = tools_bin 
 
-    with open(maketools_log, 'w') as f:
-        for t in targets:
-            proc = Popen(
-                [maketools_in, t],
-                env=my_env,
-                cwd=tools_root,
-                stderr=STDOUT,
-                stdout=PIPE
-            )
-            for line in proc.stdout:
-                sys.stdout.write(line)
-                f.write(line)
-
-    proc.wait()
-
-    if proc.returncode != 0:
-        exit(-1)
+    for t in targets:
+        proc = Popen(
+            [maketools_in, t],
+            env=my_env,
+            cwd=tools_root,
+            stderr=STDOUT
+        )
+        proc.wait()
+        logfile = os.path.join(tools_root + '/' + t, 'build.log')
+        if proc.returncode != 0:
+           f = open(logfile, "r")
+           text = f.read()
+           print text
+           f.close()
+           exit(-1)
 
 def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
 
@@ -57,6 +54,7 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     if _opts.get('PPLIST') : my_env["PPLIST"] = _opts.get('PPLIST') 
 
     makenek_in  = os.path.join(source_root, 'bin', 'makenek')
+    logfile     = os.path.join(cwd, 'build.log')
 
     proc = Popen(
         [makenek_in, 'clean'], 
@@ -76,4 +74,8 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     proc.wait()
 
     if proc.returncode != 0:
-        exit(-1)
+       f = open(logfile, "r")
+       text = f.read()
+       print text
+       f.close()
+       exit(-1)

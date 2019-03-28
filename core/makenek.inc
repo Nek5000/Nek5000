@@ -58,7 +58,6 @@ function build_3rdparty() {
 }
 
 function clean_3rdparty() {
-  echo "cleaning 3rd-party dependencies ..."
   cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null

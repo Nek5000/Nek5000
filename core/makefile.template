@@ -164,7 +164,6 @@ ifeq ($(MPI),0)
 endif
 
 clean:
-	@echo "cleaning ..."
 	@rm -rf ${LIBNAME} ${CASENAME}.f obj ${BINNAME}
 ifeq ($(MPI),0) 
 	@rm -rf $S/mpif.h
