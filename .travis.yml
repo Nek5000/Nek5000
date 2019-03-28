@@ -9,7 +9,7 @@ env:
     - TEST_CASE=Eddy_EddyUv::test_PnPn_Serial  MPI=0 FC=gfortran CC=gcc
 
     - TEST_CASE=Axi::test_PnPn_Parallel
-    - TEST_CASE=Axi::test_PnPn2_Parallel
+#    - TEST_CASE=Axi::test_PnPn2_Parallel
 
     - TEST_CASE=FsHydro::test_PnPn2_Parallel
 

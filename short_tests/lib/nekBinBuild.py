@@ -17,6 +17,9 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     if cc:  my_env["CC"] = cc 
     my_env["bin_nek_tools"] = tools_bin 
 
+    if targets[0] == 'all':
+       targets = os.listdir(tools_root) 
+
     for t in targets:
         proc = Popen(
             [maketools_in, t],

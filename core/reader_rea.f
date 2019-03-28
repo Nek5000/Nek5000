@@ -455,6 +455,13 @@ c     set dealiasing handling
         call exitt
       endif
 
+      if (.not.ifsplit .and. ifaxis .and. ifstrs) then
+        if (nid.eq.0) write(6,*)
+     $    'ABORT: Axisymetric and stress formulation not supported ' //
+     $    'for PN/PN-2$'
+        call exitt
+      endif
+
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then
          if(nid.eq.0) write(6,*)

@@ -1118,6 +1118,13 @@ c
         call exitt
       endif
 
+      if (.not.ifsplit .and. ifaxis .and. ifstrs) then
+        if (nid.eq.0) write(6,*)
+     $    'ABORT: Axisymetric and stress formulation not supported ' //
+     $    'for PN/PN-2$'
+        call exitt
+      endif
+
       if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
 

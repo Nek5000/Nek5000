@@ -155,6 +155,7 @@ rm -rf build.log
 if [ "$1" == "clean" ]; then
    for i in $LIST ; do
      make -C ./$i clean >/dev/null 2>&1
+     rm -rf ./$i/build.log
    done 
 else
    export DOALL=''
@@ -191,7 +192,7 @@ else
         export CFLAGS+=" -Dr8"
      fi
      printf "building $TOOL ... "
-     if make -C ./$TOOL 2>&1 | tee -a build.log >/dev/null; then
+     if make -C ./$TOOL 2>&1 | tee ./$TOOL/build.log >/dev/null; then
        printf "done\n"
      else
        printf "failed\n"

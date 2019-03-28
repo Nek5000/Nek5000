@@ -96,6 +96,7 @@ class Axi(NekTestCase):
         self.size_params['lx2']='lx1-2'
         self.config_size()
         self.build_nek()
+
         self.run_nek(step_limit=None)
 
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
