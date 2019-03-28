@@ -29,7 +29,7 @@ if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] |
      tar -zxvf exodus.tgz -C seacas-exodus 
    else
      if [ ! -f seacas-exodus ]; then
-        git clone https://github.com/gsjaardema/seacas.git seacas-exodus
+        git clone --depth 1 -b master https://github.com/gsjaardema/seacas.git seacas-exodus
      fi 
    fi
 
@@ -40,7 +40,7 @@ if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] |
   chmod 755 cmake-exo
   rm -rf build  
   mkdir build; cd ./build
-  ../cmake-exo
+  TRAVIS=FALSE ../cmake-exo
   make -j4
   make install
 fi
