@@ -160,7 +160,7 @@ lib:	objdir $(NOBJS)
 	fi
 	@rm -f *.i
 ifeq ($(MPI),0) 
-	BNAME}@rm -rf $S/mpif.h
+	@rm -rf $S/mpif.h
 endif
 
 clean:

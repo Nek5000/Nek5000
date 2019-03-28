@@ -18,7 +18,8 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     my_env["bin_nek_tools"] = tools_bin 
 
     if targets[0] == 'all':
-       targets = os.listdir(tools_root) 
+       targets = os.walk(tools_root).next()[1] 
+       print(targets)
 
     for t in targets:
         proc = Popen(
