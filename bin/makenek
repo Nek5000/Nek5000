@@ -4,7 +4,7 @@
 #-------------------------------------------------------------------------------
 
 # source path 
-NEK_SOURCE_ROOT="$HOME/Nek5000" 
+#NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
@@ -50,6 +50,6 @@ NEK_SOURCE_ROOT="$HOME/Nek5000"
 set -e
 
 mver=19.0.0
+: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 source $NEK_SOURCE_ROOT/core/makenek.inc
 build_nek $@
-exit $?

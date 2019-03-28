@@ -2,6 +2,7 @@
 set -e
 
 VER=2.7.0
+CHKSUM=3559c375ce9f875542e4a39978908f91792e6d57
 
 if [ "$1" == "clean" ]; then
   rm -rf sundials lib include 2>/dev/null 
@@ -18,6 +19,11 @@ fi
 
 rm -rf sundials 2>/dev/null
 mkdir sundials
+if ! echo "$CHKSUM  sundials-$VER.tar.gz" | shasum -a 1 -c - 2>/dev/null ; then
+  echo 'Invalid checksum!'
+  rm -rf sundials-$VER.tar.gz 
+  exit 1
+fi
 tar -zxvf sundials-$VER.tar.gz -C ./sundials --strip-components=1
 cd sundials
 mkdir -p build

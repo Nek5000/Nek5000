@@ -6,7 +6,6 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
                 targets=('clean', 'all'), verbose=False):
 
     print('Compiling tools... ')
-    print('    Using source directory "{0}"'.format(tools_root))
     print('    Using output directory "{0}"'.format(tools_bin))
     print('    Using FC "{0}"'.format(f77))
     print('    Using CC "{0}"'.format(cc))
@@ -35,10 +34,7 @@ def build_tools(tools_root, tools_bin, f77=None, cc=None, bigmem=None,
     proc.wait()
 
     if proc.returncode != 0:
-        print('Could not compile tools! Check "{0}" for details.'.format(maketools_log))
         exit(-1)
-    else:
-        print('Successfully compiled tools!')
 
 def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
 
@@ -49,20 +45,18 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     _opts.update(NEK_SOURCE_ROOT=source_root)
 
     print('Compiling nek5000...')
-    print('    Using source directory "{0}"'.format(source_root))
     print('    Using working directory "{0}"'.format(cwd))
     print('    Using .usr file "{0}"'.format(usr_file))
     for key, val in _opts.iteritems():
         print('    Using {0}="{1}"'.format(key, val))
 
     my_env = os.environ.copy()
-    if source_root      : my_env["NEK_SOURCE_ROOT"] = source_root
-    if _opts.get('F77')   : my_env["FC"] = _opts.get('F77') 
-    if _opts.get('CC')    : my_env["CC"] = _opts.get('CC')
+    if source_root         : my_env["NEK_SOURCE_ROOT"] = source_root
+    if _opts.get('F77')    : my_env["FC"] = _opts.get('F77') 
+    if _opts.get('CC')     : my_env["CC"] = _opts.get('CC')
     if _opts.get('PPLIST') : my_env["PPLIST"] = _opts.get('PPLIST') 
 
     makenek_in  = os.path.join(source_root, 'bin', 'makenek')
-    logfile     = os.path.join(cwd, 'compiler.out')
 
     proc = Popen(
         [makenek_in, 'clean'], 
@@ -77,19 +71,9 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
         cwd=cwd,
         env=my_env,
         stdin=PIPE, 
-        stderr=STDOUT, 
-        stdout=PIPE)
-
-    f = open(logfile, 'w')
-    for line in proc.stdout:
-        f.write(line)
-        if verbose:
-           sys.stdout.write(line)
+        stderr=STDOUT) 
 
     proc.wait()
 
     if proc.returncode != 0:
-        print('Could not compile nek5000! Check "{0}" for details.'.format(logfile))
         exit(-1)
-    else:
-        print('Successfully compiled nek5000!')

@@ -358,28 +358,6 @@ class NekTestCase(unittest.TestCase):
             verbose    = self.verbose
         )
 
-    def move_logs(self):
-        cls = self.__class__
-        if self.log_root:
-            src_dir = os.path.join(self.examples_root, cls.example_subdir)
-            dest_dir = os.path.join(self.log_root, cls.example_subdir)
-            print("Moving logs...")
-            if not os.path.isdir(dest_dir):
-                print("    Making subdirectory {0}")
-                os.makedirs(os.path.join(dest_dir))
-
-            for f in os.listdir(src_dir):
-                if f == 'compiler.out' or f == 'genmap.out' or 'log' in f:
-                    src_file = os.path.join(src_dir, f)
-                    dest_file = os.path.join(dest_dir, f)
-                    try:
-                        os.rename(src_file, dest_file)
-                    except OSError as E:
-                        # TODO: change to warnings.warning
-                        print("    Could not move {0} to {1}: {2}".format(src_file, dest_file, E))
-                    else:
-                        print("    Moved {0} to {1}".format(src_file, dest_file))
-
     def mvn(self, src_prefix, dest_prefix):
         from lib.nekBinRun import mvn
         cls = self.__class__

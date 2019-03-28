@@ -1,8 +1,9 @@
 trap onexit EXIT
 
 function onexit() {
-  if [ $? -ne 1 ]; then
-     printf "\nsee build.log for details\n"
+  retval=$?
+  if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
+     printf "\nFATAL ERROR occured during compilation!\nCheck build.log for details\n"
   fi
 }
 
@@ -73,6 +74,7 @@ function clean_3rdparty() {
 function build_nek() {
 
 # set defaults
+: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
 : ${MPI:=1}
@@ -98,12 +100,33 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   return 0
 fi
 
-echo 'using source path:' $NEK_SOURCE_ROOT
+echo "using source path: $NEK_SOURCE_ROOT"
+
+if [ "$mver" != "19.0.0" ]; then
+  echo "FATAL ERROR: Your makenek is incompatible!"
+  echo "Please upgrade to the version shipped the source"
+  return 11
+fi
 
 rm -rf build.log
 nargs=$#
 
+CASEDIR=`pwd`
+CASENAME=$1
 NOCOMPILE=0
+ONLYDEP=0
+
+SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
+export SOURCE_ROOT_GSLIB
+SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
+export SOURCE_ROOT_PARRSB
+SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
+export SOURCE_ROOT_PARMETIS
+SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
+export SOURCE_ROOT_CVODE
+SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
+export SOURCE_ROOT_HYPRE
+
 if [ "$1" == "-nocompile" ]; then
   NOCOMPILE=1
   nargs=0
@@ -112,7 +135,6 @@ if [ "$2" == "-nocompile" ]; then
   NOCOMPILE=1
 fi 
 
-ONLYDEP=0
 if [ "$1" == "3rdparty" ]; then
   ONLYDEP=1
   nargs=0
@@ -123,43 +145,6 @@ if [ "$1" == "lib" ]; then
   ONLYLIB=1
   nargs=0
 fi 
-
-CASEDIR=`pwd`
-CASENAME=$1
-if [ $nargs -eq 0 ]; then
-   NCASEFILES=`find *.usr 2>/dev/null| wc -l`
-   if [ $NCASEFILES == "0" ]; then
-     echo "FATAL ERROR: Cannot find .usr file!"
-     return 1
-   elif [ $NCASEFILES != "1" ]; then
-     echo "FATAL ERROR: Found multiple .usr files!"
-     echo "Please use makenek [.usr filename]"
-     return 1
-   else
-     CASENAME=`find *.usr | sed 's/\.usr$//g'`
-   fi
-fi
-
-if [ "$mver" != "19.0.0" ]; then
-  echo "FATAL ERROR: Your makenek is incompatible!"
-  echo "Please upgrade to the version shipped with your Nek source."
-  return 1
-fi
-
-SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
-export SOURCE_ROOT_GSLIB
-
-SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
-export SOURCE_ROOT_PARRSB
-
-SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
-export SOURCE_ROOT_PARMETIS
-
-SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
-export SOURCE_ROOT_CVODE
-
-SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
-export SOURCE_ROOT_HYPRE
 
 if [[ $1 = "clean" ]]; then
   while true; do
@@ -180,41 +165,19 @@ if [[ $1 = "clean" ]]; then
   return 0
 fi
 
-if [ ! -f ${CASENAME}'.usr' ]; then
-   echo "FATAL ERROR: Cannot find $1.usr!"
-   return 1
-fi
-
-if [ -f SIZEu ]; then
-   if [ -f SIZE ]; then
-      echo "FATAL ERROR: found SIZEu and SIZE!"
-      return 1
-   fi
-   NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
-   mv -v SIZEu SIZE
-fi
-
-if [ ! -f SIZE ]; then
-   echo "FATAL ERROR: Cannot find SIZE!"
-   return 1
-fi
-
 if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $NEK_SOURCE_ROOT/core/makefile.template!"
-  return 1
+  return 11
 fi
 
-# test if FC compiler exists
+# test compiler
 if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
-  return 1
+  return 11
 fi
-
-
-# test if C compiler exists
 if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
-  return 1
+  return 11
 fi
 
 # trying to figure which compiler the wrapper is using 
@@ -408,6 +371,19 @@ if [ $ONLYDEP -eq 1 ]; then
   return 0 
 fi 
 
+if [ $nargs -eq 0 ]; then
+   NCASEFILES=`find *.usr 2>/dev/null| wc -l`
+   if [ $NCASEFILES == "0" ]; then
+     true
+   elif [ $NCASEFILES != "1" ]; then
+     echo "FATAL ERROR: Found multiple .usr files!"
+     echo "Please use makenek [.usr filename]"
+     return 11
+   else
+     CASENAME=`find *.usr | sed 's/\.usr$//g'`
+   fi
+fi
+
 printf "generating makefile ... "
 rm -rf makefile 2>/dev/null
 
@@ -496,13 +472,31 @@ if [ -f .makefile ]; then
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
   printf "done\n"
 else
-  echo "ERROR: Makefile could not be created!"
   printf "failed!\n"
   return 1 
 fi
 \rm .makefile 2>/dev/null
 
+if [ ! -f ${CASENAME}'.usr' ] && [ $ONLYLIB -ne 1 ]; then
+   echo "FATAL ERROR: Cannot find $1.usr!"
+   return 11
+fi
+
 # tweak SIZE file
+if [ -f SIZEu ]; then
+   if [ -f SIZE ]; then
+      echo "FATAL ERROR: found SIZEu and SIZE!"
+      return 11
+   fi
+   NEK_WARN="WARNING: SIZEu will be deprecated in a future release!"
+   mv -v SIZEu SIZE
+fi
+
+if [ ! -f SIZE ]; then
+   echo "FATAL ERROR: Cannot find SIZE!"
+   return 11
+fi
+
 if ! cat SIZE | grep -qi 'lelr' ; then
    echo >>SIZE
    echo 'c automatically added by makenek' >>SIZE
@@ -627,8 +621,9 @@ do
   echo "$i=${!i}" >> .state
 done ;
 
-set -o pipefail
+### finally compile ###
 
+set -o pipefail
 
 if [ $ONLYLIB -eq 1 ]; then
   printf "compiling ... " 
@@ -637,7 +632,8 @@ if [ $ONLYLIB -eq 1 ]; then
   if test -f ./libnek5000.a; then
     printf "done\n" 
   else
-    printf "failed\n" 
+    printf "failed\n"
+    return 1 
   fi
 else
   build_3rdparty
@@ -649,9 +645,11 @@ else
     printf "done\n" 
   else
     printf "failed\n" 
-    return 2
+    return 1
   fi
 fi
+
 set +o pipefail
+
 return 0
 }

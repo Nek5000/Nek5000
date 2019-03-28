@@ -1,4 +1,4 @@
-     subroutine initdim
+      subroutine initdim
 C-------------------------------------------------------------------
 C
 C     Transfer array dimensions to common

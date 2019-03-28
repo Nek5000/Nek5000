@@ -2,6 +2,7 @@
 set -e
 
 VER=2.15.1
+CHKSUM=655cbb848f5805512bf24b8ca5d7e923a70151fa
 
 if [ "$1" == "clean" ]; then
   rm -rf hypre lib include 2>/dev/null
@@ -17,6 +18,11 @@ fi
 
 rm -rf hypre 2>/dev/null
 mkdir hypre
+if ! echo "$CHKSUM  v$VER.tar.gz" | shasum -a 1 -c - 2>/dev/null ; then
+  echo 'Invalid checksum!'
+  rm -rf v$VER.tar.gz
+  exit 1
+fi
 tar -zxvf v$VER.tar.gz -C ./hypre --strip-components=1
 cd hypre
 mkdir -p build
