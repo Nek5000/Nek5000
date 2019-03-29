@@ -13,18 +13,19 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
   exit 0
 fi
 
-if [ ! -f sundials-$VER.tar.gz ]; then
-  wget --no-check-certificate -O sundials-$VER.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-$VER.tar.gz
+if [ ! -f v$VER.tar.gz ]; then
+  wget --no-check-certificate -O v$VER.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-$VER.tar.gz
+  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+  if [ $SUM != $CHKSUM ] ; then
+    echo 'Invalid checksum!'
+    rm -rf v$VER.tar.gz
+    exit 1
+  fi
 fi
 
 rm -rf sundials 2>/dev/null
 mkdir sundials
-if ! echo "$CHKSUM  sundials-$VER.tar.gz" | shasum -a 1 -c - 2>/dev/null ; then
-  echo 'Invalid checksum!'
-  rm -rf sundials-$VER.tar.gz 
-  exit 1
-fi
-tar -zxvf sundials-$VER.tar.gz -C ./sundials --strip-components=1
+tar -zxvf v$VER.tar.gz -C ./sundials --strip-components=1
 cd sundials
 mkdir -p build
 cd build

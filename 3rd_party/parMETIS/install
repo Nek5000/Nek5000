@@ -15,13 +15,15 @@ fi
 
 wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
 
-rm -rf parMETIS 2>/dev/null
-mkdir parMETIS
-if ! echo "$CHKSUM  v$VER.tar.gz" | shasum -a 1 -c - 2>/dev/null ; then
+SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+if [ $SUM != $CHKSUM ] ; then
   echo 'Invalid checksum!'
   rm -rf v$VER.tar.gz
   exit 1
-fi 
+fi
+
+rm -rf parMETIS 2>/dev/null
+mkdir parMETIS
 tar -zxvf v$VER.tar.gz -C ./parMETIS --strip-components=1
 cd parMETIS
 

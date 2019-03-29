@@ -12,17 +12,20 @@ fi
 if [ -f ./lib/libHYPRE.a ]; then
   exit 0
 fi
+
 if [ ! -f v$VER.tar.gz ]; then
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/hypre/archive/v$VER.tar.gz 
+  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+  if [ $SUM != $CHKSUM ] ; then
+    echo 'Invalid checksum!'
+    rm -rf v$VER.tar.gz
+    exit 1
+  fi
 fi
 
 rm -rf hypre 2>/dev/null
 mkdir hypre
-if ! echo "$CHKSUM  v$VER.tar.gz" | shasum -a 1 -c - 2>/dev/null ; then
-  echo 'Invalid checksum!'
-  rm -rf v$VER.tar.gz
-  exit 1
-fi
+
 tar -zxvf v$VER.tar.gz -C ./hypre --strip-components=1
 cd hypre
 mkdir -p build
