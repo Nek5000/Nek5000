@@ -192,7 +192,7 @@ else
         export CFLAGS+=" -Dr8"
      fi
      printf "building $TOOL ... "
-     if make -C ./$TOOL 2>&1 | tee ./$TOOL/build.log >/dev/null; then
+     if make -C ./$TOOL 2>&1 | tee ./$TOOL/build.log >/dev/null 2>&1; then
        printf "done\n"
      else
        printf "failed\n"
