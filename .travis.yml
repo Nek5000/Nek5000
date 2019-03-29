@@ -60,6 +60,8 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y libmpich-dev mpich
 
+  - sudo apt-get purge cmake
+
   # Set up Python virtualenv
   - virtualenv -p python2.7 $ROOT_DIR/python2-env
   - source $ROOT_DIR/python2-env/bin/activate
@@ -67,6 +69,7 @@ before_install:
 
 install:
   - pip install --upgrade pip
+  - pip install --upgrade cmake
   - pip install pytest
 
 script: 
