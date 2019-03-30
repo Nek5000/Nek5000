@@ -133,7 +133,6 @@ nek5000: lib usrfile
 	@if test -f ${BINNAME}; then \
         echo ""; \
         echo "$(NEK_WARN)"; \
-        echo ""; \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
@@ -143,7 +142,7 @@ nek5000: lib usrfile
 	echo -e "ERROR: Cannot find ${BINNAME}!"; \
 	echo -e ""; \
 	fi
-	@rm -f ${LIBNAME} *.i
+	@rm -f ${CASENAME}.o ${CASENAME}.f ${LIBNAME} drive.o *.i
 
 lib:	objdir $(NOBJS)
 	@printf "building ${LIBNAME} ... "

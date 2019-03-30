@@ -147,7 +147,7 @@ fi
 
 if [[ $1 = "clean" ]]; then
   while true; do
-    read -p "do you want to clean all 3rd party dependencies? [N]" yn
+    read -p "do you want to clean all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
         clean_3rdparty; 
@@ -162,6 +162,20 @@ if [[ $1 = "clean" ]]; then
   rm -rf makefile
   rm -rf .state
   return 0
+fi
+
+if [ -f makefile ] && [ $ONLYDEP -ne 1 ]; then
+  while true; do
+    echo "makefile exists already!"
+    read -p "Are you sure you want to continue? [N]" yn
+    case $yn in
+      [Yy]* )
+        break ;;
+      * ) 
+        return 0
+        break ;;
+    esac
+  done
 fi
 
 if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
@@ -236,10 +250,6 @@ case $FCcomp in
       NOCOMPILE=1
       read;;
 esac
-
-# initial clean-up
-rm -f $CASENAME.f nek5000 2>/dev/null
-rm -f ./obj/subuser.o 2>/dev/null
 
 LONGLONGINT=1
 
@@ -625,7 +635,7 @@ done ;
 set -o pipefail
 
 if [ $ONLYLIB -eq 1 ]; then
-  printf "compiling ... " 
+  printf "building ... " 
   make -j4 -f makefile lib 2>&1 | tee -a build.log >/dev/null
   sync
   if test -f ./libnek5000.a; then
@@ -637,7 +647,7 @@ if [ $ONLYLIB -eq 1 ]; then
 else
   build_3rdparty
   sync
-  printf "compiling ... " 
+  printf "building ... " 
   make -j4 -f makefile 2>&1 | tee -a build.log >/dev/null
   sync
   if test -f ./nek5000; then
