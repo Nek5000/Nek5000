@@ -75,7 +75,7 @@ userf.o    : userf.f	basics.inc basicsp.inc	; $(FC) -c $(FFLAGS)  userf.f
 trap.o     : trap.f	basics.inc basicsp.inc	; $(FC) -c $(FFLAGS)  trap.f
 xinterface.o	: xinterface.f 	basics.inc	; $(FC) -c $(FFLAGS)  xinterface.f
 reverc.o	: revert.f			; $(FC) -c $(FFLAGS)  revert.f
-blas.o	   : ../../core/3rd_party/blas.f	; $(FC) -c $(FFLAGS)  ../../core/3rd_party/blas.f
+blas.o	   : blas.f	                        ; $(FC) -c $(FFLAGS)  blas.f
 
 finiparser.o	   : ../../core/3rd_party/finiparser.c	; $(CC) -c $(CFLAGS)  ../../core/3rd_party/finiparser.c
 iniparser.o	   : ../../core/3rd_party/iniparser.c	; $(CC) -c $(CFLAGS)  ../../core/3rd_party/iniparser.c
