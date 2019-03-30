@@ -20,6 +20,10 @@ function build_3rdparty() {
      FFLAGS+=" -O2"
   fi 
 
+  cd $SOURCE_ROOT_BLAS
+  ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  cd $CASEDIR 
+
   cd $SOURCE_ROOT_GSLIB
   ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
@@ -58,6 +62,8 @@ function build_3rdparty() {
 }
 
 function clean_3rdparty() {
+  cd $SOURCE_ROOT_BLAS; ./install clean 2>/dev/null
+  cd $CASEDIR
   cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
@@ -115,6 +121,8 @@ CASENAME=$1
 NOCOMPILE=0
 ONLYDEP=0
 
+SOURCE_ROOT_BLAS="$NEK_SOURCE_ROOT/3rd_party/blasLapack"
+export SOURCE_ROOT_BLAS
 SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
 export SOURCE_ROOT_GSLIB
 SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
@@ -309,7 +317,7 @@ PARMETIS=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
-BLAS="blas.o dsygv.o"
+VENDOR_BLAS=0 
 
 for i in $PPLIST
 do
@@ -353,9 +361,13 @@ do
      MXM_USER+=" mxm_bgq.o" 
    fi
    if [ "$i" == "VENDOR_BLAS" ]; then
-     BLAS=" "
+     VENDOR_BLAS=1
    fi
 done
+
+if [ $VENDOR_BLAS -ne 1 ]; then
+  USR_LFLAGS+=" -L$SOURCE_ROOT_BLAS -lblasLapack"
+fi
 
 # gslib build options
 GSLIB_OPT+=" DESTDIR=.."

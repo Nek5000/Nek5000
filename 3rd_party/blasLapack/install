@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+if [ "$1" == "clean" ]; then
+  make clean
+  exit 0
+fi
+
+#if [ -f ./libblasLapack.a ]; then
+#  exit 0
+#fi
+
+make -j4 

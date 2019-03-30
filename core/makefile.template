@@ -59,8 +59,6 @@ partitioner.o
 # MXM 
 MXM =  
 ################################################################################
-# BLAS
-BLAS = 
 
 COMM_MPI := comm_mpi.o
 ifeq ($(MPI),0)
@@ -95,7 +93,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
@@ -261,8 +259,6 @@ $(OBJDIR)/crs_hypre.o        :$S/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/partitioner.o      :$S/partitioner.c;     $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PARRSB_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
-$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L0) $(PPS_F) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
