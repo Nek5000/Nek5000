@@ -21,7 +21,9 @@
 * CHT support for generic fld reader
 * Overwrite core routines in usr
 * Lagrangian phase model - LPM (experimental)
-* Support parMetis partitioner
+* Add parMetis partitioner
+* Add CGNS mesh converter
+* Support p0th with Helmholtz 
 * Various bug fixes
 
 ## What you may have to change to be compatible 
@@ -39,8 +41,6 @@
 ## Known Bugs 
 
 [562](https://github.com/Nek5000/Nek5000/issues/562),
-[474](https://github.com/Nek5000/Nek5000/issues/474),
-[407](https://github.com/Nek5000/Nek5000/issues/407),
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors

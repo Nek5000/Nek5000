@@ -383,7 +383,6 @@ C
            CALL RONE(V1MASK,NTOT)
            CALL RONE(V2MASK,NTOT)
            CALL RONE(V3MASK,NTOT)
-           CALL RONE( OMASK,NTOT)
 C
            DO 100 IEL=1,NELV
            DO 100 IFACE=1,NFACES
@@ -424,14 +423,22 @@ C
          ENDIF
          IF (CB.EQ.'A  ') THEN
              CALL FACEV (V2MASK,IEL,IFACE,0.0,lx1,ly1,lz1)
-             CALL FACEV ( OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
          ENDIF
   100    CONTINUE
 
-         CALL DSOP  ( OMASK,'MUL',lx1,ly1,lz1)
          call opdsop(v1mask,v2mask,v3mask,'MUL') ! no rotation for mul
 
        ENDIF
+
+       CALL RONE(OMASK,NTOT)
+       DO 200 IEL=1,NELV
+       DO 200 IFACE=1,NFACES
+          CB =CBC(IFACE,IEL,IFIELD)
+          IF (CB.EQ.'A  ') THEN
+              CALL FACEV (OMASK,IEL,IFACE,0.0,lx1,ly1,lz1)
+          ENDIF
+ 200   CONTINUE
+       CALL DSOP(OMASK,'MUL',lx1,ly1,lz1)
 C
       ENDIF
 C

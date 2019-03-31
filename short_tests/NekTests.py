@@ -16,9 +16,6 @@ class Tools(NekTestCase):
     def test_PnPn_Parallel(self):
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ###############################################################################
 
 class FsHydro(NekTestCase):
@@ -59,9 +56,6 @@ class FsHydro(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ###############################################################################
 
 class Axi(NekTestCase):
@@ -77,6 +71,7 @@ class Axi(NekTestCase):
             lxd       = '9',
             lx2       = 'lx1-2',
             lelg      = '500',
+            lx1m      = 'lx1',
         )
 
         self.build_tools(['genmap'])
@@ -90,10 +85,9 @@ class Axi(NekTestCase):
         self.run_nek(step_limit=None)
 
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(errmx, target_val=2.639593E-15, delta=1E-15, label='L2 err')
-
+        self.assertAlmostEqualDelayed(errmx, target_val=3.173174E-15, delta=1E-15, label='L2 err')
         errl2 = self.get_value_from_log('err ', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(errl2, target_val=1.043610E-14, delta=1E-15, label='MAX err')
+        self.assertAlmostEqualDelayed(errl2, target_val=1.443290E-14, delta=1E-15, label='MAX err')
 
         self.assertDelayedFailures()
 
@@ -102,6 +96,7 @@ class Axi(NekTestCase):
         self.size_params['lx2']='lx1-2'
         self.config_size()
         self.build_nek()
+
         self.run_nek(step_limit=None)
 
         errmx = self.get_value_from_log('err ', column=-2, row=-1)
@@ -111,9 +106,6 @@ class Axi(NekTestCase):
         self.assertAlmostEqualDelayed(errl2, target_val=1.687539E-14, delta=1E-15, label='MAX err')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 #####################################################################
 
@@ -158,9 +150,6 @@ class Benard_Ray9(NekTestCase):
 
         rac = self.get_value_from_log('converged_rac', column=-2)
         self.assertAlmostEqualDelayed(rac, target_val=1707.79, delta=0.01, label='rac')
-
-    def tearDown(self):
-        self.move_logs()
 
 #####################################################################
 
@@ -267,10 +256,6 @@ class Eddy_EddyUv(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
-
 #####################################################################
 
 class eddy_mv(NekTestCase):
@@ -314,10 +299,6 @@ class eddy_mv(NekTestCase):
         self.assertAlmostEqualDelayed(xerr, target_val=5.370512E-04, delta=1E-05, label='X err')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
-
 
 #####################################################################
 
@@ -392,9 +373,6 @@ class Eddy_LegacySize(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ######################################################################
 
 class Eddy_Rich(NekTestCase):
@@ -445,9 +423,6 @@ class Eddy_Rich(NekTestCase):
         self.assertAlmostEqualDelayed(perr, target_val=2.272926E-04, delta=1E-04, label='P err')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 #####################################################################
 
@@ -504,9 +479,6 @@ class Eddy_NeknekU(NekTestCase):
         self.assertAlmostEqualDelayed(phrase, label='gs_op_ms test PASSED')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ####################################################################
 
@@ -646,9 +618,6 @@ class Eddy_Neknek(NekTestCase):
         self.assertAlmostEqualDelayed(yerr_outside, target_val=9.878329E-04, delta=1E-05, label='Y err  outside')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ####################################################################
 
@@ -790,9 +759,6 @@ class Eddy_Neknek_mv(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ####################################################################
 
 
@@ -836,9 +802,6 @@ class KovStokes(NekTestCase):
         self.assertAlmostEqualDelayed(err, target_val=5.05960E-13 , delta=1e-14, label='err')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ####################################################################
 
@@ -937,10 +900,6 @@ class Ethier(NekTestCase):
 
         self.assertDelayedFailures()
 
-
-    def tearDown(self):
-        self.move_logs()
-
 ####################################################################
 
 class LowMachTest(NekTestCase):
@@ -980,9 +939,6 @@ class LowMachTest(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ####################################################################
 
 class MvCylCvode(NekTestCase):
@@ -1018,9 +974,6 @@ class MvCylCvode(NekTestCase):
         self.assertAlmostEqualDelayed(err2, target_val=6.348537E-07, delta=1e-8, label='err dp/dt')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 #####################################################################
 
@@ -1084,9 +1037,6 @@ class ConjHt(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 class CmtInviscidVortex(NekTestCase):
     example_subdir = os.path.join('CMT', 'inviscid_vortex')
     case_name = 'pvort'
@@ -1131,9 +1081,6 @@ class CmtInviscidVortex(NekTestCase):
         self.run_nek(step_limit=1000)
         self.diff_l2norms()
 
-    def tearDown(self):
-        self.move_logs()
-        
 ####################################################################
 
 class LinCav_Dir(NekTestCase):
@@ -1165,9 +1112,6 @@ class LinCav_Dir(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 class LinCav_Adj(NekTestCase):
     example_subdir = 'dfh_cav'
     case_name = 'lin_dfh_cav_adj'
@@ -1196,9 +1140,6 @@ class LinCav_Adj(NekTestCase):
         self.assertAlmostEqualDelayed(omega, target_val=-7.57304E-03, delta=1E-06, label='growth rate')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 #####################################################################
 
@@ -1243,9 +1184,6 @@ class DoubleShear(NekTestCase):
         self.assertAlmostEqualDelayed(en, target_val=0.85973996057622892, delta=1e-5, label='Energy')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ####################################################################
 
@@ -1328,9 +1266,6 @@ class IO_Test(NekTestCase):
         self.assertAlmostEqualDelayed(err1, target_val=0.0, delta=0.0, label='rs err PnPn  ')
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 ####################################################################
 
 class InclDef(NekTestCase):
@@ -1370,9 +1305,6 @@ class InclDef(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 #####################################################################
 
 class lpm_one(NekTestCase):
@@ -1403,9 +1335,6 @@ class lpm_one(NekTestCase):
         self.assertAlmostEqualDelayed(en, target_val=3.370634E-05, delta=1e-6, label='error')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ###############################################################
 
@@ -1438,9 +1367,6 @@ class lpm_two(NekTestCase):
 
         self.assertDelayedFailures()
 
-    def tearDown(self):
-        self.move_logs()
-
 #####################################################################
 
 class chan2d(NekTestCase):
@@ -1472,9 +1398,6 @@ class chan2d(NekTestCase):
         self.assertAlmostEqualDelayed(xerr, target_val=1.0005e-08, delta=1E-09, label='X err')
 
         self.assertDelayedFailures()
-
-    def tearDown(self):
-        self.move_logs()
 
 ###############################################################
 

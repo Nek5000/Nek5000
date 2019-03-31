@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-VER=1.0.3
+VER=1.0.4
+CHKSUM=422cdd18e70a92ca6a08cca57b9fbb92a3c6e789
 
 if [ "$1" == "clean" ]; then
   rm -rf gslib lib include 2>/dev/null 
@@ -14,6 +15,12 @@ fi
 
 if [ ! -f v$VER.tar.gz ]; then
   wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+  if [ $SUM != $CHKSUM ] ; then
+    echo 'Invalid checksum!'
+    rm -rf v$VER.tar.gz
+    exit 1
+  fi
 fi
 
 rm -rf gslib 2>/dev/null

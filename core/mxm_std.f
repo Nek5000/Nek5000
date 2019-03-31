@@ -2183,11 +2183,7 @@ c
 c
          one=1.0
          zero=0.0
-         if (wdsize.eq.4) then
-            call sgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
-         else
-            call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
-         endif
+         call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
  
       endif
       return
@@ -2837,11 +2833,7 @@ c
 c
          one=1.0
          zero=0.0
-         if (wdsize.eq.4) then
-            call sgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
-         else
-            call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
-         endif
+         call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
 c
 c        N0=N1*N3
 c        DO 10 I=1,N0

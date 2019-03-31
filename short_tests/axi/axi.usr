@@ -132,8 +132,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-c     param(66) = 4.
-c     param(67) = 4.
+      if (ifsplit) then
+        do iel=1,nelt
+        do ifc=1,2*ndim
+           if (cbc(ifc,iel,1).eq.'O  ') cbc(ifc,iel,1)='on '
+        enddo
+        enddo
+      endif
 
       return
       end

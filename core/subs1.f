@@ -1270,8 +1270,8 @@ C
       nel   = nelfld(ifield)
       ntot1 = lx1*ly1*lz1*nel
 
-      if (ifaxis.and.ifsplit) call exitti(
-     $'Axisymmetric stress w/PnPn not yet supported.$',istep)
+c      if (ifaxis.and.ifsplit) call exitti(
+c     $'Axisymmetric stress w/PnPn not yet supported.$',istep)
 
 c     icase = 1 --- axsf_fast (no axisymmetry)
 c     icase = 2 --- stress formulation and supports axisymmetry

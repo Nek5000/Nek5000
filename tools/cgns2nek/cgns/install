@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+VER=3.3.1
+
+if [ "$1" == "clean" ]; then
+  rm -rf cgns bin lib include 2>/dev/null
+  exit 0
+fi
+
+if [ -f ./lib/libcgns.a ]; then
+  exit 0
+fi
+
+if [ ! -f v$VER.tar.gz ]; then
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/CGNS/CGNS/archive/v$VER.tar.gz
+fi
+
+rm -rf cgns 2>/dev/null
+mkdir cgns
+tar -zxvf v$VER.tar.gz -C ./cgns --strip-components=1
+cd cgns
+mkdir -p build
+cd build
+set -x
+cmake \
+-DCMAKE_C_COMPILER=`which $CC` \
+-DCMAKE_Fortran_COMPILER=`which $FC` \
+-DCGNS_ENABLE_FORTRAN=ON \
+-DCGNS_ENABLE_HDF5=OFF \
+-DCGNS_ENABLE_64BIT=ON \
+-DCGNS_BUILD_SHARED=OFF \
+-DCGNS_ENABLE_TESTS=OFF \
+-DCMAKE_INSTALL_PREFIX=`pwd`/../.. \
+../
+set +x
+
+make -j4 install

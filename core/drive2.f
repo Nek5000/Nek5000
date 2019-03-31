@@ -940,21 +940,6 @@ c-----------------------------------------------------------------------
 
 c      call opcount(3)      ! print op-counters
 
-      call nek_comm_getstat(comm_timers,comm_counters)
-      tgp2     = comm_timers(1)
-      tgop_sync = comm_timers(2)
-      twal      = comm_timers(3)
-      tsyc      = comm_timers(4)
-      tirc      = comm_timers(5)
-      tisd      = comm_timers(6)       
-      trc       = comm_timers(7)
-      tsd       = comm_timers(8)
-      ngp2     = comm_counters(1)
-      nwal      = comm_counters(3)
-      nsyc      = comm_counters(4)
-      nirc      = comm_counters(5)
-      nisd      = comm_counters(6)
-
       tcomm  = tisd + tirc + tsyc + tgp2+ twal + trc + tsd
       min_comm = tcomm
       call gop(min_comm,wwork,'m  ',1)
@@ -1170,50 +1155,15 @@ c         pdsmn=tdsmn/tttstp
 c         write(6,*) 'dsmn time',ndsmn,tdsmn,pdsmn
 c         pslvb=tslvb/tttstp
 c         write(6,*) 'slvb time',nslvb,tslvb,pslvb
+
          pddsl=tddsl/tttstp
          write(6,*) 'ddsl time',nddsl,tddsl,pddsl
-c
-c          pbsol=tbsol/tttstp
+
+c         pbsol=tbsol/tttstp
 c         write(6,*) 'bsol time',nbsol,tbsol,pbsol
 c         pbso2=tbso2/tttstp
 c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
 
-#ifdef MPITIMER
-         write(6,'(/,A)') 'MPI timings'
-c        MPI timings         
-         write(6,*) 'comm min ',min_comm
-         write(6,*) 'comm max ',max_comm 
-         write(6,*) 'comm avg ',avg_comm 
-         write(6,*) 'total comm %',max_comm/ttime
-
-c        MPI_Barrier timings
-         psyc=tsyc/tcomm
-         write(6,*) 'barrier time',nsyc,tsyc,psyc 
-         write(6,*) 'barrier min ',min_syc 
-         write(6,*) 'barrier max ',max_syc 
-         write(6,*) 'barrier avg ',avg_syc 
-
-c        MPI_Waitall timings
-         pwal=twal/tcomm
-         write(6,*) 'waitall time',nwal,twal,pwal 
-         write(6,*) 'waitall min ',min_wal 
-         write(6,*) 'waitall max ',max_wal 
-         write(6,*) 'waitall avg ',avg_wal 
-
-c        MPI_Allreduce timings
-         pgp2=tgp2/tcomm
-         write(6,*) 'allreduce  time',ngp2,tgp2,pgp2 
-         write(6,*) 'allreduce  min ',min_gop 
-         write(6,*) 'allreduce  max ',max_gop 
-         write(6,*) 'allreduce  avg ',avg_gop 
-
-c        MPI_Allreduce(sync) timings
-         pgop_sync=tgop_sync/tcomm
-         write(6,*) 'allreduce_sync  time',tgop_sync,pgop_sync 
-         write(6,*) 'allreduce_sync  min ',min_gop_sync 
-         write(6,*) 'allreduce_sync  max ',max_gop_sync 
-         write(6,*) 'allreduce_sync  avg ',avg_gop_sync 
-#endif
          write(6,*) ''
       endif
 

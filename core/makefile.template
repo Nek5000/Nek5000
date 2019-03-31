@@ -46,7 +46,7 @@ hmholtz.o subs1.o subs2.o \
 gmres.o hsmg.o convect.o convect2.o induct.o perturb.o \
 navier5.o navier6.o navier7.o navier8.o fast3d.o fasts.o calcz.o \
 byte.o chelpers.o byte_mpi.o postpro.o interp.o \
-cvode_driver.o nek_comm.o multimesh.o \
+cvode_driver.o multimesh.o \
 vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
@@ -59,8 +59,6 @@ partitioner.o
 # MXM 
 MXM =  
 ################################################################################
-# BLAS
-BLAS = 
 
 COMM_MPI := comm_mpi.o
 ifeq ($(MPI),0)
@@ -95,7 +93,7 @@ else
 	DUMMY:= $(shell rm -rf $S/mpif.h) 
 endif
 
-TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO) $(BLAS)
+TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
 ifeq ($(CMT),1)
 TMP1 += $(CMTCORE)
@@ -126,37 +124,38 @@ objdir:
 
 usrfile:
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
+	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f
 
 nek5000: lib usrfile
-	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.f $(VISITNEK_INCLUDES) ${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
+	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.o ${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
         echo "$(NEK_WARN)"; \
-        echo ""; \
 	echo "#############################################################"; \
 	echo "#                  Compilation successful!                  #"; \
 	echo "#############################################################"; \
 	size ${BINNAME}; \
 	echo ""; \
 	else \
-	echo -e "\033[1;31;38m" "ERROR: Compilation failed!"; \
-	echo -e "\033[0m"; \
+	echo -e "ERROR: Cannot find ${BINNAME}!"; \
+	echo -e ""; \
 	fi
-	@rm -f ${LIBNAME} *.i
-ifeq ($(MPI),0) 
-	@rm -rf $S/mpif.h
-endif
+	@rm -f ${CASENAME}.o ${CASENAME}.f ${LIBNAME} drive.o *.i
 
 lib:	objdir $(NOBJS)
-	@$(AR) cru ${LIBNAME} $(NOBJS)
+	@printf "building ${LIBNAME} ... "
+	@$(AR) cru ./${LIBNAME} $(NOBJS)
 	@ranlib ${LIBNAME}
+	@if test -f ${LIBNAME}; then \
+	printf "done\n"; \
+	else \
+	printf "failed!\n"; \
+	echo ""; \
+	fi
+	@rm -f *.i
 
 clean:
-	@echo "cleaning Nek5000 ..."
 	@rm -rf ${LIBNAME} ${CASENAME}.f obj ${BINNAME}
-ifeq ($(MPI),0) 
-	@rm -rf $S/mpif.h
-endif
 
 $(NOBJS) : ./SIZE
 
@@ -250,7 +249,6 @@ $(OBJDIR)/mxm_std.o	  :$S/mxm_std.f;		$(FC) -c $(FL3) $< -o $@
 $(OBJDIR)/mxm_bgq.o	  :$S/mxm_bgq.f;		$(FC) -c $(FL3) $< -o $@
 
 # C Files ##################################################################################
-$(OBJDIR)/nek_comm.o         :$S/nek_comm.c;          $(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/byte.o             :$S/byte.c;              $(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/chelpers.o         :$S/chelpers.c;          $(CC) -c $(cFL2) $< -o $@
 $(OBJDIR)/fcrs.o             :$S/fcrs.c;              $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
@@ -261,8 +259,6 @@ $(OBJDIR)/crs_hypre.o        :$S/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/partitioner.o      :$S/partitioner.c;     $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PARRSB_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/dsygv.o     	:$S/3rd_party/dsygv.f;  	$(FC) -c $(L0) $(PPS_F) $< -o $@
-$(OBJDIR)/blas.o   	:$S/3rd_party/blas.f;		$(FC) -c $(L0) $(PPS_F) $< -o $@
 $(OBJDIR)/visit.o        :$S/3rd_party/visit.f;		$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/3rd_party/nek_in_situ.f;	$(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/3rd_party/finiparser.c;    $(CC)  -c $(cFL2) $(JL) $< -o $@
