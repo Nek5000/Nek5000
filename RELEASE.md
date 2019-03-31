@@ -21,7 +21,9 @@
 * CHT support for generic fld reader
 * Overwrite core routines in usr
 * Lagrangian phase model - LPM (experimental)
+* Distributed gllnid/gllel 
 * Add parMetis partitioner
+* Add parRSB partitioner
 * Add CGNS mesh converter
 * Support p0th with Helmholtz 
 * Various bug fixes
