@@ -4,7 +4,7 @@
 #-------------------------------------------------------------------------------
 
 # source path 
-#NEKPATH="$HOME/Nek5000" 
+#NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
@@ -48,9 +48,9 @@
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 set -e
-: ${NEKPATH:="$HOME/Nek5000"}
+: ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 export VERMAKENEK="19.0.0"
-$NEKPATH/bin/nekconfig $@
+$NEK_SOURCE_ROOT/bin/nekconfig $@
 set -o pipefail
 make -j4 2>&1 | tee -a build.log
 set +o pipefail
