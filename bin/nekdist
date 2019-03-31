@@ -23,6 +23,7 @@ cd ./Nek5000
 git clone --depth 1 -b master https://github.com/Nek5000/NekExamples
 rm -rf examples core/cmt
 mv NekExamples examples
+rm -rf examples/*.py
 find . -name ".git*" -exec rm -rf {} \; || true
 rm -rf .travis.yml
 

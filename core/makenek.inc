@@ -3,7 +3,7 @@ trap onexit EXIT
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
-     printf "\nFATAL ERROR occured during compilation!\nCheck build.log for details\n"
+     printf "\nAn ERROR occured, see build.log for details\n"
   fi
 }
 
@@ -76,7 +76,7 @@ function clean_3rdparty() {
   cd $CASEDIR
 }
 
-function build_nek() {
+function config_nek() {
 
 # set defaults
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
@@ -89,25 +89,24 @@ function build_nek() {
 
 # first do some checks ...
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
-  echo "Build tool for Nek5000"
-  echo "Usage: makenek [.usr filename ] [-nocompile]" 
-  echo "       makenek lib"
-  echo "       makenek 3rdparty"
-  echo "       makenek clean"
+  echo "Options and arguments:"
+  echo "  <casename>    name of usr file without extension"
+  echo "  clean         cleanup build environment"
+  echo "  -nodep        don't build dependencies"
   echo ""
-  echo "The following PPLIST config options are available:" 
+  echo "PPLIST config options:" 
   echo "  NOMPIIO       disable MPI-IO"
   echo "  BGQ           use BGQ optimized mxm"
   echo "  XSMM          use libxsmm for mxm"
   echo "  CVODE         enable CVODE support"
   echo "  HYPRE         enable HYPRE support"
   echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
-  return 0
+  return 11
 fi
 
 echo "using source path: $NEK_SOURCE_ROOT"
 
-if [ "$mver" != "19.0.0" ]; then
+if [ "$VERMAKENEK" != "19.0.0" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped the source"
   return 11
@@ -118,7 +117,7 @@ nargs=$#
 
 CASEDIR=`pwd`
 CASENAME=$1
-NOCOMPILE=0
+NODEP=0
 ONLYDEP=0
 
 SOURCE_ROOT_BLAS="$NEK_SOURCE_ROOT/3rd_party/blasLapack"
@@ -134,12 +133,12 @@ export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
 export SOURCE_ROOT_HYPRE
 
-if [ "$1" == "-nocompile" ]; then
-  NOCOMPILE=1
+if [ "$1" == "-nodep" ]; then
+  NODEP=1
   nargs=0
 fi 
-if [ "$2" == "-nocompile" ]; then
-  NOCOMPILE=1
+if [ "$2" == "-nodep" ]; then
+  NODEP=1
 fi 
 
 if [ "$1" == "3rdparty" ]; then
@@ -147,15 +146,9 @@ if [ "$1" == "3rdparty" ]; then
   nargs=0
 fi 
 
-ONLYLIB=0
-if [ "$1" == "lib" ]; then
-  ONLYLIB=1
-  nargs=0
-fi 
-
 if [[ $1 = "clean" ]]; then
   while true; do
-    read -p "do you want to clean all 3rd party dependencies too? [N]" yn
+    read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
         clean_3rdparty; 
@@ -172,19 +165,21 @@ if [[ $1 = "clean" ]]; then
   return 0
 fi
 
-if [ -f makefile ] && [ $ONLYDEP -ne 1 ]; then
-  while true; do
-    echo "makefile exists already!"
-    read -p "Are you sure you want to continue? [N]" yn
-    case $yn in
-      [Yy]* )
-        break ;;
-      * ) 
-        return 0
-        break ;;
-    esac
-  done
-fi
+echo "setup build environment"
+
+#if [ -f makefile ] && [ $ONLYDEP -ne 1 ]; then
+#  while true; do
+#    echo "makefile exists already!"
+#    read -p "Are you sure you want to continue? [N]" yn
+#    case $yn in
+#      [Yy]* )
+#        break ;;
+#      * ) 
+#        return 0
+#        break ;;
+#    esac
+#  done
+#fi
 
 if [ ! -f $NEK_SOURCE_ROOT/core/makefile.template ]; then
   echo "FATAL ERROR: Cannot find $NEK_SOURCE_ROOT/core/makefile.template!"
@@ -255,7 +250,6 @@ case $FCcomp in
                ;;
   *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
-      NOCOMPILE=1
       read;;
 esac
 
@@ -498,7 +492,7 @@ else
 fi
 \rm .makefile 2>/dev/null
 
-if [ ! -f ${CASENAME}'.usr' ] && [ $ONLYLIB -ne 1 ]; then
+if [ ! -f ${CASENAME}'.usr' ]; then
    echo "FATAL ERROR: Cannot find $1.usr!"
    return 11
 fi
@@ -602,10 +596,6 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   fi
 fi
 
-if [ $NOCOMPILE -ne 0 ]; then
-  return 0
-fi
-
 declare -a varlist=(
 "NEK_SOURCE_ROOT"
 "FC"
@@ -618,10 +608,10 @@ if [ -f .state ]; then
   for i in "${varlist[@]}"
   do
     if ! cat .state | grep -q "$i=${!i}" ; then
-      echo "configuration change detected, forcing full rebuild"
+      echo "configuration change detected, preparing fresh build"
       rm -rf .state
       while true; do
-        read -p "do you want to rebuild all 3rd party dependencies? [N]" yn
+        read -p "do you want to rebuild all 3rd party dependencies too? [N]" yn
         case $yn in
           [Yy]* )
             clean_3rdparty;
@@ -642,35 +632,9 @@ do
   echo "$i=${!i}" >> .state
 done ;
 
-### finally compile ###
-
-set -o pipefail
-
-if [ $ONLYLIB -eq 1 ]; then
-  printf "building ... " 
-  make -j4 -f makefile lib 2>&1 | tee -a build.log >/dev/null
-  sync
-  if test -f ./libnek5000.a; then
-    printf "done\n" 
-  else
-    printf "failed\n"
-    return 1 
-  fi
-else
+if [ $NODEP -ne 1 ]; then
   build_3rdparty
-  sync
-  printf "building ... " 
-  make -j4 -f makefile 2>&1 | tee -a build.log >/dev/null
-  sync
-  if test -f ./nek5000; then
-    printf "done\n" 
-  else
-    printf "failed\n" 
-    return 1
-  fi
 fi
-
-set +o pipefail
 
 return 0
 }
