@@ -101,6 +101,8 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  CVODE         enable CVODE support"
   echo "  HYPRE         enable HYPRE support"
   echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
+  echo "  DPROCMAP      use distributed processor mapping"
+  echo "  PARRSB        use online RSB partitioner (experimental)"
   return 11
 fi
 
