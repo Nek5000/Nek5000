@@ -21,7 +21,7 @@ SUBROUTINE write_re2_file ()
   REAL*4 test,buf(10) 
   !
   DATA   test  / 6.54321 /
-  DATA c_node /9,10,11,12,17,18,19,20,13,14,15,16/
+  DATA c_node  / 9,10,11,12,17,18,19,20,13,14,15,16 /
   !
   !
   ! Write mesh coordinates, curvature data and boundary data in re2 file
@@ -170,67 +170,7 @@ SUBROUTINE write_re2_file ()
         ENDIF
      ENDDO
   ENDDO
-  !
-  !  *****  THERMAL BOUNDARY CONDITIONS *****'
-  !
-  !WRITE(6,*)
-  !WRITE(6,*) ' Do you want thermal boundary conditions ?'
-  !WRITE(6,*)
-  !WRITE(6,'('' Type in : Yes =1 or No = 0 '')')
-  !READ(5,'(a)') dir
-  !READ(dir(1:1),*) ENERGY
-
-  !IF (ENERGY == 1) THEN
-  !   !
-  !   CALL byte_write(rbc,2,ierr)
-  !   !
-  !   DO i = 1,max_elem
-  !      DO n = 1,6
-  !         IF(tem_type(i,n) /= 'E  ' )  THEN       
-  !            buf2(1) = DBLE(i)
-  !            buf2(2) = DBLE(n)
-  !            buf2(3) =vel_val(i,n,1)
-  !            buf2(4) =vel_val(i,n,2)
-  !            buf2(5) =vel_val(i,n,3)
-  !            buf2(6) =vel_val(i,n,4)
-  !            buf2(7) =vel_val(i,n,5)
-  !            !call blank(buf2(8),8)
-  !            CALL chcopy (buf2(8),tem_type(i,n),3)
-  !            CALL byte_write (buf2,16,ierr)
-  !         ENDIF
-  !      ENDDO
-  !   ENDDO
-  !   !
-  !ENDIF
-  !
-  !
-  !  ***** PASSIVE SCALAR BOUNDARY CONDITIONS *****'
-  !
-  !IF (SCALAR > 0 ) THEN
-  !   !
-  !   DO j = 1,scalar  
-  !      !
-  !      CALL byte_write(rbc,2,ierr)
-  !      !
-  !      DO i = 1,max_elem
-  !         DO n = 1,6
-  !            IF(tem_type(i,n) /= 'E  ' )  THEN       
-  !               buf2(1) = n  
-  !               buf2(2) = i
-  !               buf2(3) =vel_val(i,n,1)
-  !               buf2(4) =vel_val(i,n,2)
-  !               buf2(5) =vel_val(i,n,3)
-  !               buf2(6) =vel_val(i,n,4)
-  !               buf2(7) =vel_val(i,n,5)
-  !               CALL blank(buf2(8),8)
-  !               CALL chcopy (buf2(8),tem_type(i,n),3)
-  !               CALL byte_write (buf2,16,ierr)
-  !            ENDIF
-  !         ENDDO
-  !      ENDDO
-  !   ENDDO
-  !
-  !ENDIF
+  
   RETURN
   !
 END SUBROUTINE write_re2_file

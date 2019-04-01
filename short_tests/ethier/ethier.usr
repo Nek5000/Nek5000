@@ -221,6 +221,12 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
+      a = -1.0
+      b = 1.0
+      call rescale_x(xm1,a,b)
+      call rescale_x(ym1,a,b)
+      call rescale_x(zm1,a,b)
+
       do iel=1,nelt
       do ifc=1,2*ndim
          if (boundaryID(ifc,iel) .eq. 1) cbc(ifc,iel,1)='v  '
