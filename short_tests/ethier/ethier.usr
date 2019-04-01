@@ -223,8 +223,7 @@ c-----------------------------------------------------------------------
 
       do iel=1,nelt
       do ifc=1,2*ndim
-         idss = bc(5,ifc,iel,1)
-         if (idss.eq.1) cbc(ifc,iel,1)='v  '
+         if (boundaryID(ifc,iel) .eq. 1) cbc(ifc,iel,1)='v  '
       enddo
       enddo
 
