@@ -182,6 +182,7 @@ SUBROUTINE read_cgns
         ENDIF
         !
         CALL cg_nbocos_f(ifile,b,z,nbocos,ier)
+        nbocos = num_bc 
         !
         ALLOCATE (boconame(nbocos))
         ALLOCATE (bocotype(nbocos))
