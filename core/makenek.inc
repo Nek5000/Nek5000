@@ -11,51 +11,37 @@ function build_3rdparty() {
   printf "building 3rd-party dependencies ... "
   set -o pipefail
 
-  CFLAGS_=$CFLAGS
-  if ! echo $CFLAGS | grep -q '\-O' ; then 
-     CFLAGS+=" -O2"
-  fi 
-  FFLAGS_=$FFLAGS
-  if ! echo $FFLAGS | grep -q '\-O' ; then 
-     FFLAGS+=" -O2"
-  fi 
-
   cd $SOURCE_ROOT_BLAS
-  ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  FFLAGS="-O2 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   cd $SOURCE_ROOT_GSLIB
-  ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
-     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $PARMETIS -ne 0 ]; then
      cd $SOURCE_ROOT_PARMETIS
-     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
-     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $HYPRE -ne 0 ]; then
      cd $SOURCE_ROOT_HYPRE
-     ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
-
-  CFLAGS=$CFLAGS_
-  export CFLAGS
-  FFLAGS=$FFLAGS_
-  export FFLAGS
 
   printf "done\n"
   set +o pipefail
@@ -237,18 +223,27 @@ fi
 
 # assign FC compiler specific flags
 case $FCcomp in
-  *pgf*)        FFLAGS+=" -r8 -Mpreprocess"
+  *pgf*)       FCPP"-Mpreprocess"
+               FR8="-r8"
                ;;
-  *gfortran*)   FFLAGS+=" -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp"
+  *gfortran*)  FCPP="-cpp"
+               FR8="-fdefault-real-8 -fdefault-double-8"
+               FF77="-std=legacy"
                ;;
-  *ftn*)       FFLAGS+=" -sreal64 -eZ"
+  *ftn*)       FCPP="-eZ"
+               FR8="-sreal64"
                ;;
-  *armflang*)   FFLAGS+=" -r8 -cpp -std=legacy"
+  *armflang*)  FCPP="-cpp"
+               FR8="-r8"
+               FF77="-std=legacy"
                ;;
-  *ifort*)      FFLAGS+=" -r8 -fpconstant -fpp"
+  *ifort*)     FCPP="-fpp"
+               FR8="-r8 -fpconstant"
                ;;
-  *xlf*)        FFLAGS+=" -qfixed -qrealsize=8 -qdpc=e -qsuffix=cpp=f -qsuppress=cmpmsg"
-                PPPO="-WF,"
+  *xlf*)       FCPP="-qsuffix=cpp=f"
+               FR8="-qrealsize=8 -qdpc=e"
+               FF77="-qfixed"
+               PPPO="-WF,"
                ;;
   *)  echo "ERROR: Cannot find a supported compiler!"
       echo ""
@@ -373,12 +368,13 @@ GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
 export FC
+export FCPP
+export FR8
+export FF77
 export CC
 export NEK_WARN 
 export MPI
 export MPIO
-export FFLAGS
-export CFLAGS
 export UNDERSCORE
 export GSLIB_OPT
 export PARRSB_OPT
@@ -406,7 +402,7 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
--e "s:^FFLAGS[ ]*=.*:FFLAGS=$FFLAGS:" \
+-e "s:^FFLAGS[ ]*=.*:FFLAGS=$FCPP $FR8 $FF77 $FFLAGS:" \
 -e "s:^CFLAGS[ ]*=.*:CFLAGS=$CFLAGS:" \
 -e "s:^LDFLAGS[ ]*=.*:LDFLAGS=$LDFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
@@ -602,6 +598,9 @@ declare -a varlist=(
 "NEK_SOURCE_ROOT"
 "FC"
 "FFLAGS"
+"FCPP"
+"FR8"
+"FF77"
 "CC"
 "CFLAGS"
 "PPLIST"
