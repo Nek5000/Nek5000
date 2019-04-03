@@ -223,7 +223,7 @@ fi
 
 # assign FC compiler specific flags
 case $FCcomp in
-  *pgf*)       FCPP"-Mpreprocess"
+  *pgf*)       FCPP="-Mpreprocess"
                FR8="-r8"
                ;;
   *gfortran*)  FCPP="-cpp"
