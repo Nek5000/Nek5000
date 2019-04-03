@@ -35,7 +35,7 @@
 * Remove multimesh_create call from usr file (not required anymore)
 * Adjust calls to interpolation wrapper according to new interface in interp.f
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
-* Use amg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
+* Use nekamg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
 * Your parameters to the reserved user space param(170) - param(200) 
 * Set lelr in SIZE for a restart using muliple files (check value in hdr) 
 * Use planar_avg() instead of planar_average_z etc. 

@@ -3,7 +3,6 @@ INC = -I ./cgns/include
 LIBS = -L ./cgns/lib -lcgns
 
 OBJS = module_global.o write_re2_file.o read_cgns.o cgns2nek.o byte.o  
-#OBJS = t.o
 
 all: lib cgns2nek
 

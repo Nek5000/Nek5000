@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+VER=2.15.1
+CHKSUM=655cbb848f5805512bf24b8ca5d7e923a70151fa
+
+if [ "$1" == "clean" ]; then
+  rm -rf hypre lib include 2>/dev/null
+  exit 0
+fi
+
+if [ -f ./lib/libHYPRE.a ]; then
+  exit 0
+fi
+
+if [ ! -f v$VER.tar.gz ]; then
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/hypre/archive/v$VER.tar.gz 
+  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+  if [ $SUM != $CHKSUM ] ; then
+    echo 'Invalid checksum!'
+    rm -rf v$VER.tar.gz
+    exit 1
+  fi
+fi
+
+rm -rf hypre 2>/dev/null
+mkdir hypre
+
+tar -zxvf v$VER.tar.gz -C ./hypre --strip-components=1
+cd hypre
+mkdir -p build
+cd build
+
+set -x
+cmake \
+-DHYPRE_BIGINT=OFF \
+-DHYPRE_INSTALL_PREFIX=`pwd`/../.. \
+-DBUILD_SHARED_LIBS=OFF \
+-DHYPRE_SEQUENTIAL=ON \
+-DMPI_C_COMPILER=`which $CC` \
+-DHYPRE_USING_FEI=OFF \
+../src
+set +x
+
+make -j4 install

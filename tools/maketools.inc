@@ -156,6 +156,7 @@ if [ "$1" == "clean" ]; then
    for i in $LIST ; do
      make -C ./$i clean >/dev/null 2>&1
      rm -rf ./$i/build.log
+     rm -rf ../bin/$i
    done 
 else
    export DOALL=''
