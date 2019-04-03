@@ -140,7 +140,7 @@ nek5000: lib usrfile
 	echo -e "ERROR: Cannot find ${BINNAME}!"; \
 	echo -e ""; \
 	fi
-	@rm -f ${CASENAME}.o ${CASENAME}.f ${LIBNAME} drive.o *.i
+	@rm -f ${CASENAME}.o ${LIBNAME} drive.o *.i
 
 lib:	objdir $(NOBJS)
 	@printf "building ${LIBNAME} ... "
