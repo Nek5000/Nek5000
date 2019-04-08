@@ -1,0 +1,106 @@
+gmsh2nek
+convert gmsh .msh (version 2, 2D/3D ascii/binary mesh) to nek .re2 file
+
+notes about compilation
+
+1. before compilation of gmsh2nek
+in
+/Nek5000/tools/makefile
+
+add
+
+          if [ "$$i" == "gmsh2nek" ]; then       \
+             export FFLAGS+=" ${R8}" ;           \
+             if [ ! -z $(DOALL) ]; then          \
+                continue;                        \
+             fi ;                                \
+          fi ;                                   \
+
+to the end of exo2nek part.
+		  
+
+notes about usage
+
+1. for 3D mesh. For volume elements, only hex20/hex27 elements. 
+For surface elements, quad8/quad9 are need to assign boundaries/boundary conditions. 
+Physical tags (surface number) are needed for all surface elements to be dumped out by gmsh
+
+2. for 2D mesh. For surface elements, only quad8/quad9 elements.
+For line elements, line3 are need to assign boundaries/boundary conditions. 
+Physical tags (surface number) are needed for all line elements to be dumped out by gmsh
+
+3. for mesh dumping in gmsh
+make sure 'set order 2' are clicked
+make sure choose 'version 2' when exporting mesh.
+make sure uncheck 'Save all elements' when exporting mesh
+make sure msh file with .msh extension
+
+4. periodic boundary condition should be set during gmsh2nek converting
+only translation periodicity is allowed. 
+user should input translation vector.
+
+5. For non-periodic boundaries, boundary conditions should be set in nek .usr file
+Please in include the following subroutines in usrdat2()
+
+      do iel=1,nelv
+      do ifc=1,2*ndim
+        id_face = bc(5,ifc,iel,1)
+        if (id_face.eq.1) then        ! surface 1 for inlet 
+           cbc(ifc,iel,1) = 'v  '
+        elseif (id_face.eq.2) then    ! surface 2 for outlet
+           cbc(ifc,iel,1) = 'O  '
+        elseif (id_face.eq.3) then    ! surface 3 for wall
+           cbc(ifc,iel,1) = 'W  '
+        endif
+      enddo
+      enddo
+
+id_face is the physical tags assigned to surface elements.
+							 
+below is the update log from Author.							 
+! gmsh2nek
+! convert gmsh .msh file (3D, version 2, ascii format) to re2 file
+! 
+! trying to add periodicity setting when doing mesh converting.
+! and set boundary condition direct in 
+! casename.bc 
+! Haomin Yuan. 9/24/18
+!
+! updates: 
+! 1.
+! modified the boundary set up part. 
+! old scheme is very slow when element number gets large. 
+! old scheme is O(N^2)
+! new scheme is much faster.
+! new scheme store the information of node - > hex.
+! thus, for each quad, only need to search nearby hex to setup boundaries.
+! new scheme is O(N)
+!
+! 2.
+! optimize memory usage of arrays. in msh file, node number is greatly 
+! larger than quad and hex numbers. its array size for nodes is now
+! 10 times of array size of quad and hex.
+!
+! Haomin Yuan. 3/14/2019
+!
+! update:
+! use dynamic memory allocation and switch to Fortran f90.
+! Haomin Yuan. 3/18/2019
+!
+! update:
+! read version 2 binary msh file
+! Haomin Yuan. 3/20/2019
+!
+! update
+! add support of 2d mesh.
+! however, it seems gmsh does not guarantee generated 2d mesh 
+! follows right-hand rule. If blocks in gmsh is created with right
+! hand rule, then mesh is ok, but if not, then may need a conversion.
+! need a local detector to determine right hand or left hand.
+! Haomin Yuan 3/26/2019
+!
+! update
+! add setbc for 2d mesh
+! direct set boundary condition
+! and set periodic boundary condition.
+! Haomin Yuan 3/27/2019
