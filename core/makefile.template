@@ -155,7 +155,7 @@ lib:	objdir $(NOBJS)
 	@rm -f *.i
 
 clean:
-	@rm -rf ${LIBNAME} ${CASENAME}.f obj ${BINNAME}
+	@rm -rf ${LIBNAME}  ${CASENAME}.o ${CASENAME}.f obj ${BINNAME}
 
 $(NOBJS) : ./SIZE
 
