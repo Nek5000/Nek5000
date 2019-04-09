@@ -402,9 +402,9 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
--e "s:^FFLAGS[ ]*=.*:FFLAGS=$FCPP $FR8 $FF77 $FFLAGS:" \
--e "s:^CFLAGS[ ]*=.*:CFLAGS=$CFLAGS:" \
--e "s:^LDFLAGS[ ]*=.*:LDFLAGS=$LDFLAGS:" \
+-e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
+-e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
+-e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
 -e "s:^MXM[ ]*=.*:MXM=$MXM_USER:" \
