@@ -28,7 +28,8 @@ c
       parameter (toteq=1)              ! max number of conserved scalars in CMT
       parameter (nsessmax=1)           ! max sessions to NEKNEK
       parameter (lxo=lx1)              ! max GLL points on output (lxo>=lx1)
-      parameter (mxprev=20,lgmres=30)  ! max dim of projection & Krylov space
+      parameter (mxprev=20)            ! max dim of projection space
+      parameter (lgmres=30)            ! max dim Krylov space
       parameter (lorder=3)             ! max order in time
       parameter (lx1m=1)               ! GLL points mesh solver
       parameter (lfdm=0)               ! unused 
