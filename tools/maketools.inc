@@ -177,6 +177,9 @@ else
      if [ "$TOOL" == "exo2nek" ]; then
         export FFLAGS+=" ${R8}"
      fi
+     if [ "$TOOL" == "gmsh2nek" ]; then
+        export FFLAGS+=" ${R8}"
+     fi	 
      if [ "$TOOL" == "n2to3" ]; then 
         export FFLAGS+=" ${R8}"
      fi
