@@ -9,32 +9,33 @@ SUBROUTINE read_cgns
   !
   INTEGER(iprec) :: icelldim,iphysdim,b,z,phys_dim,s,max_vert,num_bc
   INTEGER(iprec) :: ier,c,i,j,k,cell_dim,elem_no,ngrids,Dset,l11,n,l1,l2,l3
-  INTEGER(iprec) :: ib,ie,ii,i1,i2,i3,i4,i5,i6,i7,i8,is,js,nb,jj
+  INTEGER(iprec) :: ib,ie,ii,i1,i2,i3,i4,i5,i6,i7,i8,is,js,nb,jj,nn
   INTEGER(iprec) :: gridlocation,elementconn,bc,DirichletFlag, NeumannFlag
   INTEGER(iprec) :: ifirstnode,nconns,connect_type,data_type,inc_2,axes
   INTEGER(iprec) :: fam,nfamilies,ngeo,nfambc,nnames,int_dir,perio,trans
-  INTEGER(iprec) :: thread, id
+  INTEGER(iprec) :: thread, id,sec_cnt
   INTEGER(iprec) :: index_coord,nzone,zone_type,index_section,parent
   INTEGER(iprec) :: NormalIndex(3),NormalDataType, ndataset,ptset_type,max_bc
   INTEGER(iprec) :: omp_get_thread_num,omp_get_num_threads,sum_f,nmax
-  INTEGER(iprec) :: iel,iv,nv,nel,vid,flag
+  INTEGER(iprec) :: iel,iv,nv,nel,vid,flag,bc_par(2)
   INTEGER(iprec),ALLOCATABLE :: npe(:),per_fam(:),j_used(:),sum_face(:)
 
   INTEGER(cgsize_t),PARAMETER :: min_v= 1
-  INTEGER(cgsize_t) :: max_v, elementdatas,nvert,num_vert
+  INTEGER(cgsize_t) :: max_v, elementdatas,nvert,num_vert,vrt(4)
   INTEGER(cgsize_t) :: nelem_s,nelem_e,normallistsize,ver_id(8),bnd_vert(4)
   INTEGER(cgsize_t),ALLOCATABLE :: npnts(:),tmp_e(:),tmp_pa(:), isize(:,:),per_val(:,:)
-  INTEGER(cgsize_t),ALLOCATABLE :: volnodes(:,:)
+  INTEGER(cgsize_t),ALLOCATABLE :: volnodes(:,:),num_point(:,:)
   INTEGER(cgsize_t),ALLOCATABLE :: bound_elem(:),bc_vert(:)
   !
-  REAL(high),PARAMETER :: eps=1.d-6
+  REAL(high),PARAMETER :: eps=1.d-5,PI = 3.14159265358979
   REAL(high) :: diff,diffx,diffy, diffz,grad,displace,t1,t2,ta(2),time
+  REAL(high) :: n1(4,3),n2(4,3),nmean(2,3),ax,ay,az,bx,by,bz,dist(2,3),tri(5,3)
+  REAL(high) :: rot_angle,rot_axe,uabs,vabs,udotv,cosn,beta,radius,rot_dir
   !
   CHARACTER(32),ALLOCATABLE :: familyname(:)
-  CHARACTER(1) :: dir
+  CHARACTER(100) :: dir
   CHARACTER(32) :: degree_
   !
-  perio = 0
 
   CALL cg_get_file_type_f(ifile,s,ier)
   IF (s /= CG_FILE_ADF) THEN
@@ -42,7 +43,7 @@ SUBROUTINE read_cgns
      WRITE(6,*) ' ADF file format required!'
      CALL cg_error_exit_f
   ENDIF
- 
+
   CALL cg_nbases_f(ifile,nbases,ier)
   IF (nbases /= 1) THEN
      WRITE(6,'('' Number of base nodes = '',i5)') nbases
@@ -55,19 +56,19 @@ SUBROUTINE read_cgns
      !
      CALL cg_nzones_f (ifile,b,nzones,ier)
      CALL cg_base_read_f(ifile, b, basename, cell_dim, phys_dim, ier)
-  !
-  IF (nzones == 0) THEN
-     WRITE(6,'('' Number of zones = '',i5)') nzones
-     WRITE(6,*)
-     WRITE(6,*) ' No support for more than one zone!'
-     CALL cg_error_exit_f
-  ENDIF
-  !
-  IF (cell_dim /= 3 .OR. phys_dim /= 3 ) THEN
-     WRITE(6,*)
-     WRITE(6,*) ' 3-dim mesh required!'
-     CALL cg_error_exit_f
-  ENDIF
+     !
+     IF (nzones == 0) THEN
+        WRITE(6,'('' Number of zones = '',i5)') nzones
+        WRITE(6,*)
+        WRITE(6,*) ' No support for more than one zone!'
+        CALL cg_error_exit_f
+     ENDIF
+     !
+     IF (cell_dim /= 3 .OR. phys_dim /= 3 ) THEN
+        WRITE(6,*)
+        WRITE(6,*) ' 3-dim mesh required!'
+        CALL cg_error_exit_f
+     ENDIF
      !
      ALLOCATE (zonetype(nzones))
      ALLOCATE (index_dim(nzones))
@@ -101,6 +102,7 @@ SUBROUTINE read_cgns
         ALLOCATE (sectype(nsections))
         ALLOCATE (npe(nsections))
         ALLOCATE (elementdatasize(nsections))
+        ALLOCATE (num_point(nsections,2))
 
         nelem_start = 0
         nelem_end = 0
@@ -126,13 +128,13 @@ SUBROUTINE read_cgns
 
            WRITE(6,*) s, ' Element type ', ElementTypeName(sectype(s))
            IF (sectype(s) /= HEXA_8  .AND. &
-               sectype(s) /= HEXA_20 .AND. &
-               sectype(s) /= HEXA_27 .AND. &
-               sectype(s) /= QUAD_4  .AND. &
-               sectype(s) /= QUAD_8  .AND. &
-               sectype(s) /= QUAD_9) THEN 
-               WRITE(6,*) ' Skipping unsupported element type! ', ElementTypeName(sectype(s))
-               CYCLE
+                sectype(s) /= HEXA_20 .AND. &
+                sectype(s) /= HEXA_27 .AND. &
+                sectype(s) /= QUAD_4  .AND. &
+                sectype(s) /= QUAD_8  .AND. &
+                sectype(s) /= QUAD_9) THEN 
+              WRITE(6,*) ' Skipping unsupported element type! ', ElementTypeName(sectype(s))
+              CYCLE
            ENDIF
 
            CALL cg_npe_f(sectype(s),npe(s),ier)
@@ -289,7 +291,7 @@ SUBROUTINE read_cgns
         !
         !
         DO iel = 1,max_vert
-           IF (bc_vert(iel) > 4 ) flag = 1 
+           IF (bc_vert(iel) > 6 ) flag = 1 
         ENDDO
         !
         IF (flag == 1) THEN
@@ -323,7 +325,7 @@ SUBROUTINE read_cgns
            !
         ENDIF
         !
-        DEALLOCATE (bc_vert,bound_elem)
+        DEALLOCATE (bc_vert)
         !
         ALLOCATE (xf(max_elem,6))
         ALLOCATE (yf(max_elem,6))
@@ -388,6 +390,7 @@ SUBROUTINE read_cgns
         ALLOCATE (bc_fam(nb))
         !
         ib= 0
+        sec_cnt = 0
         !
         DO ii= 1,nsections
            !
@@ -395,13 +398,18 @@ SUBROUTINE read_cgns
            !
            IF (sectype(ii) == QUAD_4) THEN
               inc_2= 4
+              sec_cnt = sec_cnt +1
            ELSEIF (sectype(ii) == QUAD_8) THEN
               inc_2= 8
+              sec_cnt = sec_cnt +1
            ELSEIF (sectype(ii) == QUAD_9) THEN
               inc_2= 9
+              sec_cnt = sec_cnt +1
            ELSE
               CYCLE
            ENDIF
+           !
+           num_point(sec_cnt,1) = ib+1
            !
            DO j= nelem_start(ii),nelem_end(ii)
               i1= elements(ii,jj)
@@ -416,6 +424,7 @@ SUBROUTINE read_cgns
               bc_fam(ib) = ii-1 
               jj = jj+inc_2
            ENDDO
+           num_point(sec_cnt,2) = ib
         ENDDO
         !
         ib = 0
@@ -434,9 +443,9 @@ SUBROUTINE read_cgns
            !
         ENDIF
         !
-        ! Compare face coordinates to determine all boundary conditions
-        !
         ALLOCATE (j_used(nb))
+        ALLOCATE (sum_face(nb))
+        sum_face = 0
         j_used=0
         !
         WRITE(6,*) 
@@ -444,8 +453,7 @@ SUBROUTINE read_cgns
         WRITE(6,*) ' Number of boundary face elements = ',nb
         WRITE(6,*)
         !
-        ALLOCATE (sum_face(nb))
-        sum_face = 0
+        ! Compare face coordinates to determine all boundary conditions
         !
         !$OMP parallel 
         !$OMP do
@@ -483,104 +491,235 @@ SUBROUTINE read_cgns
         DO bc=1,nbocos
            l1 = INDEX (boconame(bc), ' ') - 1
            WRITE(6,100) 'ID = ', bc, 'name: ', boconame(bc)
- 100       FORMAT (2x,a6,i3,2x,a6,a18)
+100        FORMAT (2x,a6,i3,2x,a6,a18)
         ENDDO
         !
         ier = 0
+        perio = 0
         WRITE(6,*)
- 150    WRITE(6,'('' Specify number of periodic boundary face pairs: '')', ADVANCE = "NO")
-        READ(5,'(i1)', IOSTAT = ier) perio
+150     WRITE(6,'('' Enter number of periodic boundary face pairs: '')', ADVANCE = "NO")
+        READ(5,'(a)', IOSTAT = ier) dir
+        dir = ADJUSTL (dir)
+        l1 = INDEX(dir,' ')+1
+        l2 = LEN_TRIM(dir)
+        READ(dir(1:l1),*) perio 
+
         IF (ier /= 0) GOTO 150
         !
         DO n=1,perio
            !
-           diffx=0.
-           diffy=0.
-           diffz=0.
            sum_face = 0
            !
-           WRITE(6,'('' Type in periodic pair ID: '')', ADVANCE = "NO")
-           READ(5,'(a)') dir 
-           READ(dir(1:1),*) per_fam(n)
+           WRITE(6,*)
+120        WRITE(6,'('' Specify the two IDs defining the periodic pair: '')', ADVANCE = "NO")
+           WRITE(6,*)
+           READ(5,'(a)') dir
+           dir = ADJUSTL (dir)
+           l1 = INDEX(dir,' ')+1
+           l2 = LEN_TRIM(dir)
+
+           READ(dir(1:l1),*) bc_par(1)
+           READ(dir(l1:l2),*) bc_par(2) 
            !
-           !WRITE(6,'('' Type in if : translational=0 or rotational=1 '')')
-           !READ(5,'(a)') dir 
-           !READ(dir(1:1),*) int_dir
-           int_dir = 0
+           ! Check if number of element faces are equal
            !
-           IF (int_dir == 1) THEN
-              !
- 200          WRITE(6,'('' Type in rotation axis (x=1/y=2/z=3): '')', ADVANCE = "NO")
-              READ(5,'(a)') dir 
-              READ(dir(1:1),*) axes
-              IF (trans < 1 .OR. trans > 3) GOTO 200
-              !
-              WRITE(6,'('' Type in rotation angle in degrees: '')', ADVANCE = "NO")
-              READ(5,'(a)') degree_
-              l11 = INDEX (degree_, ' ') - 1
-              READ(degree_(1:l11),*) grad
-           ELSE
-              !
- 201           WRITE(6,'('' Type in translational direction (x=1/y=2/z=3): '')', ADVANCE = "NO")
-              READ(5,'(a)') dir 
-              READ(dir(1:1),*) trans
-              IF (trans < 1 .OR. trans > 3) GOTO 201
-              !
-              WRITE(6,'('' Type in translational displacement '')', ADVANCE = "NO")
-              READ(5,'(a)') degree_
-              l11 = INDEX (degree_, ' ') - 1
-              READ(degree_(1:l11),*) displace
-              !
-              IF (trans == 1) THEN
-                 diffx = displace
-              ELSEIF (trans == 2) THEN
-                 diffy = displace
-              ELSEIF (trans == 3) THEN
-                 diffz = displace
-              ENDIF
-              !
+           l1 = num_point(bc_par(1),2)-num_point(bc_par(1),1)+1
+           l2 = num_point(bc_par(2),2)-num_point(bc_par(2),1)+1
+           !
+           IF (l1/=l2) THEN
+              WRITE(6,*) 
+              WRITE(6,*) '  Number of element faces are not equal: ',l1,l2
+              WRITE(6,*) 
+              GOTO 120
            ENDIF
            !
-           !$OMP parallel do
+           ! Find translation vector 
            !
-           DO i= 1,nb 
-              per_loop: DO j= 1,nb
-                 IF (i == j) CYCLE
-                 diff=ABS(xb(i)+diffx-xb(j))+ ABS(yb(i)+diffy-yb(j))+ ABS(zb(i)+diffz-zb(j))
-                 IF (diff < eps ) THEN
-                    ii = per_val(i,1)
-                    is = per_val(i,2)
-                    jj = per_val(j,1)
-                    js = per_val(j,2)
-                    vel_val (ii,is,1) = per_val(j,1)
-                    vel_val (ii,is,2) = per_val(j,2)
-                    vel_val (jj,js,1) = per_val(i,1)
-                    vel_val (jj,js,2) = per_val(i,2)
-                    vel_val (ii,is,3:4) = 0.
-                    vel_val (jj,js,3:4) = 0.
-                    vel_type(ii,is) = 'P  '
-                    vel_type(jj,js) = 'P  '
-                    !
-                    sum_face(j) = 2
-                    EXIT per_loop
-                 ENDIF
-              ENDDO per_loop
+           trans = 0
+           diffx = 0.
+           diffy = 0.
+           diffz = 0.
+           nmean = 0.
+           dist = 0.
+           !
+           per_loop: DO j=1,2
               !
-           ENDDO
+              i1 = num_point(bc_par(j),1)
+              i2 = num_point(bc_par(j),2)
+              nn = 0
+              !
+              DO iel = 1,inc_2*l1,inc_2
+                 !
+                 nn = nn +1
+                 vrt(1:4) = elements(1+bc_par(j),iel:iel+3)
+                 !
+                 CALL norm_triangle (n1,tri,vrt)
+                 !
+                 nmean(j,1)= nmean(j,1) +0.25*(n1(1,1)+n1(2,1)+n1(3,1)+n1(4,1))
+                 nmean(j,2)= nmean(j,2) +0.25*(n1(1,2)+n1(2,2)+n1(3,2)+n1(4,2))
+                 nmean(j,3)= nmean(j,3) +0.25*(n1(1,3)+n1(2,3)+n1(3,3)+n1(4,3))
+                 !
+                 dist(j,1) = dist(j,1) +tri(5,1)
+                 dist(j,2) = dist(j,2) +tri(5,2)
+                 dist(j,3) = dist(j,3) +tri(5,3)
+                 !
+              ENDDO
+              !
+              nmean(j,:)= nmean(j,:)/nn
+              dist(j,:) = dist(j,:)/nn
+              !
+           ENDDO per_loop
            !
-           !$OMP end parallel do
+           ! check if they are translational periodic planes
            !
-           sum_f = SUM(sum_face)
-           !
-           ii = per_fam(n)+1
-           IF (sum_f < nelem_end(ii)-nelem_start(ii)+1) THEN
+           IF ( ABS(nmean(1,1))-ABS(nmean(2,1)) < eps .AND. ABS(nmean(1,2))-ABS(nmean(2,2)) < eps &
+                .AND. ABS(nmean(1,3))-ABS(nmean(2,3)) < eps) THEN
+              int_dir = 0
+              diffx = dist(2,1)-dist(1,1)
+              diffy = dist(2,2)-dist(1,2)
+              diffz = dist(2,3)-dist(1,3)
+              !
+              !
+              ! Check if they are rotational periodic planes
+              !
+           ELSEIF ( ABS(nmean(1,1)-nmean(2,1)) > eps .AND. ABS(nmean(1,2)-nmean(2,2)) > eps &
+                .AND. nmean(1,3)-nmean(2,3) < eps) THEN
+              int_dir = 1
+              rot_axe = 3 
+              rot_dir = nmean(1,1)*nmean(2,2)-nmean(1,2)*nmean(2,1)
+              udotv = nmean(1,1)*nmean(2,1)+nmean(1,2)*nmean(2,2)
+              uabs  = SQRT(nmean(1,1)*nmean(1,1)+nmean(1,2)*nmean(1,2))
+              vabs  = SQRT(nmean(2,1)*nmean(2,1)+nmean(2,2)*nmean(2,2))
+              cosn  = ACOS(udotv/(uabs*vabs))
+              beta = PI-cosn
+           ELSEIF ( ABS(nmean(1,1)-nmean(2,1)) > eps .AND. ABS(nmean(1,2)-nmean(2,2)) < eps &
+                .AND. ABS(nmean(1,3)-nmean(2,3)) > eps) THEN
+              int_dir = 1
+              rot_axe = 2 
+              rot_dir = nmean(1,3)*nmean(2,1)-nmean(1,1)*nmean(2,3)
+              udotv = nmean(1,1)*nmean(2,1)+nmean(1,3)*nmean(2,3)
+              uabs  = SQRT(nmean(1,1)*nmean(1,1)+nmean(1,3)*nmean(1,3))
+              vabs  = SQRT(nmean(2,1)*nmean(2,1)+nmean(2,3)*nmean(2,3))
+              cosn  = ACOS(udotv/(uabs*vabs))
+              beta = PI-cosn
+
+           ELSEIF ( ABS(nmean(1,1)-nmean(2,1)) < eps .AND. ABS(nmean(1,2)-nmean(2,2)) > eps &
+                .AND. ABS(nmean(1,3)-nmean(2,3)) > eps) THEN
+              int_dir = 1
+              rot_axe = 1 
+              rot_dir = nmean(1,3)*nmean(2,2)-nmean(1,3)*nmean(2,1)
+              udotv = nmean(1,3)*nmean(2,3)+nmean(1,2)*nmean(2,2)
+              uabs  = SQRT(nmean(1,3)*nmean(1,3)+nmean(1,2)*nmean(1,2))
+              vabs  = SQRT(nmean(2,3)*nmean(2,3)+nmean(2,2)*nmean(2,2))
+              cosn  = ACOS(udotv/(uabs*vabs))
+              beta = PI-cosn
+           ELSE
               WRITE(6,*) 
-              WRITE(6,*) '      NOT enough periodic elements found !!! in BC = ',ii
+              WRITE(6,*) '      No periodic bcs  found !!! '
               CALL cgnstonek_exit('       ')
            ENDIF
            !
-        ENDDO
+           IF (int_dir == 0) THEN
+              !
+              !$OMP parallel do
+              !
+              DO i=num_point(bc_par(1),1),num_point(bc_par(1),2)
+                 tra_loop: DO j= num_point(bc_par(2),1),num_point(bc_par(2),2)
+                    diff=ABS(xb(i)+diffx-xb(j))+ ABS(yb(i)+diffy-yb(j))+ ABS(zb(i)+diffz-zb(j))
+                    IF (diff < eps ) THEN
+                       ii = per_val(i,1)
+                       is = per_val(i,2)
+                       jj = per_val(j,1)
+                       js = per_val(j,2)
+                       vel_val (ii,is,1) = per_val(j,1)
+                       vel_val (ii,is,2) = per_val(j,2)
+                       vel_val (jj,js,1) = per_val(i,1)
+                       vel_val (jj,js,2) = per_val(i,2)
+                       vel_val (ii,is,3:4) = 0.
+                       vel_val (jj,js,3:4) = 0.
+                       vel_type(ii,is) = 'P  '
+                       vel_type(jj,js) = 'P  '
+                       !
+                       sum_face(j) = 1
+                       EXIT tra_loop
+                    ENDIF
+                 ENDDO tra_loop
+                 !
+              ENDDO
+              !
+              !$OMP end parallel do
+              !
+              sum_f = SUM(sum_face)
+              !
+              ii = per_fam(n)+1
+              !
+              IF (sum_f < nelem_end(1+bc_par(1))-nelem_start(1+bc_par(1))+1) THEN
+                 WRITE(6,*) 
+                 WRITE(6,*) '      NOT enough periodic elements found !!! in BC = ',ii
+                 CALL cgnstonek_exit('       ')
+              ENDIF
+              !
+           ELSEIF (int_dir == 1) THEN
+              !
+              !$OMP parallel do
+              !
+              DO i=num_point(bc_par(1),1),num_point(bc_par(1),2)
+                 IF (rot_axe == 1) THEN
+                    radius = SQRT(yb(i)**2 +zb(i)**2)
+                    diffx = 0.
+                    diffy = radius*(1.-COS(beta))*SIGN(dble(1.),rot_dir)
+                    diffz = -radius*SIN(beta)*SIGN(dble(1.),rot_dir)
+                 ELSEIF (rot_axe == 2) THEN
+                    radius = SQRT(xb(i)**2 +zb(i)**2)
+                    diffx = radius*(1.-COS(beta))*SIGN(dble(1.),rot_dir)
+                    diffy = 0.
+                    diffz = -radius*SIN(beta)*SIGN(dble(1.),rot_dir)
+                 ELSEIF (rot_axe == 3) THEN
+                    radius = SQRT(xb(i)**2 +yb(i)**2)
+                    diffx = radius*(1.-COS(beta))*SIGN(dble(1.),rot_dir)
+                    diffy = -radius*SIN(beta)*SIGN(dble(1.),rot_dir)
+                    diffz = 0.
+                 ENDIF
+
+                 rot_loop: DO j= num_point(bc_par(2),1),num_point(bc_par(2),2)
+                    diff=ABS(xb(i)+diffx-xb(j))+ ABS(yb(i)+diffy-yb(j))+ ABS(zb(i)+diffz-zb(j))
+                    IF (diff < eps ) THEN
+                       ii = per_val(i,1)
+                       is = per_val(i,2)
+                       jj = per_val(j,1)
+                       js = per_val(j,2)
+                       vel_val (ii,is,1) = per_val(j,1)
+                       vel_val (ii,is,2) = per_val(j,2)
+                       vel_val (jj,js,1) = per_val(i,1)
+                       vel_val (jj,js,2) = per_val(i,2)
+                       vel_val (ii,is,3:4) = 0.
+                       vel_val (jj,js,3:4) = 0.
+                       vel_type(ii,is) = 'P  '
+                       vel_type(jj,js) = 'P  '
+                       !
+                       sum_face(j) = 1
+                       EXIT rot_loop
+                    ENDIF
+                 ENDDO rot_loop
+                 !
+              ENDDO
+              !
+              !$OMP end parallel do
+              !
+              sum_f = SUM(sum_face)
+              !
+              ii = per_fam(n)+1
+              !
+              IF (sum_f < nelem_end(bc_par(1))-nelem_start(bc_par(1))+1) THEN
+                 WRITE(6,*)
+                 WRITE(6,*) '      NOT enough periodic elements found !!! in BC = ',ii
+                 CALL cgnstonek_exit('       ')
+              ENDIF
+
+           ENDIF
            !
+        ENDDO
+        !
         DEALLOCATE (xb)
         DEALLOCATE (yb)
         DEALLOCATE (zb)
@@ -597,3 +736,83 @@ SUBROUTINE read_cgns
   RETURN
   !
 END SUBROUTINE read_cgns
+!
+SUBROUTINE norm_triangle (n1,tri,vrt)
+  !
+  !  Calculate the normal vectors of triangles
+  !
+  USE CGNS
+  USE module_global
+  !
+  IMPLICIT NONE
+
+  INTEGER(cgsize_t) :: i,vrt(4)
+  !
+  REAL(high) :: ax,ay,az,bx,by,bz
+  REAL(high) :: tri(5,3),n1(4,3)
+  !
+  DO i=1,4
+     tri(i,1) = xv(vrt(i))
+     tri(i,2) = yv(vrt(i))
+     tri(i,3) = zv(vrt(i))
+  ENDDO
+  !
+  !  center point of the plane
+  !
+  tri(5,1) = 0.25*(xv(vrt(1)) +xv(vrt(2)) +xv(vrt(3)) +xv(vrt(4)))
+  tri(5,2) = 0.25*(yv(vrt(1)) +yv(vrt(2)) +yv(vrt(3)) +yv(vrt(4)))
+  tri(5,3) = 0.25*(zv(vrt(1)) +zv(vrt(2)) +zv(vrt(3)) +zv(vrt(4)))
+  !
+  ! Normalvector of plane 1 computed on 4 subtriangles
+  !
+  ax = tri(2,1)-tri(1,1)
+  ay = tri(2,2)-tri(1,2)
+  az = tri(2,3)-tri(1,3)
+  !
+  bx = tri(5,1)-tri(1,1)
+  by = tri(5,2)-tri(1,2)
+  bz = tri(5,3)-tri(1,3)
+  !
+  n1(1,1)= ay*bz - az*by
+  n1(1,2)= az*bx - ax*bz
+  n1(1,3)= ax*by - ay*bx
+  !
+  ax = tri(3,1)-tri(2,1)
+  ay = tri(3,2)-tri(2,2)
+  az = tri(3,3)-tri(2,3)
+  !
+  bx = tri(5,1)-tri(2,1)
+  by = tri(5,2)-tri(2,2)
+  bz = tri(5,3)-tri(2,3)
+  !
+  n1(2,1)= ay*bz - az*by
+  n1(2,2)= az*bx - ax*bz
+  n1(2,3)= ax*by - ay*bx
+  !
+  ax = tri(4,1)-tri(3,1)
+  ay = tri(4,2)-tri(3,2)
+  az = tri(4,3)-tri(3,3)
+  !
+  bx = tri(5,1)-tri(3,1)
+  by = tri(5,2)-tri(3,2)
+  bz = tri(5,3)-tri(3,3)
+  !
+  n1(3,1)= ay*bz - az*by
+  n1(3,2)= az*bx - ax*bz
+  n1(3,3)= ax*by - ay*bx
+  !
+  ax = tri(1,1)-tri(4,1)
+  ay = tri(1,2)-tri(4,2)
+  az = tri(1,3)-tri(4,3)
+  !
+  bx = tri(5,1)-tri(4,1)
+  by = tri(5,2)-tri(4,2)
+  bz = tri(5,3)-tri(4,3)
+  !
+  n1(4,1)= ay*bz - az*by
+  n1(4,2)= az*bx - ax*bz
+  n1(4,3)= ax*by - ay*bx
+  !
+  RETURN
+  !
+END SUBROUTINE norm_triangle

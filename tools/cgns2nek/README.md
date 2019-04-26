@@ -5,7 +5,7 @@ Reads a CGNS file and generates a .re2 file
 * Boundary IDs are stored in the 5th argument of the fluid bc array in re2
 * The real BC's have to be specified in the .usr file using the boundaryID
 
-Current Limitations
+Limitations
 -------------------
 * Single zone 3D unstructured grid CGNS file using ADF
-* Periodic boundary faces are aligned with global coordinate system and match 1:1
+* A periodic boundary face pair has to match 1:1 
