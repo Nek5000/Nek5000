@@ -12,7 +12,7 @@ function build_3rdparty() {
   set -o pipefail
 
   cd $SOURCE_ROOT_BLAS
-  FFLAGS="-O2 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   cd $SOURCE_ROOT_GSLIB

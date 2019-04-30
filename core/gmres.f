@@ -341,6 +341,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       etime1 = dnekclock()
       etime_p = 0.
       divex = 0.
+      maxit = iter
       iter  = 0
       m     = lgmres
 
@@ -363,7 +364,8 @@ c
       call rzero(x_gmres,n)
 
       outer = 0
-      do while (iconv.eq.0.and.iter.lt.500)
+      do while (iconv.eq.0)
+
          outer = outer+1
 
          if(iter.eq.0) then                   !      -1
@@ -495,6 +497,7 @@ c           enddo
    66       format(i5,1p4e12.5,i8,' Divergence')
 
 #ifndef FIXITER
+            if (iter+1.gt.maxit) goto 900
             if (rnorm .lt. tolpss) goto 900  !converged
 #else
             if (iter.gt.param(151)-1) goto 900

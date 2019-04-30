@@ -638,12 +638,22 @@ c
       common /iterhm/ niterhm
       character*4 name
 c
-      if (ifsplit.and.name.eq.'PRES'.and.param(42).eq.0) then
-         n = lx1*ly1*lz1*nelv
-         call copy      (x,f,n)
-         call hmh_gmres (x,h1,h2,mult,iter)
-         niterhm = iter
-         return
+      if (ifsplit.and.name.eq.'PRES') then
+         if (param(42).eq.0) then
+           n = lx1*ly1*lz1*nelv
+           call copy      (x,f,n)
+           iter = maxit
+           call hmh_gmres (x,h1,h2,mult,iter)
+           niterhm = iter
+           return
+         elseif(param(42).eq.2) then 
+           n = lx1*ly1*lz1*nelv
+           call copy       (x,f,n)
+           iter = maxit
+           call hmh_flex_cg(x,h1,h2,mult,iter)
+           niterhm = iter
+           return
+         endif
       endif
 
 c **  zero out stuff for Lanczos eigenvalue estimator
@@ -2139,6 +2149,125 @@ c             Normally, we'd store this as a 2-vector: uf(2,...)
          call gradrta(au(1,1,1,e),qr,qs,qt        ! NOTE FIX in gradr()! 3D!
      $      ,dxtm1,dym1,dzm1,lx1,ly1,lz1,if3d)
       enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hmh_flex_cg(res,h1,h2,wt,iter)
+
+c     Solve the Helmholtz equation by right-preconditioned 
+c     GMRES iteration.
+
+     
+      include 'SIZE'
+      include 'TOTAL'
+      include 'FDMH1'
+      include 'GMRES'
+      common  /ctolpr/ divex
+      common  /cprint/ ifprint
+      logical          ifprint
+      real             res  (lx1*ly1*lz1*lelv)
+      real             h1   (lx1,ly1,lz1,lelv)
+      real             h2   (lx1,ly1,lz1,lelv)
+      real             wt   (lx1,ly1,lz1,lelv)
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrcg/ r(lt),z(lt),p(lt),w(lt)
+      common /scrmg/ r1(lt)
+
+      common /cgmres1/ y(lgmres)
+      common /ctmp0/   wk1(lgmres),wk2(lgmres)
+      real alpha, l, temp
+      integer outer
+
+      logical iflag,if_hyb
+      save    iflag,if_hyb
+c     data    iflag,if_hyb  /.false. , .true. /
+      data    iflag,if_hyb  /.false. , .false. /
+      real    norm_fac
+      save    norm_fac
+
+      real*8 etime1,dnekclock
+
+      n = lx1*ly1*lz1*nelv
+
+            div0 = gamma_gmres(1)*norm_fac
+
+      etime1 = dnekclock()
+      etime_p = 0.
+      divex = 0.
+      maxit = iter
+      iter  = 0
+
+
+      call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
+      if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
+     $   tolps = abs(param(21))
+      if (istep.eq.0) tolps = 1.e-4
+      tolpss = tolps
+
+      iconv = 0
+      call copy (r,res,n)    ! Residual
+      call rzero(r1 ,n)      ! Lagged residual for flexible CG
+      call rzero(p,n)        ! Search direction
+      call rzero(res,n)      ! Solution vector
+      rho1 = 1
+                                               !            ______
+      div0  = sqrt(glsc3(r,wt,r,n)/volvm1) ! gamma  = \/ (r,r) 
+
+      if (param(21).lt.0) tolpss=abs(param(21))*div0
+
+
+      do k=1,maxit
+
+         if (param(40).ge.0 .and. param(40).le.2) then
+            call h1mg_solve(z,r,if_hyb) ! z  = M   w
+         else if (param(40).eq.3) then
+            call fem_amg_solve(z,r)
+         endif
+
+         call sub2(r1,r,n)
+         rho0 = rho1
+         rho1 =  glsc3(z,wt,r,n)   ! Inner product weighted by multiplicity
+         rho2 = -glsc3(z,wt,r1,n)  ! Inner product weighted by multiplicity
+         beta = rho2/rho0          ! Flexible GMRES
+
+         call copy(r1,r,n)         ! Save prior residual
+         call add2s1(p,z,beta,n)
+
+         call ax(w,p,h1,h2,n)      ! w = A p
+         den = glsc3(w,wt,p,n)
+         alpha = rho1/den
+         rnorm = 0.0
+         do i = 1,n
+            res(i) = res(i) + alpha*p(i)
+            r(i)   = r(i)   - alpha*w(i)
+            rnorm  = rnorm  + r(i)*r(i)*wt(i,1,1,1)
+         enddo
+         call gop(rnorm,temp,'+  ',1)
+
+c         rnorm = sqrt(glsc3(r,wt,r,n)/volvm1) ! gamma  = \/ (r,r) 
+         rnorm = sqrt(rnorm/volvm1) ! gamma  = \/ (r,r) 
+         ratio = rnorm/div0
+
+         iter=iter+1
+         if (ifprint.and.nio.eq.0) 
+     $         write (6,66) iter,tolpss,rnorm,div0,ratio,istep
+   66    format(i5,1p4e12.5,i8,' Divergence')
+
+         if (rnorm .lt. tolpss) goto 900  !converged
+
+      enddo
+
+  900 iconv = 1
+      divex = rnorm
+      call ortho   (res) ! Orthogonalize wrt null space, if present
+      etime1 = dnekclock()-etime1
+      if (nio.eq.0) write(6,9999) istep,iter,divex,div0,tolpss,etime_p,
+     &                            etime1,if_hyb
+ 9999 format(4x,i7,'  PRES cgflex',4x,i5,1p5e13.4,1x,l4)
+
+      if (outer.le.2) if_hyb = .false.
 
       return
       end
