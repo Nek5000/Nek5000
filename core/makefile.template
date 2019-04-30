@@ -75,10 +75,10 @@ else
    filters_cmt.o diagnostics.o artvisc.o
 endif
 
-DUMMY:= $(shell cp $S/PARALLEL_ $S/PARALLEL)
+DUMMY:= $(shell cp $S/PARALLEL.default $S/PARALLEL)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
-	DUMMY:= $(shell cd $S; patch < PARALLEL.patch)
+ 	DUMMY:= $(shell cp $S/PARALLEL.dprocmap $S/PARALLEL)
 endif
 
 ifneq ($(VISIT),0)
