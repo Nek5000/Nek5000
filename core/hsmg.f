@@ -2292,6 +2292,7 @@ c     if (np.eq.1)        param(82)=2  ! single proc. too slow
 c     mg_h1_lmax = 4
       if (lx1.eq.4) mg_h1_lmax = 2
 c     if (param(79).ne.0) mg_h1_lmax = param(79)
+      mg_lmax = mg_h1_lmax
       mglx1    = p82-1 !1
       mg_nx(1) = mglx1
       mg_ny(1) = mglx1
