@@ -117,6 +117,8 @@ cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 
 ################################################################################
+.PHONY: all clean
+
 all : nek5000
 
 objdir: 

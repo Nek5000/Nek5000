@@ -78,7 +78,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "Options and arguments:"
   echo "  <casename>    name of usr file without extension"
   echo "  clean         cleanup build environment"
-  echo "  -nodep        don't build dependencies"
+  echo "  -build-dep    build dependencies"
   echo ""
   echo "PPLIST config options:" 
   echo "  NOMPIIO       disable MPI-IO"
@@ -92,9 +92,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   return 11
 fi
 
-echo "using source path: $NEK_SOURCE_ROOT"
-
-if [ "$VERMAKENEK" != "19.0.0" ]; then
+if [ "$VERMAKENEK" != "19.0.1" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped the source"
   return 11
@@ -121,15 +119,8 @@ export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
 export SOURCE_ROOT_HYPRE
 
-if [ "$1" == "-nodep" ]; then
-  NODEP=1
-  nargs=0
-fi 
-if [ "$2" == "-nodep" ]; then
-  NODEP=1
-fi 
-
-if [ "$1" == "3rdparty" ]; then
+NODEP=1
+if [ "$1" == "-build-dep" ]; then
   ONLYDEP=1
   nargs=0
 fi 
@@ -152,8 +143,6 @@ if [[ $1 = "clean" ]]; then
   rm -rf .state
   return 0
 fi
-
-echo "setup build environment"
 
 #if [ -f makefile ] && [ $ONLYDEP -ne 1 ]; then
 #  while true; do
@@ -397,6 +386,11 @@ if [ $nargs -eq 0 ]; then
    fi
 fi
 
+if [ ! -f ${CASENAME}'.usr' ]; then
+   echo "FATAL ERROR: Cannot find $1.usr!"
+   return 11
+fi
+
 printf "generating makefile ... "
 rm -rf makefile 2>/dev/null
 
@@ -489,11 +483,6 @@ else
   return 1 
 fi
 \rm .makefile 2>/dev/null
-
-if [ ! -f ${CASENAME}'.usr' ]; then
-   echo "FATAL ERROR: Cannot find $1.usr!"
-   return 11
-fi
 
 # tweak SIZE file
 if [ -f SIZEu ]; then

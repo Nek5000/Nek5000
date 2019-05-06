@@ -49,9 +49,13 @@ set -a
 # DONT'T TOUCH WHAT FOLLOWS !!!
 ###############################################################################
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
-VERMAKENEK="19.0.0"
+echo "using source path: $NEK_SOURCE_ROOT"
+VERMAKENEK="19.0.1"
 set +a -e
 $NEK_SOURCE_ROOT/bin/nekconfig $@
-set -o pipefail
-make -j4 2>&1 | tee -a build.log
-set +o pipefail
+if [[ $1 != "clean" ]]; then
+ $NEK_SOURCE_ROOT/bin/nekconfig -build-dep
+ set -o pipefail
+ make -j4 2>&1 | tee -a build.log
+ set +o pipefail
+fi
