@@ -54,7 +54,7 @@ c-----------------------------------------------------------------------
             call blank(path_mult(0)   ,132)
             call chcopy(path_mult(0), path_in, l)
          else
-           write(6,*) 'Reading session file ...'
+           !write(6,*) 'Reading session file ...'
            open (unit=8,file='SESSION.NAME',status='old',err=24)
  21        read (8,*,END=22)
            nlin = nlin + 1 
@@ -72,7 +72,8 @@ c-----------------------------------------------------------------------
  11        format(a132)
            close(8)
          endif
-         write(6,*) 'Number of sessions:',nsessions
+         if (nsessions.gt.1) 
+     $     write(6,*) 'Number of sessions:',nsessions
          goto 23
  24      ierr = 1
       endif

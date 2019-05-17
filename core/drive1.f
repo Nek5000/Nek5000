@@ -101,7 +101,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call vrdsmsh          ! verify mesh topology
       call mesh_metrics     ! print some metrics
 
-      call setlog  ! Initalize logical flags
+      call setlog(.true.)   ! Initalize logical flags
 
       if (ifneknekc) call neknek_setup
 

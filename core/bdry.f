@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      SUBROUTINE SETLOG
+      SUBROUTINE SETLOG(ifecho)
 C                                                                     
 C     Subroutine to initialize logical flags
 C                                                                     
@@ -9,6 +9,9 @@ C
       INCLUDE 'TSTEP'
       INCLUDE 'CTIMER'
       INCLUDE 'ADJOINT'
+
+      logical ifecho
+
       COMMON  /CPRINT/ IFPRINT
 C
       common  /nekcb/ cb
@@ -98,7 +101,7 @@ C
          CALL GLLOG(IFNONL(IFIELD),.TRUE.)
   400 CONTINUE
 C
-      IF (NIO.EQ.0) THEN
+      IF (NIO.EQ.0 .AND. ifecho) THEN
          WRITE (6,*) 'IFTRAN    =',IFTRAN
          WRITE (6,*) 'IFFLOW    =',IFFLOW
          WRITE (6,*) 'IFHEAT    =',IFHEAT
