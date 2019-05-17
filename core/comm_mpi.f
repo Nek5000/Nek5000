@@ -156,8 +156,6 @@ c---------------------------------------------------------------------
          endif
       endif
 
-      if (nid.eq.nio) call printHeader
-
       if (wdsize .eq. 4)
      $   call exitti('Single precision mode not supported!',wdsize)
 
@@ -189,14 +187,6 @@ C     Test timer accuracy
          edif = edif + e2-e1
       enddo
       edif = edif/10.
-
-      if (nid.eq.nio) then 
-         write(6,*) 'Number of processors:',np
-         WRITE(6,*) 'REAL    wdsize      :',WDSIZE
-         WRITE(6,*) 'INTEGER wdsize      :',ISIZE
-         WRITE(6,'(A,1pE9.2)') ' Timer accuracy      : ',edif
-         WRITE(6,*) ' '
-      endif
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
       return
@@ -688,7 +678,15 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine printHeader
 
-      INCLUDE 'HEADER'
+      include 'SIZE'
+      include 'PARALLEL'
+
+      include 'HEADER'
+      write(6,*) 'Number of MPI ranks :', np
+c      WRITE(6,*) 'REAL     wdsize     :',WDSIZE
+c      WRITE(6,*) 'INTEGER  wdsize     :',ISIZE
+c      WRITE(6,*) 'INTEGER8 wdsize     :',ISIZE8
+      WRITE(6,*) ' '
 
       return
       end

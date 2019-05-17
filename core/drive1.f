@@ -60,6 +60,8 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       iglobalcomm = newcommg  ! across all sessions
       call iniproc()
 
+      if (nid.eq.nio) call printHeader
+
       etimes = dnekclock()
       istep  = 0
 
