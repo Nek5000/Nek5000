@@ -97,6 +97,7 @@ c-----------------------------------------------------------------------
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
+         amgfle  = session
          return
       endif
  
@@ -127,6 +128,8 @@ c     Assign key for splitting into multiple groups
      &     'More than 2 coupled sessions are currently not supported!$',
      $     nsessions)
       endif 
+
+      amgfle  = session
 
       return
       end
