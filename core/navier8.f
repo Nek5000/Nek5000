@@ -113,8 +113,7 @@ c
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
       integer*8 ngv
-      character*1 amgfiledm(132)
-      character*132 amgfile_c
+      character*1 amgfile_c(132)
       integer nnamg
 
       t0 = dnekclock()
@@ -206,11 +205,10 @@ c      endif
       nz=ncr*ncr*nelv
       call neknekgsync()
       isolver = param(40)
-      call blank(amgfiledm,132)
+      call blank(amgfile_c,132)
       lamgn = ltrunc(amgfile,len(amgfile))
-      call chcopy(amgfiledm,amgfile,lamgn)
-      amgfiledm(lamgn+1) = char(0)
-      call chcopy(amgfile_c,amgfiledm,lamgn+1)
+      call chcopy(amgfile_c,amgfile,lamgn)
+      amgfile_c(lamgn+1) = char(0)
       nnamg = 0
       if (ifneknek) nnamg = 1
 
