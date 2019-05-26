@@ -113,7 +113,8 @@ c
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
       integer*8 ngv
-      character*132 amgn
+      character*1 amgfiledm(132)
+      character*132 amgfile_c
       integer nnamg
 
       t0 = dnekclock()
@@ -203,16 +204,20 @@ c      endif
       endif
 
       nz=ncr*ncr*nelv
+      call neknekgsync()
       isolver = param(40)
-      lamgn = ltrunc(amgfle,len(amgfle))
-      call chcopy(amgn,amgfle,lamgn)
+      call blank(amgfiledm,132)
+      lamgn = ltrunc(amgfile,len(amgfile))
+      call chcopy(amgfiledm,amgfile,lamgn)
+      amgfiledm(lamgn+1) = char(0)
+      call chcopy(amgfile_c,amgfiledm,lamgn+1)
       nnamg = 0
       if (ifneknek) nnamg = 1
 
+      call neknekgsync()
       call fgslib_crs_setup(xxth(ifield),isolver,nekcomm,mp,ntot,
      $     se_to_gcrs,nz,ia,ja,a, null_space, crs_param, 
-     $     amgn,lamgn,nnamg,ierr)
-      call neknekgsync()
+     $     amgfile_c,nnamg,ierr)
       if (ifneknek) ierr = iglmax_ms(ierr,1)
       if (ierr.eq.1) then
          call exitt
