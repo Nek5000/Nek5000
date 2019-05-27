@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
          ifneknekc = .false.
          session   = session_mult(0)
          path      = path_mult(0)
-         amgfle  = session
+         amgfile  = session
          return
       endif
  
@@ -129,7 +129,7 @@ c     Assign key for splitting into multiple groups
      $     nsessions)
       endif 
 
-      amgfle  = session
+      amgfile  = session
 
       return
       end
