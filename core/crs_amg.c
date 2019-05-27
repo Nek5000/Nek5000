@@ -535,8 +535,8 @@ struct crs_data *crs_setup(
   char amgname[132];
   strncpy(amgname,amgnamt,amglen);
   int i;
-  for (i=132-1; i>0; i--) if (amgname[i] != ' ') break;
-  amgname[i+1] = '\0';
+  for (i=0; i<amglen; i++) if (amgname[i] == ' ') break;
+  amgname[i] = '\0';
   
   struct crs_data *data = tmalloc(struct crs_data,1);
   struct stat info;
