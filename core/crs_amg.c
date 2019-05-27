@@ -532,8 +532,11 @@ struct crs_data *crs_setup(
   uint nz, const uint *Ai, const uint *Aj, const double *A,
   uint null_space, const struct comm *comm, const char *amgnamt, const uint amglen, const uint nnflag, uint *ierr)
 {
-  char amgname[100];
+  char amgname[132];
   strncpy(amgname,amgnamt,amglen);
+  int i;
+  for (i=132-1; i>0; i--) if (amgname[i] != ' ') break;
+  amgname[i+1] = '\0';
   
   struct crs_data *data = tmalloc(struct crs_data,1);
   struct stat info;
