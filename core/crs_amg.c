@@ -530,14 +530,8 @@ static void amg_dump(
 struct crs_data *crs_setup(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
-  uint null_space, const struct comm *comm, const char *amgnamt, const uint amglen, const uint nnflag, uint *ierr)
+  uint null_space, const struct comm *comm, const char *amgname, const uint nnflag, uint *ierr)
 {
-  char amgname[132];
-  strncpy(amgname,amgnamt,amglen);
-  int i;
-  for (i=0; i<amglen; i++) if (amgname[i] == ' ') break;
-  amgname[i] = '\0';
-  
   struct crs_data *data = tmalloc(struct crs_data,1);
   struct stat info;
   int dump;

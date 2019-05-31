@@ -114,6 +114,8 @@ c
 
       integer*8 ngv
       character*132 amgfile_c
+      character*1   fname1(132)
+      equivalence  (fname1,amgfile_c)
       integer nnamg
 
       t0 = dnekclock()
@@ -205,9 +207,10 @@ c      endif
       nz=ncr*ncr*nelv
       isolver = param(40)
 
-      call blank(amgfile_c,132)
+      call blank(fname1,132)
       lamgn = ltrunc(amgfile,len(amgfile))
-      call chcopy(amgfile_c,amgfile,lamgn)
+      call chcopy(fname1,amgfile,lamgn)
+      call chcopy(fname1(lamgn+1),char(0),1)
       nnamg = 0
       if (ifneknek) nnamg = 1
 
