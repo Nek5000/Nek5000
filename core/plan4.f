@@ -28,7 +28,7 @@ c
       REAL dvc(lx1,ly1,lz1,lelv), dfc(lx1,ly1,lz1,lelv)
       REAL div1, div2, dif1, dif2, qtlq, qtl2
 
-      INTEGER e
+      INTEGER e,iter
 
       ifxyo = .true.
 
@@ -84,7 +84,7 @@ c        endif
          call col2_acc  (respr,pmask,n)
 
 c!$acc    update host(h1,h2)    
-         call hmh_gmres (respr,h1,h2,vmult,nmxh)
+         call hmh_gmres (respr,h1,h2,vmult,iter)
 
          call add2_acc (pr,respr,n)
          call ortho_acc(pr)
