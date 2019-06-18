@@ -534,12 +534,11 @@ struct crs_data *crs_setup(
 {
   struct crs_data *data = tmalloc(struct crs_data,1);
   struct stat info;
-  int dump, dumpold;
+  int dump;
 
   comm_dup(&data->comm,comm);
 
   dump    = 0;
-  dumpold = 0;
   if(data->comm.id==0) {
     char str1[132];
     char str2[132];
@@ -1252,7 +1251,6 @@ static void dump_matrix(
     sprintf(str1,"%s.iamgdmp.dat",datafname);
     sprintf(str2,"%s.jamgdmp.dat",datafname);
     sprintf(str3,"%s.pamgdmp.dat",datafname);
-
     fi=dopen(str1,'w',&code);
     fj=dopen(str2,'w',&code);
     fp=dopen(str3,'w',&code);

@@ -45,8 +45,8 @@ while(0)
 void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint *np,
                 const sint *n, const slong id[], const sint *nz,
                 const sint Ai[], const sint Aj[], const double A[],
-                const sint *null_space, const double *param
-               ,const char *datafname, uint *ierr)
+                const sint *null_space, const double *param,
+                const char *datafname, uint *ierr)
 {
   struct comm c;
   if(handle_n==handle_max)
