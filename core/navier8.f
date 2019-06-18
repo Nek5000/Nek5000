@@ -211,13 +211,11 @@ c      endif
       lamgn = ltrunc(amgfile,len(amgfile))
       call chcopy(fname1,amgfile,lamgn)
       call chcopy(fname1(lamgn+1),char(0),1)
-      nnamg = 0
-      if (ifneknek) nnamg = 1
 
       ierr = 0
       call fgslib_crs_setup(xxth(ifield),isolver,nekcomm,mp,ntot,
      $     se_to_gcrs,nz,ia,ja,a, null_space, crs_param, 
-     $     amgfile_c,nnamg,ierr)
+     $     amgfile_c,ierr)
       ierr = iglmax(ierr,1)
       if (ifneknek) ierr = iglmax_ms(ierr,1)
       if (ierr.eq.1) then

@@ -46,7 +46,7 @@ void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint 
                 const sint *n, const slong id[], const sint *nz,
                 const sint Ai[], const sint Aj[], const double A[],
                 const sint *null_space, const double *param
-               ,const char *amgname, const uint *nnflag, uint *ierr)
+               ,const char *datafname, uint *ierr)
 {
   struct comm c;
   if(handle_n==handle_max)
@@ -64,7 +64,7 @@ void fcrs_setup(sint *handle, const sint *sid, const MPI_Fint *comm, const sint 
     case 1: handle_array[handle_n]=ccrs_amg_setup(*n,(const ulong*)id,
                                                   *nz,(const uint*)Ai,(const uint*)Aj,A,
                                                   *null_space,&c,
-                                                  amgname,*nnflag,ierr); break;
+                                                  datafname,ierr); break;
     case 2: handle_array[handle_n]=ccrs_hypre_setup(*n,(const ulong*)id,
                                                   *nz,(const uint*)Ai,(const uint*)Aj,A,
                                                   *null_space,&c,param); break;

@@ -224,7 +224,7 @@ static void ar_scal_op(double *a, const double scal, const int n,
     INPUT:
     - structure data
 */
-static void amg_export(const struct amg_setup_data *data,char *session, int nnflag);
+static void amg_export(const struct amg_setup_data *data,char *session);
 
 /*
     Save matrices

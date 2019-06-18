@@ -86,17 +86,15 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    char sname[30];
-    int nnflag=1;
-    char session[30];
-    printf("Enter the name of NekNek mesh file:\n");
-    printf("Hit enter for Nek calculation (default)\n");
-    printf("Name of the mesh for NekNek calculation (e.g. eddy_inside)\n");
+    char sname[132];
+    char session[132];
+    printf("Enter the name of mesh file:\n");
     fgets(sname, sizeof sname, stdin);
     ret = sscanf(sname,"%s",&session);
     if (ret == -1)
     {
-        nnflag=0;
+        printf("Please enter the mesh name.\n");
+        exit(1);
     }
       
     /* Verbose level */
@@ -106,16 +104,9 @@ int main(int argc, char *argv[])
 
     printf("Reading AMG dump files... ");
     char str1[100],str2[100],str3[100];
-    if (nnflag==0) {
-      sprintf(str1,"amgdmp_i.dat");
-      sprintf(str2,"amgdmp_j.dat");
-      sprintf(str3,"amgdmp_p.dat");
-    } 
-    else{
-      sprintf(str1,"amgdmp_i%s.dat",session);
-      sprintf(str2,"amgdmp_j%s.dat",session);
-      sprintf(str3,"amgdmp_p%s.dat",session);
-    }
+    sprintf(str1,"%s.iamgdmp.dat",session);
+    sprintf(str2,"%s.jamgdmp.dat",session);
+    sprintf(str3,"%s.pamgdmp.dat",session);
     int n = filesize(str1);
     double *v   = malloc( n    * sizeof(double));
     double *Aid = malloc((n-1) * sizeof(double));
@@ -450,7 +441,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Setup finished... Exporting data.\n");
-    amg_export(data,session,nnflag);
+    amg_export(data,session);
 
     /* Destroy matrix ij */
     HYPRE_IJMatrixDestroy(ij_matrix);
@@ -543,7 +534,7 @@ static void sub_mat(hypre_CSRMatrix **subA, const hypre_CSRMatrix *A,
 /*
     Export data from the AMG setup to correct format.
 */
-static void amg_export(const struct amg_setup_data *data,char *session, int nnflag)
+static void amg_export(const struct amg_setup_data *data,char *session)
 {
     int nlevels = data->nlevels;
     int n = data->n[0];
@@ -589,19 +580,11 @@ static void amg_export(const struct amg_setup_data *data,char *session, int nnfl
     }
 
     /* Save matrices */
-    char str1[100],str2[100],str3[100],str4[100];
-    if (nnflag==0) {
-      sprintf(str1,"amg_W.dat");
-      sprintf(str2,"amg_AfP.dat");
-      sprintf(str3,"amg_Aff.dat");
-      sprintf(str4,"amg.dat");
-    }
-    else{
-      sprintf(str1,"amg_W%s.dat",session);
-      sprintf(str2,"amg_AfP%s.dat",session);
-      sprintf(str3,"amg_Aff%s.dat",session);
-      sprintf(str4,"amg%s.dat",session);
-    }
+    char str1[132],str2[132],str3[132],str4[132];
+      sprintf(str1,"%s.amgW.dat",session);
+      sprintf(str2,"%s.amgAfP.dat",session);
+      sprintf(str3,"%s.amgAff.dat",session);
+      sprintf(str4,"%s.amg.dat",session);
     int *W_len = malloc(n * sizeof (int));
     savemats(W_len, n, nlevels-1, lvl, data->idc, data->id_l2g, data->W,
              str1);        
