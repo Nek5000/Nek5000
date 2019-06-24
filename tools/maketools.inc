@@ -201,7 +201,6 @@ else
        printf "done\n"
      else
        printf "failed\n"
-       exit 1
      fi
    done
    set +o pipefail 
