@@ -148,7 +148,8 @@ export CPPF
 export BIGMEM
 export LDFLAGS
 
-LIST=`ls -Cd */ | sed 's:\/::g'`
+#LIST=`ls -Cd */ | sed 's:\/::g'`
+LIST="genmap gencon genbox n2to3 reatore2 nekmerge prenek postnek nekamg_setup gmsh2nek exo2nek cgns2nek"
 export LIST
 
 rm -rf build.log

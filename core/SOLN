@@ -33,7 +33,7 @@ c     Solution data
       real vx     (lx1,ly1,lz1,lelv)
      $    ,vy     (lx1,ly1,lz1,lelv)
      $    ,vz     (lx1,ly1,lz1,lelv)
-     $    ,vx_e   (lx1*ly1*lz1*lelv)
+     $    ,vx_e   (lx1,ly1,lz1,lelv)
      $    ,vy_e   (lx1,ly1,lz1,lelv)
      $    ,vz_e   (lx1,ly1,lz1,lelv)
      $    ,t      (lx1,ly1,lz1,lelt,ldimt)
