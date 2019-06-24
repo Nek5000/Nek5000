@@ -2306,7 +2306,7 @@ c                4  7  10  13   23    33    53    62     68     74
       if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
 
       if (nelr.gt.lelr) then
-        write(6,*)nid,nelr,lelr,'parse_std_hdr06: inc. lelr in RESTART'
+        write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
         call exitt
       endif
 
@@ -2560,16 +2560,9 @@ c-----------------------------------------------------------------------
       ifmpiio = .false.
 #endif
 
-      if (ifmpiio) then
-         if (nelt.gt.lelr) then
-            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelt
-            call exitt
-         endif
-      else
-         if (nelr.gt.lelr) then
-            write(6,*) 'ERROR: increase lelr in SIZE!', lelr, nelr
-            call exitt
-         endif
+      if (nelr.gt.lelr) then
+         write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
+         call exitt
       endif
 
       if(.not.ifmpiio) then

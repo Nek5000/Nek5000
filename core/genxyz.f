@@ -1504,8 +1504,8 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.0) then
          write(6,*) 'mesh metrics:'
-         write(6,'(A,1p3E9.2)') ' GLL grid spacing min/max    :',
-     $   dxmin,dxmax,dxavg
+         write(6,'(A,1p2E9.2)') ' GLL grid spacing min/max    :',
+     $   dxmin,dxmax
          write(6,'(A,1p3E9.2)') ' scaled Jacobian  min/max/avg:',
      $   dsjmin,dsjmax,dsjavg
          write(6,'(A,1p3E9.2)') ' aspect ratio     min/max/avg:',
