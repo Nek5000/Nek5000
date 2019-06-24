@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     }
     if (tol <= 0.)
     {
-        printf("Error: Smoother tolerance should be >0.\n");
+        printf("ERRORr: Smoother tolerance should be >0.\n");
         exit(1);
     }
       
@@ -199,6 +199,11 @@ int main(int argc, char *argv[])
     HYPRE_BoomerAMGCreate(&solver); // Create solver
  
     /* Set parameters (See Reference Manual for more parameters) */
+
+    HYPRE_BoomerAMGSetStrongThreshold(solver,0.5);
+    if(coars_strat == 8 || coars_strat == 10) 
+      HYPRE_BoomerAMGSetStrongThreshold(solver,0.5); 
+
     HYPRE_BoomerAMGSetPrintLevel(solver, print_level);
     HYPRE_BoomerAMGSetCoarsenType(solver, coars_strat);
     HYPRE_BoomerAMGSetInterpType(solver, interp_strat); 
@@ -220,7 +225,7 @@ int main(int argc, char *argv[])
     /* Check if last level is made of 1 element */
     if (A_array[numlvls-1]->diag->num_rows != 1)
     {
-        printf("Error: Last level has more than one element. Run again with different setup options.\n");
+        printf("ERROR: Invalid size of last level, try different coarsening!");
 	exit(1);
     }
 
@@ -400,6 +405,10 @@ int main(int argc, char *argv[])
                 data->m[lvl] = m;
                 printf("Chebyshev smoother iterations: %d\tContraction: %lf\n",
                         (int)m,c);
+                if((int)m > 3){
+                  printf("ERROR: Smoother iterations too large, try different coarsening!");
+                  exit(1);
+                }
 
                 free(Dh);    
                 free(lambda);
