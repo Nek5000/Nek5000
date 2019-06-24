@@ -85,6 +85,17 @@ int main(int argc, char *argv[])
         printf("ERRORr: Smoother tolerance should be >0.\n");
         exit(1);
     }
+
+    char sname[132];
+    char session[132];
+    printf("Enter the name of mesh file:\n");
+    fgets(sname, sizeof sname, stdin);
+    ret = sscanf(sname,"%s",&session);
+    if (ret == -1)
+    {
+        printf("Please enter the mesh name.\n");
+        exit(1);
+    }
       
     /* Verbose level */
     int print_level = 3;  // Print solve info + parameters
@@ -92,17 +103,21 @@ int main(int argc, char *argv[])
     /* Read data and convert rows and columns to integers */
 
     printf("Reading AMG dump files... ");
-    int n = filesize("amgdmp_i.dat");
+    char str1[100],str2[100],str3[100];
+    sprintf(str1,"%s.iamgdmp.dat",session);
+    sprintf(str2,"%s.jamgdmp.dat",session);
+    sprintf(str3,"%s.pamgdmp.dat",session);
+    int n = filesize(str1);
     double *v   = malloc( n    * sizeof(double));
     double *Aid = malloc((n-1) * sizeof(double));
     double *Ajd = malloc((n-1) * sizeof(double));
     double *Av  = malloc((n-1) * sizeof(double));
-    
-    readfile(v,n,"amgdmp_i.dat");
+
+    readfile(v,n,str1);
     memcpy(Aid, v+1, (n-1) * sizeof (double));
-    readfile(v,n,"amgdmp_j.dat");
+    readfile(v,n,str2);
     memcpy(Ajd, v+1, (n-1) * sizeof (double));
-    readfile(v,n,"amgdmp_p.dat");
+    readfile(v,n,str3);
     memcpy(Av , v+1, (n-1) * sizeof (double));
     printf("Done.\n");
 
@@ -435,7 +450,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Setup finished... Exporting data.\n");
-    amg_export(data);
+    amg_export(data,session);
 
     /* Destroy matrix ij */
     HYPRE_IJMatrixDestroy(ij_matrix);
@@ -528,7 +543,7 @@ static void sub_mat(hypre_CSRMatrix **subA, const hypre_CSRMatrix *A,
 /*
     Export data from the AMG setup to correct format.
 */
-static void amg_export(const struct amg_setup_data *data)
+static void amg_export(const struct amg_setup_data *data,char *session)
 {
     int nlevels = data->nlevels;
     int n = data->n[0];
@@ -574,20 +589,25 @@ static void amg_export(const struct amg_setup_data *data)
     }
 
     /* Save matrices */
+    char str1[132],str2[132],str3[132],str4[132];
+      sprintf(str1,"%s.amgW.dat",session);
+      sprintf(str2,"%s.amgAfP.dat",session);
+      sprintf(str3,"%s.amgAff.dat",session);
+      sprintf(str4,"%s.amg.dat",session);
     int *W_len = malloc(n * sizeof (int));
     savemats(W_len, n, nlevels-1, lvl, data->idc, data->id_l2g, data->W,
-             "amg_W.dat");
+             str1);        
 
     int *AfP_len = malloc(n * sizeof (int));
     savemats(AfP_len, n, nlevels-1, lvl, data->idc, data->id_l2g, data->AfP, 
-             "amg_AfP.dat");
+             str2);
 
     int *Aff_len = malloc(n * sizeof (int));
     savemats(Aff_len, n, nlevels-1, lvl, data->idf, data->id_l2g, data->Af, 
-             "amg_Aff.dat");
+             str3);
 
     /* Save vector */
-    savevec(nlevels, data, n, lvl, W_len, AfP_len, Aff_len, dvec, "amg.dat");
+    savevec(nlevels, data, n, lvl, W_len, AfP_len, Aff_len, dvec,str4);
 
     /* Free allocated memory */
     free(W_len);

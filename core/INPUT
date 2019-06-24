@@ -84,8 +84,8 @@ c
       character*132   reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
       common /cfiles/ reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
 
-      character*132   session,path,re2fle,parfle
-      common /cfile2/ session,path,re2fle,parfle
+      character*132   session,path,re2fle,parfle,amgfile
+      common /cfile2/ session,path,re2fle,parfle,amgfile
 
       integer cr_re2,fh_re2
       common /handles_re2/ cr_re2,fh_re2

@@ -439,15 +439,15 @@ static void read_data(
   struct crs_data *const data,
   struct array *ids, struct array mats[3],
   struct crystal *const cr,
-  const ulong *uid, const uint uid_n);
+  const ulong *uid, const uint uid_n, const char *datafname);
 
 static void read_data_mpiio(
   struct crs_data *const data,
   struct array *ids, struct array mats[3],
   struct crystal *const cr,
-  const ulong *uid, const uint uid_n);
+  const ulong *uid, const uint uid_n, const char *datafname);
 
-static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
+static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id, const char *datafname)
 {
   struct crystal cr;
   struct array uid; uint *id_perm;
@@ -463,9 +463,9 @@ static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
   sarray_permute(uint ,data->umap,uid.n, cr.data.ptr, &max_e);
 
 #ifdef USEMPIIO
-  read_data_mpiio(data, &ids, mat, &cr, uid.ptr,uid.n);
+  read_data_mpiio(data, &ids, mat, &cr, uid.ptr,uid.n, datafname);
 #else
-  read_data(data, &ids, mat, &cr, uid.ptr,uid.n);
+  read_data(data, &ids, mat, &cr, uid.ptr,uid.n, datafname);
 #endif
   
   /* we should have data for every uid;
@@ -525,12 +525,12 @@ static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id)
 static void amg_dump(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
-  struct crs_data *data);
+  struct crs_data *data, const char *datafname);
 
 struct crs_data *crs_setup(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
-  uint null_space, const struct comm *comm)
+  uint null_space, const struct comm *comm, const char *datafname, uint *ierr)
 {
   struct crs_data *data = tmalloc(struct crs_data,1);
   struct stat info;
@@ -538,31 +538,40 @@ struct crs_data *crs_setup(
 
   comm_dup(&data->comm,comm);
 
+  dump    = 0;
   if(data->comm.id==0) {
-    dump = 0;
-    if(stat("amg.dat"    ,&info)!=0) dump++;
-    if(stat("amg_W.dat"  ,&info)!=0) dump++;
-    if(stat("amg_AfP.dat",&info)!=0) dump++;
-    if(stat("amg_Aff.dat",&info)!=0) dump++;
+    char str1[132];
+    char str2[132];
+    char str3[132];
+    char str4[132];
+    sprintf(str1,"%s.amg.dat",datafname);
+    sprintf(str2,"%s.amgW.dat",datafname);
+    sprintf(str3,"%s.amgAfP.dat",datafname);
+    sprintf(str4,"%s.amgAff.dat",datafname);
+    if(stat(str1,&info)!=0) dump++;
+    if(stat(str2,&info)!=0) dump++;
+    if(stat(str3,&info)!=0) dump++;
+    if(stat(str4,&info)!=0) dump++;
     if(dump!=0) printf("AMG files not found, dumping data ...\n"), fflush(stdout);
   }
-  comm_bcast(&data->comm,&dump,sizeof(int),0); 
+  comm_bcast(&data->comm,&dump,sizeof(int),0);
 
   data->gs_top = gs_setup((const slong*)id,n, &data->comm, 1,
     dump?gs_crystal_router:gs_auto, !dump);
 
   if(dump) {
-    amg_dump(n,id,nz,Ai,Aj,A,data);
+    amg_dump(n,id,nz,Ai,Aj,A,data,datafname);
     gs_free(data->gs_top);
 
     if(data->comm.id==0) printf("AMG dump successful\n"), fflush(stdout);
     comm_barrier(&data->comm);
     comm_free(&data->comm);
     free(data);
-    die(0);
+    *ierr=1;
   } else {
     data->null_space = null_space;
-    amg_setup_aux(data, n,id);
+    amg_setup_aux(data, n,id, datafname);
+    *ierr=0;
   }
   return data;
 }
@@ -752,7 +761,7 @@ static void read_data(
   struct crs_data *const data,
   struct array *ids, struct array mat[3],
   struct crystal *const cr,
-  const ulong *uid, const uint uid_n)
+  const ulong *uid, const uint uid_n, const char *datafname)
 {
   int code;
   struct find_id_data fid;
@@ -769,17 +778,25 @@ static void read_data(
   find_id_setup(&fid, uid,uid_n, cr);
   code=0;
   if(pid==0) {
-    f = dopen("amg.dat",'r',&code);
-    fm[0] = dopen("amg_W.dat",'r',&code);
-    fm[1] = dopen("amg_AfP.dat",'r',&code);
-    fm[2] = dopen("amg_Aff.dat",'r',&code);
-    if(code==0) {
-     array_init(double, &read_buffer, 6*AMG_BLOCK_ROWS);
-     row_lens = tmalloc(uint, 5*AMG_BLOCK_ROWS);
-     id_proc = row_lens + 3*AMG_BLOCK_ROWS;
-     id_perm = id_proc + AMG_BLOCK_ROWS;
-     array_reserve(struct id_data, &id_buffer, AMG_BLOCK_ROWS);
-    }
+     char str1[132];
+     char str2[132];
+     char str3[132];
+     char str4[132];
+     sprintf(str1,"%s.amg.dat",datafname);
+     sprintf(str2,"%s.amgW.dat",datafname);
+     sprintf(str3,"%s.amgAfP.dat",datafname);
+     sprintf(str4,"%s.amgAff.dat",datafname);
+     f = dopen(str1,'r',&code);
+     fm[0] = dopen(str2,'r',&code);
+     fm[1] = dopen(str3,'r',&code);
+     fm[2] = dopen(str4,'r',&code);
+     if(code==0) {
+       array_init(double, &read_buffer, 6*AMG_BLOCK_ROWS);
+       row_lens = tmalloc(uint, 5*AMG_BLOCK_ROWS);
+       id_proc = row_lens + 3*AMG_BLOCK_ROWS;
+       id_perm = id_proc + AMG_BLOCK_ROWS;
+       array_reserve(struct id_data, &id_buffer, AMG_BLOCK_ROWS);
+     }
   }
   comm_bcast(&data->comm,&code,sizeof(int),0);
   if(code!=0) die(1);
@@ -880,7 +897,7 @@ static void read_data(
 static void read_data_mpiio(struct crs_data *const data,
                             struct array *ids, struct array mat[3],
                             struct crystal *const cr,
-                            const ulong *uid, const uint uid_n)
+                            const ulong *uid, const uint uid_n, const char *datafname)
 {
   int code;
   struct find_id_data fid;
@@ -915,10 +932,18 @@ static void read_data_mpiio(struct crs_data *const data,
 
   struct sfile fs = {0,0};
   struct sfile fsm[3] = {{0,0},{0,0},{0,0}};
-  fs     = dopen_mpi("amg.dat"    ,'r', &data->comm, &code);
-  fsm[0] = dopen_mpi("amg_W.dat"  ,'r', &data->comm, &code);
-  fsm[1] = dopen_mpi("amg_AfP.dat",'r', &data->comm, &code);
-  fsm[2] = dopen_mpi("amg_Aff.dat",'r', &data->comm, &code);
+  char str1[132];
+  char str2[132];
+  char str3[132];
+  char str4[132];
+  sprintf(str1,"%s.amg.dat",datafname);
+  sprintf(str2,"%s.amgW.dat",datafname);
+  sprintf(str3,"%s.amgAfP.dat",datafname);
+  sprintf(str4,"%s.amgAff.dat",datafname);
+  fs     = dopen_mpi(str1,'r', &data->comm, &code);
+  fsm[0] = dopen_mpi(str2,'r', &data->comm, &code);
+  fsm[1] = dopen_mpi(str3,'r', &data->comm, &code);
+  fsm[2] = dopen_mpi(str4,'r', &data->comm, &code);
   code = comm_reduce_int(&data->comm, gs_max, &code, 1);
   if(code != 0) 
     die(1);
@@ -1207,7 +1232,7 @@ static uint dump_matrix_setdata(
 
 static void dump_matrix(
   struct array *const mat, const ulong *const uid,
-  struct crystal *const cr)
+  struct crystal *const cr, const char *datafname)
 {
   const struct comm *comm = &cr->comm;
   const uint pid = comm->id, np = comm->np;
@@ -1220,9 +1245,15 @@ static void dump_matrix(
 
   code = 0;
   if(pid==0) {
-    fi=dopen("amgdmp_i.dat",'w',&code);
-    fj=dopen("amgdmp_j.dat",'w',&code);
-    fp=dopen("amgdmp_p.dat",'w',&code);
+    char str1[132];
+    char str2[132];
+    char str3[132];
+    sprintf(str1,"%s.iamgdmp.dat",datafname);
+    sprintf(str2,"%s.jamgdmp.dat",datafname);
+    sprintf(str3,"%s.pamgdmp.dat",datafname);
+    fi=dopen(str1,'w',&code);
+    fj=dopen(str2,'w',&code);
+    fp=dopen(str3,'w',&code);
   }
   comm_bcast(comm,&code,sizeof(int),0);
   if(code!=0) die(1);
@@ -1258,7 +1289,7 @@ static void dump_matrix(
 static void amg_dump(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
-  struct crs_data *data)
+  struct crs_data *data, const char *datafname)
 {
   struct crystal cr;
   struct array uid; struct rid *rid_map = tmalloc(struct rid,n);
@@ -1279,7 +1310,7 @@ static void amg_dump(
   mat.n = out-(struct rnz*)mat.ptr;
   free(rid_map);
 
-  dump_matrix(&mat,uid.ptr,&cr);
+  dump_matrix(&mat,uid.ptr,&cr,datafname);
   
   array_free(&uid);
   crystal_free(&cr);
