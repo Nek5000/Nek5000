@@ -26,6 +26,13 @@ int main(int argc, char *argv[])
     int coars_strat, interp_strat, ret;
     setbuf(stdout, NULL);
 
+    char sname[132];
+    char session[132];
+    printf("Enter the name of mesh file:\n");
+    fgets(sname, sizeof sname, stdin);
+    ret = sscanf(sname,"%s",&session);
+    if (ret == -1) exit(1);
+
     /* Coarsening strategy */
     printf("Choose a coarsening method. Available options are:\n");
     //printf(" - 0: CLJP,\n");
@@ -86,17 +93,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    char sname[132];
-    char session[132];
-    printf("Enter the name of mesh file:\n");
-    fgets(sname, sizeof sname, stdin);
-    ret = sscanf(sname,"%s",&session);
-    if (ret == -1)
-    {
-        printf("Please enter the mesh name.\n");
-        exit(1);
-    }
-      
+     
     /* Verbose level */
     int print_level = 3;  // Print solve info + parameters
 
@@ -104,9 +101,9 @@ int main(int argc, char *argv[])
 
     printf("Reading AMG dump files... ");
     char str1[100],str2[100],str3[100];
-    sprintf(str1,"%s.iamgdmp.dat",session);
-    sprintf(str2,"%s.jamgdmp.dat",session);
-    sprintf(str3,"%s.pamgdmp.dat",session);
+    sprintf(str1,"%s.amgdmp_i.dat",session);
+    sprintf(str2,"%s.amgdmp_j.dat",session);
+    sprintf(str3,"%s.amgdmp_p.dat",session);
     int n = filesize(str1);
     double *v   = malloc( n    * sizeof(double));
     double *Aid = malloc((n-1) * sizeof(double));
@@ -590,9 +587,9 @@ static void amg_export(const struct amg_setup_data *data,char *session)
 
     /* Save matrices */
     char str1[132],str2[132],str3[132],str4[132];
-      sprintf(str1,"%s.amgW.dat",session);
-      sprintf(str2,"%s.amgAfP.dat",session);
-      sprintf(str3,"%s.amgAff.dat",session);
+      sprintf(str1,"%s.amg_W.dat",session);
+      sprintf(str2,"%s.amg_AfP.dat",session);
+      sprintf(str3,"%s.amg_Aff.dat",session);
       sprintf(str4,"%s.amg.dat",session);
     int *W_len = malloc(n * sizeof (int));
     savemats(W_len, n, nlevels-1, lvl, data->idc, data->id_l2g, data->W,
