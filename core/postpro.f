@@ -1663,7 +1663,7 @@ c-----------------------------------------------------------------------
       endif
       
       call bcast(npoints,isize)
-      if(npoints.gt.lhis*np) then
+      if(npoints.gt.(lhis-1)*np) then
         if(nid.eq.0) write(6,*) 'ABORT: Increase lhis in SIZE!'
         call exitt
       endif

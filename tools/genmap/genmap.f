@@ -1,6 +1,6 @@
 c-----------------------------------------------------------------------
-c
-c   VERSION WITH SIMPLE BISECTION AND GROWTH OF CONN SET, COMBO (klh 07/09)
+
+   VERSION WITH SIMPLE BISECTION AND GROWTH OF CONN SET, COMBO (klh 07/09)
 c
 c   genmap.f performs the following operations:
 c   
