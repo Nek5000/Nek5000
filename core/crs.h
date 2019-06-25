@@ -28,7 +28,8 @@ void crs_xxt_free(struct crs_data *data);
 struct crs_data *crs_amg_setup(
   uint n, const ulong *id,
   uint nz, const uint *Ai, const uint *Aj, const double *A,
-  uint null_space, const struct comm *comm);
+  uint null_space, const struct comm *comm,
+  const char *datafname, uint *ierr);
 void crs_amg_solve(double *x, struct crs_data *data, double *b);
 void crs_amg_stats(struct crs_data *data);
 void crs_amg_free(struct crs_data *data);
