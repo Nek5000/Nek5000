@@ -39,6 +39,7 @@
 * Your parameters to the reserved user space param(170) - param(200) 
 * Set lelr in SIZE for a restart using muliple files (check value in hdr) 
 * Use planar_avg() instead of planar_average_z etc. 
+* Rename AMG input files (example: amg_Aff.dat -> ethier.amgAff.dat) 
 
 ## Known Bugs 
 
