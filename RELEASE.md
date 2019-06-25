@@ -11,8 +11,8 @@
 * RANS k-Omega and k-Omega-SST (experimental) 
 * Online mesh-smoother (experimental)
 * ElapsedTime option for writeControl (in par)
-* Print runtime-statistics every 100 steps
-* Support for GNU 8.x compilers
+* Print runtime-statistics every 500 steps
+* Support for GNU > 8.x compilers
 * Support for Cray compilers
 * Support for ARM compilers
 * Add AVM regularization for scalars (experimental)
@@ -21,11 +21,12 @@
 * CHT support for generic fld reader
 * Overwrite core routines in usr
 * Lagrangian phase model - LPM (experimental)
-* Distributed gllnid/gllel 
+* Distributed gllnid/gllel (experimental) 
 * Add parMetis partitioner
 * Add parRSB partitioner
 * Add CGNS mesh converter
 * Support p0th with Helmholtz 
+* Update to GSLIB v1.0.5 and HYPRE v2.15.1
 * Various bug fixes
 
 ## What you may have to change to be compatible 
@@ -37,15 +38,17 @@
 * Remove common block CTORQ from usr (now part of OBJDATA included in TOTAL)
 * Use nekamg_setup tool instead of amg_hypre (required for semg_amg preconditioner) 
 * Your parameters to the reserved user space param(170) - param(200) 
-* Set lelr in SIZE for a restart using muliple files (check value in hdr) 
+* Set lelr in SIZE for restart using muliple files (check value in file header) 
 * Use planar_avg() instead of planar_average_z etc. 
 * Rename AMG input files (example: amg_Aff.dat -> ethier.amgAff.dat) 
 
 ## Known Bugs 
 
+[635](https://github.com/Nek5000/Nek5000/issues/635)
+[634](https://github.com/Nek5000/Nek5000/issues/634)
 [628](https://github.com/Nek5000/Nek5000/issues/628)
 [627](https://github.com/Nek5000/Nek5000/issues/627)
-[562](https://github.com/Nek5000/Nek5000/issues/562),
+[562](https://github.com/Nek5000/Nek5000/issues/562)
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
 ## Thanks to our Contributors

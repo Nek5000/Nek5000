@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-VER=1.0.4
-CHKSUM=422cdd18e70a92ca6a08cca57b9fbb92a3c6e789
+VER=1.0.5
+CHKSUM=1b5b28de5b997c3b0893a3b4dcf5cee8614b9f27
 
 if [ "$1" == "clean" ]; then
   rm -rf gslib lib include 2>/dev/null 

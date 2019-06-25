@@ -199,6 +199,9 @@ c-----------------------------------------------------------------------
       istep  = 0
       msteps = 1
 
+      irstat = int(param(120))
+      write(6,*) 'HERE: ', irstat
+
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
          if(kstep.ge.nsteps) lastep = 1
@@ -209,7 +212,7 @@ c-----------------------------------------------------------------------
          tuchk = tuchk + dnekclock()-etime1
          call prepost (ifoutfld,'his')
          call in_situ_check()
-         if (mod(kstep,100).eq.0 ..and. lastep.eq.0) call runstat
+         if (mod(kstep,irstat).eq.0 .and. lastep.eq.0) call runstat 
          if (lastep .eq. 1) goto 1001
       enddo
  1001 lastep=1

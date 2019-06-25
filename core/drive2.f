@@ -56,18 +56,13 @@ c     Set default logicals
       if_full_pres = .false.
 
       CALL RZERO (PARAM,200)
-C
-C     The initialization of CBC is done in READAT
-C
-C      LCBC = 3*6*LELT*(LDIMT1+1)
-C      CALL BLANK(CBC,LCBC)
-C
+
       CALL BLANK(CCURVE ,12*LELT)
       NEL8 = 8*LELT
       CALL RZERO(XC,NEL8)
       CALL RZERO(YC,NEL8)
       CALL RZERO(ZC,NEL8)
-C
+
       NTOT=lx1*ly1*lz1*LELT
       CALL RZERO(ABX1,NTOT)
       CALL RZERO(ABX2,NTOT)
@@ -155,6 +150,9 @@ C------------------------------------------------------------------------
       include 'DEALIAS'
       include 'TSTEP'
       include 'NEKNEK'
+
+      param(120) = 500 ! print runtime stats
+
 C
 C     Geometry on Mesh 3 or 1?
 C
