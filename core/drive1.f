@@ -200,7 +200,6 @@ c-----------------------------------------------------------------------
       msteps = 1
 
       irstat = int(param(120))
-      write(6,*) 'HERE: ', irstat
 
       do kstep=1,nsteps,msteps
          call nek__multi_advance(kstep,msteps)
