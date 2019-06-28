@@ -503,9 +503,9 @@ c add rho v * del_omw
         xome_neg = glmin(xome_neg,1)
         xkey_neg = glmin(xkey_neg,1)
 
-        if(nid.eq.0 .and. nome_neg.gt.0)
+        if(nid.eq.0 .and. nome_neg.gt.0) 
      $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nid.eq.0 .and. nkey_neg.gt.0)
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
      $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
@@ -1061,8 +1061,14 @@ c ----------
 
 ! Compute Source term for k 
 
-          kSrc  (i,1,1,e) = G_k - Y_k
-c          if(nid.eq.0) write(*,*) 'kSrc ', G_k, G_k0, Y_k, kSrc(i,1,1,e)
+          if (ifrans_diag) then
+ccc         kSrc  (i,1,1,e) = G_k - Y_k
+            kSrc  (i,1,1,e) = G_k
+            kDiag (i,1,1,e) = Y_k
+          else
+            kSrc  (i,1,1,e) = G_k - Y_k
+            kDiag (i,1,1,e) = 0.0
+          endif
 
 c Compute production of omega
 
@@ -1087,7 +1093,14 @@ c Compute production of omega
 
 ! Compute Source term for omega
 
-          omgSrc(i,1,1,e) = G_w - Y_w + S_w
+          if (ifrans_diag) then
+            omgSrc(i,1,1,e) = G_w + S_w
+            omgDiag(i,1,1,e)= Y_w
+          else
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w
+            omgDiag(i,1,1,e)= 0.0
+          endif
+
           mut  (i,1,1,e)   = mu_t
           mutsk(i,1,1,e)   = mu_t * sigk
           mutso(i,1,1,e)   = mu_t * sigom
@@ -1106,7 +1119,11 @@ c add mu*delsqf
         call copy   (tempv,delsqf_omegb(1,1,1,e),lxyz)
         call cmult  (tempv,mu,lxyz)
         call col2   (tempv,f_omegb(1,1,1,e),lxyz)
-        call add2   (extra_src_omega, tempv,lxyz)
+        if (ifrans_diag) then
+          call sub2 (omgDiag(1,1,1,e),tempv,lxyz)
+        else
+          call add2 (extra_src_omega, tempv,lxyz)
+        endif
 
 c Form (1/sigma_w) del_mut * del_omw
 c  form 1: (del_yw/yw) del_k
@@ -1145,14 +1162,27 @@ c add rho v * del_omw
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if (ifrans_diag) then ! divided all at here
+        do e=1,nelv
+        do i=1,lxyz
+          kDiag  (i,1,1,e) = kDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
+          omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
+        enddo
+        enddo
+      endif
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
+
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1427,16 +1457,16 @@ c no compressibility correction M < 0.25
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
-c      write(*,*) 'Neg Omega ', nome_neg, xome_neg
-c      write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0)
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1679,13 +1709,19 @@ c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
 c          S_tau = Scoef*xt3
           Scoef = 8.*(mu+mu_t/sigma_omega)
           S_tau = Scoef*xt2
-          S_tau = min(S_tau, Y_w0)
+c          S_tau = min(S_tau, Y_w0)
 
 c          G_w = G_w0
           G_w =-min(G_w0, 10.0*Y_w0)
           Y_w =-Y_w0
 
-          omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+          if (ifrans_diag) then
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w
+            omgDiag(i,1,1,e)= S_tau
+          else
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+            omgDiag(i,1,1,e)= 0.0
+          endif
 
           xcr = xm1(i,1,1,e)
           ycr = ym1(i,1,1,e)
@@ -1709,16 +1745,27 @@ c          endif
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
-c      write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-c      write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if (ifrans_diag) then ! divided all at here
+        do e=1,nelv
+        do i=1,lxyz
+          kDiag  (i,1,1,e) = kDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
+          omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
+        enddo
+        enddo
+      endif
 
-      if(nid.eq.0) then
-        if(ntau_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
+
+        if(nid.eq.0 .and. ntau_neg.gt.0)
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -1931,7 +1978,14 @@ c          if(nid.eq.0) write(*,*) 'mu_t', mu_t, alp_str,k,omega,Omeg_min
 
 c g(i) is S**2 in equation sheet
 
-          kSrc  (i,1,1,e) = G_k - Y_k
+          if (ifrans_diag) then
+ccc         kSrc  (i,1,1,e) = G_k - Y_k
+            kSrc  (i,1,1,e) = G_k
+            kDiag (i,1,1,e) = Y_k
+          else
+            kSrc  (i,1,1,e) = G_k - Y_k
+            kDiag (i,1,1,e) = 0.0
+          endif
 
 c Compute production of omega
           alpha = (alp_inf/alp_str) *
@@ -1962,7 +2016,13 @@ c          G_w = G_w0
           G_w =-min(G_w0, 10.0*Y_w0)
           Y_w =-Y_w0
 
-          omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+          if (ifrans_diag) then
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w
+            omgDiag(i,1,1,e)= S_tau
+          else
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+            omgDiag(i,1,1,e)= 0.0
+          endif
 
           mut  (i,1,1,e)   = mu_t
           mutsk(i,1,1,e)   = mu_t / sigma_k
@@ -1971,14 +2031,27 @@ c          G_w = G_w0
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if (ifrans_diag) then ! divided all at here
+        do e=1,nelv
+        do i=1,lxyz
+          kDiag  (i,1,1,e) = kDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
+          omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
+        enddo
+        enddo
+      endif
 
-      if(nid.eq.0) then
-        if(ntau_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
+
+        if(nid.eq.0 .and. ntau_neg.gt.0)
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2191,7 +2264,14 @@ c ----------
 
 ! Compute Source term for k 
 
-          kSrc  (i,1,1,e) = G_k - Y_k
+          if (ifrans_diag) then
+ccc         kSrc  (i,1,1,e) = G_k - Y_k
+            kSrc  (i,1,1,e) = G_k
+            kDiag (i,1,1,e) = Y_k
+          else
+            kSrc  (i,1,1,e) = G_k - Y_k
+            kDiag (i,1,1,e) = 0.0
+          endif
 
 c Compute production of omega
 
@@ -2225,7 +2305,13 @@ c          G_w = G_w0
 
 ! Compute Source term for omega
 
-          omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+          if (ifrans_diag) then
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w
+            omgDiag(i,1,1,e)= S_tau
+          else
+            omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+            omgDiag(i,1,1,e)= 0.0
+          endif
 
           mut  (i,1,1,e)   = mu_t
           mutsk(i,1,1,e)   = mu_t * sigk
@@ -2235,14 +2321,27 @@ c          G_w = G_w0
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if (ifrans_diag) then ! divided all at here
+        do e=1,nelv
+        do i=1,lxyz
+          kDiag  (i,1,1,e) = kDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
+          omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
+     $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
+        enddo
+        enddo
+      endif
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
+
+        if(nid.eq.0 .and. ntau_neg.gt.0)
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0)
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2831,14 +2930,16 @@ c          mu_t = max(mu_t, mu_min)
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0) 
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -2989,14 +3090,16 @@ c          if(nid.eq.0) write(*,*) 'mu_t', rho, alp_str,k,omega,Omeg_min
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0) 
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -3178,14 +3281,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0) 
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -3363,14 +3468,16 @@ c end testing
 
       enddo
 
-      nome_neg =iglsum(nome_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xome_neg = glmin(xome_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        nome_neg =iglsum(nome_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xome_neg = glmin(xome_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(nome_neg.gt.0) write(*,*) 'Neg Omega ', nome_neg, xome_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. nome_neg.gt.0) 
+     $    write(*,*) 'Neg Omega ', nome_neg, xome_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -3545,14 +3652,16 @@ c          if(nid.eq.0) write(*,*) 'mu_t', mu_t, alp_str,k,omega,Omeg_min
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(ntau_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. ntau_neg.gt.0) 
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -3709,14 +3818,16 @@ c          if(nid.eq.0) write(*,*) 'mu_t', mu_t, alp_str,k,omega,Omeg_min
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(ntau_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. ntau_neg.gt.0) 
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
@@ -3902,14 +4013,16 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
       enddo
 
-      ntau_neg =iglsum(ntau_neg,1)
-      nkey_neg =iglsum(nkey_neg,1)
-      xtau_neg = glmin(xtau_neg,1)
-      xkey_neg = glmin(xkey_neg,1)
+      if(loglevel.gt.2) then
+        ntau_neg =iglsum(ntau_neg,1)
+        nkey_neg =iglsum(nkey_neg,1)
+        xtau_neg = glmin(xtau_neg,1)
+        xkey_neg = glmin(xkey_neg,1)
 
-      if(nid.eq.0) then
-        if(ntau_neg.gt.0) write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
-        if(nkey_neg.gt.0) write(*,*) 'Neg Key   ', nkey_neg, xkey_neg
+        if(nid.eq.0 .and. ntau_neg.gt.0) 
+     $    write(*,*) 'Neg Tau   ', ntau_neg, xtau_neg
+        if(nid.eq.0 .and. nkey_neg.gt.0) 
+     $    write(*,*) 'Neg TKE   ', nkey_neg, xkey_neg
       endif
 
       return
