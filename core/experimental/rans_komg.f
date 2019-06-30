@@ -4419,6 +4419,8 @@ c
 c-----------------------------------------------------------------------
       subroutine sqrt_tau(tausq,tinput,n)
       implicit real(a-h,o-z)
+      include 'SIZE'
+      include 'PARALLEL'
 c
       real tausq(n), tinput(n)
 
