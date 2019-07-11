@@ -15,6 +15,105 @@ fi
 rm -f $CASENAME.f
 cp -pv $CASENAME.usr $CASENAME.f
 
+if ! cat $CASENAME.f | grep -qi "subroutine.*uservp" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine uservp(ix,iy,iz,eg)
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*userf" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userf(ix,iy,iz,eg)
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*userq" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userq(ix,iy,iz,eg)
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*useric" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine useric(ix,iy,iz,eg) 
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*userbc" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userbc(ix,iy,iz,iside,eg)
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*userchk" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine userchk() 
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine usrdat() 
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat2" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine usrdat2() 
+
+      return
+      end
+_ACEOF
+fi
+
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat3" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine usrdat3 
+
+      return
+      end
+_ACEOF
+fi
+
 if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then
 cat >> $CASENAME.f << _ACEOF
 
@@ -39,7 +138,6 @@ c automatically added by makenek
       end
 _ACEOF
 fi
-
 
 if [ $CVODE -ne 0 ]; then
 
@@ -70,6 +168,7 @@ fi
 fi
 
 if [ $CMT -ne 0 ]; then
+
 if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
 cat >> $CASENAME.f << _ACEOF
 
@@ -88,10 +187,6 @@ cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
       subroutine cmt_userEOS ! user defined EOS 
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKUSE'
-      include 'CMTDATA'
 
       return
       end
