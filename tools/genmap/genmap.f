@@ -63,12 +63,12 @@ c     read nekton .rea file and make a .map file
      $               , w3   (lpts) , w4   (lpts)
      $               , w5   (lpts)
 
-      real        w14(4*lpts)
+      real        w14(4,lpts)
       equivalence (w1,w14)
 
-      common /arrayr/  dx(4*lpts)
+      common /arrayr/  dx(4,lpts)
 
-      common /carrayr/ bc(5*6*lelm)
+      common /carrayr/ bc(5,6,lelm)
       real*8 bc
       common /carrayc/ cbc(6,lelm)
       character*3      cbc
@@ -355,6 +355,7 @@ c
       real dx(1)
       real x(8),y(8),z(8)
       integer e,buf(50)
+      integer*8 l
 
       integer h2s(8) ! hypercube to strange ordering
       save    h2s
