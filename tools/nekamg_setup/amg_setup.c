@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
     char sname[132];
     char session[132];
-    printf("Enter the name of mesh file:\n");
+    printf("Enter name prefix of input file(s):\n");
     fgets(sname, sizeof sname, stdin);
     ret = sscanf(sname,"%s",&session);
     if (ret == -1) exit(1);
@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
     printf("Choose a coarsening method. Available options are:\n");
     //printf(" - 0: CLJP,\n");
     printf(" - 3: Ruege-Stuben,\n");
-    printf(" - 6: Falgout,\n");
-    //printf(" - 8: PMIS,\n");
-    printf(" - 10: HMIS (default),\n");
+    printf(" - 6: Falgout (default),\n");
+    printf(" - 8: PMIS,\n");
+    printf(" - 10: HMIS,\n");
     //printf(" - 21: CGC,\n");
     //printf(" - 22: CGC-E.\n");
     printf("Choice: ");
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     ret = sscanf(scoars, "%d", &coars_strat);
     if (ret == -1)
     {
-        coars_strat = 10; // default
+        coars_strat = 6; // default
     }
 
     /* Interpolation strategy */
@@ -213,8 +213,8 @@ int main(int argc, char *argv[])
     /* Set parameters (See Reference Manual for more parameters) */
 
     HYPRE_BoomerAMGSetStrongThreshold(solver,0.5);
-    if(coars_strat == 8 || coars_strat == 10) 
-      HYPRE_BoomerAMGSetStrongThreshold(solver,0.5); 
+    if (coars_strat == 8 || coars_strat == 10) 
+      HYPRE_BoomerAMGSetStrongThreshold(solver,0.25); 
 
     HYPRE_BoomerAMGSetPrintLevel(solver, print_level);
     HYPRE_BoomerAMGSetCoarsenType(solver, coars_strat);
@@ -418,7 +418,7 @@ int main(int argc, char *argv[])
                 printf("Chebyshev smoother iterations: %d\tContraction: %lf\n",
                         (int)m,c);
                 if((int)m > 3){
-                  printf("ERROR: Smoother iterations too large, try different coarsening!");
+                  printf("ERROR: Smoother iterations too large, try different coarsening!\n");
                   exit(1);
                 }
 
