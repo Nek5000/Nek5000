@@ -326,18 +326,13 @@ c     points in jsend
             do iz=kz1,kz2
             do iy=ky1,ky2
             do ix=kx1,kx2
-               call nekasgn (ix,iy,iz,e)
                ip=ip+1
                idx = (e-1)*nxyz+(iz-1)*nxy+(iy-1)*lx1+ix
                jsend(ip) = idx 
-               if (if3d) then
-                 rsend(ldim*(ip-1)+1)=x-dxf
-                 rsend(ldim*(ip-1)+2)=y
-                 rsend(ldim*(ip-1)+3)=z
-               else
-                 rsend(ldim*(ip-1)+1)=x-dxf
-                 rsend(ldim*(ip-1)+2)=y
-               endif
+               rsend(ldim*(ip-1)+1)=xm1(ix,iy,iz,e)-dxf
+               rsend(ldim*(ip-1)+2)=ym1(ix,iy,iz,e)
+               if (if3d) 
+     $         rsend(ldim*(ip-1)+3)=zm1(ix,iy,iz,e)
 
                if (ip.gt.nmaxl_nn) then
                   write(6,*) nid,
@@ -366,8 +361,6 @@ c     JL's routine to find which points these procs are on
      &                    rsend(1),ldim,
      &                    rsend(2),ldim,
      &                    rsend(3),ldim,nbp)
-
-      call neknekgsync()
 
 c     Move mesh 1 back to its original position
       if (idsess.eq.0) then
