@@ -1,6 +1,7 @@
 if [ $# -eq 0 ]; then
   echo ""
-  echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
+#echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknek case1 case2 ... casex np1 np2 ... npx"
   echo ""
   exit 1
 fi
@@ -14,7 +15,7 @@ fi
 
 if [ $(($NT%2)) -eq 1 ]; then
   echo "please provide NP for each case"
-  echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknek case1 case2 ... casex np1 np2 ... npx"
   echo ""
   exit 1
 fi

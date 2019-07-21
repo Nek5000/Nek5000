@@ -1,6 +1,7 @@
 if [ $# -eq 0 ]; then
   echo ""
-  echo "usage: neknekb case1 case2 np1 np2 [uncoupled] "
+#echo "usage: neknekb case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknekb case1 case2 ... casex np1 np2 ... npx"
   echo ""
   exit 1
 fi
@@ -14,7 +15,7 @@ fi
 
 if [ $(($NT%2)) -eq 1 ]; then
   echo "please provide NP for each case"
-  echo "usage: neknekb case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknek case1 case2 ... casex np1 np2 ... npx"
   echo ""
   exit 1
 fi
@@ -38,7 +39,6 @@ for ((i = 1; i <= $(($NT/2)); i++ )); do
   echo  ${!proc}       >>   SESSION.NAME
   NP=$(($NP+${!proc}))
 done
-
 
 rm -f ioinfo
 export NEK_LOGFILE=logfile

@@ -548,8 +548,8 @@ c     velocity.
       aqg=glsum(aqg,1) ! sum over all processors for this session
       gamma = 0.
       if (aqg.gt.0) gamma = -dqg/aqg
-c      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
-c 104  format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
+      if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
+ 104  format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
       do e=1,nelv
       do f=1,2*ldim
         if (intflag(f,e).eq.1) then
