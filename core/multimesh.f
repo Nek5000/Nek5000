@@ -29,7 +29,6 @@ c-------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      real dxf,dyf,dzf
 
       integer icalld
       save    icalld
@@ -65,12 +64,15 @@ c-------------------------------------------------------------
          endif
       endif
 
+c     Get NekNek distance field
+      call get_ms_dist()
+
 c     Figure out the displacement for the first mesh 
-      call setup_int_neknek(dxf,dyf,dzf)  !sets up interpolation for 2 meshes
+      call setup_int_neknek()  !sets up interpolation for 2 meshes
 
 c     exchange_points finds the processor and element number at
 c     comm_world level and displaces the 1st mesh back
-      call exchange_points(dxf,dyf,dzf)
+      call exchange_points()
 
       if (icalld.eq.0) then
         if(nio.eq.0) write(6,'(A,/)') ' done :: setup neknek'
@@ -90,7 +92,7 @@ c-------------------------------------------------------------
       integer j,e,f
 
 c     Set interpolation flag: points with boundary condition = 'int' 
-c     get intflag=1. 
+c     get intflag=1, with 'inp' get intflag=2
 c
 c     Boundary conditions are changed back to 'v' or 't'.
 
@@ -111,6 +113,7 @@ c     Boundary conditions are changed back to 'v' or 't'.
 c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
 c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
             if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
+            if (cb.eq.'inp') intflag(f,e) = 2
          endif
       enddo
       enddo
@@ -229,14 +232,13 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setup_int_neknek(dxf,dyf,dzf)
+      subroutine setup_int_neknek()
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
       include 'NEKNEK'
       include 'mpif.h'
 
-      real dx1,dy1,dz1,dxf,dyf,dzf,mx_glob,mn_glob
       integer i,j,k,n,ntot2,npall
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 c     THIS ROUTINE DISPLACES THE FIRST MESH AND SETUPS THE FINDPTS
@@ -248,21 +250,7 @@ c     Get total number of processors and number of p
        npall = npall+npsess(i-1)
       enddo
 
-c     Get diamter of the domain
-      mx_glob = glmax_ms(xm1,lx1*ly1*lz1*nelt)
-      mn_glob = glmin_ms(xm1,lx1*ly1*lz1*nelt)
-      dx1 = mx_glob-mn_glob
-
-      dxf = 10.+dx1
-      dyf = 0.
-      dzf = 0.
-
-c     Displace MESH 1
       ntot = lx1*ly1*lz1*nelt
-      if (idsess.eq.0) then
-         call cadd(xm1,-dxf,ntot)
-      endif
-
 c     Setup findpts    
       tol     = 5e-13
       npt_max = 128
@@ -271,16 +259,16 @@ c     Setup findpts
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 
-      if (istep.gt.1) call fgslib_findpts_free(inth_multi2)
-      call fgslib_findpts_setup(inth_multi2,mpi_comm_world,npall,ldim,
+      if (istep.gt.1) call fgslib_findptsms_free(fpth_ms)
+      call fgslib_findptsms_setup(fpth_ms,mpi_comm_world,npall,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
      &                          nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
-     &                          npt_max,tol)
+     &                          npt_max,tol,idsess,distfint)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine exchange_points(dxf,dyf,dzf)
+      subroutine exchange_points()
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
@@ -289,10 +277,9 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       integer jsend(nmaxl_nn)
       common /exchr/ rsend(ldim*nmaxl_nn)
-      integer rcode_all(nmaxl_nn),elid_all(nmaxl_nn)
-      integer proc_all(nmaxl_nn)
-      real    dist_all(nmaxl_nn)
-      real    rst_all(nmaxl_nn*ldim)
+      integer rcode_all(nmaxl_nn),elid_all(nmaxl_nn),proc_all(nmaxl_nn)
+      real    dist_all(nmaxl_nn),rst_all(nmaxl_nn*ldim)
+      integer isid_nn(nmaxl_nn)
       integer e,ip,iface,nel,nfaces,ix,iy,iz
       integer kx1,kx2,ky1,ky2,kz1,kz2,idx,nxyz,nxy
       integer icalld
@@ -316,12 +303,9 @@ c     interpolation)
 c     Setup arrays of x,y,zs to send to findpts and indices of boundary 
 c     points in jsend
       ip = 0
-      if (idsess.eq.0) then
-        dxf = -dxf
-      endif
       do e=1,nel
       do iface=1,nfaces
-         if (intflag(iface,e).eq.1) then
+         if (intflag(iface,e).gt.0) then
             call facind (kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
             do iz=kz1,kz2
             do iy=ky1,ky2
@@ -329,7 +313,8 @@ c     points in jsend
                ip=ip+1
                idx = (e-1)*nxyz+(iz-1)*nxy+(iy-1)*lx1+ix
                jsend(ip) = idx 
-               rsend(ldim*(ip-1)+1)=xm1(ix,iy,iz,e)-dxf
+               isid_nn(ip) = idsess
+               rsend(ldim*(ip-1)+1)=xm1(ix,iy,iz,e)
                rsend(ldim*(ip-1)+2)=ym1(ix,iy,iz,e)
                if (if3d) 
      $         rsend(ldim*(ip-1)+3)=zm1(ix,iy,iz,e)
@@ -353,19 +338,16 @@ c     points in jsend
       call neknekgsync()
 
 c     JL's routine to find which points these procs are on
-      call fgslib_findpts(inth_multi2,rcode_all,1,
+      call fgslib_findptsms(fpth_ms,rcode_all,1,
      &                    proc_all,1,
      &                    elid_all,1,
      &                    rst_all,ldim,
      &                    dist_all,1,
      &                    rsend(1),ldim,
      &                    rsend(2),ldim,
-     &                    rsend(3),ldim,nbp)
-
-c     Move mesh 1 back to its original position
-      if (idsess.eq.0) then
-        call cadd(xm1,-dxf,lx1*ly1*lz1*nelt)
-      endif
+     &                    rsend(3),ldim,
+     &                    isid_nn,1,0,
+     &                    nbp)
 
       ip=0
       icount=0
@@ -398,7 +380,11 @@ c     Make sure rcode_all is fine
 
       ipg = iglsum(ip,1)
       nbpg = iglsum(nbp,1)
-      if (nid.eq.0) write(6,*) ipg,nbpg,'interface points' 
+      if (nid.eq.0) write(6,*) idsess,ipg,nbpg,'interface points' 
+      if (ipg.lt.nbpg) then
+         if (nid.eq.0) write(6,*) 'Not all interface points found'
+         ierror = 1
+      endif
       npoints_nn = ip
 
       ierror = iglmax_ms(ierror,1)
@@ -473,7 +459,7 @@ c--------------------------------------------------------------------------
       integer fieldstride
 
 c     Used for findpts_eval of various fields
-      call fgslib_findpts_eval(inth_multi2,fieldout,fieldstride,
+      call fgslib_findptsms_eval(fpth_ms,fieldout,fieldstride,
      &                         rcode,1,
      &                         proc,1,
      &                         elid,1,
@@ -538,9 +524,7 @@ c     velocity.
        do e=1,nelv
        do f=1,2*ldim
          if (cbc(f,e,1).eq.'o  '.or.cbc(f,e,1).eq.'O  ') then
-         if (intflag(f,e).eq.0) then
            itchk = 1
-         endif
          endif
        enddo
        enddo
@@ -874,7 +858,7 @@ c
       call opzero(vxcbc,vycbc,vzcbc)
       call opzero(vxc,vyc,vzc)
 
-      ngeompv = 10
+      ngeompv = 20
       do ictr = 1,ngeompv
         if (icvflow.eq.1) then
          call copy     (rw1,bm1,ntot1)
@@ -956,12 +940,6 @@ c
         call neknekgsync()
       enddo
 
-        call neknekgsync()
-c
-      
-      if (istep.eq.3) ifxyo = .true.
-      if (istep.eq.3) call outpost(vxc,vyc,vzc,prc,t,'cor')
-      if (istep.eq.3) ifxyo = .false.
       return
       end
 c-----------------------------------------------------------------------
@@ -1015,7 +993,7 @@ c     (Tombo splitting scheme).
       NXYZ1  = lx1*ly1*lz1
       NTOT1  = NXYZ1*NELV
 
-      ngeompv = 10
+      ngeompv = 20
       do ictr = 1,ngeompv
         call invers2  (h1,vtrans,n)
         call rzero    (h2,       n)
@@ -1042,7 +1020,7 @@ C     surface terms
             IF (ldim.EQ.3)
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
-            IF (CB(1:1).EQ.'v'.and.intflag(ifc,iel).eq.1) then
+            IF (intflag(ifc,iel).eq.1) then
                CALL FACCL3
      $         (W1(1,IEL),vxcbc(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
@@ -1055,7 +1033,7 @@ C     surface terms
             IF (ldim.EQ.3)
      $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
-            IF (CB(1:1).EQ.'v'.and.intflag(ifc,iel).eq.1) then
+            IF (intflag(ifc,iel).eq.1) then
               CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
             endif
             CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
@@ -1111,4 +1089,27 @@ ccccc
       return
       end
 c-----------------------------------------------------------------------
+      subroutine get_ms_dist()
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
 
+      do ie=1,nelv
+      do ifac=1,2*ldim
+         if (intflag(ifac,ie).gt.0) cbc(ifac,ie,1) = 'int'
+      enddo
+      enddo
+
+      call cheap_dist(distfint,1,'int')
+      call dsavg(distfint)
+
+      do ie=1,nelv
+      do ifac=1,2*ldim
+         if (intflag(ifac,ie).eq.1) cbc(ifac,ie,1) = 'v  '
+         if (intflag(ifac,ie).eq.2) cbc(ifac,ie,1) = 'o  '
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------

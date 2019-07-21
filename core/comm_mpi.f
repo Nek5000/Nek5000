@@ -123,12 +123,6 @@ c     Assign key for splitting into multiple groups
       session = session_mult(idsess)
       path    = path_mult   (idsess)
 
-      if (ifneknekc) then
-         if (nsessions.gt.2) call exitti(
-     &     'More than 2 coupled sessions are currently not supported!$',
-     $     nsessions)
-      endif 
-
       amgfile  = session
 
       return
