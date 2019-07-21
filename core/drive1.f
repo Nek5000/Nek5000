@@ -255,6 +255,12 @@ c-----------------------------------------------------------------------
       call setsolv
       call comment
 
+
+      if (ifneknekc) then
+        call bcopy
+        call chk_outflow
+      endif
+
 #ifdef CMTNEK
       if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
       call cmt_nek_advance
@@ -359,12 +365,7 @@ c-----------------------------------------------------------------------
       do i=1,msteps
          istep = istep+i
          call nek_advance
-
-         if (ifneknekc) then 
-            call neknek_exchange
-            call bcopy
-            call chk_outflow
-         endif
+         if (ifneknekc) call neknek_exchange
       enddo
 
       return

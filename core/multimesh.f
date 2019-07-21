@@ -132,8 +132,9 @@ c------------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
       integer k,i,n
+      real tvec(3),ccoeff(3)
 
-      if (.not.ifneknekc) return
+      if (.not.ifneknekc.or.istep.eq.1) return
 
       n    = lx1*ly1*lz1*nelt
 
@@ -147,21 +148,42 @@ c     Order of extrpolation is contolled by the parameter NINTER contained
 c     in NEKNEK. First order interface extrapolation, NINTER=1 (time lagging) 
 c     is activated. It is unconditionally stable.  If you want to use 
 c     higher-order interface extrapolation schemes, you need to increase 
-c     ngeom to ngeom=3-5 for scheme to be stable.
+c     ngeom to nge om=3-5 for scheme to be stable.
 
-
-      if (NINTER.eq.1.or.istep.eq.1) then
-       c0=1.
-       c1=0.
-       c2=0.
-       else if (NINTER.eq.2.or.istep.eq.2) then
-         c0=2.
-         c1=-1.
+      rdt = glmax(param(12),1)
+      if (rdt.lt.0.) then 
+        if (NINTER.eq.1.or.istep.le.2) then
+         c0=1.
+         c1=0.
          c2=0.
-       else 
-         c0=3.
-         c1=-3.
-         c2=1.
+         else if (NINTER.eq.2.or.istep.eq.3) then
+           c0=2.
+           c1=-1.
+           c2=0.
+         else 
+           c0=3.
+           c1=-3.
+           c2=1.
+        endif
+      else
+         tvec(1) = time-dtlag(1)
+         tvec(2) = tvec(1)-dtlag(2)
+         tvec(3) = tvec(2)-dtlag(3)
+         if (NINTER.eq.1.or.istep.le.2) then
+           c0=1.
+           c1=0.
+           c2=0.
+         elseif (NINTER.eq.2.or.istep.eq.3) then
+           call fd_weights_full(time,tvec,1,0,ccoeff)
+           c0=ccoeff(1)
+           c1=ccoeff(2)    
+           c2=0. 
+         else
+           call fd_weights_full(time,tvec,2,0,ccoeff)
+           c0=ccoeff(1)
+           c1=ccoeff(2) 
+           c2=ccoeff(3)
+         endif
       endif
 
       do k=1,nfld_neknek

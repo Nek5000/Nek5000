@@ -24,7 +24,7 @@ if [ $(($NT/2)) -ne 2 ]; then
    echo ""
    echo "only 2 sessions permitted right now"
    echo ""
-   exit 1
+#  exit 1
 fi
 
 rm -rf SESSION.NAME  2>/dev/null
