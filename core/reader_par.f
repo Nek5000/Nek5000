@@ -630,8 +630,14 @@ c set logical flags
       call capit(c_out,132)
       if (index(c_out,'STEADYSTOKES').eq.1) then
          iftran = .false.
-      else if (index(c_out,'INCOMPNS').eq.1) then
-         continue
+         ifadvc(1) = .false.
+      else if (index(c_out,'STOKES').eq.1) then
+         ifadvc(1) = .false.
+      else if (index(c_out,'STEADYHEAT').eq.1) then
+         iftran = .false.
+         ifflow = .false. 
+         ifheat = .true.
+         ifadvc(2) = .false.
       else if (index(c_out,'LOWMACHNS').eq.1) then
          iflomach = .true.
       else if (index(c_out,'INCOMPLINNS').eq.1 .or.
