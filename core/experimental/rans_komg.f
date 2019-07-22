@@ -1653,8 +1653,10 @@ c	    if(nu_t.gt.5000*mu)nu_t = 5000*mu
           endif
           toll = 0. !1.0e-06
           Y_k = 0.
+          om0 = 270.4
+          fom0tau = 1. - om0 * tau
           if(tau.gt.toll) 
-     $    Y_k = rho * betai_str * f_beta_str * k / tau
+     $    Y_k = rho * betai_str * f_beta_str * fom0tau / tau
 
 
 c betai_str = beta_star in 12.5.15 for incompressible flow
@@ -1673,16 +1675,15 @@ c betai_str = beta_star in 12.5.15 for incompressible flow
           mu_t = max(mu_t, mu_min)
 
           G_k0= mu_t*g(i) - ( rho*k + mu_t*div(i) )*extra_prod
-          G_k = min(G_k0, 10.*Y_k)
+          G_k = min(G_k0, 10.*Y_k*k)
 
 c g(i) is S**2 in equation sheet
 
           if (ifrans_diag) then
-ccc         kSrc  (i,1,1,e) = G_k - Y_k
             kSrc  (i,1,1,e) = G_k
             kDiag (i,1,1,e) = Y_k
           else
-            kSrc  (i,1,1,e) = G_k - Y_k
+            kSrc  (i,1,1,e) = G_k - Y_k * k
             kDiag (i,1,1,e) = 0.0
           endif
 
@@ -1712,8 +1713,8 @@ c          S_tau = Scoef*xt3
 c          S_tau = min(S_tau, Y_w0)
 
 c          G_w = G_w0
-          G_w =-min(G_w0, 10.0*Y_w0)
-          Y_w =-Y_w0
+          G_w =-min(G_w0, 10.0*Y_w0)*fom0tau
+          Y_w =-Y_w0*fom0tau*fom0tau
 
           if (ifrans_diag) then
             omgSrc(i,1,1,e) = G_w - Y_w + S_w
@@ -1749,7 +1750,7 @@ c          endif
         do e=1,nelv
         do i=1,lxyz
           kDiag  (i,1,1,e) = kDiag(i,1,1,e)
-     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
+c     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
           omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
      $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
         enddo
