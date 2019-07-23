@@ -1553,6 +1553,7 @@ c================================
       do e=1,nelv
 
         call copy   (g,   St_mag2(1,e),       lxyz)
+c        call copy   (g,   Om_mag2(1,e),       lxyz)
         call copy   (div, DivQ   (1,e),       lxyz)
         if(.not.iflomach) call rzero  (div,   lxyz)
 
@@ -1703,7 +1704,8 @@ c no compressibility correction M < 0.25
 
           Y_w0 = rho*beta*f_b
 
-          S_w =-rho * sigd * xk3
+          S_w = 0.
+          if(fom0tau.ne.0.) S_w =-rho * sigd * xk3/fom0tau
 
 c          Scoef = 0.0
 c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
