@@ -13,6 +13,8 @@ c     Solution and data
 c
       real bq(lx1,ly1,lz1,lelt,ldimt)
       common /bqcb/ bq
+      real adq(lx1,ly1,lz1,lelt,ldimt)
+      common /aqcb/ adq
 
 c     Can be used for post-processing runs (SIZE .gt. 10+3*LDIMT flds)
       real vxlag  (lx1,ly1,lz1,lelv,2)

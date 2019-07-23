@@ -1,7 +1,9 @@
-      parameter (ncoeffs = 21)
+      parameter (ncoeffs = 30)
       common /rans_komg_i/ ifld_k, ifld_omega
       common /rans_komg_r/ kSrc  (lx1,ly1,lz1,lelv)
      $                   , omgSrc(lx1,ly1,lz1,lelv)
+     $                   , kDiag  (lx1,ly1,lz1,lelv)
+     $                   , omgDiag(lx1,ly1,lz1,lelv)
      $                   , mut   (lx1,ly1,lz1,lelv)
      $                   , mutsk (lx1,ly1,lz1,lelv)
      $                   , mutso (lx1,ly1,lz1,lelv)
@@ -16,12 +18,17 @@
      $                        , ywd         (lx1,ly1,lz1,lelv)
      $                        , ywdm1       (lx1,ly1,lz1,lelv)
 
-      real kSrc, omgSrc, mut, mutsk, mutso
+      real kSrc, omgSrc, kDiag, omgDiag, mut, mutsk, mutso
+      real k,mu_t,nu_t,mu,nu, kv_min,omeg_max, mu_min
 
       common/ifrans/ifrans_komg_stndrd, ifrans_komg_lowRe
-     $             ,ifrans_komgSST_stndrd, ifrans_komgSST_lowRe
-     $             ,ifrans_komg_stndrd_noreg
+     $             ,ifrans_komgSST_stndrd
+     $             ,ifrans_komg_stndrd_noreg, ifrans_ktau_stndrd
+     $             ,ifrans_ktau_lowRe, ifrans_ktauSST_stndrd
+     $             ,ifrans_diag
       logical       ifrans_komg_stndrd, ifrans_komg_lowRe
-     $             ,ifrans_komgSST_stndrd, ifrans_komgSST_lowRe
-     $             ,ifrans_komg_stndrd_noreg
+     $             ,ifrans_komgSST_stndrd
+     $             ,ifrans_komg_stndrd_noreg, ifrans_ktau_stndrd
+     $             ,ifrans_ktau_lowRe, ifrans_ktauSST_stndrd
+     $             ,ifrans_diag
 
