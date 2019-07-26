@@ -190,7 +190,7 @@ C
       NMXV   = 1000
       if (iftran) NMXV = 200
       NMXH   =  NMXV ! not used anymore
-      NMXP   = 1000 ! 200 what the fuck
+      NMXP   =  200
       do ifield = 2,ldimt+1
          NMXT(ifield-1) = 200 
       enddo 
