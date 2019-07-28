@@ -18,8 +18,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       ntot1 = lx1*ly1*lz1*nelt
-c     Initialize unity partition function to 1
-      call rone(upf,ntot1)
+      call get_ms_dist()
+      call getupf()
       call col3(bm1ms,bm1,upf,ntot1)
 
       return
@@ -42,8 +42,6 @@ c-------------------------------------------------------------
       if (nsessmax.eq.1) 
      $  call exitti('set nsessmax > 1 in SIZE!$',nsessmax)
 
-      call setup_neknek_wts
-
       if (icalld.eq.0) then
          ! just in case we call setup from usrdat2 
          call fix_geom
@@ -64,15 +62,11 @@ c-------------------------------------------------------------
          endif
       endif
 
-c     Get NekNek distance field
-      call get_ms_dist()
+      call setup_int_neknek()  !sets up findpts handle
 
-c     Figure out the displacement for the first mesh 
-      call setup_int_neknek()  !sets up interpolation for 2 meshes
-
-c     exchange_points finds the processor and element number at
-c     comm_world level and displaces the 1st mesh back
-      call exchange_points()
+      call setup_neknek_wts    !sets up integration weights
+      
+      call exchange_points()   !find donor elements
 
       if (icalld.eq.0) then
         if(nio.eq.0) write(6,'(A,/)') ' done :: setup neknek'
@@ -281,7 +275,7 @@ c     Setup findpts
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 
-      if (istep.gt.1) call fgslib_findptsms_free(fpth_ms)
+      if (istep.ge.1) call fgslib_findptsms_free(fpth_ms)
       call fgslib_findptsms_setup(fpth_ms,mpi_comm_world,npall,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
      &                          nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
@@ -1135,3 +1129,119 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine getupf()
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKNEK'
+      include 'mpif.h'
+      parameter (ltot=lx1*ly1*lz1*lelt)
+      parameter (nxyz=lx1*ly1*lz1     )
+      real wtglls(nxyz,lelt,0:nsessmax-1)
+      real rsend(ltot*ldim)
+      integer rcode_all(ltot),elid_all(ltot),proc_all(ltot)
+      real    dist_all(ltot),rst_all(ltot*ldim)
+      real    disti_all(ltot)
+      integer idx1(ltot)
+      integer isid_nn(ltot)
+      integer elfound(lelt),e,f
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      n = lx1*ly1*lz1*nelt
+ccc   initialize all wtglls to -1
+      do i=1,nsessions
+         call cfill(wtglls(1,1,i-1),-1.,n)
+      enddo
+ccc   first find just all the element faces in other domains
+      npt = 0
+      do e=1,nelt
+      do f=1,2*ldim
+         call facind (kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,f)
+         do iz=kz1,kz2
+         do iy=ky1,ky2
+         do ix=kx1,kx2
+            npt=npt+1
+            rsend(ldim*(npt-1)+1) = xm1(ix,iy,iz,e)
+            rsend(ldim*(npt-1)+2) = ym1(ix,iy,iz,e)
+            if (ldim.eq.3) rsend(ldim*(npt-1)+3) = zm1(ix,iy,iz,e)
+            isid_nn(npt) = idsess
+         enddo
+         enddo
+         enddo
+      enddo
+      enddo
+
+      call fgslib_findptsms(fpth_ms,rcode_all,1,proc_all,1,
+     &        elid_all,1,rst_all,ldim,dist_all,1,
+     &        rsend(1),ldim,rsend(2),ldim,rsend(3),ldim,
+     &        isid_nn,1,0,npt)
+
+      npt = 0
+      npel = 2*ldim*(lx1**(ldim-1))
+      nelf = 0
+      call izero(elfound,nelt)
+      if (idsess.eq.0) then
+      do e=1,nelt
+        itchk = 0
+        do i=1,npel
+          if (rcode_all((e-1)*npel+i).eq.2) itchk=itchk+1
+        enddo
+        if (itchk.eq.npel) elfound(e) = 1
+        if (itchk.eq.npel) nelf = nelf+1 !can get rid of nelf variable
+      enddo
+      endif
+
+c     specify elements that are not in the overlap region 
+      npt = 0
+      do e=1,nelt
+        if (elfound(e).eq.1) then
+          do i=0,nsessions-1
+            if (idsess.eq.i) then
+              call cfill(wtglls(1,e,i),1.,nxyz)
+            else
+              call cfill(wtglls(1,e,i),0.,nxyz)
+            endif
+          enddo
+        else !  elfound(e)!=1. element has some GLL points in overlap
+          do i=1,nxyz
+            rsend(ldim*npt+1) = xm1(i,1,1,e)
+            rsend(ldim*npt+2) = ym1(i,1,1,e)
+            if (ldim.eq.3) rsend(ldim*npt+3) = zm1(i,1,1,e)
+            npt=npt+1
+            isid_nn(npt) = idsess
+            idx1(npt)    = (e-1)*nxyz+i
+           enddo
+        endif
+      enddo !e=1,nelt
+
+      do ids=0,nsessions-1
+         call ifill(isid_nn,ids,npt)
+         call fgslib_findptsms(fpth_ms,rcode_all,1,proc_all,1,
+     &        elid_all,1,rst_all,ldim,dist_all,1,
+     &        rsend(1),ldim,rsend(2),ldim,rsend(3),ldim,
+     &        isid_nn,1,1,npt)
+         call fgslib_findptsms_eval(fpth_ms,disti_all,1,
+     &      rcode_all,1,proc_all,1,elid_all,1,rst_all,ldim,npt,distfint)
+
+         do i=1,npt
+           icd = rcode_all(i)
+           dst = dist_all(i)
+           idx = idx1(i)
+           if (icd.eq.2) then !this point not found
+             wtglls(idx,1,ids) = 0.
+           else
+             wtglls(idx,1,ids) = disti_all(i)
+           endif
+         enddo
+      enddo
+      do i=1,n
+         rsum = 0.
+         do j=0,nsessions-1
+           rsum = rsum+wtglls(i,1,j)
+         enddo
+         upval = wtglls(i,1,idsess)/rsum
+         upf(i,1,1,1) = wtglls(i,1,idsess)/rsum
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
