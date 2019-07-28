@@ -3,7 +3,10 @@ c     Routines for multidomain (neknek) simulations.
 c
 c     References:
 c
-c     "A spectrally accurate method for overlapping grid solution of
+c     Mittal, Ketan, Som Dutta, and Paul Fischer. "Nonconforming
+c     Schwarz-spectral element methods for incompressible flow." 
+c     Computers & Fluids (2019): 104237.
+c
 c     incompressible Navier–Stokes equations" Brandon E. Merrill,
 c     Yulia T. Peet, Paul F. Fischer, and James W. Lottes, J. Comp. Phys.
 c     307 (2016) 60-93.
@@ -1238,7 +1241,6 @@ c     specify elements that are not in the overlap region
          do j=0,nsessions-1
            rsum = rsum+wtglls(i,1,j)
          enddo
-         upval = wtglls(i,1,idsess)/rsum
          upf(i,1,1,1) = wtglls(i,1,idsess)/rsum
       enddo
 
