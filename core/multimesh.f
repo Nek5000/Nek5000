@@ -147,8 +147,10 @@ c     is activated. It is unconditionally stable.  If you want to use
 c     higher-order interface extrapolation schemes, you need to increase 
 c     ngeom to nge om=3-5 for scheme to be stable.
 
-      rdt = glmax(param(12),1)
-      if (rdt.lt.0.) then 
+      ichk = 0
+      if (iffxdt) ichk = 1
+      ichkg = iglmin_ms(ichk,1)
+      if (ichkg.eq.1) then 
         if (NINTER.eq.1.or.istep.le.2) then
          c0=1.
          c1=0.
