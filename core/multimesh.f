@@ -7,6 +7,7 @@ c     Mittal, Ketan, Som Dutta, and Paul Fischer. "Nonconforming
 c     Schwarz-spectral element methods for incompressible flow." 
 c     Computers & Fluids (2019): 104237.
 c
+c     "A spectrally accurate method for overlapping grid solution of
 c     incompressible Navier–Stokes equations" Brandon E. Merrill,
 c     Yulia T. Peet, Paul F. Fischer, and James W. Lottes, J. Comp. Phys.
 c     307 (2016) 60-93.
