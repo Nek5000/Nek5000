@@ -2334,11 +2334,6 @@ c                4  7  10  13   23    33    53    62     68     74
 
       if (nid.eq.0) write(6,*) 'WARNING: reading depreacted header!'
 
-      if (nelr.gt.lelr) then
-        write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
-        call exitt
-      endif
-
 c     Assign read conditions, according to rdcode
 c     NOTE: In the old hdr format: what you see in file is what you get.
 c      ifgtim  = .true.  ! always get time
@@ -2589,11 +2584,6 @@ c-----------------------------------------------------------------------
       ifmpiio = .false.
 #endif
 
-      if (nelr.gt.lelr) then
-         write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
-         call exitt
-      endif
-
       if(.not.ifmpiio) then
 
         stride = np / nfiler
@@ -2618,6 +2608,10 @@ c-----------------------------------------------------------------------
            call byte_read (bytetest,1,ierr) 
            if(ierr.ne.0) goto 102
            call mfi_parse_hdr (hdr,ierr)    ! replace hdr with correct one 
+           if (nelr.gt.lelr) then
+              write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
+              call exitt
+           endif
            call byte_read (er,nelr,ierr)    ! get element mapping
            if(if_byte_sw) call byte_reverse(er,nelr,ierr)
         else
@@ -2647,6 +2641,10 @@ c-----------------------------------------------------------------------
 
         if(ierr.ne.0) goto 102
         call byte_set_view(offs,ifh_mbyte)
+        if (nelr.gt.lelr) then
+           write(6,*) 'ERROR: increase lelr in SIZE to ', nelr 
+           call exitt
+        endif
         call byte_read_mpi(er,nelr,-1,ifh_mbyte,ierr)
         if(ierr.ne.0) goto 102
         if(if_byte_sw) call byte_reverse(er,nelr,ierr)

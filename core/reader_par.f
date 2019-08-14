@@ -436,6 +436,20 @@ c set parameters
       call finiparser_getDbl(d_out,'mesh:firstBCFieldIndex',ifnd)
       if(ifnd .eq. 1) param(33) = int(d_out)
 
+      call finiparser_getString(c_out,'pressure:solver',ifnd)
+      if (ifnd .eq. 1) then 
+         call capit(c_out,132)
+         if (index(c_out,'GMRES') .eq. 1) then
+            param(42) = 0
+         else if (index(c_out,'CGFLEX') .eq. 1) then
+            param(42) = 2
+         else
+            write(6,*) 'value: ',trim(c_out)
+            write(6,*) 'not supported for pressure:solver!'
+            goto 999
+         endif
+      endif
+
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
          call capit(c_out,132)
