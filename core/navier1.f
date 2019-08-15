@@ -124,9 +124,12 @@ c     Compute the residual for the velocity - UZAWA SCHEME.
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
       COMMON /SCREV/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
+
 C
+      if(nio.eq.0.and.istep.eq.1) write(*,*) "implicit - drs"
       INLOC   = -1
       CALL SETHLM  (H1,H2,INLOC)
+      call add2    (h2,ffa,lx1*ly1*lz1*nelv)
       CALL OPRZERO (RESV1,RESV2,RESV3)
       CALL OPGRADT (RESV1,RESV2,RESV3,PR)
       CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
@@ -1472,14 +1475,14 @@ C----------------------------------------------------------------------
       include 'TSTEP'
 C
       TIME = TIME-DT
-      CALL NEKUF   (BFX,BFY,BFZ)
+      CALL NEKUF   (BFX,BFY,BFZ,aff)
       CALL OPCOLV  (BFX,BFY,BFZ,BM1)
       TIME = TIME+DT
 C
       return
       END
 C
-      subroutine nekuf (f1,f2,f3)
+      subroutine nekuf (f1,f2,f3,fa)
       include 'SIZE'
       include 'PARALLEL'
       include 'NEKUSE'
@@ -1488,12 +1491,14 @@ C
       REAL F1 (LX1,LY1,LZ1,LELV)
       REAL F2 (LX1,LY1,LZ1,LELV)
       REAL F3 (LX1,LY1,LZ1,LELV)
+      real fa (lx1,ly1,lz1,lelv)
 
 #ifdef TIMER
       etime1=dnekclock_sync()
 #endif
 
       CALL OPRZERO (F1,F2,F3)
+      call rzero (fa,lx1*ly1*lz1*nelv)
       DO 100 IEL=1,NELV
          ielg = lglel(iel)
          DO 100 K=1,lz1
@@ -1504,6 +1509,7 @@ C
             F1(I,J,K,IEL) = FFX
             F2(I,J,K,IEL) = FFY
             F3(I,J,K,IEL) = FFZ
+            fa(i,j,k,iel) = ffa
  100  CONTINUE
 
 #ifdef TIMER
