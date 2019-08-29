@@ -340,13 +340,6 @@ c no source terms Sk or S_w are added
 
           alp_str = alpinf_str 
 
-c          if( sqrt(k).lt.(omega*Hlen)) then
-c             mu_t    = rho * alp_str*k/omega
-c          else
-c             mu_t = sqrt(k) * Hlen
-c          endif
-c          mu_t = max(mu_t, mu_min)
-
           rhoalpk(i)= rho*alp_str*k
 
           factr = 1.0
@@ -377,15 +370,25 @@ c betai_str = beta_star in 12.5.15 for incompressible flow
 
           twoSijSij_bar = g(i) - div(i)*extra_prod
           Omeg_min      = Clim*sqrt(twoSijSij_bar/betainf_str)/alp_str
-          if(Omeg_min .lt.omega) then
-             mu_t = rho*alp_str*k/omega
+c          if(Omeg_min .lt.omega) then
+c             mu_t = rho*alp_str*k/omega
+c          else
+c             mu_t = rho*alp_str*k/Omeg_min
+c          endif
+c          mu_t = max(mu_t, mu_min)
+
+          if( sqrt(k).lt.(omega*Hlen)) then
+             mu_t    = rho * alp_str*k/omega
           else
-             mu_t = rho*alp_str*k/Omeg_min
+             mu_t = sqrt(k) * Hlen
           endif
           mu_t = max(mu_t, mu_min)
 
+c          mu_t    = rho * alp_str*k/(omega + tiny) ! should multiply these by rho!!!
+
           G_k0= mu_t*g(i) - ( rho*k + mu_t*div(i) )*extra_prod
-          G_k = min(G_k0, 10.*Y_k)
+c          G_k = min(G_k0, 10.*Y_k)
+          G_k = G_k0
 
 c g(i) is S**2 in equation sheet
 
@@ -413,7 +416,8 @@ c no compressibility correction M < 0.25
 
           Y_w = rho*beta*f_b * omega * omega
 
-          G_w = min(G_w0, 10.0*Y_w)
+c          G_w = min(G_w0, 10.0*Y_w)
+          G_w = G_w0
 
           S_w = rho * sigd * xk3 * omega * omega
 
@@ -1649,14 +1653,15 @@ c	    if(nu_t.gt.5000*mu)nu_t = 5000*mu
             f_beta_str = 1.0
             sigd       = sigd_min
           else
-            f_beta_str = 1.0 ! (1.0 + fb_c1st*xk3*xk3)/(1.0 + fb_c2st*xk3*xk3)
+            f_beta_str = (1.0 + fb_c1st*xk3*xk3)/(1.0 + fb_c2st*xk3*xk3)
             sigd       = sigd_max
           endif
           toll = 0. !1.0e-06
           Y_k = 0.
-          om0 = 270.4
+          om0 = 0. !270.4
           fom0tau = 1. - om0 * tau
           if(tau.gt.toll) 
+c     $ Y_k = rho * betai_str * f_beta_str * fom0tau*sign(1.,fom0tau)/tau
      $    Y_k = rho * betai_str * f_beta_str * fom0tau / tau
 
 
@@ -1673,10 +1678,12 @@ c betai_str = beta_star in 12.5.15 for incompressible flow
           else
              mu_t = rho*alp_str*k/Omeg_min
           endif
-          mu_t = max(mu_t, mu_min)
+c          mu_t = max(mu_t, mu_min)
+
+          mu_t    = rho * alp_str*k*tau
 
           G_k0= mu_t*g(i) - ( rho*k + mu_t*div(i) )*extra_prod
-          G_k = min(G_k0, 10.*Y_k*k)
+          G_k = G_k0 ! min(G_k0, 10.*Y_k*k)
 
 c g(i) is S**2 in equation sheet
 
@@ -1704,8 +1711,9 @@ c no compressibility correction M < 0.25
 
           Y_w0 = rho*beta*f_b
 
-          S_w = 0.
-          if(fom0tau.ne.0.) S_w =-rho * sigd * xk3/fom0tau
+c          S_w = 0.
+c          if(fom0tau.ne.0.) S_w =-rho * sigd * xk3/fom0tau
+          S_w =-rho * sigd * xk3
 
 c          Scoef = 0.0
 c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
@@ -1715,8 +1723,8 @@ c          S_tau = Scoef*xt3
 c          S_tau = min(S_tau, Y_w0)
 
 c          G_w = G_w0
-          G_w =-min(G_w0, 10.0*Y_w0)*fom0tau
-          Y_w =-Y_w0*fom0tau*fom0tau
+          G_w =-G_w0*fom0tau !-min(G_w0, 10.0*Y_w0)*fom0tau
+          Y_w =-Y_w0*fom0tau*fom0tau !*sign(1.,fom0tau)
 
           if (ifrans_diag) then
             omgSrc(i,1,1,e) = G_w - Y_w + S_w
@@ -2623,6 +2631,8 @@ c additional constants
         Clim         = 7.0/8.0
         coeffs(23)   = Clim      
 
+        if(nid.eq.0) write(*,*) 'Using kw98 coeffs'
+
         return
         end
 c-----------------------------------------------------------------------
@@ -2635,6 +2645,9 @@ c ====various problem-specific turbulence constants
 c omeg_max = value of omega on the walls
 c kv_min = value of K on the walls
 c Pr_t is the turbulent prandtl number
+
+        logical if_cfl3d
+        if_cfl3d = .false.
 
         vkappa = 0.41
 
@@ -2654,6 +2667,8 @@ c Production of K constants
         r_k          = 6.0
         coeffs( 5)   = r_k
         beta_0       = 0.0708 ! should be 0.075 for SST
+        if(if_cfl3d) 
+     $  beta_0       = 0.075
         coeffs( 6)   = beta_0
         alp0_str     = beta_0/3.0
         coeffs( 7)   = alp0_str
@@ -2662,8 +2677,9 @@ c Dissipation of K constants
         betainf_str  = 0.09
         coeffs( 8)   = betainf_str
         alp_inf      = 0.52
-c        alp_inf      = beta_0/betainf_str 
-c     $               - vkappa**2/sqrt(betainf_str)/sigma_omega ! should be 0.52 for k-omega
+        if(if_cfl3d) 
+     $  alp_inf      = beta_0/betainf_str 
+     $               - vkappa**2/sqrt(betainf_str)/sigma_omega ! should be 0.52 for k-omega
         coeffs( 9)   = alp_inf
         r_b          = 8.0
         coeffs(10)   = r_b
@@ -2702,6 +2718,15 @@ c additional constants
         coeffs(22)   = sigd_max
         Clim         = 7.0/8.0
         coeffs(23)   = Clim     
+
+        if(nid.eq.0) then
+          if(if_cfl3d) then
+            write(*,*) 'Using kw06_cfl3d coeffs'
+          else
+            write(*,*) 'Using kw06 coeffs'
+          endif
+          write(*,*) 'beta_0, alp_inf ', beta_0, alp_inf
+        endif
 
         return
         end
@@ -2908,23 +2933,25 @@ c             write(*,*) 'Neg  KEY  ', nkey_neg, xkey_neg
 
           alp_str = alpinf_str 
 
-c          if( sqrt(k).lt.(omega*Hlen)) then
-c             mu_t    = rho * alp_str*k/omega
-c          else
-c             mu_t = sqrt(k) * Hlen
-c          endif
-c          mu_t = max(mu_t, mu_min)
-
           extra_prod = twothird*div(i)
 
           twoSijSij_bar = g(i) - div(i)*extra_prod
           Omeg_min      = Clim*sqrt(twoSijSij_bar/betainf_str)/alp_str
-          if(Omeg_min .lt.omega) then
-             mu_t = rho*alp_str*k/omega
+c          if(Omeg_min .lt.omega) then
+c             mu_t = rho*alp_str*k/omega
+c          else
+c             mu_t = rho*alp_str*k/Omeg_min
+c          endif
+c          mu_t = max(mu_t, mu_min)
+
+          if( sqrt(k).lt.(omega*Hlen)) then
+             mu_t    = rho * alp_str*k/omega
           else
-             mu_t = rho*alp_str*k/Omeg_min
+             mu_t = sqrt(k) * Hlen
           endif
           mu_t = max(mu_t, mu_min)
+
+c          mu_t    = rho * alp_str*k/(omega + tiny) ! should multiply these by rho!!!
 
           mut  (i,1,1,e)   = mu_t
           mutsk(i,1,1,e)   = mu_t / sigma_k
@@ -3626,7 +3653,9 @@ c
           else
              mu_t = rho*alp_str*k/Omeg_min
           endif
-          mu_t = max(mu_t, mu_min)
+c          mu_t = max(mu_t, mu_min)
+
+          mu_t    = rho * alp_str*k*tau
 
 c          yw = ywd(i,1,1,e)
 c          Omeg_min= f_omegb(i,1,1,e)
