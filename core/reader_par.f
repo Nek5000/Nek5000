@@ -18,6 +18,8 @@ c
       if(ierr .ne. 0) call exitt
       call bcastParam
 
+      call usrdat0
+
       call read_re2_hdr(ifbswap)
 
       call chkParam
