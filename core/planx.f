@@ -32,7 +32,7 @@ C        New geometry, new b.c.
 C
          intype = -1
          call sethlm  (h1,h2,intype)
-         call add2    (h2,aff,lx1*ly1*lz1*nelv)
+c        call add2    (h2,aff,lx1*ly1*lz1*nelv)
          call cresvif (resv1,resv2,resv3,h1,h2)
 
          call ophinv  (dv1,dv2,dv3,resv1,resv2,resv3,h1,h2,tolhv,nmxv)

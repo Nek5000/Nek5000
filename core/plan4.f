@@ -182,6 +182,12 @@ c     add old pressure term because we solve for delta p
       call axhelm  (respr,pr,ta1,ta2,imesh,1)
       call chsign  (respr,ntot1)
 
+c     add contribution from implicit body force term
+      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
+      call opcolv   (ta1,ta2,ta3,adq)
+      call opcolv   (ta1,ta2,ta3,bm1)
+      call opadd2   (wa1,wa2,wa3,ta1,ta2,ta3)
+
 c     add explicit (NONLINEAR) terms 
       n = lx1*ly1*lz1*nelv
       do i=1,n
@@ -211,6 +217,16 @@ c     add explicit (NONLINEAR) terms
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
       endif
+
+c     add contribution from implicit body force term
+c     call opgrad  (ta1,ta2,ta3,adq)
+c     call opdot   (wa1,ta1,ta2,ta3,vx_e,vy_e,vz_e,n)
+      
+c     call col3    (wa2,adq,QTL,n)
+c     call add2    (wa1,wa2,n)
+
+c     call col2    (wa1,bm1,n)
+c     call sub2    (respr,wa1,n)
 
 C     add thermal divergence
       dtbd = BD(1)/DT

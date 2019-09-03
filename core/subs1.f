@@ -1046,6 +1046,8 @@ c        endif
          CALL RZERO (H2,NTOT1)
       endif
 
+      call add2(h2,adq(1,1,1,1,ifield),ntot1)
+
       return
       end
 c-----------------------------------------------------------------------

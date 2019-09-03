@@ -66,7 +66,7 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          call add2    (h2,ta,n) ! {laplace*H1 + H2}u
 
 c....... swh:
-         call add2(h2,adq(1,1,1,1,ifield-1),n)
+c        call add2(h2,adq(1,1,1,1,ifield-1),n) ! covered in sethlm
          
          call bcdirsc (t(1,1,1,1,ifield-1))
          call axhelm  (ta,t(1,1,1,1,ifield-1),h1,h2,imesh,ISD)
@@ -123,7 +123,7 @@ c     mass matrix on the Gauss-Lobatto mesh.
 
       if (nio.eq.0.and.loglevel.gt.2) 
      $   write(6,*) 'makeuq', ifield, time
-      call setqvol(bq(1,1,1,1,ifield-1),adq(1,1,1,1,ifield-1))
+      call setqvol(bq(1,1,1,1,ifield-1),adq(1,1,1,1,ifield))
       call col2   (bq(1,1,1,1,ifield-1) ,bm1,n) ! adding ro rhs?
 
       if (.not.ifcvfld(ifield)) time = time+dt ! Restore time

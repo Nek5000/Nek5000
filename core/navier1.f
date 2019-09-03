@@ -1475,7 +1475,7 @@ C----------------------------------------------------------------------
       include 'TSTEP'
 C
       TIME = TIME-DT
-      CALL NEKUF   (BFX,BFY,BFZ,aff)
+      CALL NEKUF   (BFX,BFY,BFZ,adq)
       CALL OPCOLV  (BFX,BFY,BFZ,BM1)
       TIME = TIME+DT
 C
