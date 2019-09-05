@@ -182,12 +182,6 @@ c     add old pressure term because we solve for delta p
       call axhelm  (respr,pr,ta1,ta2,imesh,1)
       call chsign  (respr,ntot1)
 
-c     add contribution from implicit body force term
-      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
-      call opcolv   (ta1,ta2,ta3,adq)
-      call opcolv   (ta1,ta2,ta3,bm1)
-      call opadd2   (wa1,wa2,wa3,ta1,ta2,ta3)
-
 c     add explicit (NONLINEAR) terms 
       n = lx1*ly1*lz1*nelv
       do i=1,n
@@ -218,14 +212,46 @@ c     add explicit (NONLINEAR) terms
          enddo
       endif
 
-c     add contribution from implicit body force term
-c     call opgrad  (ta1,ta2,ta3,adq)
+C     add contribution from implicit body force term (method 1)
+      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
+      call opcolv   (ta1,ta2,ta3,adq)
+      call opcolv   (ta1,ta2,ta3,bm1)
+      call opdssum  (ta1,ta2,ta3)
+      call opcolv   (ta1,ta2,ta3,binvm1)
+
+      call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
+      call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
+      call add2     (wa1,wa2,n)
+      if(if3d) then
+        call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
+        call add2   (wa1,wa3,n)
+      endif
+      call sub2     (respr,wa1,n)
+
+C     add contribution from implicit body force term (method 2)
+c     call gradm1   (ta1,ta2,ta3,adq)
+c     call opdot    (wa1,ta1,ta2,ta3,vx_e,vy_e,vz_e,n)
+
+c     call col3     (wa2,adq,QTL,n)
+c     call add2     (wa1,wa2,n)
+
+c     call sub2     (respr,wa1,n)
+
+c     add contribution from implicit body force term (method 3)
+c     if (if3d) then
+c       call cdtp  (ta1,adq,rxm1,sxm1,txm1,1)
+c       call cdtp  (ta2,adq,rym1,sym1,tym1,1)
+c       call cdtp  (ta3,adq,rzm1,szm1,tzm1,1)
+c     else 
+c       call cdtp  (ta1,adq,rxm1,sxm1,txm1,1)
+c       call cdtp  (ta2,adq,rym1,sym1,tym1,1)
+c     endif
+
 c     call opdot   (wa1,ta1,ta2,ta3,vx_e,vy_e,vz_e,n)
       
 c     call col3    (wa2,adq,QTL,n)
 c     call add2    (wa1,wa2,n)
 
-c     call col2    (wa1,bm1,n)
 c     call sub2    (respr,wa1,n)
 
 C     add thermal divergence

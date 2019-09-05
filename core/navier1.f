@@ -126,10 +126,8 @@ c     Compute the residual for the velocity - UZAWA SCHEME.
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 
 C
-      if(nio.eq.0.and.istep.eq.1) write(*,*) "implicit - drs"
       INLOC   = -1
       CALL SETHLM  (H1,H2,INLOC)
-      call add2    (h2,ffa,lx1*ly1*lz1*nelv)
       CALL OPRZERO (RESV1,RESV2,RESV3)
       CALL OPGRADT (RESV1,RESV2,RESV3,PR)
       CALL OPADD2  (RESV1,RESV2,RESV3,BFX,BFY,BFZ)
