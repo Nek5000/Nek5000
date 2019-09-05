@@ -59,7 +59,7 @@ c-----------------------------------------------------------------------
 
       etime_t = dnekclock_sync() - etime0
       if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
-     &                   ' done :: read .re2 file   ',
+     &                   ' done :: read .re2 file, time    ',
      &                   etime_t, ' sec'
 
       return

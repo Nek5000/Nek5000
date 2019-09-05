@@ -103,7 +103,7 @@ C     End of input data, close read file.
       if(nid.eq.0) then
         close(unit=9)
         call echopar
-        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file, time',
      $                             dnekclock()-etime0,' sec'
       endif
 

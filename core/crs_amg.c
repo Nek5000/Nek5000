@@ -462,11 +462,14 @@ static void amg_setup_aux(struct crs_data *data,  uint n, const ulong *id, const
   sarray_permute(ulong,uid.ptr   ,uid.n, cr.data.ptr, &temp_long);
   sarray_permute(uint ,data->umap,uid.n, cr.data.ptr, &max_e);
 
+  double time0 = comm_time();
 #ifdef USEMPIIO
   read_data_mpiio(data, &ids, mat, &cr, uid.ptr,uid.n, datafname);
 #else
   read_data(data, &ids, mat, &cr, uid.ptr,uid.n, datafname);
 #endif
+  if(data->comm.id == 0)
+    printf("\nAMG   :: read .dat file, time%13.5E sec\n", comm_time() - time0);
   
   /* we should have data for every uid;
      if not, then the data is for a smaller problem than we were given */
