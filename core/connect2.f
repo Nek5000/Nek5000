@@ -52,6 +52,8 @@ C     Read Mesh Info
       ifre2 = .false.
       if (nelgs.lt.0) ifre2 = .true.
 
+      call usrdat0
+
       if (nelgt.gt.350000 .and. .not.ifre2) 
      $   call exitti('Problem size requires .re2!$',1)
 
