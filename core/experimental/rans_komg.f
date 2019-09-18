@@ -1,4 +1,4 @@
-      real function rans_komg_mut(ix,iy,iz,iel)
+      real function rans_mut(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
@@ -7,7 +7,7 @@
       data ifldla /ldimt1/ 
 
       if(ix*iy*iz*iel.eq.1 .and. ifield.le.ifldla) then
-         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_mut'
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating rans_mut'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_eddy
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_eddy
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_eddy
@@ -18,27 +18,27 @@
       endif
 
       ifldla = ifield
-      rans_komg_mut = mut(ix,iy,iz,iel)
+      rans_mut = mut(ix,iy,iz,iel)
 
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_mutsk(ix,iy,iz,iel)
+      real function rans_mutsk(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
 
-      rans_komg_mutsk = mutsk(ix,iy,iz,iel)
+      rans_mutsk = mutsk(ix,iy,iz,iel)
 
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_mutso(ix,iy,iz,iel)
+      real function rans_mutso(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
 
-      rans_komg_mutso = mutso(ix,iy,iz,iel)
+      rans_mutso = mutso(ix,iy,iz,iel)
 
       return
       end
@@ -61,7 +61,7 @@ c     $               should be >=$',ncoeffs)
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_kSrc(ix,iy,iz,iel)
+      real function rans_kSrc(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
@@ -71,7 +71,7 @@ c-----------------------------------------------------------------------
       common /komgifsrc/ ifevalsrc
 
       if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
-         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating rans_src'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -83,12 +83,12 @@ c-----------------------------------------------------------------------
       endif
 
       if(ifld_k.gt.ifld_omega) ifevalsrc = .true.
-      rans_komg_kSrc = kSrc(ix,iy,iz,iel)
+      rans_kSrc = kSrc(ix,iy,iz,iel)
 
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_omgSrc(ix,iy,iz,iel)
+      real function rans_omgSrc(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
       common /komgifsrc/ ifevalsrc
 
       if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
-         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating rans_src'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -110,12 +110,12 @@ c-----------------------------------------------------------------------
       endif
 
       if(ifld_omega.gt.ifld_k) ifevalsrc = .true.
-      rans_komg_omgSrc = omgSrc(ix,iy,iz,iel)
+      rans_omgSrc = omgSrc(ix,iy,iz,iel)
 
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_kDiag(ix,iy,iz,iel)
+      real function rans_kDiag(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
@@ -125,7 +125,7 @@ c-----------------------------------------------------------------------
       common /komgifsrc/ ifevalsrc
 
       if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
-         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating rans_src'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -137,12 +137,12 @@ c-----------------------------------------------------------------------
       endif
 
       if(ifld_k.gt.ifld_omega) ifevalsrc = .true.
-      rans_komg_kDiag = kDiag(ix,iy,iz,iel)
+      rans_kDiag = kDiag(ix,iy,iz,iel)
 
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_komg_omgDiag(ix,iy,iz,iel)
+      real function rans_omgDiag(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
       include 'RANS_KOMG'
@@ -152,7 +152,7 @@ c-----------------------------------------------------------------------
       common /komgifsrc/ ifevalsrc
 
       if(ix*iy*iz*iel.eq.1 .and. ifevalsrc) then
-         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating komg_src'
+         if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'updating rans_src'
          if(ifrans_komg_stndrd)      call rans_komg_stndrd_compute
          if(ifrans_komg_lowRe)       call rans_komg_lowRe_compute
          if(ifrans_komgSST_stndrd)   call rans_komgSST_stndrd_compute
@@ -164,7 +164,7 @@ c-----------------------------------------------------------------------
       endif
 
       if(ifld_omega.gt.ifld_k) ifevalsrc = .true.
-      rans_komg_omgDiag = omgDiag(ix,iy,iz,iel)
+      rans_omgDiag = omgDiag(ix,iy,iz,iel)
 
       return
       end
@@ -1759,7 +1759,7 @@ c          endif
       if (ifrans_diag) then ! divided all at here
         do e=1,nelv
         do i=1,lxyz
-          kDiag  (i,1,1,e) = kDiag(i,1,1,e)
+c         kDiag  (i,1,1,e) = kDiag(i,1,1,e)
 c     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
           omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
      $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
@@ -2359,7 +2359,7 @@ c          G_w = G_w0
       end
 c-----------------------------------------------------------------------
       subroutine rans_komg_init(ifld_k_in,ifld_omega_in,ifcoeffs
-     $                       ,coeffs_in,wall_id,ywd_in,model_id,ifransD)
+     $                       ,coeffs_in,wall_id,ywd_in,model_id)
 c
 c     Initialize values ifld_omega & ifld_k for RANS k-omega turbulence
 c     modeling
@@ -2418,7 +2418,7 @@ c
       if(model_id .eq.6) ifrans_ktauSST_stndrd       = .TRUE.
 
       ! split diagonal of the production term into implicit, by Sigfried
-      if(ifransD) ifrans_diag=.TRUE.
+      ifrans_diag=.TRUE. !really shouldn't even be an option
 
       if(nid.eq.0) write(*,'(a,a)')
      &                      '  model: ',mname(model_id+1)
@@ -2451,19 +2451,21 @@ c     $   ifrans_ktau_lowRe) call rans_komg_set_defaultcoeffs
       endif
 
 c solve for omega_pert
-      if(wall_id.eq.0) then
-        if(nid.eq.0) write(6,*) ' user supplied wall distance'
-        call copy(ywd,ywd_in,n)
-      else
-        bcw    = 'W  '
-        ifld   = 1
-        if(nid.eq.0) write(6,*) 'BC for distance ',bcw
-        if(wall_id.eq.1) call cheap_dist(ywd,ifld,bcw)
-        if(wall_id.eq.2) call distf(ywd,ifld,bcw,w1,w2,w3,w4,w5)
-        call copy(ywd_in,ywd,n)
-      endif
+c     if(model_id.le.2) then
+        if(wall_id.eq.0) then
+          if(nid.eq.0) write(6,*) ' user supplied wall distance'
+          call copy(ywd,ywd_in,n)
+        else
+          bcw    = 'W  '
+          ifld   = 1
+          if(nid.eq.0) write(6,*) 'BC for distance ',bcw
+          if(wall_id.eq.1) call cheap_dist(ywd,ifld,bcw)
+          if(wall_id.eq.2) call distf(ywd,ifld,bcw,w1,w2,w3,w4,w5)
+          call copy(ywd_in,ywd,n)
+        endif
 
-      call rans_komg_omegabase
+        call rans_komg_omegabase
+c     endif
 
       if(nid.eq.0) write(6,*) 'done :: init RANS'
 
@@ -3675,7 +3677,7 @@ cc             mu_t = rho*alp_str*k/Omeg_min
 c             mu_t = rho*alp_str*k*tau
 c          endif
 c          mu_t = max(mu_t, mu_min)
-c          if(nid.eq.0) write(*,*) 'mu_t', mu_t, alp_str,k,omega,Omeg_min
+c          if(nid.eq.0) write(*,*) 'mu_t', mu_t!, alp_str,k,omega,Omeg_min
 
           mut  (i,1,1,e)   = mu_t
           mutsk(i,1,1,e)   = mu_t / sigma_k
