@@ -183,14 +183,13 @@ c     add old pressure term because we solve for delta p
       call chsign  (respr,ntot1)
 
 c     add explicit (NONLINEAR) terms 
-      n = lx1*ly1*lz1*nelv
-      do i=1,n
+      do i=1,ntot1
          ta1(i,1) = bfx(i,1,1,1)/vtrans(i,1,1,1,1)-wa1(i)
          ta2(i,1) = bfy(i,1,1,1)/vtrans(i,1,1,1,1)-wa2(i)
          ta3(i,1) = bfz(i,1,1,1)/vtrans(i,1,1,1,1)-wa3(i)
       enddo
       call opdssum (ta1,ta2,ta3)
-      do i=1,n
+      do i=1,ntot1
          ta1(i,1) = ta1(i,1)*binvm1(i,1,1,1)
          ta2(i,1) = ta2(i,1)*binvm1(i,1,1,1)
          ta3(i,1) = ta3(i,1)*binvm1(i,1,1,1)
@@ -200,59 +199,50 @@ c     add explicit (NONLINEAR) terms
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
          call cdtp    (wa3,ta3,rzm1,szm1,tzm1,1)
-         do i=1,n
+         do i=1,ntot1
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)+wa3(i)
          enddo
       else
          call cdtp    (wa1,ta1,rxm1,sxm1,txm1,1)
          call cdtp    (wa2,ta2,rym1,sym1,tym1,1)
 
-         do i=1,n
+         do i=1,ntot1
             respr(i,1) = respr(i,1)+wa1(i)+wa2(i)
          enddo
       endif
 
 C     add contribution from implicit body force term (method 1)
-      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
-      call opcolv   (ta1,ta2,ta3,adq)
-      call opcolv   (ta1,ta2,ta3,bm1)
-      call opdssum  (ta1,ta2,ta3)
-      call opcolv   (ta1,ta2,ta3,binvm1)
-
-      call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
-      call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
-      call add2     (wa1,wa2,n)
-      if(if3d) then
-        call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
-        call add2   (wa1,wa3,n)
-      endif
-      call sub2     (respr,wa1,n)
+       call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
+       call opcolv   (ta1,ta2,ta3,adq)
+       call opcolv   (ta1,ta2,ta3,bm1)
+       call opdssum  (ta1,ta2,ta3)
+       call opcolv   (ta1,ta2,ta3,binvm1)
+ 
+       call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
+       call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
+       call add2     (wa1,wa2,ntot1)
+       if(if3d) then
+         call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
+         call add2   (wa1,wa3,ntot1)
+       endif
+       call sub2     (respr,wa1,ntot1)
 
 C     add contribution from implicit body force term (method 2)
-c     call gradm1   (ta1,ta2,ta3,adq)
-c     call opdot    (wa1,ta1,ta2,ta3,vx_e,vy_e,vz_e,n)
+c     call opgrad  (ta1,ta2,ta3,adq)
+c     call opdssum (ta1,ta2,ta3)
+c     call opcolv  (ta1,ta2,ta3,binvm1)
 
-c     call col3     (wa2,adq,QTL,n)
-c     call add2     (wa1,wa2,n)
+c     call col3    (wa1, vx_e, ta1, ntot1)
+c     call addcol3 (wa1, vy_e, ta2, ntot1)
+c     if(if3d) call addcol3 (wa1, vz_e, ta3, ntot1)
+ 
+c     call col2     (wa1,  bm1,ntot1)
+c     call add2     (respr,wa1,ntot1)
 
-c     call sub2     (respr,wa1,n)
-
-c     add contribution from implicit body force term (method 3)
-c     if (if3d) then
-c       call cdtp  (ta1,adq,rxm1,sxm1,txm1,1)
-c       call cdtp  (ta2,adq,rym1,sym1,tym1,1)
-c       call cdtp  (ta3,adq,rzm1,szm1,tzm1,1)
-c     else 
-c       call cdtp  (ta1,adq,rxm1,sxm1,txm1,1)
-c       call cdtp  (ta2,adq,rym1,sym1,tym1,1)
+c     if(iflomach) then
+c       call col4   (wa1,adq,QTL,bm1,ntot1)
+c       call add2   (respr,wa1,ntot1)
 c     endif
-
-c     call opdot   (wa1,ta1,ta2,ta3,vx_e,vy_e,vz_e,n)
-      
-c     call col3    (wa2,adq,QTL,n)
-c     call add2    (wa1,wa2,n)
-
-c     call sub2    (respr,wa1,n)
 
 C     add thermal divergence
       dtbd = BD(1)/DT
