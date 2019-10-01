@@ -279,6 +279,8 @@ C
       ninter = 1
       nfld_neknek = ndim + nfield
 
+      CALL BLANK(cbc_bmap,sizeof(cbc_bmap))
+
       one = 1.
       PI  = 4.*ATAN(one)
 
