@@ -2358,7 +2358,7 @@ c          G_w = G_w0
       return
       end
 c-----------------------------------------------------------------------
-      subroutine rans_komg_init(ifld_k_in,ifld_omega_in,ifcoeffs
+      subroutine rans_init(ifld_k_in,ifld_omega_in,ifcoeffs
      $                       ,coeffs_in,wall_id,ywd_in,model_id)
 c
 c     Initialize values ifld_omega & ifld_k for RANS k-omega turbulence
@@ -2398,7 +2398,7 @@ c
 
       if(iflomach) then
         if(nid.eq.0) write(6,*)
-     &          "ERROR: K-OMEGA NOT SUPPORTED WITH LOW MACH FORMULATION"
+     &         "ERROR: RANS NOT YET SUPPORTED WITH LOW MACH FORMULATION"
         call exitt
       endif
 
