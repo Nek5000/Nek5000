@@ -107,11 +107,27 @@ C     End of input data, close read file.
      $                             dnekclock()-etime0,' sec'
       endif
 
- 99   do iel = 1,nelt
+ 99   call izero(boundaryID, size(boundaryID))
+      call izero(boundaryIDt, size(boundaryIDt))
+
+      do iel = 1,nelv
       do ifc = 1,2*ndim   
          boundaryID(ifc,iel) = bc(5,ifc,iel,1)
       enddo
-      enddo 
+      enddo
+
+      ntmsh = 0
+      do i=1,ldimt
+         if(iftmsh(1+i)) ntmsh = ntmsh + 1 
+      enddo
+
+      if (ntmsh.gt.0) then
+        do iel = 1,nelt
+        do ifc = 1,2*ndim   
+           boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
+        enddo
+        enddo
+      endif 
 
       return
       END
