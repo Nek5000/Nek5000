@@ -2164,13 +2164,22 @@ c
      $  call exitti('invalid boundary id!$',bid)
 
       cbc_bmap(bid,ifld) = cbci
-
-      do iel = 1,nelt
-      do ifc = 1,2*ndim
-         if (boundaryID(ifc,iel).eq.bid)
-     $     cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
-      enddo
-      enddo
+ 
+      if (iftmsh(ifld)) then
+        do iel = 1,nelt
+        do ifc = 1,2*ndim
+           if (boundaryIDt(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      else
+        do iel = 1,nelv
+        do ifc = 1,2*ndim
+           if (boundaryID(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      endif
 
       return
       end
