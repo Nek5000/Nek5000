@@ -1700,6 +1700,7 @@ c Compute production of omega
 
           tau2 = tau*tau
           G_w0 = rho*tau2*alpha*alp_str*(g(i)-(omega+div(i))*extra_prod)
+          G_wp = rho*tau*alpha*alp_str*g(i)
 
 c Compute dissipation of omega
           beta = beta_0
@@ -1718,19 +1719,20 @@ c          if(fom0tau.ne.0.) S_w =-rho * sigd * xk3/fom0tau
 c          Scoef = 0.0
 c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
 c          S_tau = Scoef*xt3
-          Scoef = 8.*(mu+mu_t/sigma_omega)
-          S_tau = Scoef*xt2
+c         Scoef = 8.*(mu+mu_t/sigma_omega)
+          S_tau = 8.0*mu/sigma_omega*xt2
+          S_taup = 8.0*rho*alp_str*k/sigma_omega*xt2
 c          S_tau = min(S_tau, Y_w0)
 
 c          G_w = G_w0
           G_w =-G_w0*fom0tau !-min(G_w0, 10.0*Y_w0)*fom0tau
           Y_w =-Y_w0*fom0tau*fom0tau !*sign(1.,fom0tau)
 
+          omgSrc(i,1,1,e) = S_w - Y_w - S_tau
           if (ifrans_diag) then
-            omgSrc(i,1,1,e) = G_w - Y_w + S_w
-            omgDiag(i,1,1,e)= S_tau
+            omgDiag(i,1,1,e)= G_wp + S_taup
           else
-            omgSrc(i,1,1,e) = G_w - Y_w + S_w - S_tau
+            omgSrc(i,1,1,e) = omgSrc(i,1,1,e) - (G_wp+ S_taup)*tau
             omgDiag(i,1,1,e)= 0.0
           endif
 
@@ -1755,17 +1757,6 @@ c          endif
         enddo
 
       enddo
-
-      if (ifrans_diag) then ! divided all at here
-        do e=1,nelv
-        do i=1,lxyz
-c         kDiag  (i,1,1,e) = kDiag(i,1,1,e)
-c     $                     / max(t(i,1,1,e,ifld_k-1),1.E-8)
-          omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
-     $                     / max(t(i,1,1,e,ifld_omega-1),1.E-8)
-        enddo
-        enddo
-      endif
 
       if(loglevel.gt.2) then
         ntau_neg =iglsum(ntau_neg,1)
