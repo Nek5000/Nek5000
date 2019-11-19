@@ -253,7 +253,8 @@ C
 C    .Normalize new element in P~
 C
       if (ALPHAd.le.0.0) then
-         write(6,*) 'ERROR:  alphad .le. 0 in econj',alphad,Kprev
+         if (nio.eq.0)
+     $   write(6,*) 'ERROR:  alphad .le. 0 in econj',alphad,Kprev
          ierr = 1
          return
       endif
