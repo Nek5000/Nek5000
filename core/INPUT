@@ -104,9 +104,13 @@ c
       integer igroup(lelt),object(maxobj,maxmbr,2)
       common /input6/ igroup,object
 
+      integer lbid
+      parameter(lbid = 100)
+
       character*1     ccurve(12,lelt),cdof(6,lelt)
       character*3     cbc(6,lelt,0:ldimt1)
-      common /input8/ cbc,ccurve,cdof
+      character*3     cbc_bmap(lbid,ldimt1)
+      common /input8/ cbc,ccurve,cdof,cbc_bmap
 
       integer ieact(lelt),neact
       common /input9/ ieact,neact

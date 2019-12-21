@@ -2149,7 +2149,7 @@ c            write(6,1) iobj,mem,f,ieg,e,nid,' OBJ'
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setbc(sid,ifld,cbci)
+      subroutine setbc(bid,ifld,cbci)
 c
 c     sets boundary condition for a given surface id and field
 c
@@ -2158,13 +2158,28 @@ c
       include 'GEOM'
 
       character*3 cbci
-      integer sid
+      integer bid
 
-      do iel = 1,nelt
-      do ifc = 1,2*ndim
-         if (boundaryID(ifc,iel).eq.sid) cbc(ifc,iel,ifld) = cbci
-      enddo
-      enddo
+      if (bid.lt.1 .or. bid.gt.lbid)
+     $  call exitti('invalid boundary id!$',bid)
+
+      cbc_bmap(bid,ifld) = cbci
+ 
+      if (iftmsh(ifld)) then
+        do iel = 1,nelt
+        do ifc = 1,2*ndim
+           if (boundaryIDt(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      else
+        do iel = 1,nelv
+        do ifc = 1,2*ndim
+           if (boundaryID(ifc,iel).eq.bid)
+     $       cbc(ifc,iel,ifld) = cbc_bmap(bid,ifld)
+        enddo
+        enddo
+      endif
 
       return
       end

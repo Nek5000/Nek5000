@@ -81,6 +81,17 @@ c automatically added by makenek
 _ACEOF
 fi
 
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat0" ; then
+cat >> $CASENAME.f << _ACEOF
+
+c automatically added by makenek
+      subroutine usrdat0() 
+
+      return
+      end
+_ACEOF
+fi
+
 if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat" ; then
 cat >> $CASENAME.f << _ACEOF
 

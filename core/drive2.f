@@ -280,6 +280,8 @@ C
       ninter = 1
       nfld_neknek = ndim + nfield
 
+      CALL BLANK(cbc_bmap,sizeof(cbc_bmap))
+
       one = 1.
       PI  = 4.*ATAN(one)
 
@@ -1284,13 +1286,35 @@ c-----------------------------------------------------------------------
       subroutine dofcnt
       include 'SIZE'
       include 'TOTAL'
+      COMMON /SCRNS/ WORK(LCTMP1)
 
-      integer*8 ntotv
+      integer*8 ntot,ntotp,ntotv
 
-      ntot1=lx1*ly1*lz1*nelv
+      nxyz  = nx1*ny1*nz1
+      nel   = nelv
+
+      ! unique points on v-mesh
+      vpts = glsum(vmult,nel*nxyz) + .1
+      nvtot=vpts
+
+      ! unique points on pressure mesh
+      work(1)=nel*nxyz
+      ppts = glsum(work,1) + .1
+      ntot=ppts
+C
+      if (nio.eq.0) write(6,'(A,2i13)')
+     &   'gridpoints unique/tot: ',nvtot,ntot
+
+      ntot1=nx1*ny1*nz1*nelv
+      ntot2=nx2*ny2*nz2*nelv
+
       ntotv = glsc2(tmult,tmask,ntot1)
-      if (ifflow) ntotv = glsc2(vmult,v1mask,ntot1)
-      if (nio.eq.0) write(6,*) 'dofs: ',ntotv
+      ntotp = i8glsum(ntot2,1)
+
+      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
+      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
+      if (nio.eq.0) write(6,'(A,2i13)') 
+     $   'dofs vel/pr:           ',ntotv,ntotp
 
       return
       end
