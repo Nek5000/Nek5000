@@ -1,4 +1,4 @@
-# Release v19.0-rc2
+# Release v19.0
 
 ## What is new? 
 
@@ -44,10 +44,10 @@
 
 ## Known Bugs 
 
+[643](https://github.com/Nek5000/Nek5000/issues/643)
 [635](https://github.com/Nek5000/Nek5000/issues/635)
 [634](https://github.com/Nek5000/Nek5000/issues/634)
 [628](https://github.com/Nek5000/Nek5000/issues/628)
-[627](https://github.com/Nek5000/Nek5000/issues/627)
 [562](https://github.com/Nek5000/Nek5000/issues/562)
 [65](https://github.com/Nek5000/Nek5000/issues/65)
 
