@@ -1645,6 +1645,10 @@ c-----------------------------------------------------------------------
 
       integer e
 
+      umax = glmax(u,nel*mx*my*mz)
+      umin = glmin(u,nel*mx*my*mz)
+      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', umin,umax
+
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
         if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
@@ -1733,6 +1737,15 @@ c-----------------------------------------------------------------------
       equivalence    (u4,u8)
 
       integer e
+
+      umax = glmax(u,nel*mx*my*mz)
+      vmax = glmax(v,nel*mx*my*mz)
+      wmax = glmax(w,nel*mx*my*mz)
+      umin = glmin(u,nel*mx*my*mz)
+      vmin = glmin(v,nel*mx*my*mz)
+      wmin = glmin(w,nel*mx*my*mz)
+      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
+     $             umin,umax, vmin,vmax, wmin,wmax
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
