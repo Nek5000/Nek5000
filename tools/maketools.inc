@@ -148,6 +148,29 @@ export CPPF
 export BIGMEM
 export LDFLAGS
 
+if ! which openssl >/dev/null; then
+  echo "FATAL ERROR: Cannot find openssl!"
+  exit 11
+fi
+if ! which wget >/dev/null; then
+  echo "FATAL ERROR: Cannot find wget!"
+  exit 11
+fi
+if ! which tar >/dev/null; then
+  echo "FATAL ERROR: Cannot find tar!"
+  exit 11
+fi
+if ! which make >/dev/null; then
+  echo "FATAL ERROR: Cannot find make!"
+  exit 11
+fi
+if ! which cmake >/dev/null; then
+  echo "WARNING: Cannot find cmake, which is required by some tools!"
+fi
+if ! which X >/dev/null; then
+  echo "WARNING: Cannot find X11, which is required by some tools!"
+fi
+
 #LIST=`ls -Cd */ | sed 's:\/::g'`
 LIST="genmap gencon genbox n2to3 reatore2 nekmerge prenek postnek nekamg_setup gmsh2nek exo2nek cgns2nek"
 export LIST
