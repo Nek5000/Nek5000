@@ -4,7 +4,7 @@ trap onexit EXIT
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
-     printf "\nFATAL ERROR occured during compilation!\nCheck build.log for details\n"
+     printf "\nFATAL ERROR occured during compilation!\nCheck $TOOL/build.log for details\n"
   fi
 }
 
@@ -30,13 +30,13 @@ fi
 
 which `echo $FC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
-  echo "FATAL ERROR: Cannot find $FC!"
+  echo "FATAL ERROR: Cannot find compiler $FC!"
   exit 11
 fi
 
 which `echo $CC | awk '{print $1}'` 1>/dev/null
 if [ $? -ne 0 ]; then
-  echo "FATAL ERROR: Cannot find $CC!"
+  echo "FATAL ERROR: Cannot find compiler $CC!"
   exit 11
 fi
 
@@ -169,6 +169,11 @@ else
    fi
    set -o pipefail
    for TOOL in $LIST ; do
+     if [ ! -d "$TOOL" ]; then
+       printf "FATAL ERROR: Cannot find tool $TOOL!\n"
+       exit 12
+     fi
+
      export FFLAGS="${NEK_FFLAGS}" 
      export FFLAGS+=" ${CPPF}"
      export FFLAGS+=" ${BIGMEM}"
@@ -197,10 +202,13 @@ else
         export CFLAGS+=" -Dr8"
      fi
      printf "building $TOOL ... "
+
      if make -C ./$TOOL 2>&1 | tee ./$TOOL/build.log >/dev/null 2>&1; then
        printf "done\n"
      else
        printf "failed\n"
+       export TOOL=$TOOL
+       exit 1
      fi
    done
    set +o pipefail 
