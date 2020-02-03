@@ -1928,7 +1928,7 @@ c-----------------------------------------------------------------------
 
       real u(lx1*ly1*lz1,1)
 
-      real*4 wk(lwk) ! message buffer
+      real*4 wk(2*lwk) ! message buffer
       parameter(lrbs=20*lx1*ly1*lz1*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
@@ -1944,16 +1944,13 @@ c-----------------------------------------------------------------------
       len    = nxyzr*wdsizr  ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
-      ! check message buffer
-      num_recv  = len
-      num_avail = lwk*wdsize
+      ! check message buffer wk
+      num_recv  = nxyzr*nelt
+      num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
       ! setup read buffer
       if (nid.eq.pid0r) then
-c         dtmp  = dnxyzr*nelr 
-c         nread = dtmp/lrbs
-c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          i8tmp = int(nxyzr,8)*int(nelr,8)
          nread = i8tmp/int(lrbs,8)
          if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
@@ -2065,7 +2062,7 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1),v(lx1*ly1*lz1,1),w(lx1*ly1*lz1,1)
       logical iskip
 
-      real*4 wk(lwk) ! message buffer
+      real*4 wk(2*lwk) ! message buffer
       parameter(lrbs=20*lx1*ly1*lz1*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
@@ -2076,20 +2073,16 @@ c-----------------------------------------------------------------------
       call nekgsync() ! clear outstanding message queues.
 
       nxyzr  = ldim*nxr*nyr*nzr
-      dnxyzr = nxyzr
       len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
-      ! check message buffer
-      num_recv  = len
-      num_avail = lwk*wdsize
+      ! check message buffer wk
+      num_recv  = nxyzr*nelt 
+      num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
 
       ! setup read buffer
       if(nid.eq.pid0r) then
-c         dtmp  = dnxyzr*nelr
-c         nread = dtmp/lrbs
-c         if(mod(dtmp,1.0*lrbs).ne.0) nread = nread + 1
          i8tmp = int(nxyzr,8)*int(nelr,8)
          nread = i8tmp/int(lrbs,8)
          if (mod(i8tmp,int(lrbs,8)).ne.0) nread = nread + 1
