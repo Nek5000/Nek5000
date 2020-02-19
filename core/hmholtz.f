@@ -751,7 +751,11 @@ c        write(6,*) rmean,ifmcor,' ifmcor'
 c
          rtz2=rtz1
          scalar(1)=vlsc3 (z,r,mult,n)
-         scalar(2)=vlsc32(r,mult,binv,n)
+         if(param(18).eq.1) then
+           scalar(2)=vlsc3(r,r,mult,n)
+         else 
+          scalar(2)=vlsc32(r,mult,binv,n)
+         endif
          call gop(scalar,w,'+  ',2)
          rtz1=scalar(1)
          rbn2=sqrt(scalar(2)/vol)
