@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VER=4.6.1
+VER="c-4.7.2"
 
 # NETCDF
 if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then 

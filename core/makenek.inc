@@ -92,6 +92,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   return 11
 fi
 
+
 if [ "$VERMAKENEK" != "19.0.1" ]; then
   echo "FATAL ERROR: Your makenek is incompatible!"
   echo "Please upgrade to the version shipped the source"
@@ -355,6 +356,29 @@ GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
+
+if ! which openssl >/dev/null; then
+  echo "FATAL ERROR: Cannot find openssl!"
+  return 11
+fi
+if ! which wget >/dev/null; then
+  echo "FATAL ERROR: Cannot find wget!"
+  return 11
+fi
+if ! which tar >/dev/null; then
+  echo "FATAL ERROR: Cannot find tar!"
+  return 11
+fi
+if ! which make >/dev/null; then
+  echo "FATAL ERROR: Cannot find make!"
+  return 11
+fi
+if [ $HYPRE -ne 0 ]; then
+  if ! which cmake >/dev/null; then
+    echo "FATAL ERROR: Cannot find cmake!"
+    return 11
+  fi
+fi
 
 export FC
 export FCPP
