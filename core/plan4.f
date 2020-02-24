@@ -104,6 +104,7 @@ C     Compute startresidual/right-hand-side in the pressure
       INCLUDE 'TOTAL'
 
       REAL           RESPR (LX1*LY1*LZ1,LELV)
+      real tmp(LX1*LY1*LZ1*LELV)
 c
       COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
      $ ,             TA2   (LX1*LY1*LZ1,LELV)
@@ -212,37 +213,37 @@ c     add explicit (NONLINEAR) terms
       endif
 
 C     add contribution from implicit body force term (method 1)
-       call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
-       call opcolv   (ta1,ta2,ta3,adq)
-       call opcolv   (ta1,ta2,ta3,bm1)
-       call opdssum  (ta1,ta2,ta3)
-       call opcolv   (ta1,ta2,ta3,binvm1)
- 
-       call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
-       call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
-       call add2     (wa1,wa2,ntot1)
-       if(if3d) then
-         call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
-         call add2   (wa1,wa3,ntot1)
-       endif
-       call sub2     (respr,wa1,ntot1)
+c      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
+c      call opcolv   (ta1,ta2,ta3,adq)
+c      call opcolv   (ta1,ta2,ta3,bm1)
+c      call opdssum  (ta1,ta2,ta3)
+c      call opcolv   (ta1,ta2,ta3,binvm1)
+c
+c      call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
+c      call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
+c      call add2     (wa1,wa2,ntot1)
+c      if(if3d) then
+c        call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
+c        call add2   (wa1,wa3,ntot1)
+c      endif
+c      call sub2     (respr,wa1,ntot1)
 
 C     add contribution from implicit body force term (method 2)
-c     call opgrad  (ta1,ta2,ta3,adq)
-c     call opdssum (ta1,ta2,ta3)
-c     call opcolv  (ta1,ta2,ta3,binvm1)
+      call opgrad  (ta1,ta2,ta3,adq)
+      call opdssum (ta1,ta2,ta3)
+      call opcolv  (ta1,ta2,ta3,binvm1)
 
-c     call col3    (wa1, vx_e, ta1, ntot1)
-c     call addcol3 (wa1, vy_e, ta2, ntot1)
-c     if(if3d) call addcol3 (wa1, vz_e, ta3, ntot1)
+      call col3    (wa1, vx_e, ta1, ntot1)
+      call addcol3 (wa1, vy_e, ta2, ntot1)
+      if(if3d) call addcol3 (wa1, vz_e, ta3, ntot1)
  
-c     call col2     (wa1,  bm1,ntot1)
-c     call add2     (respr,wa1,ntot1)
+      call col2     (wa1,  bm1,ntot1)
+      call add2     (respr,wa1,ntot1)
 
-c     if(iflomach) then
-c       call col4   (wa1,adq,QTL,bm1,ntot1)
-c       call add2   (respr,wa1,ntot1)
-c     endif
+      if(iflomach) then
+        call col4   (wa1,adq,QTL,bm1,ntot1)
+        call add2   (respr,wa1,ntot1)
+      endif
 
 C     add thermal divergence
       dtbd = BD(1)/DT
