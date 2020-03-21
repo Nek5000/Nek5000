@@ -108,10 +108,10 @@ c     Boundary conditions are changed back to 'v' or 't'.
             intflag(f,e)=1
             if (j.ge.2) cbc(f,e,j)='t  '
             if (j.eq.1) cbc(f,e,j)='v  '
-c            if (cb.eq.'inp') cbc(f,e,ifield)='on ' ! Pressure
-c            if (cb.eq.'inp') cbc(f,e,ifield)='o  ' ! Pressure
-            if (cb.eq.'inp') cbc(f,e,j)='o  ' ! Pressure
-            if (cb.eq.'inp') intflag(f,e) = 2
+            if (cb.eq.'inp') then 
+               cbc(f,e,j)='o  ' ! Pressure
+               intflag(f,e) = 2
+            endif
          endif
       enddo
       enddo
@@ -146,7 +146,7 @@ c     Order of extrpolation is contolled by the parameter NINTER contained
 c     in NEKNEK. First order interface extrapolation, NINTER=1 (time lagging) 
 c     is activated. It is unconditionally stable.  If you want to use 
 c     higher-order interface extrapolation schemes, you need to increase 
-c     ngeom to nge om=3-5 for scheme to be stable.
+c     ngeom to 3-5 for scheme to be stable.
 
       ichk = 0
       if (iffxdt) ichk = 1
@@ -281,7 +281,7 @@ c     Setup findpts
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
 
-      if (istep.ge.1) call fgslib_findptsms_free(fpth_ms)
+      if (istep.gt.0) call fgslib_findptsms_free(fpth_ms)
       call fgslib_findptsms_setup(fpth_ms,mpi_comm_world,npall,ldim,
      &                          xm1,ym1,zm1,lx1,ly1,lz1,
      &                          nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
@@ -860,18 +860,16 @@ C
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      REAL           vxcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvxc   (LX1,LY1,LZ1,LELV)
-      REAL           vycp   (LX1,LY1,LZ1,LELV)
-      REAL           dvyc   (LX1,LY1,LZ1,LELV)
-      REAL           vzcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvzc   (LX1,LY1,LZ1,LELV)
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc
-      real resbc(lx1*ly1*lz1*lelv,ldim+1)
-c
-c
+      real vxcp (lx1,ly1,lz1,lelv)
+      real vycp (lx1,ly1,lz1,lelv)
+      real vzcp (lx1,ly1,lz1,lelv)
+      real resbc(lx1*ly1*lz1*lelv,ldim)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc,vxcp,vycp,vzcp,resbc
+ 
+ 
 c     Compute velocity, 1st part 
-c
+ 
       n  = lx1*ly1*lz1*nelv
       ntot1  = lx1*ly1*lz1*nelv
       ntot2  = lx2*ly2*lz2*nelv
@@ -905,9 +903,7 @@ c
           intype = -1
           call sethlm   (h1,h2,intype)
 
-          call copy(vxcp,vxc,lx1*ly1*lz1*nelv)
-          call copy(vycp,vyc,lx1*ly1*lz1*nelv)
-          if (ldim.eq.3) call copy(vzcp,vzc,lx1*ly1*lz1*nelv)
+          call opcopy(vxcp,vycp,vzcp,vxc,vyc,vzc)
 
           call neknek_xfer_fld(vxc,vxcbc)
           call neknek_xfer_fld(vyc,vycbc)
@@ -915,10 +911,9 @@ c
   
           call ophx(resbc(1,1),resbc(1,2),resbc(1,3),
      $             vxcbc,vycbc,vzcbc,h1,h2)
-          call sub2(rw1,resbc(1,1),ntot1)
-          call sub2(rw2,resbc(1,2),ntot1)
-          if (ldim.eq.3) call sub2(rw3,resbc(1,3),ntot1)
-          call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+
+          call opsub2(rw1,rw2,rw3,resbc(1,1),resbc(1,2),resbc(1,3))
+          call ophinv(vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
           call opadd2(vxc,vyc,vzc,vxcbc,vycbc,vzcbc)
           call ssnormd  (vxc,vyc,vzc)
         endif
@@ -950,17 +945,20 @@ c
 c
         call cmult2  (prc,respr,bd(1),ntot2)
 
-        call sub3(dvxc,vxcp,vxc,ntot1)
-        call sub3(dvyc,vycp,vyc,ntot1)
-        call sub3(dvzc,vzcp,vzc,ntot1)
-        dvxmax = glamax_ms(dvxc,ntot1)
-        dvymax = glamax_ms(dvyc,ntot1)
-        dvzmax = glamax_ms(dvzc,ntot1)
+        call opsub2(vxcp,vycp,vzcp,vxc,vyc,vzc)
+        dvxmax = glamax_ms(vxcp,ntot1)
+        dvymax = glamax_ms(vycp,ntot1)
+        dvzmax = glamax_ms(vzcp,ntot1)
          if (nio.eq.0)
      $      write(6,'(i2,i8,i4,1p4e13.4,a11)') idsess,istep,ictr,time,
      $      dvxmax,dvymax,dvzmax,' del-vol-vxy'
         call neknekgsync()
       enddo
+
+      if (istep.eq.3) ifxyo = .true.
+      if (istep.eq.3) call outpost(vxc,vyc,vzc,prc,t,'cor')
+      if (istep.eq.3) ifxyo = .false.
+      call exitt
 
       return
       end
@@ -999,26 +997,24 @@ c     (Tombo splitting scheme).
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      REAL           vxcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvxc   (LX1,LY1,LZ1,LELV)
-      REAL           vycp   (LX1,LY1,LZ1,LELV)
-      REAL           dvyc   (LX1,LY1,LZ1,LELV)
-      REAL           vzcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvzc   (LX1,LY1,LZ1,LELV)
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc
-      real resbc(lx1*ly1*lz1*lelv,ldim+1)
+      real vxcp (lx1,ly1,lz1,lelv)
+      real vycp (lx1,ly1,lz1,lelv)
+      real vzcp (lx1,ly1,lz1,lelv)
+      real resbc(lx1*ly1*lz1*lelv,ldim)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc,vxcp,vycp,vzcp,resbc
 
       CHARACTER CB*3
 
 
-      n = lx1*ly1*lz1*nelv
-      NXYZ1  = lx1*ly1*lz1
-      NTOT1  = NXYZ1*NELV
+      ntot1  = lx1*ly1*lz1*nelv
+      ntot2  = lx2*ly2*lz2*nelv
+      nxyz1  = lx1*ly1*lz1
 
       ngeompv = 20
       do ictr = 1,ngeompv
-        call invers2  (h1,vtrans,n)
-        call rzero    (h2,       n)
+        call invers2  (h1,vtrans,ntot1)
+        call rzero    (h2,       ntot1)
         if (ictr.eq.1) then
           call opzero(vxc,vyc,vzc)
         else 
@@ -1037,10 +1033,10 @@ c       Compute pressure
 C     surface terms
         DO 100 IEL=1,NELV
           DO 300 IFC=1,2*ldim
-            CALL RZERO  (W1(1,IEL),NXYZ1)
-            CALL RZERO  (W2(1,IEL),NXYZ1)
+            CALL RZERO  (W1(1,IEL),nxyz1)
+            CALL RZERO  (W2(1,IEL),nxyz1)
             IF (ldim.EQ.3)
-     $      CALL RZERO  (W3(1,IEL),NXYZ1)
+     $      CALL RZERO  (W3(1,IEL),nxyz1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (intflag(ifc,iel).eq.1) then
                CALL FACCL3
@@ -1051,14 +1047,14 @@ C     surface terms
      $          CALL FACCL3
      $         (W3(1,IEL),vzcbc(1,1,1,IEL),UNZ(1,1,IFC,IEL),IFC)
             ENDIF
-            CALL ADD2   (W1(1,IEL),W2(1,IEL),NXYZ1)
+            CALL ADD2   (W1(1,IEL),W2(1,IEL),nxyz1)
             IF (ldim.EQ.3)
-     $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
+     $      CALL ADD2   (W1(1,IEL),W3(1,IEL),nxyz1)
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
             IF (intflag(ifc,iel).eq.1) then
-              CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
+              CALL CMULT(W1(1,IEL),dtbd,nxyz1)
             endif
-            CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
+            CALL SUB2 (RESPR(1,IEL),W1(1,IEL),nxyz1)
   300     CONTINUE
   100   CONTINUE
 
@@ -1073,40 +1069,39 @@ C     surface terms
 C     Compute velocity
 ccccc
         call opgrad   (resv1,resv2,resv3,prc)
-        if (ifaxis) call col2 (resv2,omask,n)
+        if (ifaxis) call col2 (resv2,omask,ntot1)
         call opchsgn  (resv1,resv2,resv3)
 
-        if (icvflow.eq.1) call add2col2(resv1,v1mask,bm1,n) ! add forcing
-        if (icvflow.eq.2) call add2col2(resv2,v2mask,bm1,n)
-        if (icvflow.eq.3) call add2col2(resv3,v3mask,bm1,n)
+        if (icvflow.eq.1) call add2col2(resv1,v1mask,bm1,ntot1) ! add forcing
+        if (icvflow.eq.2) call add2col2(resv2,v2mask,bm1,ntot1)
+        if (icvflow.eq.3) call add2col2(resv3,v3mask,bm1,ntot1)
         if (ifexplvis) call split_vis ! split viscosity into exp/imp part
 
-        call copy(vxcp,vxc,lx1*ly1*lz1*nelv)
-        call copy(vycp,vyc,lx1*ly1*lz1*nelv)
-        call copy(vzcp,vzc,lx1*ly1*lz1*nelv)
+        call opcopy(vxcp,vycp,vzcp,vxc,vyc,vzc)
 
         intype = -1
         call sethlm   (h1,h2,intype)
         call ophx(resbc(1,1),resbc(1,2),resbc(1,3),
      $             vxcbc,vycbc,vzcbc,h1,h2)
-        call sub2(resv1,resbc(1,1),n)
-        call sub2(resv2,resbc(1,2),n)
-        if (ldim.eq.3) call sub2(resv3,resbc(1,3),n)
+        call opsub2(resv1,resv2,resv3,resbc(1,1),resbc(1,2),resbc(1,3))
         call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
         call opadd2(vxc,vyc,vzc,vxcbc,vycbc,vzcbc)
 
-        call sub3(dvxc,vxcp,vxc,n)
-        call sub3(dvyc,vycp,vyc,n)
-        call sub3(dvzc,vzcp,vzc,n)
-        dvxmax = glamax_ms(dvxc,n)
-        dvymax = glamax_ms(dvyc,n)
-        dvzmax = glamax_ms(dvzc,n)
+        call opsub2(vxcp,vycp,vzcp,vxc,vyc,vzc)
+        dvxmax = glamax_ms(vxcp,ntot1)
+        dvymax = glamax_ms(vycp,ntot1)
+        dvzmax = glamax_ms(vzcp,ntot1)
         if (ifexplvis) call redo_split_vis ! restore vdiff
         if (nid.eq.0)
      $    write(6,'(i2,i8,i4,1p4e13.4,a11)') idsess,istep,ictr,time,
      $    dvxmax,dvymax,dvzmax,' del-vol-vxy'
 
       enddo
+
+      if (istep.eq.3) ifxyo = .true.
+      if (istep.eq.3) call outpost(vxc,vyc,vzc,prc,t,'cor')
+      if (istep.eq.3) ifxyo = .false.
+      call exitt
 
       return
       end
@@ -1147,104 +1142,45 @@ c-----------------------------------------------------------------------
       integer rcode_all(ltot),elid_all(ltot),proc_all(ltot)
       real    dist_all(ltot),rst_all(ltot*ldim)
       real    disti_all(ltot)
-      integer idx1(ltot)
-      integer isid_nn(ltot)
-      integer elfound(lelt),e,f
+      integer idx1(ltot),idx2(ltot)
+      integer rsid_nn(ltot)
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       n = lx1*ly1*lz1*nelt
-ccc   initialize all wtglls to -1
-      do i=1,nsessions
-         call cfill(wtglls(1,1,i-1),-1.,n)
+      do i=1,n
+        wtglls(i,1,idsess) = distfint(i,1,1,1)
       enddo
-ccc   first find just all the element faces in other domains
-      npt = 0
-      do e=1,nelt
-      do f=1,2*ldim
-         call facind (kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,f)
-         do iz=kz1,kz2
-         do iy=ky1,ky2
-         do ix=kx1,kx2
-            npt=npt+1
-            rsend(ldim*(npt-1)+1) = xm1(ix,iy,iz,e)
-            rsend(ldim*(npt-1)+2) = ym1(ix,iy,iz,e)
-            if (ldim.eq.3) rsend(ldim*(npt-1)+3) = zm1(ix,iy,iz,e)
-            isid_nn(npt) = idsess
-         enddo
-         enddo
-         enddo
-      enddo
-      enddo
+      npt = n
+      npt = n
+      do ids=1,nsessions-1
+         idcheck = mod(idsess+ids,nsessions)
 
-      call fgslib_findptsms(fpth_ms,rcode_all,1,proc_all,1,
-     &        elid_all,1,rst_all,ldim,dist_all,1,
-     &        rsend(1),ldim,rsend(2),ldim,rsend(3),ldim,
-     &        isid_nn,1,0,npt)
-
-      npt = 0
-      npel = 2*ldim*(lx1**(ldim-1))
-      nelf = 0
-      call izero(elfound,nelt)
-      if (idsess.eq.0) then
-      do e=1,nelt
-        itchk = 0
-        do i=1,npel
-          if (rcode_all((e-1)*npel+i).eq.2) itchk=itchk+1
-        enddo
-        if (itchk.eq.npel) elfound(e) = 1
-        if (itchk.eq.npel) nelf = nelf+1 !can get rid of nelf variable
-      enddo
-      endif
-
-c     specify elements that are not in the overlap region 
-      npt = 0
-      do e=1,nelt
-        if (elfound(e).eq.1) then
-          do i=0,nsessions-1
-            if (idsess.eq.i) then
-              call cfill(wtglls(1,e,i),1.,nxyz)
-            else
-              call cfill(wtglls(1,e,i),0.,nxyz)
-            endif
-          enddo
-        else !  elfound(e)!=1. element has some GLL points in overlap
-          do i=1,nxyz
-            rsend(ldim*npt+1) = xm1(i,1,1,e)
-            rsend(ldim*npt+2) = ym1(i,1,1,e)
-            if (ldim.eq.3) rsend(ldim*npt+3) = zm1(i,1,1,e)
-            npt=npt+1
-            isid_nn(npt) = idsess
-            idx1(npt)    = (e-1)*nxyz+i
-           enddo
-        endif
-      enddo !e=1,nelt
-
-      do ids=0,nsessions-1
-         call ifill(isid_nn,ids,npt)
+         call ifill(rsid_nn,idcheck,npt)
          call fgslib_findptsms(fpth_ms,rcode_all,1,proc_all,1,
      &        elid_all,1,rst_all,ldim,dist_all,1,
-     &        rsend(1),ldim,rsend(2),ldim,rsend(3),ldim,
-     &        isid_nn,1,1,npt)
+     &        xm1,1,ym1,1,zm1,1,
+     &        rsid_nn,1,1,npt)
          call fgslib_findptsms_eval(fpth_ms,disti_all,1,
      &      rcode_all,1,proc_all,1,elid_all,1,rst_all,ldim,npt,distfint)
 
          do i=1,npt
            icd = rcode_all(i)
            dst = dist_all(i)
-           idx = idx1(i)
+           idx = i
            if (icd.eq.2) then !this point not found
-             wtglls(idx,1,ids) = 0.
+             wtglls(idx,1,idcheck) = 0.
            else
-             wtglls(idx,1,ids) = disti_all(i)
+             wtglls(idx,1,idcheck) = disti_all(i)
            endif
          enddo
       enddo
       do i=1,n
-         rsum = 0.
+         prod = 0.
          do j=0,nsessions-1
-           rsum = rsum+wtglls(i,1,j)
+           prod = prod+wtglls(i,1,j)
          enddo
-         upf(i,1,1,1) = wtglls(i,1,idsess)/rsum
+         upval = wtglls(i,1,idsess)/prod
+         upf(i,1,1,1) = upval
       enddo
 
       return
