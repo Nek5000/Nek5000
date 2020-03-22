@@ -690,7 +690,7 @@ class Eddy_Neknekn_mv(NekTestCase):
         self.assertAlmostEqualDelayed(xerr_in2, target_val=7.491564E-07, delta=1E-05, label='X err  in2')
 
         xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_outside, target_val=7.742886E-07  delta=1E-05, label='X err  outside')
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=7.742886E-07, delta=1E-05, label='X err  outside')
 
         yerr_in1 = self.get_value_from_log('Y err  in1', logfile=logfile, column=-7, row=-1)
         self.assertAlmostEqualDelayed(yerr_in1, target_val=9.280564E-07, delta=1E-05, label='Y err  in1')
@@ -754,7 +754,7 @@ class Eddy_Neknekn_mv(NekTestCase):
         self.assertAlmostEqualDelayed(xerr_in2, target_val=6.152744E-05, delta=1E-05, label='X err  in2')
 
         xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
-        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.225846E-05  delta=1E-05, label='X err  outside')
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.225846E-05, delta=1E-05, label='X err  outside')
 
         yerr_in1 = self.get_value_from_log('Y err  in1', logfile=logfile, column=-7, row=-1)
         self.assertAlmostEqualDelayed(yerr_in1, target_val=1.194416E-04, delta=1E-05, label='Y err  in1')
