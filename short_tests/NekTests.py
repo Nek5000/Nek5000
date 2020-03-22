@@ -621,7 +621,7 @@ class Eddy_Neknek(NekTestCase):
 
 ####################################################################
 
-class Eddy_Neknekn_mv(NekTestCase):
+class Eddy_Neknek_mv(NekTestCase):
     example_subdir  = 'eddy_neknek_mv'
     case_name       = 'eddy_uv_mv'
 
@@ -1439,7 +1439,7 @@ if __name__ == '__main__':
                Axi, 
                Eddy_NeknekU,
                Eddy_Neknek,
-               Eddy_Neknekn_mv,
+               Eddy_Neknek_mv,
                Eddy_EddyUv,
                Eddy_LegacySize,
                eddy_mv, 
