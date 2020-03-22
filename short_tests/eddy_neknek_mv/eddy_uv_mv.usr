@@ -130,15 +130,25 @@ c
      $              ,pd(lx2,ly2,lz2,lelt)
 
       n = lx1*ly1*lz1*nelt
-      totalvolexact = (2.*pi)**2
-      totalvolnum   = glsum_ms(bm1ms,n)
-      localvolnum   = glsum   (bm1,n)
-      totalvolerr   = abs(totalvolexact-totalvolnum)
-      if (istep.eq.0.and.nid.eq.0) write(6,'(i3,1x,1p1e13.4,A)') 
+      ! test global integeration
+      if (nsessions.ge.2 .and. ifneknekc) then
+         totalvolexact = (2.*pi)**2
+         totalvolnum   = glsum_ms(bm1ms,n)
+         totalvolerr   = abs(totalvolexact-totalvolnum)
+         if (istep.eq.0.and.nid.eq.0) write(6,'(i3,1x,1p1e13.4,A)')
      $         idsess,totalvolerr,' Error in total volume'
+        if (totalvolerr.lt.1.e-2) then
+           if (nid_global.eq.0) write(6,*) 'global integeration test 
+     $                                      PASSED'
+        else
+           if (nid_global.eq.0) write(6,*) 'global integeration test 
+     $                                      FAILED'
+           call exitt0
+        endif
+      endif
 
-      ifxyo = .true.
       if (IFMVBD) then
+       ifxyo = .true.
        ifusermv = .true.
        do i=1,n
         xv = xm1(i,1,1,1)
