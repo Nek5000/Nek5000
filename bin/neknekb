@@ -1,7 +1,6 @@
 if [ $# -eq 0 ]; then
   echo ""
-#echo "usage: neknekb case1 case2 np1 np2 [uncoupled] "
-  echo "usage: neknekb case1 case2 ... casex np1 np2 ... npx"
+  echo "usage: neknekb case1 case2 ... casex np1 np2 ... npx [uncoupled]"
   echo ""
   exit 1
 fi
