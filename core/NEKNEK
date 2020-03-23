@@ -23,7 +23,7 @@ c
       common /multipts_r/ rst
 
       integer rcode(nmaxl_nn),elid(nmaxl_nn)
-     $    ,proc(nmaxl_nn),ilist(1,nmaxl_nn),npoints_nn
+     $       ,proc(nmaxl_nn),ilist(nmaxl_nn),npoints_nn
       common /multipts_i/ rcode,elid,proc,ilist,npoints_nn
 
       integer fpth_ms

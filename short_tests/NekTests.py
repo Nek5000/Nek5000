@@ -650,10 +650,6 @@ class Eddy_Neknek_mv(NekTestCase):
         # Tweak the .rea files and run genmap
         for rea_file in ('in1', 'in2', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
-            with open(rea_path, 'r') as f:
-                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-08     p21 DIVERGENCE', l) for l in f]
-            with open(rea_path, 'w') as f:
-                f.writelines(lines)
             self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params['lx2'] = 'lx1'
@@ -714,10 +710,6 @@ class Eddy_Neknek_mv(NekTestCase):
         # Tweak the .rea files and run genmap
         for rea_file in ('in1', 'in2', 'outside'):
             rea_path = os.path.join(cwd, rea_file + '.rea')
-            with open(rea_path, 'r') as f:
-                lines = [sub(r'^.*DIVERGENCE$', '      1.0000000E-08     p21 DIVERGENCE', l) for l in f]
-            with open(rea_path, 'w') as f:
-                f.writelines(lines)
             self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params['lx2'] = 'lx1-2'

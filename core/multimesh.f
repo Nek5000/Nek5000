@@ -239,12 +239,10 @@ c-----------------------------------------------------------------------
       subroutine neknekmv()
       include 'SIZE'
       include 'TOTAL'
-
       integer imove
 
       imove=1
       if (ifmvbd) imove=0
-
       iglmove = iglmin_ms(imove,1)
 
       if (iglmove.eq.0) then
@@ -260,11 +258,7 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
       include 'NEKNEK'
       include 'mpif.h'
-
-      integer i,j,k,n,ntot2,npall
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-c     THIS ROUTINE DISPLACES THE FIRST MESH AND SETUPS THE FINDPTS
-c     THE MESH IS DISPLACED BACK TO ORIGINAL POSITION IN EXCH_POINTS
 
 c     Get total number of processors and number of p
       npall = 0
@@ -272,7 +266,6 @@ c     Get total number of processors and number of p
        npall = npall+npsess(i-1)
       enddo
 
-      ntot = lx1*ly1*lz1*nelt
 c     Setup findpts    
       tol     = 5e-13
       npt_max = 128
@@ -280,12 +273,13 @@ c     Setup findpts
       nyf     = 2*ly1
       nzf     = 2*lz1
       bb_t    = 0.01 ! relative size to expand bounding boxes by
+      ntot    = lx1*ly1*lz1*nelt
 
       if (istep.gt.0) call fgslib_findptsms_free(fpth_ms)
       call fgslib_findptsms_setup(fpth_ms,mpi_comm_world,npall,ldim,
-     &                          xm1,ym1,zm1,lx1,ly1,lz1,
-     &                          nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
-     &                          npt_max,tol,idsess,distfint)
+     &                            xm1,ym1,zm1,lx1,ly1,lz1,
+     &                            nelt,nxf,nyf,nzf,bb_t,ntot,ntot,
+     &                            npt_max,tol,idsess,distfint)
 
       return
       end
@@ -295,18 +289,11 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
       include 'NEKNEK'
-      integer i,j,k,n
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       integer jsend(nmaxl_nn)
       common /exchr/ rsend(ldim*nmaxl_nn)
-      integer rcode_all(nmaxl_nn),elid_all(nmaxl_nn),proc_all(nmaxl_nn)
-      real    dist_all(nmaxl_nn),rst_all(nmaxl_nn*ldim)
+      real    dist(nmaxl_nn)
       integer isid_nn(nmaxl_nn)
-      integer e,ip,iface,nel,nfaces,ix,iy,iz
-      integer kx1,kx2,ky1,ky2,kz1,kz2,idx,nxyz,nxy
-      integer icalld
-      save    icalld
-      data    icalld /0/
 
 c     Look for boundary points with Diriclet b.c. (candidates for
 c     interpolation)
@@ -316,39 +303,36 @@ c     interpolation)
 
       nfaces = 2*ldim
       nel    = nelfld(ifield)
-
-      nxyz  = lx1*ly1*lz1
-      ntot  = nxyz*nel
-      nxy = lx1*ly1
+      nxy    = lx1*ly1
+      nxyz   = nxy*lz1
+      ntot   = nxyz*nel
       call izero(imask,ntot)
 
 c     Setup arrays of x,y,zs to send to findpts and indices of boundary 
-c     points in jsend
+c     points in iList
       ip = 0
-      do e=1,nel
+      do ie=1,nel
       do iface=1,nfaces
-         if (intflag(iface,e).gt.0) then
+         if (intflag(iface,ie).gt.0) then
             call facind (kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
             do iz=kz1,kz2
             do iy=ky1,ky2
             do ix=kx1,kx2
                ip=ip+1
-               idx = (e-1)*nxyz+(iz-1)*nxy+(iy-1)*lx1+ix
-               jsend(ip) = idx 
+               idx = (ie-1)*nxyz+(iz-1)*nxy+(iy-1)*lx1+ix
+               iList(ip) = idx 
                isid_nn(ip) = idsess
-               rsend(ldim*(ip-1)+1)=xm1(ix,iy,iz,e)
-               rsend(ldim*(ip-1)+2)=ym1(ix,iy,iz,e)
+               rsend(ldim*(ip-1)+1)=xm1(ix,iy,iz,ie)
+               rsend(ldim*(ip-1)+2)=ym1(ix,iy,iz,ie)
                if (if3d) 
-     $         rsend(ldim*(ip-1)+3)=zm1(ix,iy,iz,e)
+     $         rsend(ldim*(ip-1)+3)=zm1(ix,iy,iz,ie)
 
                if (ip.gt.nmaxl_nn) then
                   write(6,*) nid,
      &            ' ABORT: nbp (current ip) too large',ip,nmaxl_nn
                   call exitt
                endif
-
                imask(idx,1,1,1)=1
-
             enddo
             enddo
             enddo
@@ -356,61 +340,40 @@ c     points in jsend
       enddo
       enddo
       nbp = ip
-
-      call neknekgsync()
+      nbpg = iglsum(nbp,1)
 
 c     JL's routine to find which points these procs are on
-      call fgslib_findptsms(fpth_ms,rcode_all,1,
-     &                    proc_all,1,
-     &                    elid_all,1,
-     &                    rst_all,ldim,
-     &                    dist_all,1,
-     &                    rsend(1),ldim,
-     &                    rsend(2),ldim,
-     &                    rsend(3),ldim,
-     &                    isid_nn,1,0,
-     &                    nbp)
+      call fgslib_findptsms(fpth_ms,rcode,1,
+     &                      proc,1,
+     &                      elid,1,
+     &                      rst,ldim,
+     &                      dist,1,
+     &                      rsend(1),ldim,
+     &                      rsend(2),ldim,
+     &                      rsend(3),ldim,
+     &                      isid_nn,1,0,
+     &                      nbp)
 
-      ip=0
-      icount=0
-      ierror=0
+      ip     = 0
+      ierror = 0
+c     Make sure all points were found
+      do i=1,nbp
+        if (rcode(i).eq.2) then
+           ierror = 1
+        else 
+           ip = ip+1
+        endif
+      enddo
 
-c     Make sure rcode_all is fine
-      do 200 i=1,nbp
-
-      if (rcode_all(i).lt.2) then
-
-        if (rcode_all(i).eq.1.and.dist_all(i).gt.1e-02) then
-           if (ldim.eq.2) write(6,*)
-     &     'WARNING: point on boundary or outside the mesh xy[z]d^2: '
-           if (ldim.eq.3) write(6,*)
-     &     'WARNING: point on boundary or outside the mesh xy[z]d^2: '
-           goto 200
-         endif
-         ip=ip+1
-         rcode(ip) = rcode_all(i)
-         elid(ip)  = elid_all(i)
-         proc(ip)  = proc_all(i)
-         do j=1,ldim
-           rst(ldim*(ip-1)+j)   = rst_all(ldim*(i-1)+j)
-         enddo
-         iList(1,ip) = jsend(i)
-
-      endif  !  rcode_all
-
- 200  continue
-
-      ipg = iglsum(ip,1)
-      nbpg = iglsum(nbp,1)
-      if (nid.eq.0) write(6,*) idsess,ipg,nbpg,'interface points' 
-      if (ipg.lt.nbpg) then
-         if (nid.eq.0) write(6,*) 'Not all interface points found'
-         ierror = 1
-      endif
-      npoints_nn = ip
+      ipg = iglsum_ms(ip,1)
+      if (nid.eq.0) write(6,*) idsess,nbpg,ibpg,
+     $                    ' Interdomain boundary points'
+      npoints_nn = nbp
 
       ierror = iglmax_ms(ierror,1)
-      if (ierror.eq.1) call exitt
+      if (ierror.eq.1) call exitti('Not all interdomain boundary points
+     $                              were found in domain: $',idsess)
+     
  
       return
       end
@@ -426,7 +389,6 @@ c-----------------------------------------------------------------------
 
       real fieldout(nmaxl_nn,nfldmax_nn)
       real field(lx1*ly1*lz1*lelt)
-      integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
 
       if (nio.eq.0) write(6,98) 
      $   ' Multidomain data exchange ... ', nfld_neknek
@@ -453,12 +415,12 @@ c     Interpolate using findpts_eval
          
 c     Now we can transfer this information to valint array from which
 c     the information will go to the boundary points
-       do i=1,npoints_nn
-        idx = iList(1,i)
-        do ifld=1,nfld_neknek
-          valint(idx,1,1,1,ifld)=fieldout(i,ifld)
-        enddo
+      do i=1,npoints_nn
+       idx = iList(i)
+       do ifld=1,nfld_neknek
+         valint(idx,1,1,1,ifld)=fieldout(i,ifld)
        enddo
+      enddo
 
       call nekgsync()
       etime = dnekclock() - etime1
@@ -480,49 +442,26 @@ c--------------------------------------------------------------------------
       real fieldin(1)
       integer fieldstride
 
-c     Used for findpts_eval of various fields
       call fgslib_findptsms_eval(fpth_ms,fieldout,fieldstride,
-     &                         rcode,1,
-     &                         proc,1,
-     &                         elid,1,
-     &                         rst,ldim,npoints_nn,
-     &                         fieldin)
+     &                           rcode,1,proc,1,elid,1,rst,ldim,
+     &                           npoints_nn,fieldin)
 
       return
       end
 c--------------------------------------------------------------------------
-      subroutine nekneksanchk
-      include 'SIZE'
-      include 'TOTAL'
-      include 'NEKNEK'
-
-      if (nfld_neknek.gt.nfldmax_nn) then
-        call exitti('Error: nfld_neknek > nfldmax:$',idsess)
-      endif
-
-      if (nfld_neknek.eq.0)
-     $ call exitti('Error: set nfld_neknek in usrdat. Session:$',idsess)
-
-      return
-      end
-C--------------------------------------------------------------------------
       subroutine neknek_xfer_fld(u,ui)
       include 'SIZE'
       include 'TOTAL'
       include 'NEKNEK'
-      real fieldout(nmaxl_nn,nfldmax_nn)
+      real fieldout(nmaxl_nn)
       real u(1),ui(1)
-      integer nv,nt
 
-      call field_eval(fieldout(1,1),1,u)
-
-c     Now we can transfer this information to valint array from which
-c     the information will go to the boundary points
-       do i=1,npoints_nn
-        idx = iList(1,i)
-        ui(idx)=fieldout(i,1)
-       enddo
-      call neknekgsync()
+      call field_eval(fieldout,1,u)
+c     Now we transfer fieldout to ui at the interdomain boundary points
+      do i=1,npoints_nn
+        idx = iList(i)
+        ui(idx)=fieldout(i)
+      enddo
 
       return
       end
@@ -553,14 +492,15 @@ c     velocity.
        itchk = iglmax(itchk,1)
        icalld = 1
       endif
+
       if (itchk.eq.1) return
+
       dqg=0
       aqg=0
       do e=1,nelv
       do f=1,2*ldim
          if (cbc(f,e,1).eq.'v  '.or.cbc(f,e,1).eq.'V  ') then
-            call surface_flux_area(dq,aq
-     $          ,vx,vy,vz,e,f,work)
+            call surface_flux_area(dq,aq,vx,vy,vz,e,f,work)
             dqg = dqg+dq
             if (intflag(f,e).eq.1) aqg = aqg+aq
          endif
@@ -572,6 +512,7 @@ c     velocity.
       if (aqg.gt.0) gamma = -dqg/aqg
       if (nid.eq.0) write(6,104) idsess,istep,time,dqg,aqg,gamma
  104  format(i4,i10,1p4e13.4,' NekNek_bdry_flux')
+
       do e=1,nelv
       do f=1,2*ldim
         if (intflag(f,e).eq.1) then
@@ -591,6 +532,7 @@ c     velocity.
         endif
       enddo
       enddo
+
       return
       end
 c-----------------------------------------------------------------------
@@ -603,10 +545,12 @@ c-----------------------------------------------------------------------
       parameter (l=lx1*ly1*lz1)
       real qx(l,1),qy(l,1),qz(l,1),w(lx1,ly1,lz1)
       integer e,f
+
       call           faccl3  (w,qx(1,e),unx(1,1,f,e),f)
       call           faddcl3 (w,qy(1,e),uny(1,1,f,e),f)
       if (if3d) call faddcl3 (w,qz(1,e),unz(1,1,f,e),f)
       call dsset(lx1,ly1,lz1)
+
       iface  = eface1(f)
       js1    = skpdat(1,iface)
       jf1    = skpdat(2,iface)
@@ -614,15 +558,18 @@ c-----------------------------------------------------------------------
       js2    = skpdat(4,iface)
       jf2    = skpdat(5,iface)
       jskip2 = skpdat(6,iface)
+
       dq = 0
       aq = 0
       i  = 0
+
       do 100 j2=js2,jf2,jskip2
       do 100 j1=js1,jf1,jskip1
-         i = i+1
-         dq    = dq + area(i,1,f,e)*w(j1,j2,1)
-         aq    = aq + area(i,1,f,e)
+          i = i+1
+         dq = dq + area(i,1,f,e)*w(j1,j2,1)
+         aq = aq + area(i,1,f,e)
   100 continue
+
       return
       end
 c-----------------------------------------------------------------------
@@ -639,8 +586,7 @@ c-----------------------------------------------------------------------
       if (xmax.le.xmin) return
 
       scale = (x1-x0)/(xmaxg-xming)
-      x0n = x0 + scale*(xmin-xming)
-
+      x0n   = x0 + scale*(xmin-xming)
 
       do i=1,n
          x(i) = x0n + scale*(x(i)-xmin)
@@ -648,7 +594,6 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine vol_flow_ms
 c
@@ -686,11 +631,6 @@ c
       data bd_vflow,dt_vflow /-99.,-99./
 
       logical ifcomp
-
-c     Check list:
-
-c     param (55) -- volume flow rate, if nonzero
-c     forcing in X? or in Z?
 
       ntot1 = lx1*ly1*lz1*nelv
       ntot2 = lx2*ly2*lz2*nelv
@@ -786,13 +726,11 @@ c
       common /cvflow_i/ icvflow,iavflow
       common /cvflow_c/ chv(3)
       character*1 chv
-c
+ 
       integer icalld
       save    icalld
       data    icalld/0/
-
-c
-c
+ 
       ntot1 = lx1*ly1*lz1*nelv
       if (icalld.eq.0) then
          icalld=icalld+1
@@ -802,14 +740,13 @@ c
          ylmax = glmax_ms(ym1,ntot1)
          zlmin = glmin_ms(zm1,ntot1)          !  for Z!
          zlmax = glmax_ms(zm1,ntot1)
-c
+ 
          if (icvflow.eq.1) domain_length = xlmax - xlmin
          if (icvflow.eq.2) domain_length = ylmax - ylmin
          if (icvflow.eq.3) domain_length = zlmax - zlmin
       endif
-c
+ 
       if (ifsplit) then
-c        call plan2_vol(vxc,vyc,vzc,prc)
          call plan4_vol_ms(vxc,vyc,vzc,prc)
       else
          call plan3_vol_ms(vxc,vyc,vzc,prc)
@@ -836,15 +773,14 @@ c
 c     Compute pressure and velocity using fractional step method.
 c     (PLAN3).
 c
-c
       include 'SIZE'
       include 'TOTAL'
-c
+ 
       real vxc(lx1,ly1,lz1,lelv)
      $   , vyc(lx1,ly1,lz1,lelv)
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx2,ly2,lz2,lelv)
-C
+ 
       COMMON /SCRNS/ rw1   (LX1,LY1,LZ1,LELV)
      $ ,             rw2   (LX1,LY1,LZ1,LELV)
      $ ,             rw3   (LX1,LY1,LZ1,LELV)
@@ -869,12 +805,11 @@ C
  
  
 c     Compute velocity, 1st part 
- 
       n  = lx1*ly1*lz1*nelv
       ntot1  = lx1*ly1*lz1*nelv
       ntot2  = lx2*ly2*lz2*nelv
       ifield = 1
-c
+ 
       call opzero(vxcbc,vycbc,vzcbc)
       call opzero(vxc,vyc,vzc)
 
@@ -918,12 +853,11 @@ c
           call ssnormd  (vxc,vyc,vzc)
         endif
 c
-c
 c     Compute pressure  (from "incompr")
 c
         intype = 1
         dtinv  = 1./dt
-c
+ 
         call rzero   (h1,ntot1)
         call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
         call cmult   (h2,dtinv,ntot1)
@@ -931,18 +865,18 @@ c
         call opdiv   (respr,vxc,vyc,vzc)
         call chsign  (respr,ntot2)
         call ortho   (respr)
-c
-c
+ 
+ 
 c     Set istep=0 so that h1/h2 will be re-initialized in eprec
         i_tmp = istep
         istep = 0
         call esolver (respr,h1,h2,h2inv,intype)
         istep = i_tmp
-c
+ 
         call opgradt (rw1,rw2,rw3,respr)
         call opbinv  (dv1,dv2,dv3,rw1,rw2,rw3,h2inv)
         call opadd2  (vxc,vyc,vzc,dv1,dv2,dv3)
-c
+ 
         call cmult2  (prc,respr,bd(1),ntot2)
 
         call opsub2(vxcp,vycp,vzcp,vxc,vyc,vzc)
@@ -954,11 +888,6 @@ c
      $      dvxmax,dvymax,dvzmax,' del-vol-vxy'
         call neknekgsync()
       enddo
-
-      if (istep.eq.3) ifxyo = .true.
-      if (istep.eq.3) call outpost(vxc,vyc,vzc,prc,t,'cor')
-      if (istep.eq.3) ifxyo = .false.
-      call exitt
 
       return
       end
@@ -1067,7 +996,6 @@ C     surface terms
         call ortho    (prc)
 
 C     Compute velocity
-ccccc
         call opgrad   (resv1,resv2,resv3,prc)
         if (ifaxis) call col2 (resv2,omask,ntot1)
         call opchsgn  (resv1,resv2,resv3)
@@ -1080,11 +1008,11 @@ ccccc
         call opcopy(vxcp,vycp,vzcp,vxc,vyc,vzc)
 
         intype = -1
-        call sethlm   (h1,h2,intype)
+        call sethlm(h1,h2,intype)
         call ophx(resbc(1,1),resbc(1,2),resbc(1,3),
      $             vxcbc,vycbc,vzcbc,h1,h2)
         call opsub2(resv1,resv2,resv3,resbc(1,1),resbc(1,2),resbc(1,3))
-        call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+        call ophinv(vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
         call opadd2(vxc,vyc,vzc,vxcbc,vycbc,vzcbc)
 
         call opsub2(vxcp,vycp,vzcp,vxc,vyc,vzc)
@@ -1097,11 +1025,6 @@ ccccc
      $    dvxmax,dvymax,dvzmax,' del-vol-vxy'
 
       enddo
-
-      if (istep.eq.3) ifxyo = .true.
-      if (istep.eq.3) call outpost(vxc,vyc,vzc,prc,t,'cor')
-      if (istep.eq.3) ifxyo = .false.
-      call exitt
 
       return
       end
@@ -1137,29 +1060,23 @@ c-----------------------------------------------------------------------
       include 'mpif.h'
       parameter (ltot=lx1*ly1*lz1*lelt)
       parameter (nxyz=lx1*ly1*lz1     )
-      real wtglls(nxyz,lelt,0:nsessmax-1)
-      real rsend(ltot*ldim)
-      integer rcode_all(ltot),elid_all(ltot),proc_all(ltot)
-      real    dist_all(ltot),rst_all(ltot*ldim)
-      real    disti_all(ltot)
-      integer idx1(ltot),idx2(ltot)
-      integer rsid_nn(ltot)
+      real    wtglls(nxyz,lelt,0:nsessmax-1),rsend(ltot*ldim),
+     &        dist_all(ltot),rst_all(ltot*ldim),disti_all(ltot)
+      integer rcode_all(ltot),elid_all(ltot),proc_all(ltot),
+     &        rsid_nn(ltot)
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      n = lx1*ly1*lz1*nelt
-      do i=1,n
+      npt = lx1*ly1*lz1*nelt
+      do i=1,npt
         wtglls(i,1,idsess) = distfint(i,1,1,1)
       enddo
-      npt = n
-      npt = n
+
       do ids=1,nsessions-1
          idcheck = mod(idsess+ids,nsessions)
-
          call ifill(rsid_nn,idcheck,npt)
          call fgslib_findptsms(fpth_ms,rcode_all,1,proc_all,1,
-     &        elid_all,1,rst_all,ldim,dist_all,1,
-     &        xm1,1,ym1,1,zm1,1,
-     &        rsid_nn,1,1,npt)
+     &                         elid_all,1,rst_all,ldim,dist_all,1,
+     &                         xm1,1,ym1,1,zm1,1,rsid_nn,1,1,npt)
          call fgslib_findptsms_eval(fpth_ms,disti_all,1,
      &      rcode_all,1,proc_all,1,elid_all,1,rst_all,ldim,npt,distfint)
 
@@ -1174,7 +1091,7 @@ c-----------------------------------------------------------------------
            endif
          enddo
       enddo
-      do i=1,n
+      do i=1,npt
          prod = 0.
          do j=0,nsessions-1
            prod = prod+wtglls(i,1,j)
