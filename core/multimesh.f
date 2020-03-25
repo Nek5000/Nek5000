@@ -365,7 +365,7 @@ c     Make sure all points were found
         endif
       enddo
 
-      ipg = iglsum_ms(ip,1)
+      ipg = iglsum(ip,1)
       if (nid.eq.0) write(6,*) idsess,nbpg,ibpg,
      $                    ' Interdomain boundary points'
       npoints_nn = nbp

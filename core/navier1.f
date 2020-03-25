@@ -4782,3 +4782,20 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine set_mesh_facev(d,ifld,b,val)
+      include 'SIZE'
+      include 'TOTAL'
+      real d(1),val
+      integer e,f
+      character*3 b  ! Boundary condition of interest
+
+      nel = nelfld(ifld)
+      do e=1,nel
+      do f=1,2*ldim
+         if (cbc(f,e,ifld).eq.b) call facev(d,e,f,val,lx1,ly1,lz1)
+      enddo
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------

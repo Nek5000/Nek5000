@@ -3449,3 +3449,123 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine domain_size_ms(xmin,xmax,ymin,ymax,zmin,zmax)
+      include 'SIZE'
+      include 'PARALLEL'
+
+      call setnekcomm(iglobalcomm)
+      call domain_size(xmin,xmax,ymin,ymax,zmin,zmax)
+      call setnekcomm(intracomm)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine cheap_dist_ms(d,ifld,b)
+      include 'SIZE'
+      include 'GEOM'       ! Coordinates
+      include 'INPUT'      ! cbc()
+      include 'TSTEP'      ! nelfld
+      include 'PARALLEL'   ! gather-scatter handle for field "ifld"
+      include 'NEKNEK'
+
+      real d(lx1,ly1,lz1,lelt)
+      real dms(lx1*ly1*lz1*lelt)
+      real dold(lx1,ly1,lz1,lelt)
+      real dchmax
+      character*3 b  ! Boundary condition of interest
+
+      integer e,eg,f
+
+      nel = nelfld(ifld)
+      n = lx1*ly1*lz1*nel
+
+      call domain_size_ms(xmin,xmax,ymin,ymax,zmin,zmax)
+      xmn = min(xmin,ymin)
+      xmx = max(xmax,ymax)
+      if (if3d) xmn = min(xmn ,zmin)
+      if (if3d) xmx = max(xmx ,zmax)
+
+      big    = 10*(xmx-xmn)
+      dchmax = big
+      call cfill(d,big,n)
+
+      call set_mesh_facev(d,ifld,b,0.)
+
+      do i=1,npoints_nn
+        idx = iList(i)
+      enddo
+      call rzero(dms,n)
+
+      nschwarz = 20
+      if (idsess+nid.eq.0) write(6,1) 0,nschwarz,dchmax
+      do ischwarz=1,nschwarz
+         call copy(dold,d,n)
+         call neknek_xfer_fld(d,dms)
+         call cfill(d,big,n)
+         do i=1,npoints_nn
+            idx = iList(i)
+            d(idx,1,1,1) = min(d(idx,1,1,1),dms(idx))
+         enddo
+         call set_mesh_facev(d,ifld,b,0.)
+         do ipass=1,10000
+           dmax    = 0
+           nchange = 0
+           do e=1,nel
+              do k=1,lz1
+              do j=1,ly1
+              do i=1,lx1
+                 i0=max(  1,i-1)
+                 j0=max(  1,j-1)
+                 k0=max(  1,k-1)
+                 i1=min(lx1,i+1)
+                 j1=min(ly1,j+1)
+                 k1=min(lz1,k+1)
+                 do kk=k0,k1
+                 do jj=j0,j1
+                 do ii=i0,i1
+                    xv1 = xm1(ii,jj,kk,e)
+                    yv1 = ym1(ii,jj,kk,e)
+                    zv1 = zm1(ii,jj,kk,e)
+                    xv2 = xm1(i ,j ,k ,e)
+                    yv2 = ym1(i ,j ,k ,e)
+                    zv2 = zm1(i ,j ,k ,e)
+                    if (if3d) then
+                       dtmp = d(ii,jj,kk,e) +
+     $                              dist3d(xv1,yv1,zv1,xv2,yv2,zv2)
+                    else
+                       dtmp = d(ii,jj,kk,e) + dist2d(xv1,yv1,xv2,yv2)
+                    endif
+                    if (dtmp.lt.d(i,j,k,e)) then
+                       d(i,j,k,e) = dtmp
+                       nchange = nchange+1
+                       dmax = max(dmax,d(i,j,k,e))
+                     endif
+                 enddo
+                 enddo
+                 enddo
+              enddo
+              enddo
+              enddo
+           enddo
+           call fgslib_gs_op(gsh_fld(ifld),d,1,3,0) !min over elements
+           nchange = iglsum_ms(nchange,1)
+           dmax    =  glmax_ms(dmax,1)
+           if (nchange.eq.0) goto 1000
+         enddo
+ 1000  continue
+       call sub2(dold,d,n)
+       dchmax = glamax_ms(dold,n)
+       dmax   = glmax_ms(d,n)
+       if (idsess+nid.eq.0) write(6,1) ischwarz,nschwarz,dchmax
+       if (dchmax/dmax.lt.1.e-3) goto 2000
+      enddo
+ 2000 continue
+      if (ischwarz.ge.nschwarz.and.idsess+nid.eq.0) then
+         write(6,*) 'Warning:cheap_dist_ms did not converge'
+      endif
+    1 format(i4,' of ',i4,' cheap_dist Schwarz iteration: ',1p1e12.6)
+
+      return
+      end
+c-----------------------------------------------------------------------
