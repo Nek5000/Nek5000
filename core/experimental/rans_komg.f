@@ -4061,22 +4061,22 @@ c
      $   (ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e) +
      $    vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e) )
          oij(i,e,3) = j*  ! dv/dx - du/dy
-     $   (vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e) -
-     $    ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e) )
+     $   (vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)+vt(i)*txm1(i,1,1,e) 
+     $   -ur(i)*rym1(i,1,1,e)-us(i)*sym1(i,1,1,e)-ut(i)*tym1(i,1,1,e) )
 
          sij(i,5,e) = j*  ! dv/dz + dw/dy
      $   (wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e)+wt(i)*tym1(i,1,1,e) +
      $    vr(i)*rzm1(i,1,1,e)+vs(i)*szm1(i,1,1,e)+vt(i)*tzm1(i,1,1,e) )
          oij(i,e,1) = j*  ! dw/dy - dv/dz
-     $   (wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e)+wt(i)*tym1(i,1,1,e) -
-     $    vr(i)*rzm1(i,1,1,e)+vs(i)*szm1(i,1,1,e)+vt(i)*tzm1(i,1,1,e) )
+     $   (wr(i)*rym1(i,1,1,e)+ws(i)*sym1(i,1,1,e)+wt(i)*tym1(i,1,1,e)  
+     $   -vr(i)*rzm1(i,1,1,e)-vs(i)*szm1(i,1,1,e)-vt(i)*tzm1(i,1,1,e) )
 
          sij(i,6,e) = j*  ! du/dz + dw/dx
      $   (ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e) +
      $    wr(i)*rxm1(i,1,1,e)+ws(i)*sxm1(i,1,1,e)+wt(i)*txm1(i,1,1,e) )
          oij(i,e,2) = j*  ! du/dz - dw/dx
-     $   (ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e) -
-     $    wr(i)*rxm1(i,1,1,e)+ws(i)*sxm1(i,1,1,e)+wt(i)*txm1(i,1,1,e) )
+     $   (ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e)  
+     $   -wr(i)*rxm1(i,1,1,e)-ws(i)*sxm1(i,1,1,e)-wt(i)*txm1(i,1,1,e) )
 
 
         enddo
@@ -4121,8 +4121,8 @@ c
      $            ( ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e) +
      $              vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e) )
                oij(i,e,3) = j*  ! dv/dx - du/dy
-     $            ( vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e) -
-     $              ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e) )
+     $            ( vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)  
+     $             -ur(i)*rym1(i,1,1,e)-us(i)*sym1(i,1,1,e) )
 
                if (r.gt.0) then                             ! e_r@
                   sij(i,5,e) = j*  ! dw/dy 
@@ -4166,8 +4166,8 @@ c
      $           (ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e) +
      $            vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e) )
                oij(i,e,1) = j*  ! dv/dx - du/dy
-     $           (vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e) -
-     $            ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e) )
+     $           (vr(i)*rxm1(i,1,1,e)+vs(i)*sxm1(i,1,1,e)  
+     $           -ur(i)*rym1(i,1,1,e)-us(i)*sym1(i,1,1,e) )
 
             enddo
          enddo
@@ -4220,7 +4220,7 @@ c
       nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
 
-      if (if3d .or. ifaxis) then
+      if (if3d) then
          call opcolv  (oij(1,1,1), oij(1,1,2), oij(1,1,3),   bm1)
          call opdssum (oij(1,1,1), oij(1,1,2), oij(1,1,3)       )
          call opcolv  (oij(1,1,1), oij(1,1,2), oij(1,1,3),binvm1)
@@ -4250,6 +4250,54 @@ c
             call copy (sij(1,5,e),work2(1,e), nxyz)
             call copy (sij(1,6,e),work3(1,e), nxyz)
          enddo
+      elseif(ifaxis) then
+         call col2    (oij(1,1,1),bm1   ,ntot)
+         call dssum   (oij(1,1,1),lx1,ly1,lz1)
+         call col2    (oij(1,1,1),binvm1,ntot)
+         call col2    (oij(1,1,2),bm1   ,ntot)
+         call dssum   (oij(1,1,2),lx1,ly1,lz1)
+         call col2    (oij(1,1,2),binvm1,ntot)
+         call col2    (oij(1,1,3),bm1   ,ntot)
+         call dssum   (oij(1,1,3),lx1,ly1,lz1)
+         call col2    (oij(1,1,3),binvm1,ntot)
+         do e=1,nelv
+            call copy (work1(1,e), sij(1,1,e),nxyz)
+            call copy (work2(1,e), sij(1,2,e),nxyz)
+            call copy (work3(1,e), sij(1,3,e),nxyz)
+         enddo
+         call col2    (work1     ,bm1   ,ntot)
+         call dssum   (work1     ,lx1,ly1,lz1)
+         call col2    (work1     ,binvm1,ntot)
+         call col2    (work2     ,bm1   ,ntot)
+         call dssum   (work2     ,lx1,ly1,lz1)
+         call col2    (work2     ,binvm1,ntot)
+         call col2    (work3     ,bm1   ,ntot)
+         call dssum   (work3     ,lx1,ly1,lz1)
+         call col2    (work3     ,binvm1,ntot)
+         do e=1,nelv
+            call copy (sij(1,1,e),work1(1,e), nxyz)
+            call copy (sij(1,2,e),work2(1,e), nxyz)
+            call copy (sij(1,3,e),work3(1,e), nxyz)
+         enddo
+         do e=1,nelv
+            call copy (work1(1,e), sij(1,4,e),nxyz)
+            call copy (work2(1,e), sij(1,5,e),nxyz)
+            call copy (work3(1,e), sij(1,6,e),nxyz)
+         enddo
+         call col2    (work1     ,bm1   ,ntot)
+         call dssum   (work1     ,lx1,ly1,lz1)
+         call col2    (work1     ,binvm1,ntot)
+         call col2    (work2     ,bm1   ,ntot)
+         call dssum   (work2     ,lx1,ly1,lz1)
+         call col2    (work2     ,binvm1,ntot)
+         call col2    (work3     ,bm1   ,ntot)
+         call dssum   (work3     ,lx1,ly1,lz1)
+         call col2    (work3     ,binvm1,ntot)
+         do e=1,nelv
+            call copy (sij(1,4,e),work1(1,e), nxyz)
+            call copy (sij(1,5,e),work2(1,e), nxyz)
+            call copy (sij(1,6,e),work3(1,e), nxyz)
+         enddo
       else
          call col2    (oij(1,1,1),bm1   ,ntot)
          call dssum   (oij(1,1,1),lx1,ly1,lz1)
@@ -4259,9 +4307,18 @@ c
             call copy (work2(1,e), sij(1,2,e),nxyz)
             call copy (work3(1,e), sij(1,3,e),nxyz)
          enddo
-         call opcolv  (work1, work2, work3,   bm1)
-         call opdssum (work1, work2, work3       )
-         call opcolv  (work1, work2, work3,binvm1)
+c         call opcolv  (work1, work2, work3,   bm1)
+c         call opdssum (work1, work2, work3       )
+c         call opcolv  (work1, work2, work3,binvm1)
+         call col2    (work1     ,bm1   ,ntot)
+         call dssum   (work1     ,lx1,ly1,lz1)
+         call col2    (work1     ,binvm1,ntot)
+         call col2    (work2     ,bm1   ,ntot)
+         call dssum   (work2     ,lx1,ly1,lz1)
+         call col2    (work2     ,binvm1,ntot)
+         call col2    (work3     ,bm1   ,ntot)
+         call dssum   (work3     ,lx1,ly1,lz1)
+         call col2    (work3     ,binvm1,ntot)
          do e=1,nelv
             call copy (sij(1,1,e),work1(1,e), nxyz)
             call copy (sij(1,2,e),work2(1,e), nxyz)
