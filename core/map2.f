@@ -167,7 +167,10 @@ c-----------------------------------------------------------------------
 
       integer*8 eid8(lelt), vtx8(8*lelt)
       integer iwork(lelt)
+      real xyz(lelt*ldim)
       common /ctmp0/ eid8, vtx8, iwork
+
+      integer tt,cnt
 
       integer opt_parrsb(3), opt_parmetis(10)
 
@@ -186,6 +189,7 @@ c-----------------------------------------------------------------------
 c fluid elements
       j  = 0
       ii = 0
+      cnt= 0
       do i = 1,neli
          if (wk(ii+1) .le. nelgv) then
             j = j + 1
@@ -193,11 +197,24 @@ c fluid elements
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
          endif
          ii = ii + (nlv+1)
+
+         xyz(cnt+0)=0.
+         xyz(cnt+1)=0.
+         xyz(cnt+2)=0.
+         do tt=1,nlv
+           xyz(cnt+0)=xyz(cnt+0)+xc(tt,eid8(j))
+           xyz(cnt+1)=xyz(cnt+1)+yc(tt,eid8(j))
+           xyz(cnt+2)=xyz(cnt+2)+zc(tt,eid8(j))
+         enddo
+         xyz(cnt+0)=xyz(cnt+0)/nlv
+         xyz(cnt+1)=xyz(cnt+0)/nlv
+         xyz(cnt+2)=xyz(cnt+0)/nlv
+         cnt=cnt+3
       enddo
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -218,6 +235,7 @@ c solid elements
       if (nelgt.ne.nelgv) then
          j  = 0
          ii = 0
+         cnt= 0
          do i = 1,neli
             if (wk(ii+1) .gt. nelgv) then
                j = j + 1
@@ -225,11 +243,24 @@ c solid elements
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
             endif
             ii = ii + (nlv+1)
+
+            xyz(cnt+0)=0.
+            xyz(cnt+1)=0.
+            xyz(cnt+2)=0.
+            do tt=1,nlv
+              xyz(cnt+0)=xyz(cnt+0)+xc(tt,eid8(j))
+              xyz(cnt+1)=xyz(cnt+1)+yc(tt,eid8(j))
+              xyz(cnt+2)=xyz(cnt+2)+zc(tt,eid8(j))
+            enddo
+            xyz(cnt+0)=xyz(cnt+0)/nlv
+            xyz(cnt+1)=xyz(cnt+0)/nlv
+            xyz(cnt+2)=xyz(cnt+0)/nlv
+            cnt=cnt+3
          enddo
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel

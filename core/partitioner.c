@@ -156,8 +156,9 @@ err:
 #endif
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell, 
-               const int *nve, int *fcomm, int *rtval) 
+void fpartMesh(long long *el, long long *vl, double *xyz,
+               const int *lelt, int *nell, const int *nve,
+               int *fcomm, int *rtval)
 {
   struct comm comm;
   struct crystal cr;
