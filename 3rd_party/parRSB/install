@@ -12,14 +12,9 @@ if [ -f ./lib/libparRSB.a ]; then
   exit 0
 fi
 
-if [ ! -f v$VER.tar.gz ]; then
-  wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
-fi
+git clone https://github.com/thilinarmtb/parRSB.git -b parcon
 
-rm -rf parRSB 2>/dev/null
-mkdir parRSB 
-tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
 cd parRSB
 set -x
-make -j4 $PARRSB_OPT 
+make $PARRSB_OPT
 set +x
