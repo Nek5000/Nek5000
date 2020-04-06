@@ -188,6 +188,46 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   opt[0] = 1;
   opt[1] = 2; /* verbosity */
   opt[2] = 0;
+  ierr = parRCB_partMesh(part, xyz, nel, nv, opt, comm.c);
+  if (ierr != 0) goto err;
+
+  /* redistribute data */
+  array_init(edata, &eList, nel), eList.n = nel;
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    data[e].proc = part[e];
+    data[e].eid  = el[e];
+    for(n = 0; n < nv; ++n) {
+      data[e].vtx[n] = vl[e*nv + n];
+    }
+  }
+  free(part);
+
+  crystal_init(&cr, &comm);
+  sarray_transfer(edata, &eList, proc, 0, &cr);
+  crystal_free(&cr);
+
+  nel=eList.n;
+  count = 0;
+  if (nel > *lelt) count = 1;
+  comm_allreduce(&comm, gs_int, gs_add, &count, 1, &ibuf);
+  if (count > 0) {
+    if (comm.id == 0)
+      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
+    goto err;
+  }
+
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    el[e] = data[e].eid;
+    for(n = 0; n < nv; ++n) {
+      vl[e*nv + n] = data[e].vtx[n];
+    }
+  }
+  array_free(&eList);
+
+  printPartStat(vl, nel, nv, cext);
+
+  /* run parRSB now */
+  part=(int*)malloc(nel*sizeof(int));
   ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
 #elif defined(PARMETIS)
   opt[0] = 1;
