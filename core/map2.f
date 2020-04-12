@@ -195,21 +195,21 @@ c fluid elements
             j = j + 1
             eid8(j) = wk(ii+1)
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+            xyz(cnt+1)=0.
+            xyz(cnt+2)=0.
+            xyz(cnt+3)=0.
+            do tt=1,nlv
+              xyz(cnt+1)=xyz(cnt+1)+xc(tt,i)
+              xyz(cnt+2)=xyz(cnt+2)+yc(tt,i)
+              xyz(cnt+3)=xyz(cnt+3)+zc(tt,i)
+            enddo
+            xyz(cnt+1)=xyz(cnt+1)/nlv
+            xyz(cnt+2)=xyz(cnt+2)/nlv
+            xyz(cnt+3)=xyz(cnt+3)/nlv
+            cnt=cnt+3
          endif
          ii = ii + (nlv+1)
-
-         xyz(cnt+0)=0.
-         xyz(cnt+1)=0.
-         xyz(cnt+2)=0.
-         do tt=1,nlv
-           xyz(cnt+0)=xyz(cnt+0)+xc(tt,eid8(j))
-           xyz(cnt+1)=xyz(cnt+1)+yc(tt,eid8(j))
-           xyz(cnt+2)=xyz(cnt+2)+zc(tt,eid8(j))
-         enddo
-         xyz(cnt+0)=xyz(cnt+0)/nlv
-         xyz(cnt+1)=xyz(cnt+0)/nlv
-         xyz(cnt+2)=xyz(cnt+0)/nlv
-         cnt=cnt+3
       enddo
       neliv = j
 
@@ -241,21 +241,21 @@ c solid elements
                j = j + 1
                eid8(j) = wk(ii+1)
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+               xyz(cnt+1)=0.
+               xyz(cnt+2)=0.
+               xyz(cnt+3)=0.
+               do tt=1,nlv
+                 xyz(cnt+1)=xyz(cnt+1)+xc(tt,i)
+                 xyz(cnt+2)=xyz(cnt+2)+yc(tt,i)
+                 xyz(cnt+3)=xyz(cnt+3)+zc(tt,i)
+               enddo
+               xyz(cnt+1)=xyz(cnt+1)/nlv
+               xyz(cnt+2)=xyz(cnt+2)/nlv
+               xyz(cnt+3)=xyz(cnt+3)/nlv
+               cnt=cnt+3
             endif
             ii = ii + (nlv+1)
-
-            xyz(cnt+0)=0.
-            xyz(cnt+1)=0.
-            xyz(cnt+2)=0.
-            do tt=1,nlv
-              xyz(cnt+0)=xyz(cnt+0)+xc(tt,eid8(j))
-              xyz(cnt+1)=xyz(cnt+1)+yc(tt,eid8(j))
-              xyz(cnt+2)=xyz(cnt+2)+zc(tt,eid8(j))
-            enddo
-            xyz(cnt+0)=xyz(cnt+0)/nlv
-            xyz(cnt+1)=xyz(cnt+0)/nlv
-            xyz(cnt+2)=xyz(cnt+0)/nlv
-            cnt=cnt+3
          enddo
          nelit = j
 
