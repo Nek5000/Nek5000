@@ -273,6 +273,11 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
+  if(comm.id==0)
+    printf("Before RCB:\n");
+
+  printPartStat(vl, nel, nv, cext);
+
   part = (int*) malloc(nel * sizeof(int));
 
   ierr = 1;
