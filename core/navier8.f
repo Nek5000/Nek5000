@@ -23,9 +23,11 @@ c     Check for single-element periodicity 'p' bc
       if (if3d) nz = nx
       call check_p_bc(glo_num,nx,nx,nz,nel)
 
-      if(nio.eq.0) write(6,*) 'call usrsetvert'
+      if(nio.eq.0 .and. loglevel.gt.2) 
+     $  write(6,*) 'call usrsetvert'
       call usrsetvert(glo_num,nel,nx,nx,nz)
-      if(nio.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
+      if(nio.eq.0 .and. loglevel.gt.2) 
+     $  write(6,'(A,/)') ' done :: usrsetvert'
 
       return
       end
