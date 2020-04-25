@@ -12,9 +12,11 @@ if [ -f ./lib/libparRSB.a ]; then
   exit 0
 fi
 
-git clone https://github.com/thilinarmtb/parRSB.git -b parcon
+if [ ! -d parRSB ]; then
+  git clone https://github.com/thilinarmtb/parRSB.git -b parcon
+fi
 
 cd parRSB
 set -x
-make $PARRSB_OPT
+make $PARRSB_OPT install examples
 set +x

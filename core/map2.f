@@ -141,22 +141,22 @@ c
       save    icalld
       data    icalld  /0/
 
-      if (icalld.gt.0) return
-      icalld = 1
+      if(icalld.gt.1) return
 
       nv = 2**ldim
-      call get_vert_map(vertex,nv,wk,mdw,ndw)
+      call get_vert_map(vertex,nv,wk,mdw,ndw,icalld)
+      icalld=icalld+1
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw)
+      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw,icalld)
 
       include 'SIZE'
       include 'TOTAL'
 
       integer vertex(nlv,1)
-      integer wk(mdw*ndw)
+      integer wk(mdw*ndw),icalld
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -170,7 +170,7 @@ c-----------------------------------------------------------------------
       real xyz(lelt*ldim)
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer tt,cnt
+      integer tt,cnt,nrank,ierr
 
       integer opt_parrsb(3), opt_parmetis(10)
 
@@ -190,6 +190,8 @@ c fluid elements
       j  = 0
       ii = 0
       cnt= 0
+      do nrank=0,mp-1
+      if(mid.eq.nrank) then
       do i = 1,neli
          if (wk(ii+1) .le. nelgv) then
             j = j + 1
@@ -200,9 +202,9 @@ c fluid elements
             xyz(cnt+2)=0.
             xyz(cnt+3)=0.
             do tt=1,nlv
-              xyz(cnt+1)=xyz(cnt+1)+xc(tt,i)
-              xyz(cnt+2)=xyz(cnt+2)+yc(tt,i)
-              xyz(cnt+3)=xyz(cnt+3)+zc(tt,i)
+              xyz(cnt+1)=xyz(cnt+1)+xc(tt,j)
+              xyz(cnt+2)=xyz(cnt+2)+yc(tt,j)
+              xyz(cnt+3)=xyz(cnt+3)+zc(tt,j)
             enddo
             xyz(cnt+1)=xyz(cnt+1)/nlv
             xyz(cnt+2)=xyz(cnt+2)/nlv
@@ -211,11 +213,16 @@ c fluid elements
          endif
          ii = ii + (nlv+1)
       enddo
+      endif
+      call mpi_barrier(nekcomm,ierr);
+      enddo
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
-      call err_chk(ierr,'partMesh fluid failed!$')
+      if(icalld.ge.1) then
+        call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
+        call err_chk(ierr,'partMesh fluid failed!$')
+      endif
 
       nelv = nel
       nelt = nelv
@@ -235,33 +242,21 @@ c solid elements
       if (nelgt.ne.nelgv) then
          j  = 0
          ii = 0
-         cnt= 0
          do i = 1,neli
             if (wk(ii+1) .gt. nelgv) then
                j = j + 1
                eid8(j) = wk(ii+1)
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
-
-               xyz(cnt+1)=0.
-               xyz(cnt+2)=0.
-               xyz(cnt+3)=0.
-               do tt=1,nlv
-                 xyz(cnt+1)=xyz(cnt+1)+xc(tt,i)
-                 xyz(cnt+2)=xyz(cnt+2)+yc(tt,i)
-                 xyz(cnt+3)=xyz(cnt+3)+zc(tt,i)
-               enddo
-               xyz(cnt+1)=xyz(cnt+1)/nlv
-               xyz(cnt+2)=xyz(cnt+2)/nlv
-               xyz(cnt+3)=xyz(cnt+3)/nlv
-               cnt=cnt+3
             endif
             ii = ii + (nlv+1)
          enddo
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
-         call err_chk(ierr,'partMesh solid failed!$')
+         if(icalld.ge.1) then
+           call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
+           call err_chk(ierr,'partMesh solid failed!$')
+         endif
 
          nelt = nelv + nel
          ierr = 0 
