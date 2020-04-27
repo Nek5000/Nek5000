@@ -273,14 +273,13 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
-  part = (int*) malloc(nel * sizeof(int));
+  part = (int*) malloc(*lelt * sizeof(int));
 
   ierr = 1;
 #if defined(PARRSB)
   opt[0] = 1;
   opt[1] = 2; /* verbosity */
   opt[2] = 0;
-#if 1
   if(comm.id==0)
     printf("Before RCB:\n");
 
@@ -300,7 +299,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   }
 
   crystal_init(&cr, &comm);
-  sarray_transfer(edata, &eList, proc, 1, &cr);
+  sarray_transfer(edata, &eList, proc, 0, &cr);
 
   nel=eList.n;
   count = 0;
@@ -312,28 +311,19 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     goto err;
   }
 
-  long long *el1 = (long long*) malloc(nel * sizeof(long long));
-  long long *vl1 = (long long*) malloc(nel * nv * sizeof(long long));
   for(data = eList.ptr, e = 0; e < nel; ++e) {
-    el1[e] = data[e].eid;
+    el[e] = data[e].eid;
     for(n = 0; n < nv; ++n) {
-      vl1[e*nv + n] = data[e].vtx[n];
+      vl[e*nv + n] = data[e].vtx[n];
     }
   }
 
   if(comm.id==0)
     printf("After RCB:\n");
-  printPartStat(vl1, nel, nv, cext);
-
-  free(el1);
-  free(vl1);
-
-  sarray_transfer(edata, &eList, proc, 0, &cr);
-  nel=eList.n;
+  printPartStat(vl, nel, nv, cext);
 
   crystal_free(&cr);
   array_free(&eList);
-#endif
   ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
 #elif defined(PARMETIS)
   opt[0] = 1;
