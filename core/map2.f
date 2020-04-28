@@ -141,22 +141,22 @@ c
       save    icalld
       data    icalld  /0/
 
-      if(icalld.gt.1) return
+      if(icalld.gt.0) return
+      icalld = 1
 
       nv = 2**ldim
-      call get_vert_map(vertex,nv,wk,mdw,ndw,icalld)
-      icalld=icalld+1
+      call get_vert_map(vertex,nv,wk,mdw,ndw)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw,icalld)
+      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw)
 
       include 'SIZE'
       include 'TOTAL'
 
       integer vertex(nlv,1)
-      integer wk(mdw*ndw),icalld
+      integer wk(mdw*ndw)
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -229,10 +229,8 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      if(icalld.ge.1) then
-        call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
-        call err_chk(ierr,'partMesh fluid failed!$')
-      endif
+      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
+      call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
       nelt = nelv
@@ -263,10 +261,8 @@ c solid elements
          nelit = j
 
          nel = nelit
-         if(icalld.ge.1) then
-           call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
-           call err_chk(ierr,'partMesh solid failed!$')
-         endif
+         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ierr)
+         call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
          ierr = 0 

@@ -63,16 +63,6 @@ C     Read Mesh Info
       call mapelpr
 
       if (ifre2) then
-        call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
-        call err_chk(ierr,' Cannot open .re2 file!$')
-
-        call readp_re2_mesh (ifbswap)
-        call byte_close_mpi(fh_re2,ierr)
-      endif
-
-      call mapelpr  ! read .map file, est. gllnid, etc.
-
-      if (ifre2) then
         call read_re2_data(ifbswap)
       else
         maxrd = 32               ! max # procs to read at once
