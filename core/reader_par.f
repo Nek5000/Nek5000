@@ -20,7 +20,7 @@ c
 
       call usrdat0
 
-      call read_re2_hdr(ifbswap)
+      call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
 

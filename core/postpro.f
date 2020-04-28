@@ -65,9 +65,12 @@ c           eigenvalues in ascending order.
       enddo
 
       ! smooth field
-      wght = 0.5 
-      ncut = 1
+      ifld   = ifield
+      ifield = 1
+      wght   = 0.5 
+      ncut   = 1
       call filter_s0(l2,wght,ncut,'vortx') 
+      ifield = ifld
 
       return
       end

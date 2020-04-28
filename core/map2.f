@@ -173,8 +173,18 @@ c-----------------------------------------------------------------------
       integer tt,cnt,nrank,ierr
 
       integer opt_parrsb(3), opt_parmetis(10)
+      logical ifbswap
 
 #if defined(PARRSB) || defined(PARMETIS)
+      ! read vertex coordinates
+      call read_re2_hdr(ifbswap, .false.)
+      nelt = nelgt/np
+      do i = 1,mod(nelgt,np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call readp_re2_mesh(ifbswap, .false.)
+      call byte_close_mpi(fh_re2,ierr)
 
       call read_con(wk,size(wk),neli,nvi,nelgti,nelgvi)
       if (nvi .ne. nlv)
