@@ -378,6 +378,7 @@ c    1       format(a5,2i12,i2)
 
          call byte_set_view(offs,ifh)
          call byte_read_mpi(wk,(nv+1)*nelr,-1,ifh,ierr)
+         call err_chk(ierr,' Error while reading con file!$')
          call byte_close_mpi(ifh,ierr)
          if (ifbswap) call byte_reverse(wk,(nv+1)*nelr,ierr)
       else
