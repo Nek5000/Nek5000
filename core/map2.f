@@ -200,8 +200,6 @@ c fluid elements
       j  = 0
       ii = 0
       cnt= 0
-      do nrank=0,mp-1
-      if(mid.eq.nrank) then
       do i = 1,neli
          if (wk(ii+1) .le. nelgv) then
             j = j + 1
@@ -222,9 +220,6 @@ c fluid elements
             cnt=cnt+3
          endif
          ii = ii + (nlv+1)
-      enddo
-      endif
-      call mpi_barrier(nekcomm,ierr);
       enddo
       neliv = j
 
