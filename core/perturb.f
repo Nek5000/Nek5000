@@ -102,6 +102,7 @@ c
       include 'ADJOINT'
  
                                               call makeufp
+      if (filterType.eq.2)                    call make_hpf
       if (ifnav.and.(.not.ifchar).and.(.not.ifadj))call advabp
       if (ifnav.and.(.not.ifchar).and.(     ifadj))call advabp_adjoint
       if (iftran)                              call makextp
@@ -663,6 +664,7 @@ C----------------------------------------------------------------------
       INCLUDE 'TSTEP'
       include 'SOLN'
                                                        CALL MAKEUQP
+      IF (FILTERTYPE.EQ.2)                             CALL MAKE_HPF
       IF (IFADVC(IFIELD).AND.(.NOT.IFCHAR))            CALL CONVABP
       IF (IFTRAN)                                      CALL MAKEABQP
       IF ((IFTRAN.AND..NOT.IFCHAR).OR.
