@@ -3397,6 +3397,7 @@ c     enddo
       if (nfld.gt.2) ifpsco(nfld-2) = .true.
       if (nfld.gt.2) npscal = npscal+1
 
+      ifldmhd = npscal + 3
 
       nfield = nfld
 
