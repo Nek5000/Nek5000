@@ -3393,9 +3393,11 @@ c     enddo
       ifadvc(nfld) = .true.
       iftmsh(nfld) = .true.
       ifvarp(nfld) = ifvarp(nfield)
+      ifdeal(nfld) = ifdeal(nfield)
       if (nfld.eq.2) ifto = .true.
       if (nfld.gt.2) ifpsco(nfld-2) = .true.
       if (nfld.gt.2) npscal = npscal+1
+      if (ldimt_proj.ge.(nfld-1)) ifprojfld(nfld)=ifprojfld(nfield)
 
       ifldmhd = npscal + 3
 
