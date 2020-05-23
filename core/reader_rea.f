@@ -149,6 +149,9 @@ c     IFSPLIT   = .false.
 
       ifrich = .false.
 
+      ifparrsb  = .true.
+      ifparrcb  = .false.
+
       IF(NID.EQ.0) READ(9,*,ERR=500) NLOGIC
       call bcast(NLOGIC,ISIZE)
       IF(NLOGIC.GT.100) THEN
@@ -221,6 +224,10 @@ c             read(string(i),*) IFMGRID
               read(string(i),*) IFSCHCLOB
          elseif (indx1(string(i),'IFSPLIT' ,7).gt.0) then 
 c              read(string,*) IFSPLIT
+         elseif (indx1(string(i),'IFPARRSB',8).gt.0) then
+               read(string(i),*) IFPARRSB
+         elseif (indx1(string(i),'IFPARRCB',8).gt.0) then
+               read(string(i),*) IFPARRCB
          else
               if(nid.eq.0) then
                 write(6,'(1X,2A)') 'ABORT: Unknown logical flag', string
@@ -249,7 +256,9 @@ c              read(string,*) IFSPLIT
      &           '   IFEXPLVIS',
      &           '   IFCONS'   ,
      &           '   IFCOUP'   ,
-     &           '   IFVCOUP'
+     &           '   IFVCOUP'  ,
+     &           '   IFPARRSB' ,
+     &           '   IFPARRCB'
               endif
               call exitt
          endif

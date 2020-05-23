@@ -187,6 +187,9 @@ C
       ifdp0dt   = .false.
       ifreguo   = .false.   ! dump on the GLL mesh
 
+      ifparrsb  = .true.
+      ifparrcb  = .false.
+
       fem_amg_param(1) = 0
       crs_param(1) = 0
 
@@ -822,6 +825,19 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
+c set partitioner options
+      call finiparser_getString(c_out,'general:partitioner',ifnd)
+      call capit(c_out,132)
+      if (index(c_out,'RSB').eq.1) then
+         ifparrsb = .true.
+         ifparrcb = .false.
+      else if (index(c_out,'RCB').eq.1) then
+         ifparrsb = .false.
+         ifparrcb = .true.
+      else if (index(c_out,'HYBRID').eq.1) then
+         ifparrsb = .true.
+         ifparrcb = .true.
+      endif
 
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -896,6 +912,9 @@ C
       call bcast(initc, 15*132*csize) 
 
       call bcast(timeioe,sizeof(timeioe))
+
+      call bcast(ifparrsb,lsize)
+      call bcast(ifparrcb,lsize)
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.
