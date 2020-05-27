@@ -42,8 +42,6 @@ C     !! NOTE: Do not change the content of the array BQ until the current
              endif
          else
              if (.not.ifchar) call convab
-             if (ifchar.AND.(nelgv.ne.nelgt))
-     $         call convab_tail
          endif
 
       endif
@@ -67,11 +65,10 @@ C     !! NOTE: Do not change the content of the array BQ until the current
 
            if (ifchar.and.ifadvc(ifield)) then
               call convch
+              call makebdq_solid
            else
               call makebdq
            endif
-           if (ifchar.AND.(nelgv.ne.nelgt))
-     $        call makebdq_tail
 
          endif
 

@@ -291,34 +291,7 @@ C-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine convab_tail
-C---------------------------------------------------------------
-C
-C     Eulerian scheme, add convection term to forcing function 
-C     at current time step.
-C
-C---------------------------------------------------------------
-      include 'SIZE'
-      include 'SOLN'
-      include 'MASS'
-      include 'TSTEP'
-
-      common /scruz/ ta (lx1*ly1*lz1*lelt)
-
-      nel = nelfld(ifield)
-      n   = lx1*ly1*lz1*nelv
-      ndif=lx1*ly1*lz1*(nelt-nelv)
-
-      call convop  (ta,t(1,1,1,1,ifield-1))
-      do i=1,ndif
-        bq(n+i,1,1,1,ifield-1) = bq (n+i,1,1,1,ifield-1)
-     $                - bm1(n+i,1,1,1)*ta(n+i)*vtrans(n+i,1,1,1,ifield)
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine makebdq_tail
+      subroutine makebdq_solid
 C-----------------------------------------------------------------------
 C
 C     Add contributions to F from lagged BD terms.
@@ -332,7 +305,9 @@ C-----------------------------------------------------------------------
 
       nel   = nelfld(ifield)
       n     = lx1*ly1*lz1*nelv
-      ndif=lx1*ly1*lz1*(nelt-nelv)
+      ndif=lx1*ly1*lz1*(nel-nelv)
+
+      if(ndif.eq.0) return
 
       const = 1./dt
       do i=1,ndif
