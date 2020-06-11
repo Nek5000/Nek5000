@@ -2368,12 +2368,14 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
-      character*132 hdr
+      character*132  hdr
       character*132  fname_in
 
       character*132  fname
       character*1    fnam1(132)
       equivalence   (fnam1,fname)
+
+      character*1    frontc
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
       common /scrns/ wk(lwk)
@@ -2384,12 +2386,18 @@ c
 
       tiostart=dnekclock()
 
-      ! add path
+      ! add full path if required
       call blank(fname,132)
-      lenp = ltrunc(path,132)
-      lenf = ltrunc(fname_in,132)
-      call chcopy(fnam1(1),path,lenp)
-      call chcopy(fnam1(lenp+1),fname_in,lenf)
+      call chcopy(frontc, fname_in, 1)
+      if (frontc .ne. '/') then
+        lenp = ltrunc(path,132)
+        lenf = ltrunc(fname_in,132)
+        call chcopy(fnam1(1),path,lenp)
+        call chcopy(fnam1(lenp+1),fname_in,lenf)
+      else
+        lenf = ltrunc(fname_in,132)
+        call chcopy(fnam1(1),fname_in,lenf)     
+      endif
 
       call mfi_prepare(fname)       ! determine reader nodes +
                                     ! read hdr + element mapping 
