@@ -31,7 +31,7 @@ c-----------------------------------------------------------------------
       call mpi_comm_rank(nekcomm,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_comm_get_attr(nekcomm,MPI_TAG_UB,ntags,flag,ierr)
+      call mpi_comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,ntags,flag,ierr)
       if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
