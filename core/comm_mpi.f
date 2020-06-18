@@ -143,6 +143,7 @@ c---------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
+      integer*8 isize_mpi, lb
 
       nid  = mynode()
       nid_ = nid
@@ -163,17 +164,17 @@ c---------------------------------------------------------------------
       if (wdsize .eq. 4)
      $   call exitti('Single precision mode not supported!',wdsize)
 
-      call MPI_Type_Extent(MPI_DOUBLE_PRECISION,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_DOUBLE_PRECISION,lb,isize_mpi,ierr)
       if (isize_mpi .ne. wdsize) then
          call exitti('MPI real size does not match$',isize_mpi)
       endif
 
-      call MPI_Type_Extent(MPI_INTEGER,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_INTEGER,lb,isize_mpi,ierr)
        if (isize_mpi .ne. isize) then
          call exitti('MPI integer size does not match$',isize_mpi)
       endif
 
-      call MPI_Type_Extent(MPI_INTEGER8,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_INTEGER8,lb,isize_mpi,ierr)
        if (isize_mpi .ne. isize8) then
          call exitti('MPI integer8 size does not match$',isize_mpi)
       endif
