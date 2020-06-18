@@ -1109,6 +1109,19 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mpi_type_extent(ikey,isize,ierr)
+
+      include "mpi_dummy.h"
+
+      if (ikey.eq.MPI_DOUBLE_PRECISION) isize = 8 
+      if (ikey.eq.MPI_INTEGER)  isize = 4 
+      if (ikey.eq.MPI_INTEGER8) isize = 8 
+
+      ierr = 0
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine mpi_type_get_extent(ikey,lb,isize,ierr)
 
       include "mpi_dummy.h"
