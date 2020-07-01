@@ -110,9 +110,11 @@ C     End of input data, close read file.
  99   call izero(boundaryID, size(boundaryID))
       call izero(boundaryIDt, size(boundaryIDt))
 
+      ifld = 2 
+      if(ifflow) ifld = 1
       do iel = 1,nelv
       do ifc = 1,2*ndim   
-         boundaryID(ifc,iel) = bc(5,ifc,iel,1)
+         boundaryID(ifc,iel) = bc(5,ifc,iel,ifld)
       enddo
       enddo
 
