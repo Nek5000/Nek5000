@@ -92,7 +92,7 @@ c     Get file name
 
       call blank(hdr,80)
       call byte_read(hdr,20,ierr)
-      read (hdr,1) version,nelv,ndim,nel
+      read (hdr,1) version,nel,ndim,nelv
  
       wdsizi = 4
       if(version.eq.'#v002') wdsizi = 8
