@@ -3389,14 +3389,18 @@ c     enddo
       param(7) = param(1)  ! rhoCP   = rho
       param(8) = param(2)  ! conduct = dyn. visc
 
-      ifheat       = .true.
-      ifadvc(nfld) = .true.
-      iftmsh(nfld) = .true.
-      ifvarp(nfld) = ifvarp(nfield)
+      ifheat          = .true.
+      ifadvc(nfld)    = .true.
+      iftmsh(nfld)    = .true.
+      ifvarp(nfld)    = ifvarp(nfield)
+      ifdeal(nfld)    = ifdeal(nfield)
+      ifprojfld(nfld) = ldimt_proj.ge.(nfld-1).and.ifprojfld(nfield)
+
       if (nfld.eq.2) ifto = .true.
       if (nfld.gt.2) ifpsco(nfld-2) = .true.
       if (nfld.gt.2) npscal = npscal+1
 
+      ifldmhd = npscal + 3
 
       nfield = nfld
 
