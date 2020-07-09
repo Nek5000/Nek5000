@@ -160,7 +160,6 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      integer ipartmode
       integer ibuf(2)
       integer hrsb
 
@@ -173,12 +172,6 @@ c-----------------------------------------------------------------------
 
       integer opt_parrsb(3), opt_parmetis(10)
       logical ifbswap
-
-      ipartmode = 0
-#if defined(PARRSB)
-      if(ifparrsb) ipartmode = ipartmode + 1
-      if(ifparrcb) ipartmode = ipartmode + 2
-#endif
 
 #if defined(PARRSB) || defined(PARMETIS)
       ! read vertex coordinates
@@ -229,8 +222,8 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ipartmode,
-     $  ierr)
+      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $  meshPartitioner,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -262,8 +255,8 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,ipartmode,
-     $     ierr)
+         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $                  meshPartitioner,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel

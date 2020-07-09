@@ -28,5 +28,5 @@ mkdir gslib
 tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
 cd gslib
 set -x
-CFLAGS="-O2 -fPIC" make -j4 $GSLIB_OPT
+make -j4 $GSLIB_OPT
 set +x

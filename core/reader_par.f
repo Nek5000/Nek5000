@@ -145,6 +145,8 @@ C
          idpss(i) = -1
       enddo 
 
+      meshPartitioner=1 ! RSB
+
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
       do i=1,ldimt
@@ -186,9 +188,6 @@ C
 
       ifdp0dt   = .false.
       ifreguo   = .false.   ! dump on the GLL mesh
-
-      ifparrsb  = .true.
-      ifparrcb  = .false.
 
       fem_amg_param(1) = 0
       crs_param(1) = 0
@@ -826,17 +825,14 @@ c set restart options
       enddo
 
 c set partitioner options
-      call finiparser_getString(c_out,'general:partitioner',ifnd)
+      call finiparser_getString(c_out,'mesh:partitioner',ifnd)
       call capit(c_out,132)
-      if (index(c_out,'RSB').eq.1) then
-         ifparrsb = .true.
-         ifparrcb = .false.
-      else if (index(c_out,'RCB').eq.1) then
-         ifparrsb = .false.
-         ifparrcb = .true.
+      if(index(c_out,'RSB').eq.1) then
+         meshPartitioner=1
+      else if(index(c_out,'RCB').eq.1) then
+         meshPartitioner=2
       else if (index(c_out,'HYBRID').eq.1) then
-         ifparrsb = .true.
-         ifparrcb = .true.
+         meshPartitioner=3
       endif
 
 100   if(ierr.eq.0) call finiparser_dump()
@@ -898,6 +894,9 @@ C
       call bcast(iffilter, ldimt1*lsize)
 
       call bcast(idpss    ,  ldimt*isize)
+
+      call bcast(meshPartitioner,isize)
+
       call bcast(iftmsh   , (ldimt1+1)*lsize)
       call bcast(ifprojfld, (ldimt1+1)*lsize)
 
@@ -912,9 +911,6 @@ C
       call bcast(initc, 15*132*csize) 
 
       call bcast(timeioe,sizeof(timeioe))
-
-      call bcast(ifparrsb,lsize)
-      call bcast(ifparrcb,lsize)
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.

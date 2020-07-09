@@ -106,4 +106,4 @@ c
      &  pardictkey(99) / 'GENERAL:MAXNUMHISTORYPOINTS' /
      &  pardictkey(100)/ 'GENERAL:FILTERMODES' /
      &  pardictkey(101)/ 'PRESSURE:SOLVER' /
-     &  pardictkey(102)/ 'GENERAL:PARTITIONER' /
+     &  pardictkey(102)/ 'MESH:PARTITIONER' /
