@@ -1109,7 +1109,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mpi_type_extent(ikey,ib,isize,ierr)
+      subroutine mpi_type_get_extent(ikey,ib,isize,ierr)
 
       include "mpi_dummy.h"
       integer*8 ib, isize
