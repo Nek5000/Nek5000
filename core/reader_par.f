@@ -145,7 +145,7 @@ C
          idpss(i) = -1
       enddo 
 
-      meshPartitioner=1 ! RSB
+      meshPartitioner=3 ! RCB+RSB
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -833,6 +833,8 @@ c set partitioner options
          meshPartitioner=2
       else if (index(c_out,'HYBRID').eq.1) then
          meshPartitioner=3
+      else if (index(c_out,'METIS').eq.1) then
+         meshPartitioner=4
       endif
 
 100   if(ierr.eq.0) call finiparser_dump()
