@@ -33,10 +33,10 @@ c-----------------------------------------------------------------------
 #ifndef NOMPIIO
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
-      call byte_open_mpi(re2fle,fh_re2,.TRUE.,ierr)
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
-      call readp_re2_mesh (ifbswap)
+      call readp_re2_mesh (ifbswap, .true.)
       call readp_re2_curve(ifbswap)
       do ifield = ibc,nfldt
          call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
@@ -65,12 +65,12 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_mesh(ifbswap) ! version 2 of .re2 reader
+      subroutine readp_re2_mesh(ifbswap, ifdistri) ! version 2 of .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
 
-      logical ifbswap
+      logical ifbswap, ifdistri
 
       parameter(nrmax = lelt)             ! maximum number of records
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
@@ -101,6 +101,13 @@ c-----------------------------------------------------------------------
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
+
+      if (.not.ifdistri) then
+        do i = 1,nr
+           call buf_to_xyz(bufr(1,i),i,ifbswap,ierr)
+        enddo
+        return
+      endif
 
       ! pack buffer
       do i = 1,nr
@@ -761,12 +768,13 @@ c     len  = 4
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_re2_hdr(ifbswap) ! open file & chk for byteswap
+      subroutine read_re2_hdr(ifbswap, ifverbose) ! open file & chk for byteswap
 
       include 'SIZE'
       include 'TOTAL'
 
-      logical ifbswap,if_byte_swap_test
+      logical ifbswap, ifverbose
+      logical if_byte_swap_test
 
       integer fnami (33)
       character*132 fname
@@ -781,7 +789,7 @@ c-----------------------------------------------------------------------
       ierr=0
 
       if (nid.eq.0) then
-         write(6,'(A,A)') ' Reading ', re2fle
+         if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
