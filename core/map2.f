@@ -311,6 +311,7 @@ c solid elements
 
 #endif
 
+      if(nid.eq.0) write(6,*) ''
       call icopy48(vtx8,vertex,nelt*nlv)
       call printPartStat(vtx8,nelt,nlv,nekcomm)
 
@@ -360,7 +361,7 @@ c-----------------------------------------------------------------------
         if(.not.ifcon .and. .not.ifco2) ierr = 1
       endif
       call bcast(confle,sizeof(confle))
-      if(nid.eq.0) write(6,'(A,A)') ' Reading ', confle
+      if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
       call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
       ierr = 0

@@ -831,7 +831,7 @@ c set partitioner options
          meshPartitioner=1
       else if(index(c_out,'RCB').eq.1) then
          meshPartitioner=2
-      else if (index(c_out,'HYBRID').eq.1) then
+      else if (index(c_out,'RCB+RSB').eq.1) then
          meshPartitioner=3
       else if (index(c_out,'METIS').eq.1) then
          meshPartitioner=4

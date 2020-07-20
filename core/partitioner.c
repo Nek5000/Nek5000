@@ -321,9 +321,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 
   part = (int*) malloc(*lelt * sizeof(int));
 
-  if(comm.id==0)
-    printf("Before partitioning:\n");
-  printPartStat(vl, nel, nv, cext);
+  /* printPartStat(vl, nel, nv, cext); */
 
   ierr = 1;
 #if defined(PARRSB)
@@ -342,9 +340,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
     if (ierr != 0) goto err;
 
-    if(comm.id==0)
-      printf("After parRCB:\n");
-    printPartStat(vl, nel, nv, cext);
+    /* printPartStat(vl, nel, nv, cext); */
   }
 
   if(rsb){
@@ -354,9 +350,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
     if (ierr != 0) goto err;
 
-    if(comm.id==0)
-      printf("After parRSB:\n");
-    printPartStat(vl, nel, nv, cext);
+    /* printPartStat(vl, nel, nv, cext); */
   }
 #elif defined(PARMETIS)
   int metis; metis=mode&4;
@@ -371,9 +365,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
     if (ierr != 0) goto err; 
 
-    if(comm.id==0)
-      printf("After parMETIS:\n");
-    printPartStat(vl, nel, nv, cext);
+    /* printPartStat(vl, nel, nv, cext); */
   }
 #endif
 

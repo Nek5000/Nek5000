@@ -85,7 +85,7 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
 
-      if (nio.eq.0) write(6,*) ' preading mesh '
+      if (nio.eq.0) write(6,*) 'reading mesh '
 
       nrg       = nelgt
       nr        = nelt
@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + 4*nwds4r
 
       if(nrg.eq.0) return
-      if(nio.eq.0) write(6,*) ' preading curved sides '
+      if(nio.eq.0) write(6,*) 'reading curved sides '
 
       ! read data from file
       dtmp8 = np
@@ -292,7 +292,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + 4*nwds4r
 
       if(nrg.eq.0) return
-      if(nio.eq.0) write(6,*) ' preading bc for ifld',ifield
+      if(nio.eq.0) write(6,*) 'reading bc for ifld',ifield
 
       ! read data from file
       dtmp8 = np
