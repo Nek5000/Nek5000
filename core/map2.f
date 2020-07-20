@@ -163,9 +163,9 @@ c-----------------------------------------------------------------------
       integer ibuf(2)
       integer hrsb
 
-      integer*8 eid8(lelt), vtx8(8*lelt)
+      integer*8 eid8(lelt), vtx8(lelt*2**ldim)
       integer iwork(lelt)
-      real xyz(lelt*24)
+      common /SCRCG/ xyz(ldim*lelt*2**ldim)
       common /ctmp0/ eid8, vtx8, iwork
 
       integer tt,cnt,nrank,ierr
