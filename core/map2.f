@@ -165,7 +165,7 @@ c-----------------------------------------------------------------------
 
       integer*8 eid8(lelt), vtx8(8*lelt)
       integer iwork(lelt)
-      real xyz(lelt*ldim)
+      real xyz(lelt*24)
       common /ctmp0/ eid8, vtx8, iwork
 
       integer tt,cnt,nrank,ierr
@@ -204,18 +204,16 @@ c fluid elements
             eid8(j) = wk(ii+1)
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
 
-            xyz(cnt+1)=0.
-            xyz(cnt+2)=0.
-            xyz(cnt+3)=0.
             do tt=1,nlv
-              xyz(cnt+1)=xyz(cnt+1)+xc(tt,j)
-              xyz(cnt+2)=xyz(cnt+2)+yc(tt,j)
-              xyz(cnt+3)=xyz(cnt+3)+zc(tt,j)
+              xyz(cnt+1)=xc(tt,j)
+              xyz(cnt+2)=yc(tt,j)
+              if(ldim.eq.3) then
+                xyc(cnt+3)=zc(tt,j)
+                cnt=cnt+3
+              else
+                cnt=cnt+2
+              endif
             enddo
-            xyz(cnt+1)=xyz(cnt+1)/nlv
-            xyz(cnt+2)=xyz(cnt+2)/nlv
-            xyz(cnt+3)=xyz(cnt+3)/nlv
-            cnt=cnt+3
          endif
          ii = ii + (nlv+1)
       enddo
@@ -240,6 +238,7 @@ c fluid elements
          call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
 
+      cnt=0
 c solid elements
       if (nelgt.ne.nelgv) then
          j  = 0
@@ -249,6 +248,17 @@ c solid elements
                j = j + 1
                eid8(j) = wk(ii+1)
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+               do tt=1,nlv
+                 xyz(cnt+1)=xc(tt,j)
+                 xyz(cnt+2)=yc(tt,j)
+                 if(ldim.eq.3) then
+                   xyc(cnt+3)=zc(tt,j)
+                   cnt=cnt+3
+                 else
+                   cnt=cnt+2
+                 endif
+               enddo
             endif
             ii = ii + (nlv+1)
          enddo
