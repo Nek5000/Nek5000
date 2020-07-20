@@ -208,7 +208,7 @@ c fluid elements
               xyz(cnt+1)=xc(tt,j)
               xyz(cnt+2)=yc(tt,j)
               if(ldim.eq.3) then
-                xyc(cnt+3)=zc(tt,j)
+                xyz(cnt+3)=zc(tt,j)
                 cnt=cnt+3
               else
                 cnt=cnt+2
@@ -253,7 +253,7 @@ c solid elements
                  xyz(cnt+1)=xc(tt,j)
                  xyz(cnt+2)=yc(tt,j)
                  if(ldim.eq.3) then
-                   xyc(cnt+3)=zc(tt,j)
+                   xyz(cnt+3)=zc(tt,j)
                    cnt=cnt+3
                  else
                    cnt=cnt+2
