@@ -37,6 +37,7 @@ C
 
 C     Read parameters and logical flags
       call rdparam
+      meshPartitioner=3 ! RCB+RSB
 
 C     Read Mesh Info 
       if(nid.eq.0) then
@@ -57,10 +58,10 @@ C     Read Mesh Info
       if (nelgt.gt.350000 .and. .not.ifre2) 
      $   call exitti('Problem size requires .re2!$',1)
 
-      if (ifre2) call read_re2_hdr(ifbswap) ! rank0 will open and read
+      if (ifre2) call read_re2_hdr(ifbswap, .true.) ! rank0 will open and read
       call chk_nel  ! make certain sufficient array sizes
 
-      call mapelpr  ! read .map file, est. gllnid, etc.
+      call mapelpr
 
       if (ifre2) then
         call read_re2_data(ifbswap)

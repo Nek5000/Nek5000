@@ -155,92 +155,6 @@ err:
 }
 #endif
 
-#define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell, 
-               const int *nve, int *fcomm, int *rtval) 
-{
-  struct comm comm;
-  struct crystal cr;
-  struct array eList;
-  edata *data;
-
-  int nel, nv;
-  int e, n; 
-  int count, ierr, ibuf;
-  int *part;
-  int opt[3];
-
-  nel  = *nell;
-  nv   = *nve;
-
-#if defined(MPI)
-  comm_ext cext = MPI_Comm_f2c(*fcomm);
-#else
-  comm_ext cext = 0;
-#endif
-  comm_init(&comm, cext);
-
-  part = (int*) malloc(nel * sizeof(int));
-
-  ierr = 1;
-#if defined(PARRSB)
-  opt[0] = 1;
-  opt[1] = 2; /* verbosity */
-  opt[2] = 0;
-  ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
-#elif defined(PARMETIS)
-  opt[0] = 1;
-  opt[1] = 0; /* verbosity */
-  opt[2] = comm.np;
-  ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
-#endif
-  if (ierr != 0) goto err; 
-
-  /* redistribute data */
-  array_init(edata, &eList, nel), eList.n = nel;
-  for(data = eList.ptr, e = 0; e < nel; ++e) {
-    data[e].proc = part[e];
-    data[e].eid  = el[e];
-    for(n = 0; n < nv; ++n) {
-      data[e].vtx[n] = vl[e*nv + n];
-    }
-  }
-  free(part);
-
-  crystal_init(&cr, &comm);
-  sarray_transfer(edata, &eList, proc, 0, &cr);
-  crystal_free(&cr);
-
-  nel = eList.n;
-
-  count = 0;
-  if (nel > *lelt) count = 1;
-  comm_allreduce(&comm, gs_int, gs_add, &count, 1, &ibuf);
-  if (count > 0) {
-    if (comm.id == 0)
-      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
-    goto err;
-  }
-
-  for(data = eList.ptr, e = 0; e < nel; ++e) {
-    el[e] = data[e].eid;
-    for(n = 0; n < nv; ++n) {
-      vl[e*nv + n] = data[e].vtx[n];
-    }
-  }
-  
-  array_free(&eList);
-  comm_free(&comm);
-
-  *nell = nel;
-  *rtval = 0;
-  return;
-
-err:
-  fflush(stdout);
-  *rtval = 1;
-}
-
 void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 {
   int i,j;
@@ -331,6 +245,137 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   }
 
   comm_free(&comm);
+}
+
+int redistributeData(int *nel_,long long *vl,long long *el,int *part,
+  int nv,int lelt,struct comm *comm)
+{
+  int nel=*nel_;
+
+  struct crystal cr;
+  struct array eList;
+  edata *data;
+
+  int count,e,n,ibuf;
+
+  /* redistribute data */
+  array_init(edata, &eList, nel), eList.n = nel;
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    data[e].proc = part[e];
+    data[e].eid  = el[e];
+    for(n = 0; n < nv; ++n) {
+      data[e].vtx[n] = vl[e*nv + n];
+    }
+  }
+
+  crystal_init(&cr,comm);
+  sarray_transfer(edata, &eList, proc, 0, &cr);
+  crystal_free(&cr);
+
+  *nel_=nel=eList.n;
+
+  count = 0;
+  if (nel > lelt) count = 1;
+  comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
+  if (count > 0) {
+    if (comm->id == 0)
+      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
+    return 1;
+  }
+
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    el[e] = data[e].eid;
+    for(n = 0; n < nv; ++n) {
+      vl[e*nv + n] = data[e].vtx[n];
+    }
+  }
+
+  array_free(&eList);
+
+  return 0;
+}
+
+#define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
+void fpartMesh(long long *el, long long *vl, double *xyz,
+               const int *lelt, int *nell, const int *nve,
+               int *fcomm, int *fmode,int *rtval)
+{
+  struct comm comm;
+
+  int nel, nv, mode;
+  int e, n; 
+  int count, ierr, ibuf;
+  int *part;
+  int opt[3];
+
+  nel  = *nell;
+  nv   = *nve;
+  mode = *fmode;
+
+#if defined(MPI)
+  comm_ext cext = MPI_Comm_f2c(*fcomm);
+#else
+  comm_ext cext = 0;
+#endif
+  comm_init(&comm, cext);
+
+  part = (int*) malloc(*lelt * sizeof(int));
+
+  /* printPartStat(vl, nel, nv, cext); */
+
+  ierr = 1;
+#if defined(PARRSB)
+  int rsb,rcb;
+  rsb=mode&1;
+  rcb=mode&2;
+
+  opt[0] = 1;
+  opt[1] = 2; /* verbosity */
+  opt[2] = 0;
+
+  if(rcb){
+    ierr = parRCB_partMesh(part, xyz, nel, nv, opt, comm.c);
+    if (ierr != 0) goto err;
+
+    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    if (ierr != 0) goto err;
+
+    /* printPartStat(vl, nel, nv, cext); */
+  }
+
+  if(rsb){
+    ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
+    if (ierr != 0) goto err;
+
+    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    if (ierr != 0) goto err;
+
+    /* printPartStat(vl, nel, nv, cext); */
+  }
+#elif defined(PARMETIS)
+  int metis; metis=mode&4;
+
+  if(metis){
+    opt[0] = 1;
+    opt[1] = 0; /* verbosity */
+    opt[2] = comm.np;
+
+    ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
+
+    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    if (ierr != 0) goto err; 
+
+    /* printPartStat(vl, nel, nv, cext); */
+  }
+#endif
+
+  *nell = nel;
+  *rtval = 0;
+  return;
+
+err:
+  fflush(stdout);
+  *rtval = 1;
 }
 
 #define fprintPartStat FORTRAN_UNPREFIXED(printpartstat,PRINTPARTSTAT)

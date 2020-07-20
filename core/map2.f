@@ -141,7 +141,7 @@ c
       save    icalld
       data    icalld  /0/
 
-      if (icalld.gt.0) return
+      if(icalld.gt.0) return
       icalld = 1
 
       nv = 2**ldim
@@ -160,18 +160,29 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      logical ifparrsb
       integer ibuf(2)
-
       integer hrsb
 
       integer*8 eid8(lelt), vtx8(8*lelt)
       integer iwork(lelt)
+      real xyz(lelt*ldim)
       common /ctmp0/ eid8, vtx8, iwork
 
+      integer tt,cnt,nrank,ierr
+
       integer opt_parrsb(3), opt_parmetis(10)
+      logical ifbswap
 
 #if defined(PARRSB) || defined(PARMETIS)
+      ! read vertex coordinates
+      call read_re2_hdr(ifbswap, .false.)
+      nelt = nelgt/np
+      do i = 1,mod(nelgt,np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call readp_re2_mesh(ifbswap, .false.)
+      call byte_close_mpi(fh_re2,ierr)
 
       call read_con(wk,size(wk),neli,nvi,nelgti,nelgvi)
       if (nvi .ne. nlv)
@@ -186,18 +197,33 @@ c-----------------------------------------------------------------------
 c fluid elements
       j  = 0
       ii = 0
+      cnt= 0
       do i = 1,neli
          if (wk(ii+1) .le. nelgv) then
             j = j + 1
             eid8(j) = wk(ii+1)
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+            xyz(cnt+1)=0.
+            xyz(cnt+2)=0.
+            xyz(cnt+3)=0.
+            do tt=1,nlv
+              xyz(cnt+1)=xyz(cnt+1)+xc(tt,j)
+              xyz(cnt+2)=xyz(cnt+2)+yc(tt,j)
+              xyz(cnt+3)=xyz(cnt+3)+zc(tt,j)
+            enddo
+            xyz(cnt+1)=xyz(cnt+1)/nlv
+            xyz(cnt+2)=xyz(cnt+2)/nlv
+            xyz(cnt+3)=xyz(cnt+3)/nlv
+            cnt=cnt+3
          endif
          ii = ii + (nlv+1)
       enddo
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $  meshPartitioner,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -229,7 +255,8 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $                  meshPartitioner,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
@@ -284,6 +311,7 @@ c solid elements
 
 #endif
 
+      if(nid.eq.0) write(6,*) ''
       call icopy48(vtx8,vertex,nelt*nlv)
       call printPartStat(vtx8,nelt,nlv,nekcomm)
 
@@ -333,7 +361,7 @@ c-----------------------------------------------------------------------
         if(.not.ifcon .and. .not.ifco2) ierr = 1
       endif
       call bcast(confle,sizeof(confle))
-      if(nid.eq.0) write(6,'(A,A)') ' Reading ', confle
+      if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
       call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
       ierr = 0

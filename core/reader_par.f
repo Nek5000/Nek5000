@@ -20,7 +20,7 @@ c
 
       call usrdat0
 
-      call read_re2_hdr(ifbswap)
+      call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
 
@@ -144,6 +144,8 @@ C
       do i=1,ldimt
          idpss(i) = -1
       enddo 
+
+      meshPartitioner=3 ! RCB+RSB
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -822,6 +824,18 @@ c set restart options
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
       enddo
 
+c set partitioner options
+      call finiparser_getString(c_out,'mesh:partitioner',ifnd)
+      call capit(c_out,132)
+      if(index(c_out,'RSB').eq.1) then
+         meshPartitioner=1
+      else if(index(c_out,'RCB').eq.1) then
+         meshPartitioner=2
+      else if (index(c_out,'RCB+RSB').eq.1) then
+         meshPartitioner=3
+      else if (index(c_out,'METIS').eq.1) then
+         meshPartitioner=4
+      endif
 
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -882,6 +896,9 @@ C
       call bcast(iffilter, ldimt1*lsize)
 
       call bcast(idpss    ,  ldimt*isize)
+
+      call bcast(meshPartitioner,isize)
+
       call bcast(iftmsh   , (ldimt1+1)*lsize)
       call bcast(ifprojfld, (ldimt1+1)*lsize)
 
