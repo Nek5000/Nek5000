@@ -205,10 +205,10 @@ c fluid elements
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
 
             do tt=1,nlv
-              xyz(cnt+1)=xc(tt,j)
-              xyz(cnt+2)=yc(tt,j)
+              xyz(cnt+1)=xc(tt,i)
+              xyz(cnt+2)=yc(tt,i)
               if(ldim.eq.3) then
-                xyz(cnt+3)=zc(tt,j)
+                xyz(cnt+3)=zc(tt,i)
                 cnt=cnt+3
               else
                 cnt=cnt+2
@@ -250,10 +250,10 @@ c solid elements
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
 
                do tt=1,nlv
-                 xyz(cnt+1)=xc(tt,j)
-                 xyz(cnt+2)=yc(tt,j)
+                 xyz(cnt+1)=xc(tt,i)
+                 xyz(cnt+2)=yc(tt,i)
                  if(ldim.eq.3) then
-                   xyz(cnt+3)=zc(tt,j)
+                   xyz(cnt+3)=zc(tt,i)
                    cnt=cnt+3
                  else
                    cnt=cnt+2
