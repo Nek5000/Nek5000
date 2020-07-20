@@ -145,7 +145,7 @@ C
          idpss(i) = -1
       enddo 
 
-      meshPartitioner=1 ! RSB
+      meshPartitioner=3 ! HYBRID (RSB+RCB)
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -831,7 +831,7 @@ c set partitioner options
          meshPartitioner=1
       else if(index(c_out,'RCB').eq.1) then
          meshPartitioner=2
-      else if (index(c_out,'RCB+RSB').eq.1) then
+      else if (index(c_out,'HYBRID').eq.1) then
          meshPartitioner=3
       else if (index(c_out,'METIS').eq.1) then
          meshPartitioner=4
