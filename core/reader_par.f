@@ -145,7 +145,7 @@ C
          idpss(i) = -1
       enddo 
 
-      meshPartitioner=3 ! RCB+RSB
+      meshPartitioner=1 ! RSB
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
