@@ -1880,6 +1880,8 @@ c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
 
       nel   = nelfld(ifield)
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
 
       op    =  1.                                     ! Coefficients for h1mg_ax
       om    = -1.
@@ -2243,6 +2245,8 @@ c----------------------------------------------------------------------
       integer p_h1,p_h2,p_g,p_b,p_msk
 
 
+      mg_fld = 1
+      if (ifield.gt.1) mg_fld = 2
       param(59) = 1
       call geom_reset(1)  ! Recompute g1m1 etc. with deformed only
 

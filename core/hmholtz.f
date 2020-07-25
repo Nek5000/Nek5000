@@ -643,14 +643,14 @@ c
            n = lx1*ly1*lz1*nelv
            call copy      (x,f,n)
            iter = maxit
-           call hmh_gmres (x,h1,h2,mult,iter)
+           call hmh_gmres (x,h1,h2,mask,mult,iter)
            niterhm = iter
            return
          elseif(param(42).eq.2) then 
            n = lx1*ly1*lz1*nelv
            call copy       (x,f,n)
            iter = maxit
-           call hmh_flex_cg(x,h1,h2,mult,iter)
+           call hmh_flex_cg(x,h1,h2,mask,mult,iter)
            niterhm = iter
            return
          endif
@@ -2153,7 +2153,7 @@ c             Normally, we'd store this as a 2-vector: uf(2,...)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hmh_flex_cg(res,h1,h2,wt,iter)
+      subroutine hmh_flex_cg(res,h1,h2,mask,mult,iter)
 
 c     Solve the Helmholtz equation by right-preconditioned 
 c     GMRES iteration.
@@ -2169,7 +2169,8 @@ c     GMRES iteration.
       real             res  (lx1*ly1*lz1*lelv)
       real             h1   (lx1,ly1,lz1,lelv)
       real             h2   (lx1,ly1,lz1,lelv)
-      real             wt   (lx1,ly1,lz1,lelv)
+      real             mult (lx1,ly1,lz1,lelv)
+      real             mask (lx1,ly1,lz1,lelv)
 
       parameter (lt=lx1*ly1*lz1*lelt)
       common /scrcg/ r(lt),z(lt),p(lt),w(lt)
@@ -2200,7 +2201,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       iter  = 0
 
 
-      call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
+      call chktcg1(tolps,res,h1,h2,mask,mult,1,1)
       if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
@@ -2213,7 +2214,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
       call rzero(res,n)      ! Solution vector
       rho1 = 1
                                                !            ______
-      div0  = sqrt(glsc3(r,wt,r,n)/volvm1) ! gamma  = \/ (r,r) 
+      div0  = sqrt(glsc3(r,mult,r,n)/volvm1) ! gamma  = \/ (r,r) 
 
       if (param(21).lt.0) tolpss=abs(param(21))*div0
 
@@ -2228,25 +2229,25 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
          call sub2(r1,r,n)
          rho0 = rho1
-         rho1 =  glsc3(z,wt,r,n)   ! Inner product weighted by multiplicity
-         rho2 = -glsc3(z,wt,r1,n)  ! Inner product weighted by multiplicity
+         rho1 =  glsc3(z,mult,r,n)   ! Inner product weighted by multiplicity
+         rho2 = -glsc3(z,mult,r1,n)  ! Inner product weighted by multiplicity
          beta = rho2/rho0          ! Flexible GMRES
 
          call copy(r1,r,n)         ! Save prior residual
          call add2s1(p,z,beta,n)
 
-         call ax(w,p,h1,h2,n)      ! w = A p
-         den = glsc3(w,wt,p,n)
+         call ax(w,p,h1,h2,mask,n)      ! w = A p
+         den = glsc3(w,mult,p,n)
          alpha = rho1/den
          rnorm = 0.0
          do i = 1,n
             res(i) = res(i) + alpha*p(i)
             r(i)   = r(i)   - alpha*w(i)
-            rnorm  = rnorm  + r(i)*r(i)*wt(i,1,1,1)
+            rnorm  = rnorm  + r(i)*r(i)*mult(i,1,1,1)
          enddo
          call gop(rnorm,temp,'+  ',1)
 
-c         rnorm = sqrt(glsc3(r,wt,r,n)/volvm1) ! gamma  = \/ (r,r) 
+c         rnorm = sqrt(glsc3(r,mult,r,n)/volvm1) ! gamma  = \/ (r,r) 
          rnorm = sqrt(rnorm/volvm1) ! gamma  = \/ (r,r) 
          ratio = rnorm/div0
 

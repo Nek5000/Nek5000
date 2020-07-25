@@ -166,7 +166,9 @@ c     ifield=1			!c? avo: set in set_overlap through 'TSTEP'?
          do iface=1,nfaces
             cb=cbc(iface,ie,ifield)
             if (cb.eq.'ndd'  .or.  cb.eq.'dnd'  .or.  cb.eq.'ddn')
-     $          call facev(mask,ie,iface,z,nxc,nxc,nzc)
+     $           call facev(mask,ie,iface,z,nxc,nxc,nzc)
+            if (cb.eq.'O  '  .or.  cb.eq.'o ')
+     $           call facev(mask,ie,iface,z,nxc,nxc,nzc) ! 'S* ' & 's* ' ?avo?
          enddo
          enddo
       endif
@@ -225,6 +227,7 @@ c      endif
       t0 = dnekclock()-t0
       if (nio.eq.0) then
          write(6,*) 'done :: setup h1 coarse grid ',t0, ' sec'
+     $            ,  ifield,xxth(ifield)
          write(6,*) ' '
       endif
 

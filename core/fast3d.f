@@ -850,6 +850,9 @@ c     ibc = 2  <==>  Neumann,
          if (cbc(ied,e,ifield).eq.'s  ') ibc = 2
          if (cbc(ied,e,ifield).eq.'J  ') ibc = 0
          if (cbc(ied,e,ifield).eq.'SP ') ibc = 0
+         if (cbc(ied,e,ifield).eq.'t  ') ibc = 2
+         if (cbc(ied,e,ifield).eq.'T  ') ibc = 2
+         if (cbc(ied,e,ifield).eq.'I  ') ibc = 1
 
          fbc(iface) = ibc
 
@@ -1639,10 +1642,9 @@ c
       ied = eface(face)	! symmetric -> preprocessor notation
       nfc = face+1
       nfc = nfc/2	! = 1,2,3 for face 1 & 2,3 & 4,5 & 6
+      if (indx2(cbc(ied,e,ifield),3,'d',1).gt.0)   ibc=2
 
-      if (indx1(cbc(ied,e,ifield),'d',1).gt.0)   ibc=2
-
-      if (indx1(cbc(ied,e,ifield),'n',1).gt.nfc) ibc=1 ! 'n' for V_n
+      if (indx2(cbc(ied,e,ifield),3,'n',1).gt.nfc) ibc=1 ! 'n' for V_n
 
       return
       end

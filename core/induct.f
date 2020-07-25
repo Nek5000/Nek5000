@@ -1106,6 +1106,8 @@ c     include 'TSTEP'   ! ifield?
          cb = cbc(ifc,iel,ifield)
          if  (cb.eq.'ndd' .or. cb.eq.'dnd' .or. cb.eq.'ddn')
      $           ifbcor = .false.
+         if  (cb.eq.'O  ' .or. cb.eq.'o  ')
+     $           ifbcor = .false.
       enddo
       enddo
 

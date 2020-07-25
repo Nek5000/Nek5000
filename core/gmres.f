@@ -281,7 +281,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ax(w,x,h1,h2,n)
+      subroutine ax(w,x,h1,h2,mask,n)
       include 'SIZE'
       include 'TOTAL'
 
@@ -290,18 +290,18 @@ c     w = A*x for pressure iteration
 c
 
       integer n
-      real w(n),x(n),h1(n),h2(n)
+      real w(n),x(n),h1(n),h2(n),mask(n)
 
       imsh = 1
       isd  = 1
       call axhelm (w,x,h1,h2,imsh,isd)
       call dssum  (w,lx1,ly1,lz1)
-      call col2   (w,pmask,n)
+      call col2   (w,mask,n)
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine hmh_gmres(res,h1,h2,wt,iter)
+      subroutine hmh_gmres(res,h1,h2,mask,mult,iter)
 
 c     Solve the Helmholtz equation by right-preconditioned 
 c     GMRES iteration.
@@ -317,7 +317,8 @@ c     GMRES iteration.
       real             res  (lx1*ly1*lz1*lelv)
       real             h1   (lx1,ly1,lz1,lelv)
       real             h2   (lx1,ly1,lz1,lelv)
-      real             wt   (lx1,ly1,lz1,lelv)
+      real             mask (lx1,ly1,lz1,lelv)
+      real             mult (lx1,ly1,lz1,lelv)
 
       common /scrcg/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
 
@@ -354,7 +355,7 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
       if (param(100).ne.2) call set_fdm_prec_h1b(d,h1,h2,nelv)
 
-      call chktcg1(tolps,res,h1,h2,pmask,vmult,1,1)
+      call chktcg1(tolps,res,h1,h2,mask,mult,1,1)
       if (param(21).gt.0.and.tolps.gt.abs(param(21))) 
      $   tolps = abs(param(21))
       if (istep.eq.0) tolps = 1.e-4
@@ -374,13 +375,13 @@ c           call copy(r,res,n)
          else
             !update residual
             call copy  (r_gmres,res,n)           ! r = res
-            call ax    (w_gmres,x_gmres,h1,h2,n) ! w = A x
+            call ax    (w_gmres,x_gmres,h1,h2,mask,n) ! w = A x
             call add2s2(r_gmres,w_gmres,-1.,n)   ! r = r - w
                                                  !      -1
             call col2(r_gmres,ml_gmres,n)        ! r = L   r
          endif
                                                             !            ______
-         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,wt,n)) ! gamma  = \/ (r,r) 
+         gamma_gmres(1) = sqrt(glsc3(r_gmres,r_gmres,mult,n)) ! gamma  = \/ (r,r) 
                                                             !      1
          if(iter.eq.0) then
             div0 = gamma_gmres(1)*norm_fac
@@ -413,10 +414,10 @@ c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
             else                                            !  j
                kfldfdm = ldim+1
                if (param(100).eq.2) then
-                   call h1_overlap_2 (z_gmres(1,j),w_gmres,pmask)
+                   call h1_overlap_2 (z_gmres(1,j),w_gmres,mask)
                else
                    call fdm_h1
-     $               (z_gmres(1,j),w_gmres,d,pmask,vmult,nelv,
+     $               (z_gmres(1,j),w_gmres,d,mask,mult,nelv,
      $                ktype(1,1,kfldfdm),wk)
                endif
                call crs_solve_h1 (wk,w_gmres)        ! z  = M   w
@@ -429,7 +430,7 @@ c           if (outer.gt.2) if_hyb = .true.       ! Slow outer convergence
 c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
      
-            call ax  (w_gmres,z_gmres(1,j),h1,h2,n) ! w = A z
+            call ax  (w_gmres,z_gmres(1,j),h1,h2,mask,n) ! w = A z
                                                     !        j
      
                                                     !      -1
@@ -438,7 +439,7 @@ c . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 c           !modified Gram-Schmidt
 
 c           do i=1,j
-c              h_gmres(i,j)=glsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+c              h_gmres(i,j)=glsc3(w_gmres,v_gmres(1,i),mult,n) ! h    = (w,v )
 c                                                            !  i,j       i
 
 c              call add2s2(w_gmres,v_gmres(1,i),-h_gmres(i,j),n) ! w = w - h    v
@@ -447,7 +448,7 @@ c           enddo                                                !          i,j 
 c           2-PASS GS, 1st pass:
 
             do i=1,j
-               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+               h_gmres(i,j)=vlsc3(w_gmres,v_gmres(1,i),mult,n) ! h    = (w,v )
             enddo                                            !  i,j       i
 
             call gop(h_gmres(1,j),wk1,'+  ',j)          ! sum over P procs
@@ -460,7 +461,7 @@ c           2-PASS GS, 1st pass:
 c           2-PASS GS, 2nd pass:
 c
 c           do i=1,j
-c              wk1(i)=vlsc3(w_gmres,v_gmres(1,i),wt,n) ! h    = (w,v )
+c              wk1(i)=vlsc3(w_gmres,v_gmres(1,i),mult,n) ! h    = (w,v )
 c           enddo                                      !  i,j       i
 c                                                      !
 c           call gop(wk1,wk2,'+  ',j)                  ! sum over P procs
@@ -479,7 +480,7 @@ c           enddo
      $                        + c_gmres(i)*h_gmres(i+1,j)
             enddo
                                                       !            ______
-            alpha = sqrt(glsc3(w_gmres,w_gmres,wt,n)) ! alpha =  \/ (w,w)
+            alpha = sqrt(glsc3(w_gmres,w_gmres,mult,n)) ! alpha =  \/ (w,w)
             rnorm = 0.
             if(alpha.eq.0.) goto 900  !converged
             l = sqrt(h_gmres(j,j)*h_gmres(j,j)+alpha*alpha)
