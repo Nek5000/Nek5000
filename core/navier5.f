@@ -2333,9 +2333,8 @@ c-----------------------------------------------------------------------
       n      = lx1*ly1*lz1*nelt
       nxyz   = lx1*ly1*lz1
       nfaces = 2*ldim
-      ifield = 1                   ! velocity field
-      if (ifheat) ifield = 2       ! temperature field
-
+      ifield = 1 ! velocity field
+      if (nelgv.ne.nelgt .or. .not.ifflow) ifield = 2 ! temperature field
 
       call rone  (tmlt,n)
       call dssum (tmlt,lx1,ly1,lz1)  ! denominator
