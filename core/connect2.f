@@ -157,7 +157,7 @@ c      call  vrdsmshx  ! verify mesh topology
       EPS       = 1.0e-04
       EPS       = 1.0e-03
       IFIELD    = 1
-      IF (IFHEAT) IFIELD = 2
+      if (nelgv.ne.nelgt .or. .not.ifflow) ifield = 2
       NXYZ1     = lx1*ly1*lz1
       NTOT      = lx1*ly1*lz1*NELT
       NFACES    = 2*ldim
