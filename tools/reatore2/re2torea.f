@@ -38,7 +38,7 @@ c     an ascii rea file for just the parameters
 
       real*8 rbc,rcurve
       character*3 cbc(6,nelm)
-      logical ifbswap,if_byte_swap_test
+      logical ifbswap,if_byte_swap_test,ifexist
       
 c     for workstation:
       in = 5
@@ -60,7 +60,20 @@ c     Get file name
       call chcopy(fin1(len+1),'.rea',4)
       call chcopy(fout1(lou+1),'.rea',4)
       call chcopy(fbin1(len+1),'.re2'//CHAR(0),5)
- 
+
+      ifexist = .false.
+      inquire(file=fin, exist=ifexist) 
+      if(.not.ifexist)then
+        write(6,*)'could not find file ',(fin1(i),i=1,len+4),', abort.'
+        stop
+      endif
+      ifexist = .false.
+      inquire(file=fbin, exist=ifexist) 
+      if(.not.ifexist)then
+        write(6,*)'could not find file ',(fbin1(i),i=1,len+4),', abort.'
+        stop
+      endif
+
       open(unit=10, file=fin)
       open(unit=11, file=fout)
       call byte_open(fbin,ierr)
@@ -92,7 +105,8 @@ c     Get file name
 
       call blank(hdr,80)
       call byte_read(hdr,20,ierr)
-      read (hdr,1) version,nelv,ndim,nel
+      read (hdr,1) version,nelt,ndim,nelv
+      nelt=abs(nelt)
  
       wdsizi = 4
       if(version.eq.'#v002') wdsizi = 8
@@ -103,25 +117,25 @@ c     Get file name
       write(11,*) 
      & '**MESH DATA** 6 lines are X,Y,Z;X,Y,Z. Columns corners 1-4;5-8'
 
-      write(11,*) abs(nelv),ndim,nel
+      write(11,*) nelt,ndim,nelv
 
  1    format(a5,i9,i3,i9)
 
       call byte_read(test,1,ierr)
       ifbswap=if_byte_swap_test(test)
 
-      print *, nel, ndim, nelv
+      print *, nelt, ndim, nelv
 
 
 c mesh
 
-      do ie=1,nel      
+      do ie=1,nelt
 
          nwds = (1 + ndim*(2**ndim))*(wdsizi/4)
          call byte_read(buf,nwds,ierr)
          call buf_to_xyz(buf,x,y,z,ifbswap,ndim,wdsizi)
 
-         if(nel.lt.100000) then
+         if(nelt.lt.100000) then
            write (11,12) ie, ie, 'a', igroup
          else
            write (11,'(A,I12,A,I1)') 
@@ -167,7 +181,7 @@ c curved sides
       IF (NCURVE.GT.0) THEN
          DO 50 ICURVE=1,NCURVE
             call byte_read(buf,nwds,ierr)
-            call buf_to_curve(buf,nel,ifbswap,wdsizi)
+            call buf_to_curve(buf,nelt,ifbswap,wdsizi)
  50      CONTINUE
       endif
 
@@ -192,6 +206,9 @@ c boundary conditions
      &    '***** THERMAL  BOUNDARY CONDITIONS *****'
          if(ifld.gt.2) write(11,*) 
      &    '***** PASSIVE SCALAR  BOUNDARY CONDITIONS *****'
+
+         nel=nelv
+         if(ifld.ge.2) nel=nelt
 
          do ie = 1,nel
             do k=1,nface
@@ -221,11 +238,11 @@ c boundary conditions
          do ie = 1,nel
             do k=1,nface
 
-              if (nel.lt.1 000) then
+              if (nelt.lt.1 000) then
                   write (11,20) cbc(k,ie),ie,k,(bc(j,k,ie),j=1,5)
-              elseif(nel.lt.100 000) then
+              elseif(nelt.lt.100 000) then
                   write (11,21) cbc(k,ie),ie,k,(bc(j,k,ie),j=1,5)
-              elseif(nel.lt.1 000 000) then
+              elseif(nelt.lt.1 000 000) then
                   write (11,22) cbc(k,ie),ie,(bc(j,k,ie),j=1,5)
               else
                   write (11,23) cbc(k,ie),ie,(bc(j,k,ie),j=1,5)
