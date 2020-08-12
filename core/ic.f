@@ -1851,6 +1851,7 @@ c
          yc(2,ie) = YM1(lx1,1  ,1  ,ie)
          yc(3,ie) = YM1(lx1,ly1,1  ,ie)
          yc(4,ie) = YM1(1  ,ly1,1  ,ie)
+         yc(5,ie) = YM1(1  ,1  ,lz1,ie)
          yc(6,ie) = YM1(lx1,1  ,lz1,ie)
          yc(7,ie) = YM1(lx1,ly1,lz1,ie)
          yc(8,ie) = YM1(1  ,ly1,lz1,ie)
