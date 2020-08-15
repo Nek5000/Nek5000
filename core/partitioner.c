@@ -5,8 +5,12 @@
 #endif
 
 #define MAXNV 8 /* maximum number of vertices per element */
-typedef struct {long long vtx[MAXNV]; long long eid; int proc;} edata;
-
+typedef struct{
+  long long vtx[MAXNV];
+  long long eid;
+  int proc;
+  uint seq;
+} edata;
 
 #ifdef PARMETIS
 
@@ -247,8 +251,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_free(&comm);
 }
 
-int redistributeData(int *nel_,long long *vl,long long *el,int *part,
-  int nv,int lelt,struct comm *comm)
+int redistributeData(int *nel_,long long *vl,long long *el,
+  int *part,int *seq,int nv,int lelt,struct comm *comm)
 {
   int nel=*nel_;
 
@@ -261,11 +265,16 @@ int redistributeData(int *nel_,long long *vl,long long *el,int *part,
   /* redistribute data */
   array_init(edata, &eList, nel), eList.n = nel;
   for(data = eList.ptr, e = 0; e < nel; ++e) {
-    data[e].proc = part[e];
-    data[e].eid  = el[e];
+    data[e].proc= part[e];
+    data[e].eid = el[e];
     for(n = 0; n < nv; ++n) {
       data[e].vtx[n] = vl[e*nv + n];
     }
+  }
+
+  if(seq!=NULL){
+    for(data=eList.ptr, e=0; e<nel; ++e)
+      data[e].seq=seq[e];
   }
 
   crystal_init(&cr,comm);
@@ -281,6 +290,13 @@ int redistributeData(int *nel_,long long *vl,long long *el,int *part,
     if (comm->id == 0)
       printf("ERROR: resulting parition requires lelt=%d!\n", nel);
     return 1;
+  }
+
+  //TODO: sort by seq
+  if(seq!=NULL){
+    buffer bfr; buffer_init(&bfr,1024);
+    sarray_sort(edata,eList.ptr,eList.n,seq,0,&bfr);
+    buffer_free(&bfr);
   }
 
   for(data = eList.ptr, e = 0; e < nel; ++e) {
@@ -305,7 +321,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   int nel, nv, mode;
   int e, n; 
   int count, ierr, ibuf;
-  int *part;
+  int *part,*seq;
   int opt[3];
 
   nel  = *nell;
@@ -320,8 +336,11 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   comm_init(&comm, cext);
 
   part = (int*) malloc(*lelt * sizeof(int));
-
-  /* printPartStat(vl, nel, nv, cext); */
+  seq  = (int*) malloc(*lelt * sizeof(int));
+ 
+  if(comm.id==0)
+    printf("Before partitioning:\n");
+  printPartStat(vl, nel, nv, cext);
 
   ierr = 1;
 #if defined(PARRSB)
@@ -330,27 +349,23 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   rcb=mode&2;
 
   opt[0] = 1;
-  opt[1] = 2; /* verbosity */
+  opt[1] = 1; /* verbosity */
   opt[2] = 0;
 
   if(rcb){
-    ierr = parRCB_partMesh(part, xyz, nel, nv, opt, comm.c);
+    ierr = parRCB_partMesh(part,seq,xyz,nel,nv,opt,comm.c);
     if (ierr != 0) goto err;
 
-    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    ierr=redistributeData(&nel,vl,el,part,seq,nv,*lelt,&comm);
     if (ierr != 0) goto err;
-
-    /* printPartStat(vl, nel, nv, cext); */
   }
 
   if(rsb){
-    ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
+    ierr = parRSB_partMesh(part,vl,nel,nv,opt,comm.c);
     if (ierr != 0) goto err;
 
-    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
     if (ierr != 0) goto err;
-
-    /* printPartStat(vl, nel, nv, cext); */
   }
 #elif defined(PARMETIS)
   int metis; metis=mode&4;
@@ -360,14 +375,17 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
 
-    ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
+    ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
 
-    ierr=redistributeData(&nel,vl,el,part,nv,*lelt,&comm);
+    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
     if (ierr != 0) goto err; 
 
     /* printPartStat(vl, nel, nv, cext); */
   }
 #endif
+
+  free(part);
+  free(seq);
 
   *nell = nel;
   *rtval = 0;
