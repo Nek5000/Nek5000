@@ -133,7 +133,7 @@ c mesh
 
          nwds = (1 + ndim*(2**ndim))*(wdsizi/4)
          call byte_read(buf,nwds,ierr)
-         call buf_to_xyz(buf,x,y,z,ifbswap,ndim,wdsizi)
+         call buf_to_xyz(buf,igroup,x,y,z,ifbswap,ndim,wdsizi)
 
          if(nelt.lt.100000) then
            write (11,12) ie, ie, 'a', igroup
@@ -300,7 +300,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine buf_to_xyz(buf,x,y,z,ifbswap,ndim,wdsizi)
+      subroutine buf_to_xyz(buf,igroup,x,y,z,ifbswap,ndim,wdsizi)
 
       logical ifbswap
       integer buf(0:49),wdsizi
