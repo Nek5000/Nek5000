@@ -12,8 +12,8 @@ c
 c
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,12) 'lx1/lx2/lx3/lxd:',lx1,lx2,lx3,lxd
- 12      format(1X,A,4I12,/,/)
+         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
+ 12      format(1X,A,4I12)
          write(6,*)
       endif
 
@@ -320,10 +320,6 @@ c solid elements
 
 
 #endif
-
-      if(nid.eq.0) write(6,*) ''
-      call icopy48(vtx8,vertex,nelt*nlv)
-      call printPartStat(vtx8,nelt,nlv,nekcomm)
 
       return
       end

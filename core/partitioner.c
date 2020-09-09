@@ -230,17 +230,17 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 
   if (id == 0) {
     printf(
-      " Max neighbors: %d | Min neighbors: %d | Avg neighbors: %lf\n",
+      " nElements   max/min/bal: %d %d %.2f\n",
+      nelMax, nelMin, (double)nelMax/nelMin);
+    printf(
+      " nMessages   max/min/avg: %d %d %.2f\n",
       ncMax, ncMin, (double)ncSum/np);
-   printf(
-      " Max nvolume: %d | Min nvolume: %d | Avg nvolume: %lf\n",
+    printf(
+      " msgSize     max/min/avg: %d %d %.2f\n",
       nsMax, nsMin, (double)nsSum/np);
     printf(
-      " Max volume: %d | Min volume: %d | Avg volume: %lf\n",
+      " msgSizeSum  max/min/avg: %d %d %.2f\n",
       nssMax, nssMin, (double)nssSum/np);
-    printf(
-      " Max elements: %d | Min elements: %d | Balance: %lf\n",
-      nelMax, nelMin, (double)nelMax/nelMin);
     fflush(stdout);
   }
 
