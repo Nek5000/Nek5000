@@ -442,9 +442,9 @@ c-----------------------------------------------------------------------
       integer wk(nwk)
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-      common /SCRCG/ xyz(ldim*lelt*2**ldim)
+      common /SCRCG/ xyz(ldim*(2**ldim)*lelt)
 
-      integer*8 eid8(4*lelt),vtx8(lelt*2**ldim)
+      integer*8 eid8(4*lelt),vtx8(lelt*(2**ldim+1))
       common /ctmp0/ eid8, vtx8, iwork
 
       integer npf,nv,nf,i,j,k,verbose
