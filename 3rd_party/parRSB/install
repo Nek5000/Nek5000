@@ -13,7 +13,7 @@ if [ -f ./lib/libparRSB.a ]; then
 fi
 
 if [ ! -d parRSB ]; then
-  git clone https://github.com/thilinarmtb/parRSB.git -b gencon_and_mg_precon
+  git clone https://github.com/thilinarmtb/parRSB.git -b gencon_and_mg
 fi
 
 cd parRSB
