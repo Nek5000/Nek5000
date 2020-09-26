@@ -336,8 +336,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   comm_init(&comm, cext);
 
   part = (int*) malloc(*lelt * sizeof(int));
-  seq  = (int*) malloc(*lelt * sizeof(int));
- 
+
   if(comm.id==0)
     printf("Before partitioning:\n");
   printPartStat(vl, nel, nv, cext);
@@ -353,10 +352,10 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   opt[2] = 0;
 
   if(rcb){
-    ierr = parRCB_partMesh(part,seq,xyz,nel,nv,opt,comm.c);
+    ierr = parRCB_partMesh(part,NULL,xyz,nel,nv,opt,comm.c);
     if (ierr != 0) goto err;
 
-    ierr=redistributeData(&nel,vl,el,part,seq,nv,*lelt,&comm);
+    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
     if (ierr != 0) goto err;
   }
 
@@ -385,7 +384,6 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 #endif
 
   free(part);
-  free(seq);
 
   *nell = nel;
   *rtval = 0;
