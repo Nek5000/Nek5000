@@ -190,9 +190,9 @@ C
       NMXV   = 1000
       if (iftran) NMXV = 200
       NMXH   =  NMXV ! not used anymore
-      NMXP   = 200
+      NMXP   = NMXV
       do ifield = 2,ldimt+1
-         NMXT(ifield-1) = 200 
+         NMXT(ifield-1) = NMXV
       enddo 
       NMXE   = 100
       NMXNL  = 10 
