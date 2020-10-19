@@ -3401,7 +3401,8 @@ c
 c
       call prs('Input number of reps (e.g., 1 --> double mesh size)$')
       call rei(nrep)
-c
+      if (nrep.eq.0) return  ! pff 5/19/2020
+
       do i=1,nrep
          ie0 = 1 + i*nel
          ie1 = ie0 + nel - 1

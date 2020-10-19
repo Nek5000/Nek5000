@@ -10,7 +10,8 @@ if [ "$1" == "clean" ]; then
 fi
 
 if [ -f ./lib/libparmetis.a ]; then
-  exit 0
+echo h
+#  exit 0
 fi
 
 wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
@@ -29,6 +30,7 @@ cd parMETIS
 
 set -x
 patch metis/include/metis.h < ../p_idx64
+patch Makefile < ../p_makefile
 make config cc=`which $CC` prefix=`pwd`/..
 set +x
 mkdir -p ../include

@@ -12,8 +12,8 @@ c
 c
       if (nio.eq.0) then
          write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,12) 'lx1  /lx2  /lx3 :',lx1,lx2,lx3
- 12      format(1X,A,4I12,/,/)
+         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
+ 12      format(1X,A,4I12)
          write(6,*)
       endif
 
@@ -141,7 +141,7 @@ c
       save    icalld
       data    icalld  /0/
 
-      if (icalld.gt.0) return
+      if(icalld.gt.0) return
       icalld = 1
 
       nv = 2**ldim
@@ -160,18 +160,29 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      logical ifparrsb
       integer ibuf(2)
-
       integer hrsb
 
-      integer*8 eid8(lelt), vtx8(8*lelt)
+      integer*8 eid8(lelt), vtx8(lelt*2**ldim)
       integer iwork(lelt)
+      common /SCRCG/ xyz(ldim*lelt*2**ldim)
       common /ctmp0/ eid8, vtx8, iwork
 
+      integer tt,cnt,nrank,ierr
+
       integer opt_parrsb(3), opt_parmetis(10)
+      logical ifbswap
 
 #if defined(PARRSB) || defined(PARMETIS)
+      ! read vertex coordinates
+      call read_re2_hdr(ifbswap, .false.)
+      nelt = nelgt/np
+      do i = 1,mod(nelgt,np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call readp_re2_mesh(ifbswap, .false.)
+      call byte_close_mpi(fh_re2,ierr)
 
       call read_con(wk,size(wk),neli,nvi,nelgti,nelgvi)
       if (nvi .ne. nlv)
@@ -186,18 +197,31 @@ c-----------------------------------------------------------------------
 c fluid elements
       j  = 0
       ii = 0
+      cnt= 0
       do i = 1,neli
          if (wk(ii+1) .le. nelgv) then
             j = j + 1
             eid8(j) = wk(ii+1)
             call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+            do tt=1,nlv
+              xyz(cnt+1)=xc(tt,i)
+              xyz(cnt+2)=yc(tt,i)
+              if(ldim.eq.3) then
+                xyz(cnt+3)=zc(tt,i)
+                cnt=cnt+3
+              else
+                cnt=cnt+2
+              endif
+            enddo
          endif
          ii = ii + (nlv+1)
       enddo
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $  meshPartitioner,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -214,6 +238,7 @@ c fluid elements
          call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
 
+      cnt=0
 c solid elements
       if (nelgt.ne.nelgv) then
          j  = 0
@@ -223,13 +248,25 @@ c solid elements
                j = j + 1
                eid8(j) = wk(ii+1)
                call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+
+               do tt=1,nlv
+                 xyz(cnt+1)=xc(tt,i)
+                 xyz(cnt+2)=yc(tt,i)
+                 if(ldim.eq.3) then
+                   xyz(cnt+3)=zc(tt,i)
+                   cnt=cnt+3
+                 else
+                   cnt=cnt+2
+                 endif
+               enddo
             endif
             ii = ii + (nlv+1)
          enddo
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,lelt,nel,nlv,nekcomm,ierr)
+         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+     $                  meshPartitioner,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
@@ -284,9 +321,6 @@ c solid elements
 
 #endif
 
-      call icopy48(vtx8,vertex,nelt*nlv)
-      call printPartStat(vtx8,nelt,nlv,nekcomm)
-
       return
       end
 c-----------------------------------------------------------------------
@@ -333,7 +367,7 @@ c-----------------------------------------------------------------------
         if(.not.ifcon .and. .not.ifco2) ierr = 1
       endif
       call bcast(confle,sizeof(confle))
-      if(nid.eq.0) write(6,'(A,A)') ' Reading ', confle
+      if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
       call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
       ierr = 0
@@ -378,6 +412,7 @@ c    1       format(a5,2i12,i2)
 
          call byte_set_view(offs,ifh)
          call byte_read_mpi(wk,(nv+1)*nelr,-1,ifh,ierr)
+         call err_chk(ierr,' Error while reading con file!$')
          call byte_close_mpi(ifh,ierr)
          if (ifbswap) call byte_reverse(wk,(nv+1)*nelr,ierr)
       else

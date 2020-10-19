@@ -134,7 +134,7 @@ C
             WRITE (6,*) 'IFNONL for field',IFIELD,'   = ',IFNONL(IFIELD)
  500     CONTINUE
          WRITE (6,*) '  '
-         if (param(99).gt.0) write(6,*) 'Dealiasing enabled, lxd=', lxd
+         if (param(99).gt.0) write(6,*) 'Dealiasing enabled, nxd=', nxd
       ENDIF
 C
       RETURN

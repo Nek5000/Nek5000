@@ -64,31 +64,60 @@ c       Only initialize once
       if (ifield.eq.1) then
 c       Apply the filter
 c       to velocity fields
-        call build_hpf_fld(ta1,vx,hpf_op,lx1,lz1)
-        call build_hpf_fld(ta2,vy,hpf_op,lx1,lz1)
-        if (if3d) call build_hpf_fld(ta3,vz,hpf_op,lx1,lz1)
+        if (jp.eq.0) then 
+          call build_hpf_fld(ta1,vx,hpf_op,lx1,lz1)
+          call build_hpf_fld(ta2,vy,hpf_op,lx1,lz1)
+          if (if3d) call build_hpf_fld(ta3,vz,hpf_op,lx1,lz1)
 
-c       Multiply by filter weight (chi)
-        call cmult(ta1,hpf_chi,n)    
-        call cmult(ta2,hpf_chi,n)    
-        if (if3d) call cmult(ta3,hpf_chi,n)    
+c         Multiply by filter weight (chi)
+          call cmult(ta1,hpf_chi,n)    
+          call cmult(ta2,hpf_chi,n)    
+          if (if3d) call cmult(ta3,hpf_chi,n)    
 
-c       Multiply by Mass matrix 
-c       and add to forcing term 
-        call opadd2col (bfx,bfy,bfz,ta1,ta2,ta3,bm1)
+c         Multiply by Mass matrix 
+c         and add to forcing term 
+          call opadd2col (bfx,bfy,bfz,ta1,ta2,ta3,bm1)
+        else
+c         Apply filter on velocity perturbation fields
+          call build_hpf_fld(ta1,vxp(1,jp),hpf_op,lx1,lz1)
+          call build_hpf_fld(ta2,vyp(1,jp),hpf_op,lx1,lz1)
+          if (if3d) call build_hpf_fld(ta3,vzp(1,jp),hpf_op,lx1,lz1)
+
+c         Multiply by filter weight (chi)
+          call cmult(ta1,hpf_chi,n)    
+          call cmult(ta2,hpf_chi,n)    
+          if (if3d) call cmult(ta3,hpf_chi,n)    
+
+c         Multiply by Mass matrix 
+c         and add to forcing term 
+          call opadd2col (bfxp(1,jp),bfyp(1,jp),bfzp(1,jp),
+     $                    ta1,ta2,ta3,bm1)
+        endif        
 
       else
 
-c       Apply filter to temp/passive scalar fields      
-        call build_hpf_fld(ta1,t(1,1,1,1,ifield-1),
-     $       hpf_op,lx1,lz1)
+c       Apply filter to temp/passive scalar fields
+        if (jp.eq.0) then
+          call build_hpf_fld(ta1,t(1,1,1,1,ifield-1),
+     $         hpf_op,lx1,lz1)
 
-c       Multiply by filter weight (chi)
-        call cmult(ta1,hpf_chi,n)    
+c         Multiply by filter weight (chi)
+          call cmult(ta1,hpf_chi,n)    
 
-c       Multiply by Mass matrix    
-c       and add to source term
-        call addcol3(bq(1,1,1,1,ifield-1),ta1,bm1,n)
+c         Multiply by Mass matrix    
+c         and add to source term
+          call addcol3(bq(1,1,1,1,ifield-1),ta1,bm1,n)
+        else
+c         Apply filter on scalar perturbation field                
+          call build_hpf_fld(ta1,tp(1,ifield-1,jp),hpf_op,lx1,lz1)
+
+c         Multiply by filter weight (chi)
+          call cmult(ta1,hpf_chi,n)    
+
+c         Multiply by Mass matrix    
+c         and add to source term
+          call addcol3(bqp(1,ifield-1,jp),ta1,bm1,n)
+        endif  
 
       endif
 

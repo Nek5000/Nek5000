@@ -30,10 +30,10 @@ c
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)
      $       ,ipscal,npscal,ipsco, ifldmhd
      $       ,irstv,irstt,irstim,nmember(maxobj),nobj
-     $       ,ngeom,idpss(ldimt)
+     $       ,ngeom,idpss(ldimt),meshPartitioner
       common /input2/ matype,nktonv,nhis,lochis,ipscal,npscal,ipsco
      $               ,ifldmhd,irstv,irstt,irstim,nmember,nobj
-     $               ,ngeom,idpss
+     $               ,ngeom,idpss,meshPartitioner
 
       logical         if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid
