@@ -1,0 +1,23 @@
+-2                      spatial dimension  ( < 0 --> generate .rea/.re2 pair)
+4                      number of fields
+#=======================================================================
+#
+#    Example of .box file for Taylor-Green
+#
+#    If nelx (y or z) < 0, then genbox automatically generates the
+#                          grid spacing in the x (y or z) direction
+#                          with a geometric ratio given by "ratio".
+#                          ( ratio=1 implies uniform spacing )
+#
+#    Note that the character bcs _must_ have 3 spaces.
+#
+#=======================================================================
+#
+Box
+-3  -8                                              nelx,nely,nelz for Box
+-0.125 0.125 1.0                                      x0,x1,gain  (rescaled in usrdat)
+0.0 0.25 1.4                                         y0,y1,gain  (rescaled in usrdat)
+P  ,P  ,W  ,SYM                                     bc's  (3 chars each!)
+P  ,P  ,I  ,I                                       bc's  (3 chars each!)
+P  ,P  ,t  ,I                                       bc's  (3 chars each!)
+P  ,P  ,t  ,I                                       bc's  (3 chars each!)

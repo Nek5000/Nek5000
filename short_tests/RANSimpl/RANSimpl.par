@@ -1,0 +1,34 @@
+#
+# nek parameter file
+#
+[GENERAL] 
+polynomialOrder = 7
+PnPnFormulation = yes
+minNumProcesses = 1
+
+#extrapolation = OIFS
+numSteps = 5000
+dt = 2e-03
+
+[PROBLEMTYPE]
+equation = incompNS
+stressFormulation = yes
+variableProperties = yes
+
+[PRESSURE]
+residualTol = 1.0e-06
+
+[VELOCITY]
+residualTol = 1.0e-08
+density = 1.0
+viscosity = -20000.0
+
+[SCALAR01]
+residualTol = 1.0e-08
+density = 1.0
+diffusivity = -20000.0
+
+[SCALAR02]
+residualTol = 1.0e-08
+density = 1.0
+diffusivity = -20000.0

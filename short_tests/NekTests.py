@@ -1401,6 +1401,39 @@ class chan2d(NekTestCase):
 
 ###############################################################
 
+class RANSimpl(NekTestCase):
+    example_subdir  = 'RANSimpl'
+    case_name        = 'RANSimpl'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-0',
+            lelg      = '24',
+            lx1m      = 'lx1',
+            ldimt     = '4'
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        dpdx = self.get_value_from_log('Volflow', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(dpdx, target_val=1.5093e-02, delta=1.E-05, label='dPdx')
+
+        self.assertDelayedFailures()
+
+###############################################################
+
 if __name__ == '__main__':
     import unittest, argparse, os
 
