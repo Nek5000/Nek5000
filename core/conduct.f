@@ -63,14 +63,10 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          if (iftran) intype = -1
          call sethlm  (h1,h2,intype)
          call bcneusc (ta,-1)
-         call add2    (h2,ta,n) ! {laplace*H1 + H2}u
-
-c....... swh:
-c        call add2(h2,adq(1,1,1,1,ifield-1),n) ! covered in sethlm
-         
+         call add2    (h2,ta,n)
          call bcdirsc (t(1,1,1,1,ifield-1))
          call axhelm  (ta,t(1,1,1,1,ifield-1),h1,h2,imesh,ISD)
-         call sub3    (tb,bq(1,1,1,1,ifield-1),ta,n) !rhs, tb=bq-ta
+         call sub3    (tb,bq(1,1,1,1,ifield-1),ta,n)
          call bcneusc (ta,1)
          call add2    (tb,ta,n)
 
@@ -124,14 +120,13 @@ c     mass matrix on the Gauss-Lobatto mesh.
       if (nio.eq.0.and.loglevel.gt.2) 
      $   write(6,*) 'makeuq', ifield, time
       call setqvol(bq(1,1,1,1,ifield-1),adq(1,1,1,1,ifield))
-      call col2   (bq(1,1,1,1,ifield-1) ,bm1,n) ! adding ro rhs?
+      call col2   (bq(1,1,1,1,ifield-1) ,bm1,n)
 
       if (.not.ifcvfld(ifield)) time = time+dt ! Restore time
 
       return
       end
 c-----------------------------------------------------------------------
-c     subroutine setqvol(bql)
       subroutine setqvol(bql,aql)      
 
 c     Set user specified volumetric forcing function (e.g. heat source).
@@ -155,8 +150,7 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 
       do iel=1,nel
 
-c     call nekuq (bql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
-         call nekuq (bql,aql,iel)          
+      call nekuq (bql,aql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
 
 c        igrp = igroup(iel)
 c        if (matype(igrp,ifield).eq.1) then ! constant source within a group
@@ -178,13 +172,13 @@ C
  
       return
       end
-
+c-----------------------------------------------------------------------
+      subroutine nekuq (bql,aql,iel)
 C------------------------------------------------------------------
 C
 C     Generate user-specified volumetric source term (temp./p.s.)
 C
 C------------------------------------------------------------------
-      subroutine nekuq (bql,aql,iel)
       include 'SIZE'
       include 'SOLN'
       include 'MASS'

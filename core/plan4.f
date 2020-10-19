@@ -212,23 +212,7 @@ c     add explicit (NONLINEAR) terms
          enddo
       endif
 
-C     add contribution from implicit body force term (method 1)
-c      call opcopy   (ta1,ta2,ta3,vx_e,vy_e,vz_e)
-c      call opcolv   (ta1,ta2,ta3,adq)
-c      call opcolv   (ta1,ta2,ta3,bm1)
-c      call opdssum  (ta1,ta2,ta3)
-c      call opcolv   (ta1,ta2,ta3,binvm1)
-c
-c      call cdtp     (wa1,ta1,rxm1,sxm1,txm1,1)
-c      call cdtp     (wa2,ta2,rym1,sym1,tym1,1)
-c      call add2     (wa1,wa2,ntot1)
-c      if(if3d) then
-c        call cdtp   (wa3,ta3,rzm1,szm1,tzm1,1)
-c        call add2   (wa1,wa3,ntot1)
-c      endif
-c      call sub2     (respr,wa1,ntot1)
-
-C     add contribution from implicit body force term (method 2)
+C     add contribution from implicit body force term
       call opgrad  (ta1,ta2,ta3,adq)
       call opdssum (ta1,ta2,ta3)
       call opcolv  (ta1,ta2,ta3,binvm1)
