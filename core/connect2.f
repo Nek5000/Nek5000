@@ -64,7 +64,7 @@ C     Read Mesh Info
       call mapelpr
 
       if (ifre2) then
-        call read_re2_data(ifbswap)
+        call read_re2_data(ifbswap, .true., .true., .true.)
       else
         maxrd = 32               ! max # procs to read at once
         mread = (np-1)/maxrd+1   ! mod param
