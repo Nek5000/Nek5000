@@ -209,6 +209,10 @@ fi
 \rm -f .tmp
 if [ $FCok -eq 0 ]; then
   FCcomp="unknown"
+else
+  # Resolve aliases and symlinks
+  FCcomp="`which $FCcomp`"
+  FCcomp="`realpath -e $FCcomp`"
 fi
 
 # assign FC compiler specific flags
