@@ -8,7 +8,7 @@ minNumProcesses = 1
 maxNumHistoryPoints = 1000
 
 #extrapolation = OIFS
-numSteps = 1000
+numSteps = 10
 dt = 1e-04
 timeStepper = bdf3 #bdf2
 writeInterval = 0

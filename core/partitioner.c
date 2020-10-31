@@ -337,10 +337,6 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 
   part = (int*) malloc(*lelt * sizeof(int));
 
-  if(comm.id==0)
-    printf("Before partitioning:\n");
-  printPartStat(vl, nel, nv, cext);
-
   ierr = 1;
 #if defined(PARRSB)
   int rsb,rcb;

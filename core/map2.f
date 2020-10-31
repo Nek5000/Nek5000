@@ -175,9 +175,19 @@ c-----------------------------------------------------------------------
 
       integer start
 
+#if !defined(PARRSB) && !defined(PARMETIS)
+#if defined(DPROCMAP)
+      call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
+#else
+      call read_map(vertex,nlv,wk,mdw,ndw)
+      return
+#endif      
+#endif
+
 #if defined(PARRSB) || defined(PARMETIS)
       neli = nelt
       call get_con(wk,size(wk),neli,nlv)
+
 c fluid elements
       j  = 0
       ii = 0
@@ -292,17 +302,6 @@ c solid elements
       enddo
 #endif 
 
-
-#else
-
-
-#ifdef DPROCMAP
-      call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
-#else
-      call read_map(vertex,nlv,wk,mdw,ndw)
-#endif
-
-
 #endif
 
       return
@@ -360,7 +359,7 @@ c-----------------------------------------------------------------------
 
       call bcast(confle,sizeof(confle))
       if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
-      call err_chk(ierr,' Cannot find con file!$')
+c      call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
       ierr = 0
 
@@ -419,16 +418,20 @@ c       enddo
       return
 
   50  continue
-      call calc_con(wk,size(wk),ierr)
+
+#if defined(PARRSB)      
+      call find_con(wk,size(wk),ierr)
       return
- 
+#endif
+
  100  continue
       call err_chk(ierr,'Error opening/reading con file$')
       return
 
       end
 c-----------------------------------------------------------------------
-      subroutine calc_con(wk,nwk,ierr)
+#if defined(PARRSB)      
+      subroutine find_con(wk,nwk,ierr)
 
       include 'SIZE'
       include 'INPUT'
@@ -486,22 +489,19 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      ierr=0
-      tol=1e-2
-      verbose=1
-
+      ierr = 0
+      toli = 5e-3
+      verbose = 1
       call fparrsb_findConnectivity(vtx8,xyz,nelt,ndim,
      $  eid8,npf,tol,nekcomm,verbose,ierr)
+      call err_chk(ierr,' findConnectivity failed!$')
 
       do i=1,nelt*(nv+1)
         wk(i)=vtx8(i)
       enddo
 
       end
-c-----------------------------------------------------------------------
-
-#ifndef DPROCMAP
-
+#endif
 c-----------------------------------------------------------------------
       subroutine set_proc_map()
 C
@@ -510,18 +510,60 @@ C     physical distribution in an attempt to minimize exposed number of
 C     element interfaces.
 C
       include 'SIZE'
-      include 'INPUT'
       include 'PARALLEL'
-      include 'SOLN'
-      include 'SCRCT'
-      include 'TSTEP'
-      common /ctmp0/ iwork(lelt)
+      include 'INPUT'
 
-      REAL*8 dnekclock,t0
+      integer ibuf(3)
+      logical ifbswap
+ 
+      integer iwork(lelt)
 
-      t0 = dnekclock()
-      call get_map
+#if defined(DPROCMAP)
+      call dProcmapInit()  
+#endif
 
+      call read_re2_hdr(ifbswap, .false.)
+      nelt = nelgt/np
+      do i = 1,mod(nelgt,np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+
+      if (nelt .gt. lelt)
+     $   call exitti('nelt > lelt!$',nelt)
+
+      ! setup gllnid + gllel
+      nelB = igl_running_sum(nelt) - nelt
+      do i = 1,nelt
+         ieg = nelB + i
+         lglel(i) = ieg 
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
+#if defined(DPROCMAP)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+#else
+         gllnid(ieg) = nid
+         gllel(ieg) = i 
+#endif
+      enddo
+
+#if !defined(DPROCMAP)
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         if (m.gt.0) call igop(gllel(k) ,iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif
+
+      call read_re2_data(ifbswap, .true., .false., .true.)
+      call get_map() 
+
+#if !defined(DPROCMAP)
 c     compute global to local map (no processor info)
       IEL=0
       CALL IZERO(GLLEL,NELGT)
@@ -552,9 +594,17 @@ c     (i.e. returns global element number given local index and proc id)
          ie   =gllel (ieg)
          if (mid.eq.nid) lglel(ie)=ieg
       enddo
+#endif
+
+      ! not implemented yet - for now we just read the re2 data again
+c     redistribute_re2_data(nelt_)
 
       return
       end
+c-----------------------------------------------------------------------
+
+#ifndef DPROCMAP
+
 c-----------------------------------------------------------------------
       subroutine read_map(vertex,nlv,wk,mdw,ndw)
 
@@ -836,57 +886,6 @@ c  where i = np-mod(nelgt,np) ... np
       ! unddo sorting to restore initial ordering by
       ! global element number
       call iswapt_ip(gllnid,iunsort,nelgt)
-
-      return
-      end
-c-----------------------------------------------------------------------
-
-#else
-
-c-----------------------------------------------------------------------
-      subroutine set_proc_map()
-C
-C     Compute element to processor distribution according to (weighted) 
-C     physical distribution in an attempt to minimize exposed number of
-C     element interfaces.
-C
-      include 'SIZE'
-      include 'PARALLEL'
-      include 'INPUT'
-
-      integer ibuf(3)
-      logical ifbswap
-
-      call dProcmapInit()  
-
-      call read_re2_hdr(ifbswap, .false.)
-      nelt = nelgt/np
-      do i = 1,mod(nelgt,np)
-        if (np-i.eq.nid) nelt = nelt + 1
-      enddo
-
-      if (nelt .gt. lelt)
-     $   call exitti('nelt > lelt!$',nelt)
-
-      ! setup gllnid + gllel
-      nelB = igl_running_sum(nelt) - nelt
-      do i = 1,nelt
-         ieg = nelB + i
-         lglel(i) = ieg 
-         if (ieg.lt.1 .or. ieg.gt.nelgt)
-     $      call exitti('invalid ieg!$',ieg)
-         ibuf(1) = i
-         ibuf(2) = nid
-         call dProcmapPut(ibuf,2,0,ieg)
-      enddo
-
-      call read_re2_data(ifbswap, .true., .false., .true.)
-
-      nelt_ = nelt
-      call get_map() 
-
-      ! not implemented yet - for now we just read the re2 data again
-c     redistribute_re2_data(nelt_)
 
       return
       end
