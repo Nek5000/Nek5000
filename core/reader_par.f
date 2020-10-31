@@ -26,7 +26,7 @@ c
 
       call mapelpr  ! read .map file, est. gllnid, etc.
 
-      call read_re2_data(ifbswap)
+      call read_re2_data(ifbswap, .true., .true., .true.)
 
       call nekgsync()
 
