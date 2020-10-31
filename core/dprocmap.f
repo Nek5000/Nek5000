@@ -167,6 +167,8 @@ c-----------------------------------------------------------------------
 
       integer ibuf(2)
 
+      if (ieg.eq.0) iegl = 0
+
       if (ieg.eq.iegl) then
          ibuf(2) = nidl
          goto 100
@@ -188,6 +190,8 @@ c-----------------------------------------------------------------------
       data    iegl, iell /0,0/
 
       integer ibuf(2)
+
+      if (ieg.eq.0) iegl = 0
 
       if (ieg.eq.iegl) then
          ibuf(1) = iell

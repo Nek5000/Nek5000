@@ -300,7 +300,7 @@ c solid elements
          if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
          k = k+m
       enddo
-#endif 
+#endif
 
 #endif
 
@@ -399,10 +399,6 @@ c    1       format(a5,2i12,i2)
         call byte_open_mpi(confle,ifh,.true.,ierr)
         offs0 = sizeof(hdr) + sizeof(test)
 
-c       nelr = nelgti/np
-c       do i = 1,mod(nelgti,np)
-c          if (np-i.eq.nid) nelr = nelr + 1
-c       enddo
         call lim_chk(nelr*(nvi+1),nwk,'nelr ','nwk   ','read_con  ')
 
         nelBr = igl_running_sum(nelr) - nelr
@@ -420,7 +416,7 @@ c       enddo
   50  continue
 
 #if defined(PARRSB)      
-      call find_con(wk,size(wk),ierr)
+      call find_con(wk,nwk,ierr)
       return
 #endif
 
@@ -512,8 +508,9 @@ C
       include 'SIZE'
       include 'PARALLEL'
       include 'INPUT'
+      include 'DPROCMAP'
 
-      integer ibuf(3)
+      integer ibuf(2)
       logical ifbswap
       logical ifre2
 
@@ -526,10 +523,6 @@ C
         return
       endif
 
-#if defined(DPROCMAP)
-      call dProcmapInit()  
-#endif
-
       call read_re2_hdr(ifbswap, .false.)
       nelt = nelgt/np
       do i = 1,mod(nelgt,np)
@@ -540,6 +533,10 @@ C
      $   call exitti('nelt > lelt!$',nelt)
 
       ! setup gllnid + gllel
+#if defined(DPROCMAP)
+      call dProcmapInit()  
+      dProcmapCache = .false.
+#endif
       nelB = igl_running_sum(nelt) - nelt
       do i = 1,nelt
          ieg = nelB + i
@@ -555,7 +552,6 @@ C
          gllel(ieg) = i 
 #endif
       enddo
-
 #if !defined(DPROCMAP)
       npass = 1 + nelgt/lelt
       k=1
@@ -568,11 +564,17 @@ C
       enddo
 #endif
 
-      call read_re2_data(ifbswap, .true., .false., .true.)
+      ! read coord for RCB and/or connectivity
+      call read_re2_data(ifbswap, .true., .false., .true.) 
+
+      ! get element-proc mapping      
       call get_map() 
 
+      itmp = gllnid(0) ! reset last element cache
+      itmp = gllel(0)  ! reset last element cache
+      dProcmapCache = .true.
+
 #if !defined(DPROCMAP)
-c     compute global to local map (no processor info)
       IEL=0
       CALL IZERO(GLLEL,NELGT)
       DO IEG=1,NELGT
@@ -584,8 +586,6 @@ c     compute global to local map (no processor info)
          ENDIF
 c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
       ENDDO
-
-c     dist. global to local map to all processors
       npass = 1 + nelgt/lelt
       k=1
       do ipass = 1,npass
@@ -595,17 +595,12 @@ c     dist. global to local map to all processors
          k = k+m
       enddo
 
-c     compute local to global map
-c     (i.e. returns global element number given local index and proc id)
       do ieg=1,nelgt
          mid  =gllnid(ieg)
          ie   =gllel (ieg)
          if (mid.eq.nid) lglel(ie)=ieg
       enddo
 #endif
-
-      ! not implemented yet - for now we just read the re2 data again
-c     redistribute_re2_data(nelt_)
 
       return
       end
