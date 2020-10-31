@@ -515,8 +515,16 @@ C
 
       integer ibuf(3)
       logical ifbswap
- 
+      logical ifre2
+
       integer iwork(lelt)
+
+      if(nid.eq.0) inquire(file=re2fle, exist=ifre2)
+      call bcast(ifre2,lsize)
+      if(.not.ifre2) then
+        call set_proc_map_legacy
+        return
+      endif
 
 #if defined(DPROCMAP)
       call dProcmapInit()  
@@ -598,6 +606,63 @@ c     (i.e. returns global element number given local index and proc id)
 
       ! not implemented yet - for now we just read the re2 data again
 c     redistribute_re2_data(nelt_)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_proc_map_legacy()
+C
+C     Compute element to processor distribution according to (weighted) 
+C     physical distribution in an attempt to minimize exposed number of
+C     element interfaces.
+C
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SOLN'
+      include 'SCRCT'
+      include 'TSTEP'
+      common /ctmp0/ iwork(lelt)
+
+      REAL*8 dnekclock,t0
+
+#if defined(PARRSB) || defined(PARMETIS) || defined(DPROCMAP)
+      call exitti(' DPROCMAP/PARRSB not supported for rea files$',0)
+#else      
+      t0 = dnekclock()
+      call get_map
+
+c     compute global to local map (no processor info)
+      IEL=0
+      CALL IZERO(GLLEL,NELGT)
+      DO IEG=1,NELGT
+         IF (GLLNID(IEG).EQ.NID) THEN
+            IEL = IEL + 1
+            GLLEL(IEG)=IEL
+            NELT = IEL
+            if (ieg.le.nelgv) NELV = IEL
+         ENDIF
+c        write(6,*) 'map2 ieg:',ieg,nelv,nelt,nelgv,nelgt
+      ENDDO
+
+c     dist. global to local map to all processors
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllel(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+
+c     compute local to global map
+c     (i.e. returns global element number given local index and proc id)
+      do ieg=1,nelgt
+         mid  =gllnid(ieg)
+         ie   =gllel (ieg)
+         if (mid.eq.nid) lglel(ie)=ieg
+      enddo
+#endif
 
       return
       end
