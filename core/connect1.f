@@ -23,6 +23,8 @@ C
       include 'NONCON'
       include 'SCRCT'
 c
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+c      
       COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
@@ -79,6 +81,10 @@ C
          call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
          gsh_fld(2)=gsh_fld(1)
 
+         if(nid.eq.0) write(6,*) ''
+         call printPartStat(glo_num,nelt,lx1*ly1*lz1,nekcomm)
+         if(nid.eq.0) write(6,*) ''
+
 c        call gs_counter(glo_num,gsh_fld(1))
 
       else
@@ -125,15 +131,13 @@ C========================================================================
       ntotv = lx1*ly1*lz1*nelv
       ntott = lx1*ly1*lz1*nelt
 
-
-
       if (ifflow) then
          ifield = 1
          call rone    (vmult,ntotv)
          call dssum   (vmult,lx1,ly1,lz1)
          vmltmax=glmax(vmult,ntotv)
          ivmltmax=vmltmax
-         if (nio.eq.0) write(6,*) ivmltmax,' max multiplicity'
+         if (nio.eq.0) write(6,*) 'max multiplicity ', ivmltmax
          call invcol1 (vmult,ntotv)
       endif
       if (ifheat) then

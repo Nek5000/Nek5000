@@ -2333,9 +2333,8 @@ c-----------------------------------------------------------------------
       n      = lx1*ly1*lz1*nelt
       nxyz   = lx1*ly1*lz1
       nfaces = 2*ldim
-      ifield = 1                   ! velocity field
-      if (ifheat) ifield = 2       ! temperature field
-
+      ifield = 1 ! velocity field
+      if (nelgv.ne.nelgt .or. .not.ifflow) ifield = 2 ! temperature field
 
       call rone  (tmlt,n)
       call dssum (tmlt,lx1,ly1,lz1)  ! denominator
@@ -3389,14 +3388,18 @@ c     enddo
       param(7) = param(1)  ! rhoCP   = rho
       param(8) = param(2)  ! conduct = dyn. visc
 
-      ifheat       = .true.
-      ifadvc(nfld) = .true.
-      iftmsh(nfld) = .true.
-      ifvarp(nfld) = ifvarp(nfield)
+      ifheat          = .true.
+      ifadvc(nfld)    = .true.
+      iftmsh(nfld)    = .true.
+      ifvarp(nfld)    = ifvarp(nfield)
+      ifdeal(nfld)    = ifdeal(nfield)
+      ifprojfld(nfld) = ldimt_proj.ge.(nfld-1).and.ifprojfld(nfield)
+
       if (nfld.eq.2) ifto = .true.
       if (nfld.gt.2) ifpsco(nfld-2) = .true.
       if (nfld.gt.2) npscal = npscal+1
 
+      ifldmhd = npscal + 3
 
       nfield = nfld
 

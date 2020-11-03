@@ -656,7 +656,7 @@ C
          ifvo  = .false.
          ifpo  = .false.
          ifto  = .false.
-c        param(66) = 4  !use the requested output form
+         param(66) = 4
          call outpost(vx,vy,vz,pr,t,'xyz')
          if (nid.eq.0) write(6,*) 'Jac error 1, setting p66=4, ifxyo=t'
          call exitt

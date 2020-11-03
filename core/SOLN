@@ -44,7 +44,6 @@ c     Solution data
      $    ,bfx    (lx1,ly1,lz1,lelv)
      $    ,bfy    (lx1,ly1,lz1,lelv)
      $    ,bfz    (lx1,ly1,lz1,lelv)
-C    $    ,aff    (lx1,ly1,lz1,lelv)
      $    ,cflf   (lx1,ly1,lz1,lelv)
      $    ,bmnv   (lx1*ly1*lz1*lelv*ldim,lorder+1) ! binv*mask
      $    ,bmass  (lx1*ly1*lz1*lelv*ldim,lorder+1) ! bmass
@@ -54,10 +53,9 @@ C    $    ,aff    (lx1,ly1,lz1,lelv)
 
       common /vptsol/ vxlag, vylag, vzlag, tlag, vgradt1, vgradt2,
      $     abx1, aby1, abz1, abx2, aby2, abz2, vdiff_e,
-     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, 
-     $     c_vx, fw, bmnv, bmass, bdivw,
+     $     vx, vy, vz, t, vtrans, vdiff, bfx, bfy, bfz, cflf, c_vx,fw,
+     $     bmnv, bmass, bdivw,
      $     vx_e,vy_e,vz_e
-C    $     ,aff
 
 c     Solution data for magnetic field
       real bx     (lbx1,lby1,lbz1,lbelv)

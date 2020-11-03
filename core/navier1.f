@@ -124,7 +124,6 @@ c     Compute the residual for the velocity - UZAWA SCHEME.
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
       COMMON /SCREV/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
-
 C
       INLOC   = -1
       CALL SETHLM  (H1,H2,INLOC)
@@ -1460,11 +1459,12 @@ c     if (.not.ifsplit.and..not.ifstrs)         call bcneutr
 
       return
       end
-c
+C----------------------------------------------------------------------
       subroutine makeuf
-C---------------------------------------------------------------------
+C----------------------------------------------------------------------
 C
 C     Compute and add: (1) user specified forcing function (FX,FY,FZ)
+C                      (2) user specified implicit forcing function (fa)
 C
 C----------------------------------------------------------------------
       include 'SIZE'
@@ -1479,7 +1479,7 @@ C
 C
       return
       END
-C
+C----------------------------------------------------------------------
       subroutine nekuf (f1,f2,f3,fa)
       include 'SIZE'
       include 'PARALLEL'

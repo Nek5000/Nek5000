@@ -205,7 +205,8 @@ c
       real dx(1)
       real x(8),y(8),z(8)
       integer e,buf(50)
-
+      integer*8 l
+      
       integer h2s(8) ! hypercube to strange ordering
       save    h2s
       data    h2s / 1,2,4,3,5,6,8,7 /
