@@ -1401,6 +1401,41 @@ class chan2d(NekTestCase):
 
 ###############################################################
 
+class impsrc_scalar(NekTestCase):
+    example_subdir  = 'impsrc_scalar'
+    case_name        = 'impsrc_scalar'
+
+    def setUp(self):
+
+        # Default SIZE parameters. Can be overridden in test cases
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-0',
+            lelg      = '10',
+            lx1m      = 'lx1'
+        )
+
+        self.build_tools(['genmap'])
+        self.run_genmap()
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        l2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-1)
+        l1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-1)
+        self.assertAlmostEqualDelayed(l1, target_val=0.0, delta=1E-10, label='L1 err')
+        self.assertAlmostEqualDelayed(l2, target_val=0.0, delta=1E-12, label='L2 err')
+
+        self.assertDelayedFailures()
+
+###############################################################
+
+
 if __name__ == '__main__':
     import unittest, argparse, os
 
