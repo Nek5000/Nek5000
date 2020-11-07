@@ -442,7 +442,7 @@ c-----------------------------------------------------------------------
       integer*8 eid8(4*lelt),vtx8(lelt*(2**ldim+1))
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer npf,nv,nf,i,j,k,verbose
+      integer npf,nv,nf,i,j,k,l,verbose
       integer*8 start
       real*8 tol
 
@@ -492,8 +492,16 @@ c-----------------------------------------------------------------------
      $  eid8,npf,tol,nekcomm,verbose,ierr)
       call err_chk(ierr,' findConnectivity failed!$')
 
-      do i=1,nelt*(nv+1)
-        wk(i)=vtx8(i)
+      k=1
+      l=1
+      do i=1,nelt
+        wk(k)=start+i
+        k=k+1
+        do j=1,nv 
+          wk(k)=vtx8(l)
+          k=k+1
+          l=l+1
+        enddo
       enddo
 
       end

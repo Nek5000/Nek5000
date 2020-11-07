@@ -29,7 +29,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   int ibuf;
 
   struct crystal cr;
-  struct array A; 
+  struct array A;
   edata *row;
 
   long long nell;
@@ -77,7 +77,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
     goto end;
 
   comm_init(&comm,comms);
-  if (comm.id == 0) 
+  if (comm.id == 0)
     printf("Running parMETIS ... "), fflush(stdout);
 
   nelarray = (long long*) malloc(comm.np*sizeof(long long));
@@ -86,11 +86,11 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   elmdist[0] = 0;
   for (i=0; i<comm.np; ++i)
     elmdist[i+1] = elmdist[i] + (idx_t)nelarray[i];
-  free(nelarray); 
+  free(nelarray);
 
   evlptr = (idx_t*) malloc((nel+1)*sizeof(idx_t));
   evlptr[0] = 0;
-  for (i=0; i<nel; ++i) 
+  for (i=0; i<nel; ++i)
     evlptr[i+1] = evlptr[i] + nv;
   nelsm = elmdist[comm.id+1] - elmdist[comm.id];
   evlptr[nelsm]--;
@@ -102,25 +102,25 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   options[PMV3_OPTION_DBGLVL] = 0;
   options[PMV3_OPTION_SEED]   = 0;
   if (opt[0] != 0) {
-    options[PMV3_OPTION_DBGLVL] = opt[1]; 
+    options[PMV3_OPTION_DBGLVL] = opt[1];
     if (opt[2] != 0) {
       options[3] = PARMETIS_PSR_UNCOUPLED;
       nparts = opt[2];
     }
-  }  
+  }
 
   tpwgts = (real_t*) malloc(ncon*nparts*sizeof(real_t));
   for (i=0; i<ncon*nparts; ++i)
     tpwgts[i] = 1./(real_t)nparts;
 
   if (options[3] == PARMETIS_PSR_UNCOUPLED)
-    for (i=0; i<nel; ++i) 
+    for (i=0; i<nel; ++i)
       part_[i] = comm.id;
 
-  comm_barrier(&comm); 
+  comm_barrier(&comm);
   time0 = comm_time();
   ierrm = ParMETIS_V3_PartMeshKway(elmdist,
-                                   evlptr, 
+                                   evlptr,
                                    (idx_t*)vl,
                                    elmwgt,
                                    &wgtflag,
@@ -136,10 +136,10 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
                                    &comm.c);
 
   time = comm_time() - time0;
-  if (comm.id == 0) 
+  if (comm.id == 0)
     printf("%lf sec\n", time), fflush(stdout);
 
-  for (i=0; i<nel; ++i) 
+  for (i=0; i<nel; ++i)
     part[i] = part_[i];
 
   free(elmdist);
@@ -148,12 +148,12 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   MPI_Comm_free(&comms);
   comm_free(&comm);
 
-end: 
+end:
   comm_init(&comm,ce);
-  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf); 
+  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf);
   if (ierrm != METIS_OK) goto err;
   return 0;
-                                 
+
 err:
   return 1;
 }
@@ -224,7 +224,7 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
   comm_allreduce(&comm, gs_int, gs_add, &nssSum , 1, &b);
 
-  nsSum = nsSum/Nmsg;   
+  nsSum = nsSum/Nmsg;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
 
   nelMax = nel;
@@ -319,7 +319,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   struct comm comm;
 
   int nel, nv, mode;
-  int e, n; 
+  int e, n;
   int count, ierr, ibuf;
   int *part,*seq;
   int opt[3];
@@ -336,6 +336,11 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   comm_init(&comm, cext);
 
   part = (int*) malloc(*lelt * sizeof(int));
+  seq  = (int*) malloc(*lelt * sizeof(int));
+
+  if(comm.id==0)
+    printf("Before partitioning:\n");
+  printPartStat(vl, nel, nv, cext);
 
   ierr = 1;
 #if defined(PARRSB)
@@ -348,19 +353,27 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
   opt[2] = 0;
 
   if(rcb){
-    ierr = parRCB_partMesh(part,NULL,xyz,nel,nv,opt,comm.c);
+    ierr = parRCB_partMesh(part,seq,xyz,nel,nv,opt,comm.c);
     if (ierr != 0) goto err;
 
-    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
+    ierr=redistributeData(&nel,vl,el,part,seq,nv,*lelt,&comm);
     if (ierr != 0) goto err;
+
+    if(comm.id==0)
+      printf("After RCB:\n");
+    printPartStat(vl, nel, nv, cext);
   }
 
   if(rsb){
-    ierr = parRSB_partMesh(part,vl,nel,nv,opt,comm.c);
+    ierr = parRSB_partMesh(part,vl,xyz,nel,nv,opt,comm.c);
     if (ierr != 0) goto err;
 
     ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
     if (ierr != 0) goto err;
+
+    if(comm.id==0)
+      printf("After RSB:\n");
+    printPartStat(vl, nel, nv, cext);
   }
 #elif defined(PARMETIS)
   int metis; metis=mode&4;
@@ -373,13 +386,14 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
     ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
 
     ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
-    if (ierr != 0) goto err; 
+    if (ierr != 0) goto err;
 
     /* printPartStat(vl, nel, nv, cext); */
   }
 #endif
 
   free(part);
+  free(seq);
 
   *nell = nel;
   *rtval = 0;
