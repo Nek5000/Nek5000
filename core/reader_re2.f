@@ -814,7 +814,7 @@ c-----------------------------------------------------------------------
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') then
            wdsizi = 8
-           param(32) = 1
+           !param(32) = 1
          endif
 
          call byte_read(test,1,ierr)
