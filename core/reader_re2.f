@@ -27,7 +27,7 @@ c-----------------------------------------------------------------------
 
       ! number of fields to read
       if (param(32).gt.0) then
-        if (ifheat) then
+        if (nelgt.gt.nelgv) then
          nfldt = ibc + int(param(32))
 		else 
          nfldt = ibc + int(param(32)) - 1 
