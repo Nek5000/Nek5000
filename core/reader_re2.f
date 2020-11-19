@@ -26,8 +26,14 @@ c-----------------------------------------------------------------------
       if (param(33).gt.0) ibc = int(param(33))
 
       ! number of fields to read
-      if (param(32).gt.0) nfldt = ibc + int(param(32)) - 1
-
+      if (param(32).gt.0) then
+        if (ifheat) then
+         nfldt = ibc + int(param(32))
+		else 
+         nfldt = ibc + int(param(32)) - 1 
+        endif
+      endif
+	  
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
@@ -814,7 +820,7 @@ c-----------------------------------------------------------------------
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') then
            wdsizi = 8
-           !param(32) = 1
+           param(32)=1
          endif
 
          call byte_read(test,1,ierr)
