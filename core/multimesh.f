@@ -900,7 +900,7 @@ c
         if (ictr.eq.1) then
           intype = -1
           call sethlm   (h1,h2,intype)
-          call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+          call ophinv_nopr (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
           call ssnormd  (vxc,vyc,vzc)
         else
           intype = -1
@@ -919,7 +919,7 @@ c
           call sub2(rw1,resbc(1,1),ntot1)
           call sub2(rw2,resbc(1,2),ntot1)
           if (ldim.eq.3) call sub2(rw3,resbc(1,3),ntot1)
-          call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
+          call ophinv_nopr (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxh)
           call opadd2(vxc,vyc,vzc,vxcbc,vycbc,vzcbc)
           call ssnormd  (vxc,vyc,vzc)
         endif
@@ -1099,7 +1099,7 @@ ccccc
         call sub2(resv1,resbc(1,1),n)
         call sub2(resv2,resbc(1,2),n)
         if (ldim.eq.3) call sub2(resv3,resbc(1,3),n)
-        call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
+        call ophinv_nopr(vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxh)
         call opadd2(vxc,vyc,vzc,vxcbc,vycbc,vzcbc)
 
         call sub3(dvxc,vxcp,vxc,n)

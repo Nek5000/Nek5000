@@ -1548,7 +1548,7 @@ C
 c
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
+      call ophinv_nopr (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 C
       return
       end
@@ -1601,7 +1601,7 @@ c
       endif
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxv)
+      call ophinv_nopr (vxc,vyc,vzc,rw1,rw2,rw3,h1,h2,tolhv,nmxv)
       call ssnormd  (vxc,vyc,vzc)
 c
 c     Compute pressure  (from "incompr")
@@ -1689,7 +1689,7 @@ C     Compute velocity
 
       intype = -1
       call sethlm   (h1,h2,intype)
-      call ophinv   (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
+      call ophinv_nopr (vxc,vyc,vzc,resv1,resv2,resv3,h1,h2,tolhv,nmxv)
 
       if (ifexplvis) call redo_split_vis ! restore vdiff
 
