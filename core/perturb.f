@@ -1368,7 +1368,6 @@ c-----------------------------------------------------------------------
 c     Add diagonal terms to the matrix for adjoint O/o and ON/on
 c     boundary conditions.
       subroutine bc_out_adj(h2)
-      implicit none
 
       include 'SIZE'
       include 'INPUT'
