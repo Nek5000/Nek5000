@@ -1,45 +1,63 @@
 #!/bin/bash
 set -e
 
-VER="c-4.7.2"
+if [ "$1" == "clean" ]; then
+  rm -rf netcdf seacas-exodus 2>/dev/null
+  exit 0
+fi
+
+VER="c-4.7.4"
+CHKSUM=dce4851dd65bf8ec985f11711bb5a8aa299515b9
 
 # NETCDF
-if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then 
+if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then
   if [ ! -f netcdf-$VER.tar.gz ]; then
-    wget -O netcdf-$VER.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz
+    wget --no-check-certificate -O netcdf-$VER.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz
+    SUM=`openssl dgst -sha1 netcdf-$VER.tar.gz | sed 's/^.* //'`
+    if [ $SUM != $CHKSUM ] ; then
+      echo 'Invalid checksum!'
+      rm -rf netcdf-$VER.tar.gz
+      exit 1
+    fi
   fi
-  tar -zxvf netcdf-$VER.tar.gz
-  mv netcdf-$VER netcdf || true
+  mkdir -p netcdf
+  tar -zxvf netcdf-$VER.tar.gz -C netcdf --strip-components 1
   cd netcdf
   mkdir install || true
   export NETCDFPATH=`pwd`/install
   ./configure --prefix=$NETCDFPATH --disable-netcdf-4 --disable-fsync --disable-dap
-  make -j4 
+  make -j4
   make install
   cd ..
 fi
+
+VER="2020-08-13"
+CHKSUM=02b4a96da036ce4b04628285cbf0181fbe9d624f
 
 # EXODUS
 export NETCDFPATH=`pwd`/netcdf/install
 if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] ||
    [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exoIIv2for32/libexoIIv2for32.a ]; then
 
-   if [ -f exodus.tgz ]; then
-     mkdir seacas-exodus || true 
-     tar -zxvf exodus.tgz -C seacas-exodus 
-   else
-     if [ ! -f seacas-exodus ]; then
-        git clone --depth 1 -b master https://github.com/gsjaardema/seacas.git seacas-exodus
-     fi 
-   fi
+  if [ ! -f exodus-v$VER.tar.gz ]; then
+    wget --no-check-certificate -O exodus-v$VER.tar.gz https://github.com/gsjaardema/seacas/archive/v$VER.tar.gz
+    SUM=`openssl dgst -sha1 exodus-v$VER.tar.gz | sed 's/^.* //'`
+    if [ $SUM != $CHKSUM ] ; then
+      echo 'Invalid checksum!'
+      rm -rf exodus-v$VER.tar.gz
+      exit 1
+    fi
+  fi
 
-  cd seacas-exodus 
+  mkdir -p seacas-exodus
+  tar -zxvf exodus-v$VER.tar.gz -C seacas-exodus --strip-components 1
+  cd seacas-exodus
   sed -e "s:^NETCDF_PATH=.*:NETCDF_PATH=${NETCDFPATH} \\\:" \
       -e "s:CC=.*: CC=${CC}:" \
       -e "s:FC=.*: FC=${FC}:" cmake-exodus > cmake-exo
   chmod 755 cmake-exo
-  rm -rf build  
-  mkdir build; cd ./build
+  rm -rf build
+  mkdir -p build; cd ./build
   TRAVIS=FALSE ../cmake-exo
   make -j4
   make install
