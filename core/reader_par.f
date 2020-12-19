@@ -1164,9 +1164,6 @@ c
         call exitt
       endif
 
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
-
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then
          if(nid.eq.0) write(6,*)

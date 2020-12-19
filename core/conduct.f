@@ -291,6 +291,50 @@ C-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine makebdq_solid
+C-----------------------------------------------------------------------
+C
+C     Add contributions to F from lagged BD terms.
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrns/ tb(lt),h2(lt)
+
+      nel   = nelfld(ifield)
+      n     = lx1*ly1*lz1*nelv
+      ndif=lx1*ly1*lz1*(nel-nelv)
+
+      if(ndif.eq.0) return
+
+      const = 1./dt
+      do i=1,ndif
+         h2(n+i)=const*vtrans(n+i,1,1,1,ifield)
+         tb(n+i)=bd(2)*bm1(n+i,1,1,1)*t(n+i,1,1,1,ifield-1)
+      enddo
+
+      do ilag=2,nbd
+         if (ifgeom) then
+            do i=1,ndif
+               ta=bm1lag(n+i,1,1,1,ilag-1)
+     $             *tlag(n+i,1,1,1,ilag-1,ifield-1)
+               tb(n+i)=tb(n+i)+ta*bd(ilag+1)
+            enddo
+         else
+            do i=1,ndif
+               ta=bm1(n+i,1,1,1)*tlag(n+i,1,1,1,ilag-1,ifield-1)
+               tb(n+i)=tb(n+i)+ta*bd(ilag+1)
+            enddo
+         endif
+      enddo
+
+      call addcol3 (bq(n+1,1,1,1,ifield-1),tb(n+1),h2(n+1),ndif)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine lagscal   !  Keep old passive scalar field(s) 
 
       include 'SIZE'
