@@ -1461,8 +1461,11 @@ class chan2d(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        xerr = self.get_value_from_log('X err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=1.0005e-08, delta=1E-09, label='X err')
+        xerr = self.get_value_from_log('Linf VX VY', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=5.9601E-08, delta=1E-08, label='Linf VX VY')
+
+        yerr = self.get_value_from_log('Linf VX VY', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=2.5464E-06, delta=1E-06, label='Linf VX VY')
 
         self.assertDelayedFailures()
 
