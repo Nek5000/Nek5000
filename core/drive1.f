@@ -41,7 +41,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /c_is1/ glo_num(lx1 * ly1 * lz1, lelt)
       common /ivrtx/ vertex((2 ** ldim) * lelt)
       integer*8 glo_num, ngv
-      integer vertex
+      integer*8 vertex
 
       ! set word size for REAL
       wdsize = sizeof(rtest)

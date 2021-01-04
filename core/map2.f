@@ -135,7 +135,7 @@ c
       integer wk
 
       common /ivrtx/ vertex ((2**ldim),lelt)
-      integer vertex
+      integer*8 vertex
 
       integer icalld
       save    icalld
@@ -155,7 +155,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      integer vertex(nlv,1)
+      integer*8 vertex(nlv,1)
       integer wk(mdw*ndw)
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
@@ -229,7 +229,7 @@ c fluid elements
       enddo
       call isort(lglel,iwork,nelv)
       do i = 1,nelv
-         call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
+         call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
 
       cnt=0
@@ -273,7 +273,7 @@ c solid elements
          enddo
          call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
          do i = 1,nel
-            call icopy84(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
+            call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
          enddo
       endif
 
@@ -672,7 +672,7 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
 
-      integer vertex(nlv,1)
+      integer*8 vertex(nlv,1)
       integer wk(mdw,ndw)
 
       logical ifbswap,if_byte_swap_test
@@ -838,7 +838,7 @@ c     NOW: crystal route vertex by processor id
          iflag=1
       else
          do e=1,nelt
-            call icopy(vertex(1,e),wk(2,e),nlv)
+            call icopy48(vertex(1,e),wk(2,e),nlv)
          enddo
       endif
 

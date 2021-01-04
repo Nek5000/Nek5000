@@ -592,7 +592,7 @@ c-----------------------------------------------------------------------
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /ctmp1/ qs(lx1*ly1*lz1*lelt)
-      integer vertex
+      integer*8 vertex
 
       logical ifany
       save    ifany
