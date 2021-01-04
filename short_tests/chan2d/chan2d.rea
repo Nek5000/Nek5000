@@ -114,7 +114,7 @@
   T     IFFLOW
   F     IFHEAT
   T     IFTRAN
-  T T F F F F F F F F F IFNAV & IFADVC (convection in P.S. fields)
+  F F F F F F F F F F F IFNAV & IFADVC (convection in P.S. fields)
   F F F F F T T T T T T T IFTMSH (IF mesh for this field is T mesh)
   F     IFAXIS
   T     IFSTRS
