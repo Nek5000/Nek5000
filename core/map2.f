@@ -129,80 +129,95 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(mdw=2+2**ldim)
-      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
-      common /scrns/ wk(mdw,ndw)
-      integer wk
-
-      common /ivrtx/ vertex ((2**ldim),lelt)
-      integer*8 vertex
-
       integer icalld
       save    icalld
       data    icalld  /0/
 
       if(icalld.gt.0) return
-      icalld = 1
 
       nv = 2**ldim
-      call get_vert_map(vertex,nv,wk,mdw,ndw)
+      call get_vert_map(nv)
+
+      icalld = 1
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw)
+      subroutine get_vert_map(nlv)
 
       include 'SIZE'
       include 'TOTAL'
 
-      integer*8 vertex(nlv,1)
-      integer wk(mdw*ndw)
+      parameter(mdw=2+2**ldim)
+      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      common /scrns/ wk(mdw*ndw)
+      integer*8 wk
+
+      integer     wk4(2*mdw*ndw)
+      equivalence (wk4,wk)
+
+      common /ivrtx/ vertex ((2**ldim),lelt)
+      integer*8 vertex
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       integer ibuf(2)
-      integer hrsb
 
       integer*8 eid8(lelt), vtx8(lelt*2**ldim)
-      integer iwork(lelt)
-      common /SCRCG/ xyz(ldim*lelt*2**ldim)
+      integer   iwork(lelt)
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer tt,cnt,nrank,ierr
+      common /scrcg/ xyz(ldim*lelt*2**ldim)
 
+      integer cnt
       integer opt_parrsb(3), opt_parmetis(10)
-      logical ifbswap
 
-      integer start
+      logical ifbswap, ifread_con
 
 #if !defined(PARRSB) && !defined(PARMETIS)
 #if defined(DPROCMAP)
       call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
 #else
-      call read_map(vertex,nlv,wk,mdw,ndw)
+      call read_map(vertex,nlv,wk4,mdw,ndw)
       return
 #endif      
 #endif
 
 #if defined(PARRSB) || defined(PARMETIS)
       neli = nelt
-      call get_con(wk,size(wk),neli,nlv)
+      ifread_con = .true.
+      call read_con(wk4,size(wk),neli,nlv,ierr)
+
+      if (ierr.ne.0) then
+        ifread_con = .false.
+        call find_con(wk,nwk,0.2,ierr)
+        if(ierr.ne.0) call find_con(wk,nwk,0.01,ierr)
+        call err_chk(ierr,' findConnectivity failed!$')
+      endif
 
 c fluid elements
       j  = 0
       ii = 0
       cnt= 0
       do i = 1,neli
-         if (wk(ii+1) .le. nelgv) then
-            j = j + 1
-            eid8(j) = wk(ii+1)
-            call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+         itmp = wk(ii+1)
+         if (ifread_con) itmp = wk4(ii+1)
 
-            do tt=1,nlv
-              xyz(cnt+1)=xc(tt,i)
-              xyz(cnt+2)=yc(tt,i)
+         if (itmp .le. nelgv) then
+            j = j + 1
+
+            eid8(j) = wk(ii+1)
+            call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            if (ifread_con) then
+              eid8(j) = wk4(ii+1)
+              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+            endif
+
+            do iv=1,nlv
+              xyz(cnt+1)=xc(iv,i)
+              xyz(cnt+2)=yc(iv,i)
               if(ldim.eq.3) then
-                xyz(cnt+3)=zc(tt,i)
+                xyz(cnt+3)=zc(iv,i)
                 cnt=cnt+3
               else
                 cnt=cnt+2
@@ -238,16 +253,24 @@ c solid elements
          j  = 0
          ii = 0
          do i = 1,neli
-            if (wk(ii+1) .gt. nelgv) then
-               j = j + 1
-               eid8(j) = wk(ii+1)
-               call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            itmp = wk(ii+1)
+            if (ifread_con) itmp = wk4(ii+1)
 
-               do tt=1,nlv
-                 xyz(cnt+1)=xc(tt,i)
-                 xyz(cnt+2)=yc(tt,i)
+            if (itmp .gt. nelgv) then
+               j = j + 1
+
+               eid8(j) = wk(ii+1)
+               call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+               if (ifread_con) then
+                 eid8(j) = wk4(ii+1)
+                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+               endif
+
+               do iv=1,nlv
+                 xyz(cnt+1)=xc(iv,i)
+                 xyz(cnt+2)=yc(iv,i)
                  if(ldim.eq.3) then
-                   xyz(cnt+3)=zc(tt,i)
+                   xyz(cnt+3)=zc(iv,i)
                    cnt=cnt+3
                  else
                    cnt=cnt+2
@@ -307,14 +330,15 @@ c solid elements
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_con(wk,nwk,nelr,nv)
+      subroutine read_con(wk,nwk,nelr,nv,ierr)
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
 
-      integer nwk,nelr,nv
+      integer nwk,nelr,nv,ierr
       integer wk(nwk)
+     
 
       logical ifbswap,if_byte_swap_test
       logical ifco2, ifcon
@@ -327,7 +351,7 @@ c-----------------------------------------------------------------------
       character*5   version
       real*4        test
 
-      integer ierr,nvi
+      integer nvi
       integer*8 nelgti,nelgvi
       integer*8 offs, offs0
 
@@ -355,12 +379,12 @@ c-----------------------------------------------------------------------
       endif
 
       call bcast(ierr,sizeof(ierr))
-      if(ierr.ne.0) goto 50
+      if(ierr.ne.0) return
 
       call bcast(confle,sizeof(confle))
       if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
-c      call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
+
       ierr = 0
 
       ! read header
@@ -413,12 +437,6 @@ c    1       format(a5,2i12,i2)
 
       return
 
-  50  continue
-
-#if defined(PARRSB)      
-      call find_con(wk,nwk,ierr)
-      return
-#endif
 
  100  continue
       call err_chk(ierr,'Error opening/reading con file$')
@@ -427,24 +445,22 @@ c    1       format(a5,2i12,i2)
       end
 c-----------------------------------------------------------------------
 #if defined(PARRSB)      
-      subroutine find_con(wk,nwk,ierr)
+      subroutine find_con(wk,nwk,tol,ierr)
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
 
       integer nwk,ierr
-      integer wk(nwk)
+      integer*8 wk(nwk)
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-      common /SCRCG/ xyz(ldim*(2**ldim)*lelt)
+      common /scrcg/ xyz(ldim*(2**ldim)*lelt)
 
       integer*8 eid8(4*lelt),vtx8(lelt*(2**ldim+1))
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer npf,nv,nf,i,j,k,l,verbose
-      integer*8 start
-      real*8 tol
+      ierr = 0
 
       nv=2**ndim
       nf=2*ndim
@@ -469,14 +485,14 @@ c-----------------------------------------------------------------------
         enddo
       endif
 
-      start=igl_running_sum(nelt)-nelt
+      istart=igl_running_sum(nelt)-nelt
 
       !calculate number of periodic pairs
       npf=0
       do i=1,nelt
         do j=1,nf
           if(cbc(j,i,1).eq.'P  ') then
-            eid8(4*npf+1)=i+start
+            eid8(4*npf+1)=i+istart
             eid8(4*npf+2)=j
             eid8(4*npf+3)=bc(1,j,i,1)
             eid8(4*npf+4)=bc(2,j,i,1)
@@ -485,17 +501,13 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      ierr = 0
-      toli = 5e-3
-      verbose = 1
       call fparrsb_findConnectivity(vtx8,xyz,nelt,ndim,
-     $  eid8,npf,tol,nekcomm,verbose,ierr)
-      call err_chk(ierr,' findConnectivity failed!$')
+     $  eid8,npf,tol,nekcomm,1,ierr)
 
       k=1
       l=1
       do i=1,nelt
-        wk(k)=start+i
+        wk(k)=istart+i
         k=k+1
         do j=1,nv 
           wk(k)=vtx8(l)
