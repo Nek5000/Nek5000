@@ -554,8 +554,9 @@ c
       common /c_is1/ glo_num(lxs*lys*lzs*lelv)  
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
+      integer*8 vertex
       common /handle/ gsh_dd
-      integer vertex,gsh_dd
+      integer gsh_dd
 
       mz = ldim-2
       nx = lx1+2
@@ -1291,7 +1292,8 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
       include 'NONCON'
-      integer   gs_h,vertex(1),e
+      integer   gs_h,e
+      integer*8 vertex(1)
       integer*8 ngv,glo_num(nx,ny,nz,nel)
       
 

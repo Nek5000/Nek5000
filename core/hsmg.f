@@ -129,7 +129,7 @@ c----------------------------------------------------------------------
       common /ivrtx/ vertex ((2**ldim)*lelt)
 
       integer*8 glo_num
-      integer vertex
+      integer*8 vertex
       integer nx,ny,nz
       integer l
       
@@ -2368,7 +2368,7 @@ c----------------------------------------------------------------------
       common /ivrtx/ vertex ((2**ldim)*lelt)
 
       integer*8 glo_num
-      integer vertex
+      integer*8 vertex
       integer nx,ny,nz
       integer l
       

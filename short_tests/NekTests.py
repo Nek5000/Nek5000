@@ -1012,7 +1012,7 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(tmax, target_val=13.109, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=6.63565e-06, delta=5E-07, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=6.63565e-06, delta=1E-06, label='terr')
 
         self.assertDelayedFailures()
 
@@ -1033,7 +1033,7 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(tmax, target_val=13.1208, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=8.53943e-06, delta=5E-07, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=8.53943e-06, delta=1E-06, label='terr')
 
         self.assertDelayedFailures()
 
@@ -1462,10 +1462,10 @@ class chan2d(NekTestCase):
         self.run_nek(step_limit=None)
 
         xerr = self.get_value_from_log('Linf VX VY', column=-5, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=5.9601E-08, delta=1E-08, label='Linf VX VY')
+        self.assertAlmostEqualDelayed(xerr, target_val=1.8997e-08, delta=1E-08, label='Linf VX VY')
 
         yerr = self.get_value_from_log('Linf VX VY', column=-4, row=-1)
-        self.assertAlmostEqualDelayed(yerr, target_val=2.5464E-06, delta=1E-06, label='Linf VX VY')
+        self.assertAlmostEqualDelayed(yerr, target_val=2.122e-07, delta=1E-06, label='Linf VX VY')
 
         self.assertDelayedFailures()
 

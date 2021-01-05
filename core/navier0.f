@@ -52,7 +52,7 @@ c
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /scruz/ xbar(ldim,lelt),ibar(lelt)
-      integer vertex
+      integer*8 vertex
       integer imap(nelgt)
 
       integer e,eg

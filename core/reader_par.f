@@ -829,10 +829,10 @@ c set partitioner options
       call capit(c_out,132)
       if(index(c_out,'RSB').eq.1) then
          meshPartitioner=1
-      else if(index(c_out,'RCB').eq.1) then
-         meshPartitioner=2
       else if (index(c_out,'RCBRSB').eq.1) then
          meshPartitioner=3
+      else if(index(c_out,'RCB').eq.1) then
+         meshPartitioner=2
       else if (index(c_out,'METIS').eq.1) then
          meshPartitioner=4
       endif
