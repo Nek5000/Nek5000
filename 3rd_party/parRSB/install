@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VER=0.5
+VER=0.6
 
 if [ "$1" == "clean" ]; then
   rm -rf parRSB/build lib include 2>/dev/null
