@@ -251,9 +251,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_free(&comm);
 }
 
-int redistributeData(int *nel_,long long *vl,long long *el,
-  int *part,int *seq,int nv,int lelt,struct comm *comm)
-{
+int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *seq, int nv, int lelt,
+                     struct comm *comm) {
   int nel=*nel_;
 
   struct crystal cr;
@@ -312,9 +311,8 @@ int redistributeData(int *nel_,long long *vl,long long *el,
 }
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, double *xyz,
-               const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fmode,int *rtval)
+void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
+               int *fcomm, int *fmode, int *rtval)
 {
   struct comm comm;
 
@@ -335,46 +333,39 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
-  part = (int*) malloc(*lelt * sizeof(int));
-  seq  = (int*) malloc(*lelt * sizeof(int));
+  part = (int *)malloc(*lelt * sizeof(int));
+  seq  = (int *)malloc(*lelt * sizeof(int));
 
   ierr = 1;
 #if defined(PARRSB)
-  int rsb,rcb;
-  rsb=mode&1;
-  rcb=mode&2;
+  parRSB_options options = parrsb_default_options;
+  if (mode & 1)
+    options.global_partitioner = 0;
+  else if (mode & 2)
+    options.global_partitioner = 1;
+  options.print_timing_info = 1;
 
-  opt[0] = 1;
-  opt[1] = 1; /* verbosity */
-  opt[2] = 0;
+  ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
+  if (ierr != 0)
+    goto err;
 
-  if(rcb){
-    ierr = parRCB_partMesh(part,seq,xyz,nel,nv,opt,comm.c);
-    if (ierr != 0) goto err;
-
-    ierr=redistributeData(&nel,vl,el,part,seq,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
-  }
-
-  if(rsb){
-    ierr = parRSB_partMesh(part,vl,xyz,nel,nv,opt,comm.c);
-    if (ierr != 0) goto err;
-
-    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
-  }
+  ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
+  if (ierr != 0)
+    goto err;
 #elif defined(PARMETIS)
-  int metis; metis=mode&4;
+  int metis;
+  metis = mode & 4;
 
-  if(metis){
+  if (metis) {
     opt[0] = 1;
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
 
     ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
 
-    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
+    ierr = redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
+    if (ierr != 0)
+      goto err;
 
     /* printPartStat(vl, nel, nv, cext); */
   }
