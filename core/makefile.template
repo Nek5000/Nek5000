@@ -1,11 +1,11 @@
+OBJDIR=obj
 BINNAME=nek5000
-LIBNAME=libnek5000.a
+LIBNAME=$(OBJDIR)/libnek5000.a
 CASENAME=
 CASEDIR=
 S=
 SCMT=
 OPT_INCDIR=./
-OBJDIR=obj
 
 FC=
 CC=
@@ -103,6 +103,7 @@ endif
 OPT_INCDIR += -I $S/experimental
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
+USROBJ = $(OBJDIR)/${CASENAME}.o
 
 L0 = $(G) -O0
 L2 = $(G) -O2
@@ -119,17 +120,17 @@ cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 ################################################################################
 .PHONY: all clean
 
-all : nek5000
+all : nek5000 $(OBJDIR) 
 
-objdir: 
+$(OBJDIR): 
 	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
 
-usrfile:
+$(USROBJ): ${CASENAME}.usr
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
-	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f
+	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f -o $(USROBJ)
 
-nek5000: lib usrfile
-	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.o ${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
+nek5000: ${LIBNAME} $(USROBJ) 
+	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(USROBJ) ${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
         echo "$(NEK_WARN)"; \
@@ -142,9 +143,9 @@ nek5000: lib usrfile
 	echo -e "ERROR: Cannot find ${BINNAME}!"; \
 	echo -e ""; \
 	fi
-	@rm -f ${CASENAME}.o ${LIBNAME} drive.o *.i
+	@rm -f $(CASEDIR)/${CASENAME}.f drive.o *.i
 
-lib:	objdir $(NOBJS)
+${LIBNAME}: $(NOBJS)
 	@printf "building ${LIBNAME} ... "
 	@$(AR) cru ./${LIBNAME} $(NOBJS)
 	@ranlib ${LIBNAME}
