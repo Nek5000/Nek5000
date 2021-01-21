@@ -1,1 +1,0 @@
-CPPFLAGS= CC=/soft/apps/packages/gcc/gcc-8.2.0/bin/gcc CFLAGS=-mcmodel=medium LDFLAGS= LIBS=
