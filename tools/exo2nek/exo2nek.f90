@@ -83,7 +83,7 @@
 
       f_elem_exo(iexo) = eacc - eacc_old
 
-      call offset_sideset(iexo)
+      if(fnexo.gt.1) call offset_sideset(iexo)
 
       call checkXYZ_min_max()
       write(6,*) 'total element now is ',eacc
