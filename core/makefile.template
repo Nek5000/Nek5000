@@ -124,7 +124,7 @@ all : nek5000
 
 usr: $(USRF)
 
-$(USRF): ${CASENAME}.usr
+$(USRF): ./SIZE ${CASENAME}.usr
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
 	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f -o $(USRF)
 
