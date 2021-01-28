@@ -7,6 +7,7 @@ S=
 SCMT=
 OPT_INCDIR=./
 
+LD=
 FC=
 CC=
 FFLAGS+=
@@ -129,7 +130,8 @@ $(USRF): ./SIZE ${CASENAME}.usr
 	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f -o $(USRF)
 
 nek5000: ${LIB} $(USRF) 
-	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(USRF) ${LIB} $(USR_LFLAGS) $(LDFLAGS)
+	$(FC) -c $(FL2) $S/drive.f
+	$(LD) $(FL2) -o ${BINNAME} drive.o $(USRF) ${LIB} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
         echo "$(NEK_WARN)"; \
