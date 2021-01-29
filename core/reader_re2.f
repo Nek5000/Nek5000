@@ -28,7 +28,7 @@ c-----------------------------------------------------------------------
       ! number of fields to read
       if (param(32).gt.0) then
         nfldt = ibc + int(param(32)) - 1
-        nfldt = min(nfldt,1) 
+        nfldt = max(nfldt,1) 
         if (nelgt.gt.nelgv) nfldt = max(nfldt,2) 
       endif
 
