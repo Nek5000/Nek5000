@@ -6,23 +6,23 @@
 ! 4, setting periodicity
 ! 5, tet-to-hex, wedge-to-hex conversion
 !---------------------------------------------------------------------------------
+! Feb 2021,
+! 1. improved for super large mesh > 100 million elements
+! 2. offset side-set to start from 1 consecutively.
+!
+
       program exo2nek
 
       use SIZE
 
       integer option
-      character ifmore,if_stitch_interface
-      logical ifmorefluid
       integer iexo1
-      !logical ifmoresolid
 
-      write(6,*) 'Special exo2nek version to merge multiple fluid/solid exo files'
-      write(6,*) 'notes: for 3D mesh only'
-      write(6,*) 'notes: interface surface mesh should be conformal and match spatially'
+      write(6,*) 'exo2nek version to merge multiple fluid/solid exo files'
+      write(6,*) 'notes: 3D mesh only'
+      write(6,*) 'notes: interface surface mesh should be conformal'
 
       write(6,*) 'please input estimate final total hex element number:'
-      write(6,*) 'if this number is smaller than actual converted total hex element number,'
-      write(6,*) 'you will encounter invalid memory error '
 
       read (5,*) etot_est
 
@@ -31,6 +31,10 @@
       allocate ( xm1                (3,3,3,etot_est)      )
       allocate ( ym1                (3,3,3,etot_est)      )
       allocate ( zm1                (3,3,3,etot_est)      )
+
+      call rzero(xm1,3*3*3*etot_est)
+      call rzero(ym1,3*3*3*etot_est)
+      call rzero(zm1,3*3*3*etot_est)
 
       allocate   (ccurve (4+8*(num_dim-2),etot_est) )
       allocate   (curve  (2*num_dim,12,   etot_est) )
@@ -83,7 +87,7 @@
 
       f_elem_exo(iexo) = eacc - eacc_old
 
-      call offset_sideset(iexo)
+      call offset_sideset()
 
       call checkXYZ_min_max()
       write(6,*) 'total element now is ',eacc
@@ -134,7 +138,7 @@
 
       s_elem_exo(iexo) = eacc - eacc_old
       iexo1 = iexo + fnexo
-      call offset_sideset(iexo1)
+      call offset_sideset()
 
       call checkXYZ_min_max()
       write(6,*) 'total element now is ',eacc
@@ -157,9 +161,9 @@
       call gather_bc_info
       call setbc_new
       
-      call scale_mesh
+      !call scale_mesh
 
-      write(6,*) 'please input output re2 file name:'
+      write(6,*) 'please give re2 file name:'
       call read_re2_name
 
       call gen_re2
@@ -169,6 +173,8 @@
       subroutine checkXYZ_min_max
 ! return element bound for exo file iexo
       use SIZE
+      real*8 xx,yy,zz
+      integer ie,i
 
       maxxyz(1) = -1e6
       maxxyz(2) = -1e6
@@ -178,12 +184,12 @@
       minxyz(2) = 1e6 
       minxyz(3) = 1e6 
 
-      ntot = eacc*3*3*3
-
-      do i = 1,ntot
-        xx = xm1(i,1,1,1)        
-        yy = ym1(i,1,1,1)
-        zz = zm1(i,1,1,1)
+      do ie = 1,eacc
+        do i = 1,27
+       
+        xx = xm1(i,1,1,ie)        
+        yy = ym1(i,1,1,ie)
+        zz = zm1(i,1,1,ie)
 
         if(xx.gt.maxxyz(1)) maxxyz(1)  = xx
         if(yy.gt.maxxyz(2)) maxxyz(2)  = yy
@@ -193,6 +199,7 @@
         if(yy.lt.minxyz(2)) minxyz(2)  = yy
         if(zz.lt.minxyz(3)) minxyz(3)  = zz
 
+        enddo
       enddo
 
       write(6,*) 'Domain max xyz:',maxxyz(1),maxxyz(2),maxxyz(3) 
@@ -529,6 +536,9 @@
       write(6,'(A)') 'Converting elements ... '
       do iel=1,num_elem
         eacc = eacc + 1
+
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
         do ivert =1,nvert
           if (num_dim.eq.2) then
             jvert = exo_to_nek_vert2D(ivert)
@@ -623,9 +633,9 @@
       integer exoss(6,num_elem) 
 
       integer tetss(4),wedgess(5),ehexss(6),hexss(6,8)
-      integer ehexnumber,tetnumber,wedgenumber,bctot
-      integer vert_index_exo
-      integer iel_nek,iel_exo,ifc_exo
+      integer*8 ehexnumber,tetnumber,wedgenumber,bctot
+      integer*8 vert_index_exo
+      integer*8 iel_nek,iel_exo,ifc_exo
 
       save ehexnumber,tetnumber,wedgenumber,bctot
       save vert_index_exo
@@ -633,7 +643,7 @@
 
       eacc_old = eacc
 
-      call rzero_int(exoss,6*max_num_elem)
+      call rzero_int(exoss,6*num_elem)
 ! store sideset information
       if (num_side_sets.ne.0) then
       write(6,'(a)') ''
@@ -711,6 +721,8 @@
        do ihex = 1, 4
           iel_nek = iel_nek + 1
           eacc = eacc + 1
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
           !write(6,*)  iel_nek
           do inekvert = 1,27
              xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)& 
@@ -773,6 +785,8 @@
        do ihex = 1,3
           iel_nek = iel_nek + 1
           eacc = eacc + 1
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
           do inekvert = 1,27
              xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
        + shiftvector(1)
@@ -840,15 +854,16 @@
       integer exoss(6,num_elem) 
 
       integer tetss(4),wedgess(5),ehexss(6),hexss(6,8)
-      integer ehexnumber,tetnumber,wedgenumber,bctot
-      integer vert_index_exo
-      integer iel_nek,iel_exo,ifc_exo
+      integer*8 ehexnumber,tetnumber,wedgenumber,bctot
+      integer*8 vert_index_exo
+      integer*8 iel_nek,iel_exo,ifc_exo
 
       save ehexnumber,tetnumber,wedgenumber,bctot
       save vert_index_exo
       save iel_nek,iel_exo,ifc_exo
       eacc_old = eacc
-      call rzero_int(exoss,6*max_num_elem)
+      
+      call rzero_int(exoss,6*num_elem)
 ! store sideset information
       if (num_side_sets.ne.0) then
       write(6,'(a)') ''
@@ -922,6 +937,9 @@
        do ihex = 1,4
           iel_nek = iel_nek + 1
            eacc = eacc + 1
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
+		   
           do inekvert = 1,27
              xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
        + shiftvector(1)
@@ -978,6 +996,8 @@
        do ihex = 1,8
           iel_nek = iel_nek + 1
           eacc = eacc + 1
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
           do inekvert = 1,27
              xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
        + shiftvector(1)
@@ -1040,6 +1060,8 @@
        do ihex = 1,6
           iel_nek = iel_nek + 1
           eacc = eacc + 1
+        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+
           do inekvert = 1,27
              xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
        + shiftvector(1)
@@ -1732,12 +1754,14 @@
       integer hex_face_node(4,6)
       data hex_face_node /1,3,21,19,3,9,27,21,7,9,27,25,1,7,25,19,1,7,9,3,19,21,27,25/
 
-      integer parray(2,2,num_elem)
+      !integer parray(2,2,num_elem)
       real parea(2,num_elem)
 
       integer fnode(4),ifnode,ptags(2),ipe,nipe(2),nperror
       real pvec(3),ptol,fpxyz(3,2)
       real dist,distMax
+
+      allocate ( parray (2,2,num_elem))	  
 
       ipe = 0
 
@@ -1888,9 +1912,7 @@
 	 
       integer hex_face_node(4,6)
       data hex_face_node /1,3,21,19,3,9,27,21,7,9,27,25,1,7,25,19,1,7,9,3,19,21,27,25/
-	 
-      integer parray(2,2,num_elem)
-
+      
       character*3 ubc
       integer tags(2),ibc,nbc,io
       integer ip,np,ipe,ipe2,nipe(2)
@@ -1900,7 +1922,7 @@
       real fpxyz(3,2)
       real AB_v(3),AD_v(3),farea,product_v(3)
       real dist,distMax,ptol
- 
+
 ! boundary condition summary
       write(6,*) '******************************************************'
       write(6,*) 'Boundary info summary'
@@ -1920,6 +1942,8 @@
       endif
 	  
       if(nbc.le.0) return
+	  
+      allocate ( parray (2,2,num_elem))
 
       do ibc = 1,nbc 
         write(6,*) 'input surface 1 and  surface 2  sideSet ID'
@@ -2074,6 +2098,8 @@
  
       enddo
 
+      deallocate(parray)
+	  
       write(6,*) '******************************************************'
       write(6,*) 'Please set boundary conditions to all non-periodic boundaries'
       write(6,*) 'in .usr file usrdat2() subroutine'
@@ -2410,19 +2436,79 @@
       return
       end
 !--------------------------------------------------------------------
-      subroutine offset_sideset(iexo1)
-! offset sideset number by iexo for element btween eacc and eacc_old
+      subroutine offset_sideset()
+! offset sideset number
+! so sideset number is starting from 1 consecutively.
+!
       use SIZE
-      integer iexo1
+	  
+      integer ibc,ibc2,nbc
+      logical newbc
+      integer*8 iel,jfc
+      integer bcID2
 
+      allocate (bcID (100)) ! assuming there is no more than 100 sidesets in total
+	  
+      ibc = 0
       do iel= eacc_old+1,eacc
        do jfc =1,6
-         if (bc(5,jfc,iel).gt.0) then
-           bc(5,jfc,iel) = bc(5,jfc,iel)  + iexo1*100
-         endif		 
+
+         if(ibc.eq.0) then
+         if (bc(5,jfc,iel).ne.0) then
+          ibc = ibc +1
+          bcID(ibc) = bc(5,jfc,iel)
+          nbc = ibc
+         endif
+         endif 
+		 
+         if(ibc.gt.0) then
+         if (bc(5,jfc,iel).ne.0) then
+          newbc = .TRUE.
+          do ibc2 =1,nbc
+           if (bc(5,jfc,iel).eq.bcID(ibc2)) then
+            newbc = .FALSE.
+           endif
+          enddo 
+
+          if(newbc) then		
+          ibc = ibc +1		  
+          bcID(ibc) = bc(5,jfc,iel)
+          nbc = ibc
+          endif
+
+         endif
+         endif 
+
        enddo
       enddo
-
+	  
+      ! sorting bcID array to ascend order 
+	  
+       do ibc2 =1,nbc-1
+        do ibc =1,nbc-1
+         if( bcID(ibc).gt.bcID(ibc+1)) then
+         bcID2 = bcID(ibc)
+         bcID(ibc) = bcID(ibc+1)
+         bcID(ibc+1) = bcID2
+         endif
+        enddo
+       enddo
+	  
+      ! reoder sideset number 
+	  
+      do ibc =1,nbc
+       write(6,*) 'offset sideset number: ',bcID(ibc),'->',ibc
+       do iel= eacc_old+1,eacc
+       do jfc =1,6
+         if (bc(5,jfc,iel).eq.bcID(ibc)) then  
+           bc(5,jfc,iel) = ibc
+         endif		 
+       enddo
+       enddo
+      enddo
+	  
+      deallocate ( bcID )
+	  
       return
       end
 !--------------------------------------------------------------------
@@ -2431,11 +2517,14 @@
 
       integer ibc,ibc2,nbc
       logical newbc
-	  
+      integer*8 iel,jfc
       integer bcID2
+      
       allocate (bcID (100)) ! assuming there is no more than 100 sidesets in total
 	  
       ibc = 0
+	  
+      write(6,*) 'calling: gather_bc_info()'
 	  
       ! gather all boundary information
 	  
@@ -2484,28 +2573,31 @@
        enddo
       bcNumber = nbc
 
+      write(6,*) 'done: gather_bc_info()'
+	  
       return
       end
 	  
 !--------------------------------------------------------------------
       subroutine scale_mesh
       use SIZE
-      real xx,yy,zz,ss
-      integer ntot
-
+      real*8 xx,yy,zz,ss
+      integer*8 ie
       write(6,*) "please input scaling factor (1 for no scale):"
       read(5,*) ss
 	  
-      ntot = num_elem*3*3*3
-
-      do i = 1,ntot
-        xx = xm1(i,1,1,1)        
-        yy = ym1(i,1,1,1)
-        zz = zm1(i,1,1,1)
+      if (ss.eq.1) return
+	  
+      do ie = 1,num_elem
+        do i = 1,27
+        xx = xm1(i,1,1,ie)        
+        yy = ym1(i,1,1,ie)
+        zz = zm1(i,1,1,ie)
   
-        xm1(i,1,1,1) = xx*ss
-        ym1(i,1,1,1) = yy*ss
-        zm1(i,1,1,1) = zz*ss
+        xm1(i,1,1,ie) = xx*ss
+        ym1(i,1,1,ie) = yy*ss
+        zm1(i,1,1,ie) = zz*ss
+        enddo
       enddo
 	  
       call checkXYZ_min_max()
@@ -2521,13 +2613,19 @@
 ! 1. check right-hand
 ! 2. fix if not
       use SIZE
+      integer*8 iel
       logical ifnonrighthand
 
+      write(6,*) 'performing non-right-hand check'
+	  
       do iel=1,num_elem
+         !write(6,*) 'performing non-right-hand check on element ',iel
          call check_if_non_right(ifnonrighthand,iel)
          if (ifnonrighthand) call fix_if_non_right(iel)		 
       enddo
 
+      write(6,*) 'done: non-right-hand check'
+	  
       return
       end
 !--------------------------------------------------------------------
@@ -2537,8 +2635,8 @@
       integer iel
       integer hex8_to_hex27_vertex(8)
       data hex8_to_hex27_vertex /1,3,7,9,19,21,25,27/ 
-      real hex8_vertex(3,8),vec12(3),vec14(3),vec15(3)
-      real vec1(3),AA,dot_prod
+      real*8 hex8_vertex(3,8),vec12(3),vec14(3),vec15(3)
+      real*8 vec1(3),AA,dot_prod
 
       do iver = 1,8
        hex8_vertex(1,iver) = xm1(hex8_to_hex27_vertex(iver),1,1,iel)
@@ -2668,7 +2766,7 @@
 !  Write the header
       call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, eftot
-    1 format('#v003',i9,i3,i9,' this is the hdr')
+    1 format('#v002',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 
@@ -2679,7 +2777,8 @@
 
       use SIZE
 
-      real     xx(8), yy(8), zz(8)
+      integer iel
+      real*8     xx(8), yy(8), zz(8)
       real*8   rgroup, buf2(30)
 
       integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
@@ -2740,7 +2839,7 @@
       subroutine write_curve
 
       use SIZE
-
+      integer*8 iel
       real*8     buf2(30)
       real*8     rcurve
 
@@ -2783,7 +2882,7 @@
       subroutine write_bc
       
       use SIZE
-
+      integer*8 iel
       real*8  rbc, buf2(30)
 
       character(3) ch3
@@ -2876,7 +2975,7 @@
       real         len
       real         x3(27),y3(27),z3(27),xyz(3,3)
       character(1) ccrve(12)
-      integer      e,edge
+      integer*8      e,edge
 
       integer e3(3,12)
       save    e3
@@ -3031,6 +3130,7 @@
       end
 !-----------------------------------------------------------------------
       SUBROUTINE BLANK(A,N)
+      INTEGER*8 N
       CHARACTER(1) A(1)
       CHARACTER(1) BLNK
       SAVE        BLNK
@@ -3050,7 +3150,7 @@
 !-----------------------------------------------------------------------
       subroutine copy(a,b,n)
       real a(1),b(1)
-
+      integer*8 n
       do i=1,n
          a(i)=b(i)
       enddo
@@ -3060,6 +3160,7 @@
 !-----------------------------------------------------------------------
       subroutine chcopy(a,b,n)
       CHARACTER(1) A(1), B(1)
+      integer*8 n
  
       DO 100 I = 1, N
  100     A(I) = B(I)
@@ -3068,7 +3169,7 @@
 !-----------------------------------------------------------------------
       subroutine icopy(a,b,n)
       INTEGER A(1), B(1)
- 
+      integer*8 n
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
@@ -3174,14 +3275,16 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine rzero(a,n)
+      subroutine rzero(A,N)
+      integer*8 N
       real A(1)
       DO 100 I = 1, N
  100     A(I ) = 0.0
       return
       END
 !-----------------------------------------------------------------------
-      subroutine rzero_int(a,n)
+      subroutine rzero_int(A,N)
+      integer*8 N
       integer A(1)
       DO 100 I = 1, N
  100     A(I) = 0
