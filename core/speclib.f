@@ -132,7 +132,7 @@ C
 C--------------------------------------------------------------------
       PARAMETER (NMAX=84)
       PARAMETER (lzd = NMAX)
-      REAL*8  ZD(lzd),WD(lzd),APHAD,BETAD
+      REAL*8  ZD(lzd),WD(lzd),ALPHAD,BETAD
       REAL Z(1),W(1),ALPHA,BETA
 C
       NPMAX = lzd
