@@ -1,26 +1,9 @@
-! Haomin Yuan, 6/15/2020
-! include all features:
-! 1, CHT mesh merge
-! 2, mutiple fluid and solid exo files merge
-! 3, auto correct non-right hand hex elements
-! 4, setting periodicity
-! 5, tet-to-hex, wedge-to-hex conversion
-!---------------------------------------------------------------------------------
-! Feb 2021,
-! 1. improved for super large mesh > 100 million elements
-! 2. offset side-set to start from 1 consecutively.
-!
-
       program exo2nek
 
       use SIZE
 
       integer option
       integer iexo1
-
-      write(6,*) 'exo2nek version to merge multiple fluid/solid exo files'
-      write(6,*) 'notes: 3D mesh only'
-      write(6,*) 'notes: interface surface mesh should be conformal'
 
       write(6,*) 'please input estimate final total hex element number:'
 
@@ -3276,7 +3259,7 @@
       end
 !-----------------------------------------------------------------------
       subroutine rzero(A,N)
-      integer*8 N
+      integer*8 N,I
       real A(1)
       DO 100 I = 1, N
  100     A(I ) = 0.0
@@ -3284,7 +3267,7 @@
       END
 !-----------------------------------------------------------------------
       subroutine rzero_int(A,N)
-      integer*8 N
+      integer*8 N,I
       integer A(1)
       DO 100 I = 1, N
  100     A(I) = 0
