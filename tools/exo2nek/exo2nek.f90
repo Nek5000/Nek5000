@@ -2565,7 +2565,7 @@
       subroutine scale_mesh
       use SIZE
       real*8 xx,yy,zz,ss
-      integer*8 ie
+      integer ie
       write(6,*) "please input scaling factor (1 for no scale):"
       read(5,*) ss
 	  
