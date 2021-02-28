@@ -31,7 +31,7 @@ c
       nc  = cs(0)            ! number of stored convecting fields
 
       ln  = lx1*ly1*lz1*lelt
-      n   = lx1*ly1*lz1*nelfld(ifield)
+      n   = lx1*ly1*lz1*nelc
       m   = lxd*lyd*lzd*nelc*ldim
 
 c      if(nid.eq.0) write(*,*) 'going into char_conv1 '

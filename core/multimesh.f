@@ -48,7 +48,6 @@ c-------------------------------------------------------------
       if (icalld.eq.0) then
          ! just in case we call setup from usrdat2 
          call fix_geom
-         call geom_reset(1)
 
          call set_intflag
          call neknekmv
