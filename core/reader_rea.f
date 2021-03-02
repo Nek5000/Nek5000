@@ -410,9 +410,6 @@ c      endif
       if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
 
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
-
       if (ifmhd .and. lbx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
      $   'ABORT: For MHD, need lbx1=lx1, etc.; Change SIZE '

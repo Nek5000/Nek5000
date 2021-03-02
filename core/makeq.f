@@ -65,6 +65,7 @@ C     !! NOTE: Do not change the content of the array BQ until the current
 
            if (ifchar.and.ifadvc(ifield)) then
               call convch
+              call makebdq_solid
            else
               call makebdq
            endif

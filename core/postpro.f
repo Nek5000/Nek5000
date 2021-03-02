@@ -1104,20 +1104,20 @@ c-----------------------------------------------------------------------
                      if(wdsiz2.eq.8) then
                         buf2(1)=eg
                         buf2(2)=i
-                        call copy    (buf2(3),vbc(1,i,eg),5)
+                        call copy    (buf2(3),vbc(1,i,kb),5)
                         call blank   (buf2(8),8)
                         call chcopy  (buf2(8),s3,3)
                        if(nlg.ge.1000000) then
-                            call icopy(i_vbc,vbc(1,i,eg),1)
+                            call icopy(i_vbc,vbc(1,i,kb),1)
                             buf2(3)=i_vbc
                         endif
                         iz=16
                      else
                         call icopy   (buf(1),eg,1)
                         call icopy   (buf(2),i,1)
-                        call copyX4  (buf(3),vbc(1,i,eg),5)
+                        call copyX4  (buf(3),vbc(1,i,kb),5)
                         call blank   (buf(8),4)
-                      if(nlg.ge.1000000)call icopy(buf(3),vbc(1,i,eg),1)
+                      if(nlg.ge.1000000)call icopy(buf(3),vbc(1,i,kb),1)
                         call chcopy  (buf(8),s3,3)
                         iz=8
                      endif

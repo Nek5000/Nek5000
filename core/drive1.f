@@ -41,7 +41,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       common /c_is1/ glo_num(lx1 * ly1 * lz1, lelt)
       common /ivrtx/ vertex((2 ** ldim) * lelt)
       integer*8 glo_num, ngv
-      integer vertex
+      integer*8 vertex
 
       ! set word size for REAL
       wdsize = sizeof(rtest)
@@ -96,7 +96,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
 
       call fix_geom
-      call geom_reset(1)    ! recompute Jacobians, etc.
 
       call vrdsmsh          ! verify mesh topology
       call mesh_metrics     ! print some metrics

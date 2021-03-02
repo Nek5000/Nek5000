@@ -25,7 +25,7 @@ C
          A(I)=BLNK
    10 CONTINUE
       RETURN
-      END
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE VSQ (A,N)
       DIMENSION  A(1)
@@ -35,7 +35,7 @@ C
       DO 100 I = 1, N
  100     A(I) = A(I)**2
       RETURN
-      END
+      end
 c-----------------------------------------------------------------------
       SUBROUTINE VSQRT(A,N)
       DIMENSION  A(1)
@@ -45,7 +45,7 @@ C
       DO 100 I = 1, N
  100     A(I) = SQRT(A(I))
       RETURN
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine invers2(a,b,n)
       REAL A(1),B(1)
@@ -56,7 +56,7 @@ C
          A(I)=1./B(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine invcol1(a,n)
       REAL A(1)
@@ -67,7 +67,7 @@ C
          A(I)=1./A(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine invcol2(a,b,n)
 C
@@ -92,7 +92,7 @@ C
 #endif
 
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine invcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
@@ -114,7 +114,7 @@ C
       tinv3=tinv3+(dnekclock()-etime1)
 #endif
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine col4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
@@ -125,7 +125,7 @@ C
          A(I)=B(I)*C(I)*D(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine Xaddcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
@@ -136,7 +136,7 @@ C
          A(I)=A(I)+B(I)*C(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine addcol4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
@@ -147,7 +147,7 @@ C
          A(I)=A(I)+B(I)*C(I)*D(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine ascol5 (a,b,c,d,e,n)
       REAL A(1),B(1),C(1),D(1),E(1)
@@ -158,7 +158,7 @@ C
          A(I) = B(I)*C(I)-D(I)*E(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine sub2(a,b,n)
       REAL A(1),B(1)
@@ -169,7 +169,7 @@ C
          A(I)=A(I)-B(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine sub3(a,b,c,n)
       REAL A(1),B(1),C(1)
@@ -180,7 +180,7 @@ C
          A(I)=B(I)-C(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine subcol3(a,b,c,n)
       REAL A(1),B(1),C(1)
@@ -191,7 +191,7 @@ C
          A(I)=A(I)-B(I)*C(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine subcol4(a,b,c,d,n)
       REAL A(1),B(1),C(1),D(1)
@@ -202,14 +202,14 @@ C
          A(I)=A(I)-B(I)*C(I)*D(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine rzero(a,n)
       DIMENSION  A(1)
       DO 100 I = 1, N
  100     A(I ) = 0.0
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine izero(a,n)
       INTEGER A(1)
@@ -217,28 +217,28 @@ C
       DO 100 I = 1, N
  100     A(I ) = 0
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine ione(a,n)
       INTEGER  A(1)
       DO 100 I = 1, N
  100     A(I ) = 1
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine rone(a,n)
       DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I ) = 1.0
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine ltrue(a,n)
       LOGICAL A(1)
       DO 100 I = 1, N
  100     A(I ) = .TRUE.
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine cfill(a,b,n)
       DIMENSION  A(1)
@@ -246,7 +246,7 @@ C
       DO 100 I = 1, N
  100     A(I) = B
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine ifill(ia,ib,n)
       DIMENSION IA(1)
@@ -254,7 +254,7 @@ C
       DO 100 I = 1, N
  100     IA(I) = IB
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine copy(a,b,n)
       real a(1),b(1)
@@ -283,7 +283,7 @@ C
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
-      END
+      end
 C
       subroutine icopy(a,b,n)
       INTEGER A(1), B(1)
@@ -291,7 +291,7 @@ C
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine i8copy(a,b,n)
       INTEGER*8 A(1), B(1)
@@ -299,7 +299,7 @@ C
       DO 100 I = 1, N
  100     A(I) = B(I)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine chsign(a,n)
       REAL A(1)
@@ -308,7 +308,7 @@ C
          A(I) = -A(I)
  100  CONTINUE
       return
-      END
+      end
 C
 c-----------------------------------------------------------------------
       subroutine cmult(a,const,n)
@@ -320,7 +320,7 @@ C
          A(I)=A(I)*CONST
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine cadd(a,const,n)
       REAL A(1)
@@ -331,7 +331,7 @@ C
          A(I)=A(I)+CONST
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine iadd(i1,iscal,n)
       DIMENSION I1(1)
@@ -340,7 +340,7 @@ C
          I1(I)=I1(I)+ISCAL
    10 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine cadd2(a,b,const,n)
       REAL A(1),B(1)
@@ -351,7 +351,7 @@ C
          A(I)=B(I)+CONST
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function vlmin(vec,n)
       REAL VEC(1)
@@ -362,7 +362,7 @@ C
  100  CONTINUE
       VLMIN = TMIN
       return
-      END
+      end
 c-----------------------------------------------------------------------
       integer function ivlmin(vec,n)
       integer vec(1),tmin
@@ -400,7 +400,7 @@ c-----------------------------------------------------------------------
       enddo
       VLMAX = TMAX
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function vlamax(vec,n)
       REAL VEC(1)
@@ -411,7 +411,7 @@ C
  100  CONTINUE
       VLAMAX = TAMAX
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function vlsum(vec,n)
       REAL VEC(1)
@@ -424,7 +424,7 @@ C
  100  CONTINUE
       VLSUM = SUM
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine vcross (u1,u2,u3,v1,v2,v3,w1,w2,w3,n)
 C
@@ -441,7 +441,7 @@ C
          U3(I) = V1(I)*W2(I) - V2(I)*W1(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine vdot2 (dot,u1,u2,v1,v2,n)
 C
@@ -456,7 +456,7 @@ C
          DOT(I) = U1(I)*V1(I) + U2(I)*V2(I) 
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine vdot3 (dot,u1,u2,u3,v1,v2,v3,n)
 C
@@ -471,7 +471,7 @@ C
          DOT(I) = U1(I)*V1(I) + U2(I)*V2(I) + U3(I)*V3(I)
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine addtnsr(s,h1,h2,h3,nx,ny,nz)
 C
@@ -489,7 +489,7 @@ C
   100    CONTINUE
   200 CONTINUE
       return
-      END
+      end
       function ltrunc(string,l)
       CHARACTER*1 STRING(L)
       CHARACTER*1   BLNK
@@ -497,13 +497,13 @@ C
 C
       DO 100 I=L,1,-1
          L1=I
-         IF (STRING(I).NE.BLNK) GOTO 200
+         IF (STRING(I).NE.BLNK) goto 200
   100 CONTINUE
       L1=0
   200 CONTINUE
       LTRUNC=L1
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function mod1(i,n)
 C
@@ -521,7 +521,7 @@ C
       II = I+N-1
       MOD1 = MOD(II,N)+1
       return
-      END
+      end
 c-----------------------------------------------------------------------
       integer function log2(k)
       RK=(K)
@@ -530,7 +530,7 @@ c-----------------------------------------------------------------------
       RLOG=RLOG/RLOG2+0.5
       LOG2=INT(RLOG)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine iflip(i1,n)
       DIMENSION I1(1)
@@ -543,7 +543,7 @@ c-----------------------------------------------------------------------
          I1(I)=ITMP
    10 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine iswap(b,ind,n,temp)
       INTEGER B(1),IND(1),TEMP(1)
@@ -558,7 +558,7 @@ C***
       DO 30 I=1,N
    30 B(I)=TEMP(I)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine col2(a,b,n)
       real a(1),b(1)
@@ -683,7 +683,7 @@ C
         A(I)=C1*A(I)+B(I)
   100 CONTINUE
       return
-      END
+      end
 C
 c-----------------------------------------------------------------------
       subroutine add2s2(a,b,c1,n)
@@ -709,7 +709,7 @@ C
 #endif
 
       return
-      END
+      end
 C
 c-----------------------------------------------------------------------
       subroutine add3s2(a,b,c,c1,c2,n)
@@ -721,7 +721,7 @@ C
         A(I)=C1*B(I)+C2*C(I)
   100 CONTINUE
       return
-      END
+      end
 C
 c-----------------------------------------------------------------------
       subroutine add4(a,b,c,d,n)
@@ -733,7 +733,7 @@ C
          A(I)=B(I)+C(I)+D(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function vlsc2(x,y,n)
       REAL X(1),Y(1)
@@ -788,7 +788,7 @@ C
       CALL GOP(TMP,WORK,'+  ',1)
       GLSC3 = TMP
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function glsc2(x,y,n)
 C
@@ -806,7 +806,7 @@ C
       CALL GOP(TMP,WORK,'+  ',1)
       GLSC2 = TMP
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function glsc23(x,y,z,n)
 c
@@ -868,7 +868,7 @@ c-----------------------------------------------------------------------
       CALL GOP(TMP,WORK,'+  ',1)
       GLSUM = TMP(1)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function glamax(a,n)
       REAL A(1)
@@ -881,7 +881,7 @@ c-----------------------------------------------------------------------
       CALL GOP(TMP,WORK,'M  ',1)
       GLAMAX=ABS(TMP(1))
       return
-      END
+      end
 c-----------------------------------------------------------------------
       real function glamin(a,n)
       real a(1)
@@ -967,7 +967,7 @@ C-----------------------------------------------------------------------
       CALL GOP(TMP,WORK,'M  ',1)
       GLMAX=TMP(1)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function glmin(a,n)
       REAL A(1)
@@ -980,7 +980,7 @@ c-----------------------------------------------------------------------
       CALL GOP(TMP,WORK,'m  ',1)
       GLMIN = TMP(1)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine gllog(la,lb)
 C
@@ -998,7 +998,7 @@ C
       CALL GOP(TMP,WORK,'*  ',1)
       IF (TMP(1).EQ.0.0) LA=LB
       return
-      END
+      end
 c-----------------------------------------------------------------------
       function fmdian(a,n,ifok)
 C     find the Median of the (global) set A
@@ -1039,7 +1039,7 @@ C
       II=ITRY+1
       IF (II.LE.100) GUES(II)=GUESS
 C     error check for infinite loop
-      IF (ITRY.GT.2*NTOT) GOTO 9000
+      IF (ITRY.GT.2*NTOT) goto 9000
       CALL RZERO(WORK1,5)
       NLT=0
       NGT=0
@@ -1095,7 +1095,7 @@ C           guess is too low
             EPS=AFAC*ABS(G2-GUESS)
 C           see that we move at least as far as the next closest value.
             GUESS=MAX(G2,CGT)
-            GOTO 10
+            goto 10
          ELSE IF (NLT.GT.NGT) THEN
 C           guess is too high
             GMAX=CLT
@@ -1104,7 +1104,7 @@ C           guess is too high
             EPS=AFAC*ABS(G2-GUESS)
 C           see that we move at least as far as the next closest value.
             GUESS=MIN(G2,CLT)
-            GOTO 10
+            goto 10
          ENDIF
       ELSE
 C
@@ -1150,7 +1150,7 @@ C           the median is (usually) one of the values
          ENDIF
 C
       ENDIF
-       IF (.NOT.IFOK) WRITE(6,*) NID,'FMDIAN2',FMDIAN,(A(I),I=1,N)
+      IF (.NOT.IFOK) WRITE(6,*) NID,'FMDIAN2',FMDIAN,(A(I),I=1,N)
       return
 C
 C     Error handling
@@ -1171,7 +1171,7 @@ C
    14   FORMAT(I4,' FMG:',5G14.6)
    15 CONTINUE
       call exitt
-      END
+      end
 
 C========================================================================
 C     Double precision matrix and vector routines
@@ -1185,7 +1185,7 @@ C
          A(I)=A(I)+CONST
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine dsub2(a,b,n)
       real*8 A(1), B(1)
@@ -1194,7 +1194,7 @@ C
          A(I)=A(I)-B(I)
  100  CONTINUE
       return
-      END
+      end
 C
 c-----------------------------------------------------------------------
       subroutine dadd2(a,b,n)
@@ -1204,7 +1204,7 @@ C
          A(I)=A(I)+B(I)
  100  CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine chswapr(b,L,ind,n,temp)
       INTEGER IND(1)
@@ -1220,7 +1220,7 @@ C***
       DO 30 I=1,N
    30 B(I)=TEMP(I)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine drcopy(r,d,N)
       real*8    d(1)
@@ -1261,14 +1261,15 @@ c-----------------------------------------------------------------------
   100 CONTINUE
       IVLSUM=TSUM
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine icadd(a,c,n)
       INTEGER A(1),C
       DO 100 I = 1, N
  100     A(I) = A(I) + C
       return
-      END
+      end
+c-----------------------------------------------------------------------
       subroutine isort(a,ind,n)
 C
 C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
@@ -1315,12 +1316,66 @@ C
             else
                j=ir+1
             endif
-         GOTO 200
+         goto 200
          endif
            a(i) = aa
          ind(i) = ii
-      GOTO 100
+      goto 100
       end
+c-----------------------------------------------------------------------
+      subroutine i8sort(a,ind,n)
+
+C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+
+      integer*8 a(1),aa
+      integer ind(1)
+
+      do 10 j=1,n
+         ind(j)=j
+   10 continue
+
+      if (n.le.1) return
+      l=n/2+1
+      ir=n
+  100 continue
+         if (l.gt.1) then
+            l=l-1
+            aa  = a  (l)
+            ii  = ind(l)
+         else
+                 aa =   a(ir)
+                 ii = ind(ir)
+              a(ir) =   a( 1)
+            ind(ir) = ind( 1)
+            ir=ir-1
+            if (ir.eq.1) then
+                 a(1) = aa
+               ind(1) = ii
+               return
+            endif
+         endif
+         i=l
+         j=l+l
+  200    continue
+         if (j.le.ir) then
+            if (j.lt.ir) then
+               if ( a(j).lt.a(j+1) ) j=j+1
+            endif
+            if (aa.lt.a(j)) then
+                 a(i) = a(j)
+               ind(i) = ind(j)
+               i=j
+               j=j+j
+            else
+               j=ir+1
+            endif
+         goto 200
+         endif
+           a(i) = aa
+         ind(i) = ii
+      goto 100
+      end
+c-----------------------------------------------------------------------
       subroutine sort(a,ind,n)
 C
 C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
@@ -1367,11 +1422,11 @@ C
             else
                j=ir+1
             endif
-         GOTO 200
+         goto 200
          endif
            a(i) = aa
          ind(i) = ii
-      GOTO 100
+      goto 100
       end
 c-----------------------------------------------------------------------
       subroutine iswap_ip(x,p,n)
@@ -1559,7 +1614,7 @@ C
          A(I)=A(I)+B(I)*C(I)*D
   100 CONTINUE
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine add2col2(a,b,c,n)
       real a(1),b(1),c(1)

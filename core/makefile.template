@@ -1,12 +1,13 @@
+OBJDIR=obj
 BINNAME=nek5000
-LIBNAME=libnek5000.a
+LIB=$(OBJDIR)/libnek5000.a
 CASENAME=
 CASEDIR=
 S=
 SCMT=
 OPT_INCDIR=./
-OBJDIR=obj
 
+LD=
 FC=
 CC=
 FFLAGS+=
@@ -103,6 +104,7 @@ endif
 OPT_INCDIR += -I $S/experimental
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
+USRF = $(OBJDIR)/${CASENAME}.o
 
 L0 = $(G) -O0
 L2 = $(G) -O2
@@ -116,20 +118,20 @@ cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S -I$(OPT_INCDIR)
 
-################################################################################
-.PHONY: all clean
+$(info $(shell mkdir -p $(OBJDIR)))
 
+################################################################################
 all : nek5000
 
-objdir: 
-	@mkdir $(OBJDIR) 2>/dev/null; cat /dev/null 
+usr: $(USRF)
 
-usrfile:
+$(USRF): ./SIZE ${CASENAME}.usr
 	@env CASENAME=$(CASENAME) PPS="$(PPS)" $S/mkuserfile
-	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f
+	$(FC) $(FL2) $(VISITNEK_INCLUDES) -c $(CASEDIR)/${CASENAME}.f -o $(USRF)
 
-nek5000: lib usrfile
-	$(FC) $(FL2) -o ${BINNAME} $S/drive.f $(CASEDIR)/${CASENAME}.o ${LIBNAME} $(USR_LFLAGS) $(LDFLAGS)
+nek5000: ${LIB} $(USRF) 
+	$(FC) -c $(FL2) $S/drive.f
+	$(LD) $(FL2) -o ${BINNAME} drive.o $(USRF) ${LIB} $(USR_LFLAGS) $(LDFLAGS)
 	@if test -f ${BINNAME}; then \
         echo ""; \
         echo "$(NEK_WARN)"; \
@@ -142,13 +144,15 @@ nek5000: lib usrfile
 	echo -e "ERROR: Cannot find ${BINNAME}!"; \
 	echo -e ""; \
 	fi
-	@rm -f ${CASENAME}.o ${LIBNAME} drive.o *.i
+	@rm -f $(CASEDIR)/${CASENAME}.f drive.o *.i
 
-lib:	objdir $(NOBJS)
-	@printf "building ${LIBNAME} ... "
-	@$(AR) cru ./${LIBNAME} $(NOBJS)
-	@ranlib ${LIBNAME}
-	@if test -f ${LIBNAME}; then \
+lib: ${LIB} 
+
+${LIB}: $(NOBJS)
+	@printf "building ${LIB} ... "
+	@$(AR) cru ./${LIB} $(NOBJS)
+	@ranlib ${LIB}
+	@if test -f ${LIB}; then \
 	printf "done\n"; \
 	else \
 	printf "failed!\n"; \
@@ -157,7 +161,9 @@ lib:	objdir $(NOBJS)
 	@rm -f *.i
 
 clean::
-	@rm -rf ${LIBNAME}  ${CASENAME}.o ${CASENAME}.f obj ${BINNAME}
+	@rm -rf ${LIB}  ${CASENAME}.f obj ${BINNAME}
+
+.PHONY: all clean lib usr 
 
 $(NOBJS) : ./SIZE
 

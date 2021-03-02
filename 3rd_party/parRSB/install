@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VER=0.4
+VER=0.6
 
 if [ "$1" == "clean" ]; then
   rm -rf parRSB/build lib include 2>/dev/null
@@ -12,13 +12,12 @@ if [ -f ./lib/libparRSB.a ]; then
   exit 0
 fi
 
-if [ ! -f v$VER.tar.gz ]; then
+if [ ! -d ./parRSB ]; then
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
+  mkdir parRSB
+  tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
 fi
 
-rm -rf parRSB 2>/dev/null
-mkdir parRSB
-tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
 cd parRSB
 set -x
 make -j4 $PARRSB_OPT

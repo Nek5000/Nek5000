@@ -26,7 +26,11 @@ c-----------------------------------------------------------------------
       if (param(33).gt.0) ibc = int(param(33))
 
       ! number of fields to read
-      if (param(32).gt.0) nfldt = ibc + int(param(32)) - 1
+      if (param(32).gt.0) then
+        nfldt = ibc + int(param(32)) - 1
+        nfldt = max(nfldt,1) 
+        if (nelgt.gt.nelgv) nfldt = max(nfldt,2) 
+      endif
 
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
@@ -163,7 +167,8 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
       integer*4       nrg4(2)
-      
+     
+      integer*8       i8gl_running_sum 
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
@@ -190,8 +195,7 @@ c-----------------------------------------------------------------------
       do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
-      irankoff  = igl_running_sum(nr) - nr
-      dtmp8     = irankoff
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
       lrs4      = lrs*wdsizi/4
 
@@ -268,6 +272,8 @@ c-----------------------------------------------------------------------
       integer*8       nrg
       integer*4       nrg4(2)
 
+      integer*8       i8gl_running_sum 
+
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
@@ -293,8 +299,7 @@ c-----------------------------------------------------------------------
       do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
-      irankoff  = igl_running_sum(nr) - nr
-      dtmp8     = irankoff
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
       lrs4      = lrs*wdsizi/4
 
@@ -814,7 +819,7 @@ c-----------------------------------------------------------------------
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') then
            wdsizi = 8
-           param(32) = 1
+           param(32)=1
          endif
 
          call byte_read(test,1,ierr)

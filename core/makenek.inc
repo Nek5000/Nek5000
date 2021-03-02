@@ -68,6 +68,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
+: ${LD:="mpif77"}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
@@ -223,6 +224,10 @@ case $FCcomp in
   *ftn*)       FCPP="-eZ"
                FR8="-sreal64"
                ;;
+  *frt*)       FCPP="-Cpp"
+               FR8="-CcdRR"
+               FF77="-Fixed"
+               ;;
   *armflang*)  FCPP="-cpp"
                FR8="-r8"
                FF77="-std=legacy"
@@ -313,10 +318,11 @@ do
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
-     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI" 
-     PARRSB_OPT+=" GSLIBPATH=$SOURCE_ROOT_GSLIB"
-     USR_LFLAGS+=" -L$SOURCE_ROOT_PARRSB/lib -lparRSB"
-     PARRSB_INC="$SOURCE_ROOT_PARRSB/include"
+     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=1"
+     PARRSB_OPT+=" BLASLIBPATH=${SOURCE_ROOT_BLAS}" 
+     PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
+     USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
+     PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
    fi
    if [ "$i" == "PARMETIS" ]; then
      PARMETIS=1
@@ -420,6 +426,7 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
+-e "s:^LD[ ]*=.*:LD=$LD:" \
 -e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
 -e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
 -e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \

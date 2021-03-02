@@ -1012,7 +1012,7 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(tmax, target_val=13.109, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=6.63565e-06, delta=5E-07, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=6.63565e-06, delta=1E-06, label='terr')
 
         self.assertDelayedFailures()
 
@@ -1033,7 +1033,74 @@ class ConjHt(NekTestCase):
         self.assertAlmostEqualDelayed(tmax, target_val=13.1208, delta=1E-03, label='tmax')
 
         terr = self.get_value_from_log('tmax', column=-2, row=-1)
-        self.assertAlmostEqualDelayed(terr, target_val=8.53943e-06, delta=5E-07, label='terr')
+        self.assertAlmostEqualDelayed(terr, target_val=8.53943e-06, delta=1E-06, label='terr')
+
+        self.assertDelayedFailures()
+
+
+class ConjHtChar(NekTestCase):
+    example_subdir  = 'conj_ht'
+    case_name        = 'conj_ht_char'
+
+    def setUp(self):
+        self.build_tools(['genmap'])
+        self.run_genmap()
+        self.size_params = dict (
+            ldim     = '2',
+            lx1      = '6',
+            lxd      = '8',
+            lx2      = 'lx1-0',
+            lelg     = '100',
+            ldimt    = '2',
+            lx1m     = 'lx1',
+            lcvelt   = 'lelt',
+        )
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params['lx2'] = 'lx1'
+        self.config_size()
+        self.build_nek()
+
+        self.config_parfile({'GENERAL' : {'dt' : '5e-2' , 'targetCFL' : '1.0' , 'extrapolation' : 'STANDARD'}})
+        self.run_nek(step_limit=None)
+        uave1  = self.get_value_from_log('tmax', column=-4, row=-1)
+        tmax11 = self.get_value_from_log('tmax', column=-3, row=-1)
+        tmax12 = self.get_value_from_log('tmax', column=-2, row=-1)
+
+        self.config_parfile({'GENERAL' : {'dt' : '1e-1' , 'targetCFL' : '4.0' , 'extrapolation' : 'OIFS'}})
+        self.run_nek(step_limit=None)
+        uave2  = self.get_value_from_log('tmax', column=-4, row=-1)
+        tmax21 = self.get_value_from_log('tmax', column=-3, row=-1)
+        tmax22 = self.get_value_from_log('tmax', column=-2, row=-1)
+
+        self.assertAlmostEqualDelayed(uave2,  target_val=uave1,  delta=5E-03, label='verr')
+        self.assertAlmostEqualDelayed(tmax21, target_val=tmax11, delta=6E-03, label='terr1')
+        self.assertAlmostEqualDelayed(tmax22, target_val=tmax12, delta=6E-03, label='terr2')
+
+        self.assertDelayedFailures()
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params['lx2'] = 'lx1-2'
+        self.config_size()
+        self.build_nek()
+
+        self.config_parfile({'GENERAL' : {'dt' : '5e-2' , 'targetCFL' : '1.0' , 'extrapolation' : 'STANDARD'}})
+        self.run_nek(step_limit=None)
+        uave1  = self.get_value_from_log('tmax', column=-4, row=-1)
+        tmax11 = self.get_value_from_log('tmax', column=-3, row=-1)
+        tmax12 = self.get_value_from_log('tmax', column=-2, row=-1)
+
+        self.config_parfile({'GENERAL' : {'dt' : '1e-1' , 'targetCFL' : '4.0' , 'extrapolation' : 'OIFS'}})
+        self.run_nek(step_limit=None)
+        uave2  = self.get_value_from_log('tmax', column=-4, row=-1)
+        tmax21 = self.get_value_from_log('tmax', column=-3, row=-1)
+        tmax22 = self.get_value_from_log('tmax', column=-2, row=-1)
+
+        self.assertAlmostEqualDelayed(uave2,  target_val=uave1,  delta=5E-03, label='verr')
+        self.assertAlmostEqualDelayed(tmax21, target_val=tmax11, delta=5E-03, label='terr1')
+        self.assertAlmostEqualDelayed(tmax22, target_val=tmax12, delta=5E-03, label='terr2')
 
         self.assertDelayedFailures()
 
@@ -1394,8 +1461,11 @@ class chan2d(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        xerr = self.get_value_from_log('X err', column=-3, row=-1)
-        self.assertAlmostEqualDelayed(xerr, target_val=1.0005e-08, delta=1E-09, label='X err')
+        xerr = self.get_value_from_log('Linf VX VY', column=-5, row=-1)
+        self.assertAlmostEqualDelayed(xerr, target_val=1.8997e-08, delta=1E-08, label='Linf VX VY')
+
+        yerr = self.get_value_from_log('Linf VX VY', column=-4, row=-1)
+        self.assertAlmostEqualDelayed(yerr, target_val=2.122e-07, delta=1E-06, label='Linf VX VY')
 
         self.assertDelayedFailures()
 

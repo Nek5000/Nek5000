@@ -4,7 +4,9 @@ set -e
 VER=1.0.7
 
 if [ "$1" == "clean" ]; then
-  rm -rf gslib lib include 2>/dev/null 
+  rm -rf lib include 2>/dev/null 
+  find . -name '*.o' -exec rm {} +
+  find . -name '*.a' -exec rm {} + 
   exit 0
 fi
 
@@ -12,13 +14,12 @@ if [ -f ./lib/libgs.a ]; then
   exit 0
 fi
 
-if [ ! -f v$VER.tar.gz ]; then
+if [ ! -d ./gslib ]; then
   wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  mkdir gslib 
+  tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
 fi
 
-rm -rf gslib 2>/dev/null
-mkdir gslib 
-tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
 cd gslib
 set -x
 make -j4 $GSLIB_OPT
