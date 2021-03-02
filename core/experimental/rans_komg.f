@@ -23,6 +23,14 @@
       return
       end
 c-----------------------------------------------------------------------
+      real function rans_turbPrandtl
+      include 'RANS_KOMG'
+
+      rans_turbPrandtl = coeffs(1)
+
+      return
+      end
+c-----------------------------------------------------------------------
       real function rans_mutsk(ix,iy,iz,iel)
       include 'SIZE'
       include 'TSTEP'
