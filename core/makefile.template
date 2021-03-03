@@ -149,7 +149,6 @@ nek5000: ${LIB} $(USRF)
 lib: ${LIB} 
 
 ${LIB}: $(NOBJS)
-	@printf "building ${LIB} ... "
 	@$(AR) cru ./${LIB} $(NOBJS)
 	@ranlib ${LIB}
 	@if test -f ${LIB}; then \

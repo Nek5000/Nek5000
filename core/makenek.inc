@@ -507,7 +507,7 @@ if [ -f .makefile ]; then
   sed -e "1i\\
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
 -e "s:${NEK_SOURCE_ROOT}:\$S:g" \
--e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
+-e "s:^S[ ]*=.*:S\:=${NEK_SOURCE_ROOT}:" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
   printf "done\n"
