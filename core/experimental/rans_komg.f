@@ -24,6 +24,7 @@
       end
 c-----------------------------------------------------------------------
       real function rans_turbPrandtl
+      include 'SIZE'
       include 'RANS_KOMG'
 
       rans_turbPrandtl = coeffs(1)
@@ -192,7 +193,7 @@ c
      &,w5(lx1*ly1*lz1*lelv)
 
       integer n,wall_id,ifld_mx
-      real coeffs_in(1),ywd_in(1)
+      real coeffs_in(*),ywd_in(*)
       logical ifcoeffs,ifransD
 
       character*3 bcw
