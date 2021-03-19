@@ -13,7 +13,7 @@ else
 fi
 
 rm -f $CASENAME.f
-cp -pv $CASENAME.usr $CASENAME.f
+cp -p $CASENAME.usr $CASENAME.f
 
 if ! cat $CASENAME.f | grep -qi "subroutine.*uservp" ; then
 cat >> $CASENAME.f << _ACEOF
