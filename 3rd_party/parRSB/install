@@ -12,17 +12,10 @@ if [ -f ./lib/libparRSB.a ]; then
   exit 0
 fi
 
-#if [ ! -f v$VER.tar.gz ]; then
-#  wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
-#fi
-#
-#rm -rf parRSB 2>/dev/null
-#
-#mkdir parRSB
-#tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
-
-if [ ! -d parRSB ]; then
-  git clone https://github.com/thilinarmtb/parRSB.git -b refactor
+if [ ! -d ./parRSB ]; then
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
+  mkdir parRSB
+  tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
 fi
 
 cd parRSB
