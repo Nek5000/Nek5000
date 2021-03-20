@@ -40,7 +40,7 @@ PPS_C = $(patsubst %,-D%,$(PPS))
 CORE = drive1.o drive2.o \
 plan5.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
-dssum.o edgec.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
+dssum.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
 map2.o mvmesh.o ic.o gfldr.o ssolv.o planx.o math.o mxm_wrapper.o \
 hmholtz.o subs1.o subs2.o \
@@ -174,7 +174,6 @@ $(OBJDIR)/postpro.o	:$S/core/postpro.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/gfldr.o	:$S/core/gfldr.f $S/core/GFLDR;		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect1.o	:$S/core/connect1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/connect2.o	:$S/core/connect2.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/edgec.o	:$S/core/edgec.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/genxyz.o	:$S/core/genxyz.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs1.o	:$S/core/subs1.f;			$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/subs2.o	:$S/core/subs2.f;			$(FC) -c $(FL2) $< -o $@

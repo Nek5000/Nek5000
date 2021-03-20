@@ -227,9 +227,6 @@ c-----------------------------------------------------------------------
 C
 C     .Initialize EDGE arrays for face and edge specific tasks.
 C
-C     .NOTE: Sevaral arrays in common are initialized via 
-C            BLOCKDATA EDGEC
-C
 C     Computed arrays: 
 C
 C     IEDGE  -  Minimal list of wire frame nodes.
