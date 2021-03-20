@@ -11,7 +11,8 @@ c
       logical ifverbm
 c
       etime0 = dnekclock_sync()
-      if(nio.eq.0) write(6,'(A)') ' partioning elements to MPI ranks'
+      if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)') 
+     $  ' partioning elements to MPI ranks'
 
       MFIELD=2
       IF (IFFLOW) MFIELD=1
@@ -77,7 +78,7 @@ C     Output the processor-element map:
       endif
 
       dtmp = dnekclock_sync() - etime0
-      if(nio.eq.0) then
+      if(nio.eq.0 .and. loglevel .gt. 1) then
         write(6,*) ' '
         write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
       endif

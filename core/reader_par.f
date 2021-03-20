@@ -1069,7 +1069,7 @@ c
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         if(nid.eq.0) write(6,*)
+         if(nid.eq.0 .and. loglevel .gt. 1) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
 

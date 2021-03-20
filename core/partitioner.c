@@ -386,6 +386,8 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 
   *nell = nel;
   *rtval = 0;
+  printf("\n"); 
+  fflush(stdout);
   return;
 
 err:
