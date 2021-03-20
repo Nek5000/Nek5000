@@ -20,5 +20,5 @@ fi
 
 cd parRSB
 set -x
-make $PARRSB_OPT
+make lib install $PARRSB_OPT
 set +x
