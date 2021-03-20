@@ -79,7 +79,6 @@ C     Output the processor-element map:
 
       dtmp = dnekclock_sync() - etime0
       if(nio.eq.0 .and. loglevel .gt. 1) then
-        write(6,*) ' '
         write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
       endif
 

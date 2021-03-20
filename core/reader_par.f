@@ -41,7 +41,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 
-      loglevel = 1
+      loglevel = 2
       optlevel = 1
 
       call rzero(param,200)
