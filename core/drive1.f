@@ -73,6 +73,13 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       call readat          ! Read .rea +map file
 
+      if (nio.eq.0) then
+         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
+         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
+ 12      format(1X,A,4I12)
+         write(6,*)
+      endif
+
       call setvar          ! Initialize most variables
 
       instep=1             ! Check for zero steps

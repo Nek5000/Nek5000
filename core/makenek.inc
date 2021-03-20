@@ -68,7 +68,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
-: ${LD:="mpif77"}
+: ${LD:=$FC}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
@@ -219,7 +219,7 @@ case $FCcomp in
                ;;
   *gfortran*)  FCPP="-cpp"
                FR8="-fdefault-real-8 -fdefault-double-8"
-               FF77="-std=legacy"
+               FF77="-w -std=legacy"
                ;;
   *ftn*)       FCPP="-eZ"
                FR8="-sreal64"

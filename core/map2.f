@@ -10,13 +10,6 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
 c
-      if (nio.eq.0) then
-         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
- 12      format(1X,A,4I12)
-         write(6,*)
-      endif
-
       etime0 = dnekclock_sync()
       if(nio.eq.0) write(6,'(A)') ' partioning elements to MPI ranks'
 
@@ -502,7 +495,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call fparrsb_findConnectivity(vtx8,xyz,nelt,ndim,
-     $  eid8,npf,tol,nekcomm,1,ierr)
+     $  eid8,npf,tol,nekcomm,0,ierr)
 
       k=1
       l=1

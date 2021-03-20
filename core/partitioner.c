@@ -336,12 +336,10 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
   part = (int *)malloc(*lelt * sizeof(int));
   seq  = (int *)malloc(*lelt * sizeof(int));
 
-  printPartStat(vl, nel, nv, cext);
-
   ierr = 1;
 #if defined(PARRSB)
   parRSB_options options = parrsb_default_options;
-  options.print_timing_info = 1;
+  options.print_timing_info = 0;
 
   if (mode & 1) {
     options.global_partitioner = 0;
@@ -353,8 +351,6 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
     ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
     if (ierr != 0)
       goto err;
-
-    printPartStat(vl, nel, nv, cext);
   }
 
   if (mode & 2) {
@@ -367,8 +363,6 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
     ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
     if (ierr != 0)
       goto err;
-
-    printPartStat(vl, nel, nv, cext);
   }
 #elif defined(PARMETIS)
   int metis;
@@ -385,8 +379,6 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
     if (ierr != 0)
       goto err;
   }
-
-  printPartStat(vl, nel, nv, cext);
 #endif
 
   free(part);
