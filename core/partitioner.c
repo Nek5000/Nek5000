@@ -341,29 +341,23 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
   parRSB_options options = parrsb_default_options;
   options.print_timing_info = 0;
 
-  if (mode & 1) {
+  if (mode & 1)
     options.global_partitioner = 0;
-
-    ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
-    if (ierr != 0)
-      goto err;
-
-    ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
-    if (ierr != 0)
-      goto err;
-  }
-
-  if (mode & 2) {
+  else if (mode & 2)
     options.global_partitioner = 1;
 
-    ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
-    if (ierr != 0)
-      goto err;
+  printPartStat(vl, nel, nv, cext);
 
-    ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
-    if (ierr != 0)
-      goto err;
-  }
+  ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
+  if (ierr != 0)
+    goto err;
+
+  ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
+  if (ierr != 0)
+    goto err;
+
+  printPartStat(vl, nel, nv, cext);
+
 #elif defined(PARMETIS)
   int metis;
   metis = mode & 4;
