@@ -312,7 +312,7 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
 void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fmode, int *rtval)
+               int *fcomm, int *fmode, int *loglevel, int *rtval)
 {
   struct comm comm;
 
@@ -340,13 +340,15 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 #if defined(PARRSB)
   parRSB_options options = parrsb_default_options;
   options.print_timing_info = 0;
+  if(*loglevel > 2) options.print_timing_info = 1;
 
   if (mode & 1)
     options.global_partitioner = 0;
   else if (mode & 2)
     options.global_partitioner = 1;
 
-  printPartStat(vl, nel, nv, cext);
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
 
   ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
   if (ierr != 0)
@@ -356,7 +358,8 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
   if (ierr != 0)
     goto err;
 
-  printPartStat(vl, nel, nv, cext);
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
 
 #elif defined(PARMETIS)
   int metis;
