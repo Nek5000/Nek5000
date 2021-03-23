@@ -312,11 +312,11 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
 void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fmode, int *loglevel, int *rtval)
+               int *fcomm, int *fpartitioner, int *falgo, int *loglevel, int *rtval)
 {
   struct comm comm;
 
-  int nel, nv, mode;
+  int nel, nv, partitioner, algo;
   int e, n;
   int count, ierr, ibuf;
   int *part,*seq;
@@ -324,7 +324,8 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 
   nel  = *nell;
   nv   = *nve;
-  mode = *fmode;
+  partitioner = *fpartitioner;
+  algo = *falgo; // 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
 
 #if defined(MPI)
   comm_ext cext = MPI_Comm_f2c(*fcomm);
@@ -342,10 +343,13 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
   options.print_timing_info = 0;
   if(*loglevel > 2) options.print_timing_info = 1;
 
-  if (mode & 1)
+  if (partitioner & 1)
     options.global_partitioner = 0;
-  else if (mode & 2)
+  else if (partitioner & 2)
     options.global_partitioner = 1;
+
+  if (partitioner & 1)
+    options.rsb_algo = algo;
 
   if(*loglevel >2)
     printPartStat(vl, nel, nv, cext);
@@ -363,7 +367,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 
 #elif defined(PARMETIS)
   int metis;
-  metis = mode & 4;
+  metis = partitioner & 4;
 
   if (metis) {
     opt[0] = 1;
