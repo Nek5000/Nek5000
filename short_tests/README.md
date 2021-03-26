@@ -29,3 +29,6 @@ To run all the tests, first `cd` into this directory and then run:
 
 If you wish to run tests for one short run e.g.:
 `$ python3 -m unittest NekTests.Eddy_EddyUv.test_PnPn2_Parallel`
+
+or with pytest:
+`$ pytest NekTests.py::LinCav_Dir`

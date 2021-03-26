@@ -1,5 +1,4 @@
 import os
-import sys
 from subprocess import call, check_call, Popen, PIPE, STDOUT
 
 
