@@ -5,13 +5,13 @@ from subprocess import call, check_call, PIPE, STDOUT, Popen, CalledProcessError
 
 def run_meshgen(command, stdin, cwd, verbose=False):
 
-    logfile = os.path.join(cwd, "{0}.out".format(os.path.basename(command)))
+    logfile = os.path.join(cwd, "{}.out".format(os.path.basename(command)))
     stdin_bytes = "\n".join(stdin) + "\n"
 
-    print(('Running "{0}"...'.format(os.path.basename(command))))
-    print(('    Using command "{0}"'.format(command)))
-    print(('    Using stdin "{0}"'.format(stdin)))
-    print(('    Using working directory "{0}"'.format(cwd)))
+    print('Running "{}"...'.format(os.path.basename(command)))
+    print(f'    Using command "{command}"')
+    print(f'    Using stdin "{stdin}"')
+    print(f'    Using working directory "{cwd}"')
 
     try:
         (stdoutdata, stderrdata) = Popen(
@@ -27,21 +27,19 @@ def run_meshgen(command, stdin, cwd, verbose=False):
     except (OSError, CalledProcessError) as E:
         # TODO: Change to warnings.warn()
         print(
-            (
-                'Could not complete {0}!  Caught error: "{1}".  Check "{2}" for details.'.format(
+                'Could not complete {}!  Caught error: "{}".  Check "{}" for details.'.format(
                     command, E, logfile
                 )
-            )
         )
     else:
-        print(("Successfully finished {0}!".format(os.path.basename(command))))
+        print("Successfully finished {}!".format(os.path.basename(command)))
 
 
 def run_nek_script(script, rea_file, cwd, log_suffix="", mpi_procs="1"):
     try:
         logs = (
             os.path.join(cwd, "logfile"),
-            os.path.join(cwd, "{0}.log.{1}".format(rea_file, mpi_procs)),
+            os.path.join(cwd, f"{rea_file}.log.{mpi_procs}"),
         )
 
         # Remove old logs
@@ -53,15 +51,15 @@ def run_nek_script(script, rea_file, cwd, log_suffix="", mpi_procs="1"):
         # Need to concatenate args into a string if shell=True
         cmd = " ".join([script, rea_file, str(mpi_procs)])
         print("Running nek5000...")
-        print(('    Using command "{0}"'.format(cmd)))
-        print(('    Using working directory "{0}"'.format(cwd)))
+        print(f'    Using command "{cmd}"')
+        print(f'    Using working directory "{cwd}"')
         try:
             # TODO: This doesn't work as intended.  If the nek executable fails, the nek script doesn't return the error.
             # Check doxygen to see what exit values there are (some succesful exit values there are!)
             check_call(cmd, cwd=cwd, shell=True)
         except Exception as E:
             # TODO: Change to warnings.warn()
-            print(("Could not successfully run nek5000! Caught error: {0}".format(E)))
+            print(f"Could not successfully run nek5000! Caught error: {E}")
         else:
             # print('Successfully ran nek5000!')
             print("Finished running nek5000!")
@@ -76,11 +74,9 @@ def run_nek_script(script, rea_file, cwd, log_suffix="", mpi_procs="1"):
     except (OSError, CalledProcessError) as E:
         # TODO: Change to warnings.warn()
         print(
-            (
-                'Could not complete command: "{0}": {1}'.format(
+                'Could not complete command: "{}": {}'.format(
                     " ".join([script, rea_file, mpi_procs]), E
                 )
-            )
         )
 
 
@@ -89,7 +85,7 @@ def run_nek(
 ):
     # Paths to executables, files
     nek5000 = os.path.join(cwd, "nek5000")
-    logfile = os.path.join(cwd, "{0}.log.{1}{2}".format(rea_file, n_procs, log_suffix))
+    logfile = os.path.join(cwd, f"{rea_file}.log.{n_procs}{log_suffix}")
     session_name = os.path.join(cwd, "SESSION.NAME")
     ioinfo = os.path.join(cwd, "ioinfo")
     if ifmpi:
@@ -98,24 +94,24 @@ def run_nek(
         command = [nek5000]
 
     print("Running nek5000...")
-    print(('    Using command "{0}"'.format(" ".join(command))))
-    print(('    Using working directory "{0}"'.format(cwd)))
-    print(('    Using .rea file "{0}"'.format(rea_file)))
+    print('    Using command "{}"'.format(" ".join(command)))
+    print(f'    Using working directory "{cwd}"')
+    print(f'    Using .rea file "{rea_file}"')
 
     # Any error here is unexepected
     try:
         with open(session_name, "w") as f:
             f.writelines(
                 [
-                    "{0}\n".format(1),
-                    "{0}\n".format(rea_file),
-                    "{0}\n".format(cwd + "/"),
+                    "{}\n".format(1),
+                    f"{rea_file}\n",
+                    "{}\n".format(cwd + "/"),
                 ]
             )
 
         if step_limit:
             with open(ioinfo, "w") as f:
-                f.writelines(["-{0}".format(step_limit)])
+                f.writelines([f"-{step_limit}"])
 
         if verbose:
             with open(logfile, "w") as f:
@@ -129,7 +125,7 @@ def run_nek(
 
     except Exception as E:
         # TODO: Change to warnings.warn()
-        print(("Could not successfully run nek5000! Caught error: {0}".format(E)))
+        print(f"Could not successfully run nek5000! Caught error: {E}")
     else:
         print("Finished running nek5000!")
 
@@ -163,11 +159,11 @@ def run_neknek(
     if coupled:
         ifcoupled = "T"
 
-    inside_log = os.path.join(cwd, "{0}.log".format(inside))
-    inside_his = os.path.join(cwd, "{0}.his".format(inside))
+    inside_log = os.path.join(cwd, f"{inside}.log")
+    inside_his = os.path.join(cwd, f"{inside}.his")
 
-    outside_log = os.path.join(cwd, "{0}.log".format(outside))
-    outside_his = os.path.join(cwd, "{0}.his".format(outside))
+    outside_log = os.path.join(cwd, f"{outside}.log")
+    outside_his = os.path.join(cwd, f"{outside}.his")
 
     session_name = os.path.join(cwd, "SESSION.NAME")
     ioinfo = os.path.join(cwd, "ioinfo")
@@ -175,9 +171,9 @@ def run_neknek(
     command = ["mpiexec", "-np", str(int(np_inside) + int(np_outside)), nek5000]
 
     print("Running nek5000...")
-    print(('    Using command "{0}"'.format(" ".join(command))))
-    print(('    Using working directory "{0}"'.format(cwd)))
-    print(('    Using .rea files "{0}", "{1}"'.format(inside, outside)))
+    print('    Using command "{}"'.format(" ".join(command)))
+    print(f'    Using working directory "{cwd}"')
+    print(f'    Using .rea files "{inside}", "{outside}"')
 
     # Any error here is unexpected
     try:
@@ -186,21 +182,21 @@ def run_neknek(
         with open(session_name, "w") as f:
             f.writelines(
                 [
-                    "{0}\n".format(2),
-                    "{0}\n".format(ifcoupled),
-                    "{0}\n".format(inside),
-                    "{0}\n".format(cwd),
-                    "{0}\n".format(np_inside),
-                    "{0}\n".format(outside),
-                    "{0}\n".format(cwd),
-                    "{0}\n".format(np_outside),
+                    "{}\n".format(2),
+                    f"{ifcoupled}\n",
+                    f"{inside}\n",
+                    f"{cwd}\n",
+                    f"{np_inside}\n",
+                    f"{outside}\n",
+                    f"{cwd}\n",
+                    f"{np_outside}\n",
                 ]
             )
 
         # Write step limit
         if step_limit:
-            with open(ioinfo, "w") as f:
-                f.writelines(["-{0}".format(step_limit)])
+            with open(ioinfo, "w") as file:
+                file.writelines([f"-{step_limit}"])
 
         if verbose:
             with open(logfile, "w") as f:
@@ -214,7 +210,7 @@ def run_neknek(
 
     except Exception as E:
         # TODO: Change to warnings.warn()
-        print(("Could not successfully run nek5000! Caught error: {0}".format(E)))
+        print(f"Could not successfully run nek5000! Caught error: {E}")
     else:
         print("Finished running nek5000!")
 
@@ -222,7 +218,7 @@ def run_neknek(
 def mvn(src_prefix, dst_prefix, cwd):
     exts = (".box", ".rea", ".usr", ".map", ".sep", ".re2")
     print("Running mvn...")
-    print(('    Using working directory "{0}"'.format(cwd)))
+    print(f'    Using working directory "{cwd}"')
     for x in exts:
         src = os.path.join(cwd, src_prefix + x)
         dst = os.path.join(cwd, dst_prefix + x)
@@ -230,7 +226,7 @@ def mvn(src_prefix, dst_prefix, cwd):
             os.rename(src, dst)
         except OSError as E:
             # TODO: Change to warnings.warn()
-            print(("    Could not move {0} to {1}: {2}".format(src, dst, E)))
+            print(f"    Could not move {src} to {dst}: {E}")
         else:
-            print(("    Successfully moved {0} to {1}".format(src, dst)))
+            print(f"    Successfully moved {src} to {dst}")
     print("Finished running mvn!")

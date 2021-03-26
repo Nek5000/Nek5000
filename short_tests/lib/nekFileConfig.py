@@ -20,16 +20,16 @@ def config_size(params, infile, outfile):
         outfile (str): Path to output SIZE file
 
     """
-    with open(infile, "r") as f:
-        lines = f.readlines()
+    with open(infile, "r") as file:
+        lines = file.readlines()
 
     # Substitute all the variables
     for key, value in list(params.items()):
         if value:
             lines = [
                 re.sub(
-                    r"(.*\bparameter\b.*\b{0} *= *)\S+?( *[),])".format(key),
-                    r"\g<1>{0}\g<2>".format(value),
+                    fr"(.*\bparameter\b.*\b{key} *= *)\S+?( *[),])",
+                    fr"\g<1>{value}\g<2>",
                     l,
                     flags=re.I,
                 )

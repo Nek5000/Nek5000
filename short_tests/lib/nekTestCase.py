@@ -41,7 +41,7 @@ def pn_pn_parallel(method):
     def wrapper(self, *args, **kwargs):
         self.mpi_procs = self.parallel_procs
         if not self.ifmpi:
-            self.skipTest('Skipping "{0}"; MPI is not enabled.'.format(self.id()))
+            self.skipTest(f'Skipping "{self.id()}"; MPI is not enabled.')
         else:
             self.log_suffix = ".pn_pn"
             if self.ifmpi:
@@ -58,7 +58,7 @@ def pn_pn_2_parallel(method):
     def wrapper(self, *args, **kwargs):
         self.mpi_procs = self.parallel_procs
         if not self.ifmpi:
-            self.skipTest('Skipping "{0}"; MPI is not enabled.'.format(self.id()))
+            self.skipTest(f'Skipping "{self.id()}"; MPI is not enabled.')
         else:
             # Set number of mpi procs
             self.log_suffix = ".pn_pn_2"
@@ -147,11 +147,11 @@ class NekTestCase(unittest.TestCase):
 
     def assertAlmostEqualDelayed(self, test_val, target_val, delta, label):
         if abs(test_val - target_val) <= delta:
-            msg = "    SUCCESS: {0}: Test value {1} equals target value {2} +/- {3}".format(
+            msg = "    SUCCESS: {}: Test value {} equals target value {} +/- {}".format(
                 label, test_val, target_val, delta
             )
         else:
-            msg = "    FAILURE: {0}: Test value {1} exceeds target value {2} +/- {3}".format(
+            msg = "    FAILURE: {}: Test value {} exceeds target value {} +/- {}".format(
                 label, test_val, target_val, delta
             )
             self._delayed_failures.append(msg)
@@ -159,9 +159,9 @@ class NekTestCase(unittest.TestCase):
 
     def assertIsNotNullDelayed(self, test_val, label):
         if test_val:
-            msg = 'SUCCESS: Found phrase "{0}" in logfile.'.format(label)
+            msg = f'SUCCESS: Found phrase "{label}" in logfile.'
         else:
-            msg = 'FAILURE: Unexpectedly did not find phrase "{0}" in logfile'.format(
+            msg = 'FAILURE: Unexpectedly did not find phrase "{}" in logfile'.format(
                 label
             )
             self._delayed_failures.append(msg)
@@ -169,17 +169,17 @@ class NekTestCase(unittest.TestCase):
 
     def assertIsNullDelayed(self, test_val, label):
         if test_val:
-            msg = 'FAILURE: Found phrase "{0}" in logfile.'.format(label)
+            msg = f'FAILURE: Found phrase "{label}" in logfile.'
             self._delayed_failures.append(msg)
         else:
-            msg = 'SUCCESS: Did not find phrase "{0}" in logfile'.format(label)
+            msg = f'SUCCESS: Did not find phrase "{label}" in logfile'
         print(msg)
 
     def assertDelayedFailures(self):
         if self._delayed_failures:
-            report = ["\n\nFailed assertions:{0}\n".format(len(self._delayed_failures))]
+            report = ["\n\nFailed assertions:{}\n".format(len(self._delayed_failures))]
             for i, failure in enumerate(self._delayed_failures, start=1):
-                report.append("{0}: {1}".format(i, failure))
+                report.append(f"{i}: {failure}")
             # self._delayed_failures = []
             self.fail("\n".join(report))
 
@@ -236,7 +236,7 @@ class NekTestCase(unittest.TestCase):
             ("PARALLEL_PROCS", self.parallel_procs),
         ):
             if varval:
-                print(('    Using {0:14} = "{1}"'.format(varname, varval)))
+                print(f'    Using {varname:14} = "{varval}"')
 
         # Verify that pathnames are valid
         for varname, varval in (
@@ -415,14 +415,14 @@ class NekTestCase(unittest.TestCase):
             logfile = os.path.join(
                 self.examples_root,
                 cls.example_subdir,
-                "{0}.log.{1}{2}".format(cls.case_name, self.mpi_procs, self.log_suffix),
+                f"{cls.case_name}.log.{self.mpi_procs}{self.log_suffix}",
             )
         # Get all lines with label
-        with open(logfile, "r") as f:
+        with open(logfile) as f:
             line_list = [l for l in f if label in l]
         if not line_list:
             raise ValueError(
-                'Could not find label "{0}" in logfile "{1}".  The run may have failed.'.format(
+                'Could not find label "{}" in logfile "{}".  The run may have failed.'.format(
                     label, logfile
                 )
             )
@@ -430,13 +430,13 @@ class NekTestCase(unittest.TestCase):
             value = float(line_list[row].split()[column])
         except ValueError:
             raise ValueError(
-                'Attempted to parse non-numerical value in logfile, "{0}".  Logfile may be malformatted or run may have failed'.format(
+                'Attempted to parse non-numerical value in logfile, "{}".  Logfile may be malformatted or run may have failed'.format(
                     logfile
                 )
             )
         except IndexError:
             raise IndexError(
-                'Fewer rows and/or columns than expected in logfile, "{0}".  Logfile may be malformmated or run may have failed.'.format(
+                'Fewer rows and/or columns than expected in logfile, "{}".  Logfile may be malformmated or run may have failed.'.format(
                     logfile
                 )
             )
@@ -449,10 +449,10 @@ class NekTestCase(unittest.TestCase):
             logfile = os.path.join(
                 self.examples_root,
                 cls.example_subdir,
-                "{0}.log.{1}{2}".format(cls.case_name, self.mpi_procs, self.log_suffix),
+                f"{cls.case_name}.log.{self.mpi_procs}{self.log_suffix}",
             )
 
-        with open(logfile, "r") as f:
+        with open(logfile) as f:
             line_list = [l for l in f if label in l]
 
         try:

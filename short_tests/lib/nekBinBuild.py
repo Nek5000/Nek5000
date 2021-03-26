@@ -14,9 +14,9 @@ def build_tools(
 ):
 
     print("Compiling tools... ")
-    print(('    Using output directory "{0}"'.format(tools_bin)))
-    print(('    Using FC "{0}"'.format(f77)))
-    print(('    Using CC "{0}"'.format(cc)))
+    print(f'    Using output directory "{tools_bin}"')
+    print(f'    Using FC "{f77}"')
+    print(f'    Using CC "{cc}"')
 
     maketools_in = os.path.join(tools_root, "maketools")
 
@@ -52,10 +52,10 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     _opts.update(NEK_SOURCE_ROOT=source_root)
 
     print("Compiling nek5000...")
-    print(('    Using working directory "{0}"'.format(cwd)))
-    print(('    Using .usr file "{0}"'.format(usr_file)))
+    print(f'    Using working directory "{cwd}"')
+    print(f'    Using .usr file "{usr_file}"')
     for key, val in list(_opts.items()):
-        print(('    Using {0}="{1}"'.format(key, val)))
+        print(f'    Using {key}="{val}"')
 
     my_env = os.environ.copy()
     if source_root:

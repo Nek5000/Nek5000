@@ -84,4 +84,4 @@ if __name__ == "__main__":
     ]
 
     for x in template_params:
-        print(("{:<9}= '{}',".format(x, params.get(x, None))))
+        print("{:<9}= '{}',".format(x, params.get(x, None)))
