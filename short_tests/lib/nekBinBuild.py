@@ -1,5 +1,6 @@
 import os
-from subprocess import call, check_call, Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT
+from pathlib import Path
 
 
 def build_tools(
@@ -12,12 +13,14 @@ def build_tools(
     verbose=False,
 ):
 
+    tools_root = Path(tools_root)
+
     print("Compiling tools... ")
     print(f'    Using output directory "{tools_bin}"')
     print(f'    Using FC "{f77}"')
     print(f'    Using CC "{cc}"')
 
-    maketools_in = os.path.join(tools_root, "maketools")
+    maketools_in = tools_root / "maketools"
 
     my_env = os.environ.copy()
     if f77:
@@ -33,12 +36,11 @@ def build_tools(
     for t in targets:
         proc = Popen([maketools_in, t], env=my_env, cwd=tools_root, stderr=STDOUT)
         proc.wait()
-        logfile = os.path.join(tools_root + "/" + t, "build.log")
+        logfile = tools_root / t / "build.log"
         if proc.returncode != 0:
-            f = open(logfile, "r")
-            text = f.read()
+            with open(logfile, "r") as file:
+                text = file.read()
             print(text)
-            f.close()
             exit(-1)
 
 
@@ -66,8 +68,8 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     if _opts.get("PPLIST"):
         my_env["PPLIST"] = _opts.get("PPLIST")
 
-    makenek_in = os.path.join(source_root, "bin", "makenek")
-    logfile = os.path.join(cwd, "build.log")
+    makenek_in = Path(source_root) / "bin" / "makenek"
+    logfile = Path(cwd) / "build.log"
 
     proc = Popen([makenek_in, "clean"], cwd=cwd, env=my_env, stdin=PIPE, text=True)
     proc.communicate(input="Y\n")
@@ -78,8 +80,7 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
     proc.wait()
 
     if proc.returncode != 0:
-        f = open(logfile, "r")
-        text = f.read()
+        with open(logfile, "r") as file:
+            text = file.read()
         print(text)
-        f.close()
         exit(-1)

@@ -151,8 +151,10 @@ class NekTestCase(unittest.TestCase):
                 label, test_val, target_val, delta
             )
         else:
-            msg = "    FAILURE: {}: Test value {} exceeds target value {} +/- {}".format(
-                label, test_val, target_val, delta
+            msg = (
+                "    FAILURE: {}: Test value {} exceeds target value {} +/- {}".format(
+                    label, test_val, target_val, delta
+                )
             )
             self._delayed_failures.append(msg)
         print(msg)
@@ -418,27 +420,24 @@ class NekTestCase(unittest.TestCase):
                 f"{cls.case_name}.log.{self.mpi_procs}{self.log_suffix}",
             )
         # Get all lines with label
-        with open(logfile) as f:
-            line_list = [l for l in f if label in l]
+        with open(logfile) as file:
+            line_list = [l for l in file if label in l]
         if not line_list:
             raise ValueError(
-                'Could not find label "{}" in logfile "{}".  The run may have failed.'.format(
-                    label, logfile
-                )
+                f'Could not find label "{label}" in logfile "{logfile}".  '
+                "The run may have failed."
             )
         try:
             value = float(line_list[row].split()[column])
         except ValueError:
             raise ValueError(
-                'Attempted to parse non-numerical value in logfile, "{}".  Logfile may be malformatted or run may have failed'.format(
-                    logfile
-                )
+                f'Attempted to parse non-numerical value in logfile, "{logfile}".'
+                "  Logfile may be malformatted or run may have failed"
             )
         except IndexError:
             raise IndexError(
-                'Fewer rows and/or columns than expected in logfile, "{}".  Logfile may be malformmated or run may have failed.'.format(
-                    logfile
-                )
+                f'Fewer rows and/or columns than expected in logfile, "{logfile}".'
+                "  Logfile may be malformmated or run may have failed."
             )
         else:
             return value
@@ -452,8 +451,8 @@ class NekTestCase(unittest.TestCase):
                 f"{cls.case_name}.log.{self.mpi_procs}{self.log_suffix}",
             )
 
-        with open(logfile) as f:
-            line_list = [l for l in f if label in l]
+        with open(logfile) as file:
+            line_list = [l for l in file if label in l]
 
         try:
             line = line_list[row]

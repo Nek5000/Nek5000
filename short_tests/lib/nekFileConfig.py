@@ -36,8 +36,8 @@ def config_size(params, infile, outfile):
                 for l in lines
             ]
 
-    with open(outfile, "w") as f:
-        f.writelines(lines)
+    with open(outfile, "w") as file:
+        file.writelines(lines)
 
 
 def config_parfile(opts, infile, outfile):
@@ -70,5 +70,5 @@ def config_parfile(opts, infile, outfile):
         for name, val in list(name_vals.items()):
             parfile.set(section, name, val)
 
-    with open(outfile, "w") as f:
-        parfile.write(f)
+    with open(outfile, "w") as file:
+        parfile.write(file)
