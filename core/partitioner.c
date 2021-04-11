@@ -172,7 +172,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   int nelMin, nelMax;
   int ncMin, ncMax, ncSum;
   int nsMin, nsMax, nsSum;
-  int nssMin, nssMax, nssSum;
+  int nssMin, nssMax;
+  long long nssSum;
 
   struct gs_data *gsh;
   int b;
@@ -222,7 +223,7 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   nssSum = nsSum;
   comm_allreduce(&comm, gs_int, gs_max, &nssMax , 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_add, &nssSum , 1, &b);
+  comm_allreduce(&comm, gs_long, gs_add, &nssSum , 1, &b);
 
   nsSum = nsSum/Nmsg;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
@@ -286,8 +287,10 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
   if (nel > lelt) count = 1;
   comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
   if (count > 0) {
+    count = nel;
+    comm_allreduce(comm, gs_int, gs_max, &count, 1, &ibuf);
     if (comm->id == 0)
-      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
+      printf("ERROR: resulting parition requires lelt=%d!\n", count);
     return 1;
   }
 
