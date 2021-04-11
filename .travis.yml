@@ -20,7 +20,7 @@ env:
 
     - TEST_CASE=Ethier::test_PnPn_Parallel
     - TEST_CASE=Ethier::test_PnPn2_Parallel
-#    - TEST_CASE=Ethier::test_PnPn2_Parallel PARALLEL_PROCS=3 
+#    - TEST_CASE=Ethier::test_PnPn2_Parallel PARALLEL_PROCS=3
 
     - TEST_CASE=KovStokes::test_PnPn2_Parallel
     - TEST_CASE=KovStokes::test_PnPn_Parallel
@@ -48,7 +48,7 @@ env:
 
     - TEST_CASE=chan2d::test_PnPn_Parallel
 
-before_install: 
+before_install:
   - export ROOT_DIR=`pwd`
 
   - export NEK_SOURCE_ROOT=$ROOT_DIR
@@ -63,8 +63,8 @@ before_install:
   - sudo apt-get purge cmake
 
   # Set up Python virtualenv
-  - virtualenv -p python2.7 $ROOT_DIR/python2-env
-  - source $ROOT_DIR/python2-env/bin/activate
+  - virtualenv -p python3 $ROOT_DIR/python-env
+  - source $ROOT_DIR/python-env/bin/activate
   - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
 
 install:
@@ -72,5 +72,5 @@ install:
   - pip install --upgrade cmake
   - pip install pytest
 
-script: 
+script:
   - py.test -s -v $ROOT_DIR/short_tests/NekTests.py::$TEST_CASE
