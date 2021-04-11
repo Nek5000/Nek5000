@@ -162,7 +162,7 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
-      integer cnt
+      integer cnt, algo
       integer opt_parrsb(3), opt_parmetis(10)
 
       logical ifbswap, ifread_con
@@ -221,9 +221,10 @@ c fluid elements
       enddo
       neliv = j
 
+      algo = 0 ! 0 - Lanczos, 1 - MG
       nel = neliv
       call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,loglevel,ierr)
+     $  meshPartitioner,algo,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -274,9 +275,10 @@ c solid elements
          enddo
          nelit = j
 
+         algo = 0 ! 0 - Lanczos, 1 - MG
          nel = nelit
          call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  meshPartitioner,loglevel,ierr)
+     $                  meshPartitioner,algo,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
