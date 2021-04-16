@@ -1,16 +1,55 @@
       program exo2nek
-
+! implement new interface
+!
+!
       use SIZE
 
       integer option
-      integer iexo1
+      integer iexo1,flag
+!-----------------------------------------------------------
 
-      write(6,*) 'please input estimate final total hex element number:'
+      etot_est = 0
 
-      read (5,*) etot_est
+      write(6,*) 'please input number of fluid exo files:'
+      read (5,*) fnexo
 
-      ! allocate Nek5000 array
-      num_dim = 3
+      allocate ( fluidexo  (32,fnexo))
+      allocate ( f_elem_exo  (fnexo))
+	  
+      do iexo = 1,fnexo
+
+      write(6,*) 'please input exo file:'
+      flag = 1
+      call read_input_name(flag)
+      call exodus_read_pre(flag)
+ 
+      enddo
+
+      write(6,*) 'please input number of solid exo files for CHT problem (input 0 for no solid mesh):'
+      read (5,*) snexo
+
+      if (snexo.gt.0) then
+	  
+      allocate ( solidexo  (32,snexo))
+      allocate ( s_elem_exo  (snexo))
+
+      do iexo = 1,snexo
+
+      write(6,*) 'please input exo file:'
+      flag = 2
+      call read_input_name(flag)
+      call exodus_read_pre(flag)
+
+      enddo
+
+      endif ! if (snexo.gt.0) then
+
+      write(6,*) 'done pre-read exo files'
+	  write(6,*) 'now converting to nek mesh'
+	  
+      num_elem = etot_est
+	  
+	  ! allocate Nek5000 array
       allocate ( xm1                (3,3,3,etot_est)      )
       allocate ( ym1                (3,3,3,etot_est)      )
       allocate ( zm1                (3,3,3,etot_est)      )
@@ -28,49 +67,28 @@
       allocate   (bc     (5,2*num_dim,    etot_est) )
       call rzero (bc,5*2*num_dim*etot_est)
       call blank (cbc,3*2*num_dim*etot_est)
- 
- 
-      write(6,*) 'please input number of fluid exo files:'
-      read (5,*) fnexo
-      allocate (f_elem_exo  (fnexo))
- 
+
       eacc = 0
+      eacc_old = 0
       do iexo = 1,fnexo
+      flag = 1
+      call trasnfer_exo_name(flag) ! copy fluidexo to exoname
+      call exodus_read_new
 
       eacc_old = eacc
-
-      write(6,*) 'please input exo file:'
-      call read_input_name
-      call exodus_read_new
- 
-      write(6,*) 'Please input shifting vector:'
-      read (5,*)  shiftvector(1),shiftvector(2),shiftvector(3)
-
-      write(6,*) 'Please input option for splitting:'
-      write(6,*) '1: assume pure hex20 mesh, original exo2nek'
-      write(6,*) '2: assume hybrid tetra4 and wedge6 mesh'
-      write(6,*) '    all tetra4 elements in block 1 (or first block)'
-      write(6,*) '    all wedge6 elements in block 2 (or second block)'
-      write(6,*) '3: assume hybrid hex8, tetra4 and wedge6 mesh'
-      write(6,*) '    all tetra4 elements in block 1 (or first block)'
-      write(6,*) '    all hex8   elements in block 2 (or second block)'
-      write(6,*) '    all wedge6 elements in block 3 (or third block)'
-
-      read (5,'(I1)') option
-
-      if(option.EQ.1) then
-      call convert_new
-      elseif(option.EQ.2) then
-      call split_convert1
-      elseif(option.EQ.3) then
-      call split_convert2
-      else
-       write(6,*) 'Unknown option for exo2nek, ABORT.'
+      if (num_dim.eq.2) then
+         call convert_new
+      else if (num_dim.eq.3) then
+         if(converting_option.EQ.1) then
+         call convert_new
+         elseif(converting_option.EQ.2) then
+         call split_convert_new
+         endif
       endif
 
       f_elem_exo(iexo) = eacc - eacc_old
 
-      call offset_sideset()
+      !call offset_sideset()
 
       call checkXYZ_min_max()
       write(6,*) 'total element now is ',eacc
@@ -80,48 +98,28 @@
 
       etot = eacc
       eftot = etot
- 
-      write(6,*) 'please input number of solid exo files for CHT problem (input 0 for no solid mesh):'
-      read (5,*) snexo
 
       if (snexo.gt.0) then
-      allocate (s_elem_exo  (snexo))
 
       do iexo = 1,snexo
+      flag = 2
+      call trasnfer_exo_name(flag)  ! copy fluidexo to exoname
+      call exodus_read_new
+	  
       eacc_old = eacc
 
-      write(6,*) 'please input exo file:'
-      call read_input_name
-      call exodus_read_new
-
-      write(6,*) 'Please input shifting vector (if no shift, just input 0 0 0):'
-      read (5,*)  shiftvector(1),shiftvector(2),shiftvector(3)
-
-      write(6,*) 'Please input option for splitting:'
-      write(6,*) '1: assume pure hex20 mesh, original exo2nek'
-      write(6,*) '2: assume hybrid tetra4 and wedge6 mesh'
-      write(6,*) '    all tetra4 elements in block 1 (or first block)'
-      write(6,*) '    all wedge6 elements in block 2 (or second block)'
-      write(6,*) '3: assume hybrid hex8, tetra4 and wedge6 mesh'
-      write(6,*) '    all tetra4 elements in block 1 (or first block)'
-      write(6,*) '    all hex8   elements in block 2 (or second block)'
-      write(6,*) '    all wedge6 elements in block 3 (or third block)'
-
-      read (5,'(I1)') option
-
-      if(option.EQ.1) then
-      call convert_new
-      elseif(option.EQ.2) then
-      call split_convert1
-      elseif(option.EQ.3) then
-      call split_convert2
-      else
-       write(6,*) 'Unknown option for exo2nek, ABORT.'
+      if (num_dim.eq.2) then
+         call convert_new
+      else if (num_dim.eq.3) then
+         if(converting_option.EQ.1) then
+         call convert_new
+         elseif(converting_option.EQ.2) then
+         call split_convert_new
+         endif
       endif
 
       s_elem_exo(iexo) = eacc - eacc_old
-      iexo1 = iexo + fnexo
-      call offset_sideset()
+      !call offset_sideset()
 
       call checkXYZ_min_max()
       write(6,*) 'total element now is ',eacc
@@ -129,26 +127,27 @@
 
       enddo
 
-     endif ! if (snexo.gt.0) then
+      endif ! if (snexo.gt.0) then
 
       etot = eacc
       num_elem = etot
 
-     if(etot.gt.etot_est) then
-       write(6,*) 'ABORT'
-       write(6,*) 'please increase estimate element number to ',etot
-       call exit
-      endif 
+      !if (num_dim.eq.2) then
+      !   ! for 2d mesh
+      !   call gather_bc_info
+      !   call setbc_2d
+      !else if (num_dim.eq.3) then
+      !   ! for 3d mesh
+      !   call right_hand_check
+      !   call gather_bc_info
+      !   call setbc_3d
+      !endif
 
-      call right_hand_check
       call gather_bc_info
       call setbc_new
-      
-      !call scale_mesh
-
+	  
       write(6,*) 'please give re2 file name:'
       call read_re2_name
-
       call gen_re2
 
       end 
@@ -191,29 +190,53 @@
       return
       end
 !------------------------------------------------------------------------
-      subroutine read_input_name
+      subroutine read_input_name(flag)
 
       use SIZE
 
-!      character(1)  re2nam1(80)
       character(1)  exonam1(32)
       character(32) fname
-
+      integer flag
+	  
       read (5,'(A32)') fname
       len = ltrunc(fname,32)
       
       call blank  (exonam1, 32)
-!      call blank  (re2nam1, 80)
       call chcopy (exonam1,fname,32)
-!      call chcopy (re2nam1,fname,80)
       call chcopy (exonam1(len+1) ,'.exo',4)
-!      call chcopy (re2nam1(len+1) ,'.re2',4)
 
       call blank  (exoname, 32)
-!      call blank  (re2name, 80)
       call chcopy (exoname,exonam1,len+4)
-!      call chcopy (re2name,re2nam1,len+4)
  
+      if (flag.eq.1) then
+      call blank  (fluidexo(1,iexo), 32)
+      call chcopy (fluidexo(1,iexo),exonam1,len+4)
+      else if (flag.eq.2) then
+      call blank  (solidexo(1,iexo), 32)
+      call chcopy (solidexo(1,iexo),exonam1,len+4)
+      endif
+ 
+      return 
+      end
+!------------------------------------------------------------------------
+      subroutine trasnfer_exo_name(flag)
+! copy fluidexo(1,iexo) into exoname
+
+      use SIZE
+
+      character(1)  exonam1(32)
+      character(32) fname
+      integer flag
+	  
+      if (flag.eq.1) then
+
+      call blank  (exoname, 32)
+      call chcopy (exoname,fluidexo(1,iexo),32)
+      else if (flag.eq.2) then
+      call blank  (exoname, 32)
+      call chcopy (exoname,solidexo(1,iexo),32)
+      endif
+
       return 
       end
 !-----------------------------------------------------------------------
@@ -223,41 +246,37 @@
       use SIZE
 
       character(1)  re2nam1(80)
-!      character(1)  exonam1(32)
       character(32) fname
 
       read (5,'(A32)') fname
       len = ltrunc(fname,32)
       
-!      call blank  (exonam1, 32)
       call blank  (re2nam1, 80)
-!      call chcopy (exonam1,fname,32)
       call chcopy (re2nam1,fname,80)
-!      call chcopy (exonam1(len+1) ,'.exo',4)
       call chcopy (re2nam1(len+1) ,'.re2',4)
 
-!      call blank  (exoname, 32)
       call blank  (re2name, 80)
-!      call chcopy (exoname,exonam1,len+4)
       call chcopy (re2name,re2nam1,len+4)
  
       return 
       end
 !-----------------------------------------------------------------------
-      subroutine exodus_read_new
+      subroutine exodus_read_pre(flag)
 !
-!  Subroutine to read an exodusII binary file containing a mesh.
-!  It uses exodus fortran binding subroutines, which depend on
-!  the netcdf library for low level data access.
+! pre read exo file information
 !
       use SIZE
       include 'exodusII.inc'
 
-      integer exoid, cpu_ws, io_ws
+      integer exoid, cpu_ws, io_ws, flag
 
       character(MXSTLN) typ, qa_record(4,10)
       character(MXLNLN) titl
       character(1)      cdum
+	  
+      character(3)  typ3
+      character(4)  typ4
+      character(5)  typ5
 
 !      integer,allocatable,dimension(:) :: idblk
 !      integer,allocatable,dimension(:) :: num_nodes_per_elem
@@ -304,17 +323,6 @@
       allocate ( num_nodes_per_elem (num_elem_blk)        )
       allocate ( num_attr           (num_elem_blk)        )
       allocate ( num_elem_in_block  (num_elem_blk)        )
-      allocate ( num_sides_in_set   (num_side_sets)       )
-      allocate ( idss               (num_side_sets)       )
-      allocate ( connect            (3**num_dim*num_elem) )
-      allocate ( x_exo              (3**num_dim*num_elem) )
-      allocate ( y_exo              (3**num_dim*num_elem) )
-      allocate ( z_exo              (3**num_dim*num_elem) )
-
-      ! Nek5000:
-!      allocate ( xm1                (3,3,3,num_elem*8)      )
-!      allocate ( ym1                (3,3,3,num_elem*8)      )
-!      allocate ( zm1                (3,3,3,num_elem*8)      )
 
 !
 ! read element block parameters
@@ -340,6 +348,174 @@
                    idblk(i), typ, num_elem_in_block(i), &
                    num_nodes_per_elem(i)
         write(6,*)
+      nvert=num_nodes_per_elem(i)
+
+!----------------------------------------------------------------------
+! check element type
+!
+      if (num_dim.eq.2) then
+        ! if 2d mesh, only quad8 elements are allowed
+        call chcopy(typ4,typ,4)
+        if ((typ4.eq.'QUAD').and.(nvert.eq.8)) then
+        ! valid mesh
+		  write(6,*) "QUAD8 is the only valid element for 2D mesh"
+           etot_est = etot_est + num_elem_in_block(i)
+        else
+          write(6,*) "ERROR: Only QUAD8 elements are allowed in a 2D mesh!"
+          STOP
+        endif
+      endif
+
+      if (num_dim.eq.3) then
+	  
+        call chcopy(typ3,typ,3) 
+        call chcopy(typ5,typ,5) 
+
+        if ((typ3.eq.'HEX').and.(nvert.eq.20)) then 
+           write(6,*) "HEX20 is valid element in a 3D mesh."
+           write(6,*) "in this scenario, element type should all be HEX20"
+           converting_option = 1
+           etot_est = etot_est + num_elem_in_block(i)
+        else if ((typ3.eq.'HEX').and.(nvert.eq.8)) then 
+           write(6,*) "HEX8 is valid element in a 3D mesh."
+           write(6,*) "assume linear hybrid mesh (tetra-hex-wedge)"
+           write(6,*) "one HEX8 divide into 8 Nek hex elements"
+           converting_option = 2
+           etot_est = etot_est + num_elem_in_block(i)*8
+        else if ((typ5.eq.'TETRA').and.(nvert.eq.4))then 
+           write(6,*) "TETRA4 is valid element in a 3D mesh."
+           write(6,*) "assume linear hybrid mesh (tetra-hex-wedge)"
+           write(6,*) "one TETRA4 divide into 4 Nek hex elements"
+           converting_option = 2
+           etot_est = etot_est + num_elem_in_block(i)*4
+        else if ((typ5.eq.'WEDGE').and.(nvert.eq.6)) then 
+           write(6,*) "WEDGE6 is valid element in a 3D mesh."
+           write(6,*) "assume linear hybrid mesh (tetra-hex-wedge)"
+           write(6,*) "one WEDGE6 divide into 6 Nek hex elements"
+           converting_option = 2
+           etot_est = etot_est + num_elem_in_block(i)*6
+        else
+          write(6,*) "ERROR: invalid element in a 3D mesh!"
+          STOP
+        endif
+		
+        if ((flag.eq.1).and.(iexo.eq.1)) then
+         converting_option_old = converting_option
+        else
+          if (converting_option.ne.converting_option_old) then
+            write(6,*) "ERROR: inconsistent mesh type of exo file"
+            STOP
+          endif
+        endif
+		
+      endif
+      enddo
+
+      deallocate ( idblk )
+      deallocate ( num_nodes_per_elem )
+      deallocate ( num_attr           )
+      deallocate ( num_elem_in_block  )
+	  
+      return
+      end
+! -------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      subroutine exodus_read_new
+!
+!  Subroutine to read an exodusII binary file containing a mesh.
+!  It uses exodus fortran binding subroutines, which depend on
+!  the netcdf library for low level data access.
+!
+      use SIZE
+      include 'exodusII.inc'
+
+      integer exoid, cpu_ws, io_ws
+
+      character(MXSTLN) typ, qa_record(4,10)
+      character(MXLNLN) titl
+      character(1)      cdum
+
+!      integer,allocatable,dimension(:) :: idblk
+!      integer,allocatable,dimension(:) :: num_nodes_per_elem
+!      integer,allocatable,dimension(:) :: num_attr    !not used
+
+!
+! open EXODUS II file
+!
+      cpu_ws = 8 ! use real*8 to communicate with exodus
+      io_ws  = 0
+      exoid  = exopen (exoname, EXREAD, cpu_ws, io_ws, vers, ierr)
+!      if (ierr.lt.0) then
+!        write(6,'(2a)') "ERROR: cannot open file ", exoname 
+!        STOP
+!      endif
+!      write(6,*)
+!      write(6,'(a32,a,f4.2)') & 
+!            exoname," is an EXODUSII file; version ",vers
+!      write(6,'(a,i2)') "I/O word size", io_ws
+!
+! read database parameters
+!
+      call exgini (exoid, titl, num_dim, num_nodes, num_elem, &
+                   num_elem_blk, num_node_sets, num_side_sets, ierr)
+!     if (ierr.lt.0) then
+!       write(6,'(a)') "ERROR: cannot read exodusII parameters (exgini)"
+!       STOP
+!     endif
+!     write (6, '(/"database parameters:"/ /        &
+!                "title         = ", a81 / /        &
+!                "num_dim       = ", i8 /           &
+!                "num_nodes     = ", i8 /           &
+!                "num_elem      = ", i8 /           &
+!                "num_elem_blk  = ", i8 /           &
+!                "num_side_sets = ", i8)')          &
+!                titl,num_dim, num_nodes, num_elem, &
+!                 num_elem_blk, num_side_sets
+!     write (6,*)
+!
+! allocate some arrays    
+!
+      ! EXODUS:
+      allocate ( idblk              (num_elem_blk)        )
+      allocate ( num_nodes_per_elem (num_elem_blk)        )
+      allocate ( num_attr           (num_elem_blk)        )
+      allocate ( num_elem_in_block  (num_elem_blk)        )
+      allocate ( num_sides_in_set   (num_side_sets)       )
+      allocate ( idss               (num_side_sets)       )
+      allocate ( connect            (3**num_dim*num_elem) )
+      allocate ( x_exo              (3**num_dim*num_elem) )
+      allocate ( y_exo              (3**num_dim*num_elem) )
+      allocate ( z_exo              (3**num_dim*num_elem) )
+
+      ! Nek5000:
+!      allocate ( xm1                (3,3,3,num_elem*8)      )
+!      allocate ( ym1                (3,3,3,num_elem*8)      )
+!      allocate ( zm1                (3,3,3,num_elem*8)      )
+
+!
+! read element block parameters
+!
+      call exgebi (exoid, idblk, ierr)
+!      if (ierr.lt.0) then
+!        write(6,'(a)') "ERROR: cannot read block ids (exgebi)"
+!        STOP
+!      endif
+
+      do i = 1, num_elem_blk
+        call exgelb (exoid, idblk(i), typ, num_elem_in_block(i), &
+                     num_nodes_per_elem(i), num_attr(i), ierr)
+!        if (ierr.lt.0) then
+!          write(6,'(a,i3,a)') &
+!          "ERROR: cannot read parameters for block ",i," (exgelb)"
+!          STOP
+!        endif
+!        write (6, '("element block id   = ", i8,/       &
+!                   "element type       = ", 3x,a8,/     &
+!                   "num_elem_in_block  = ", i8,/        &
+!                   "num_nodes_per_elem = ", i8)')       &
+!                   idblk(i), typ, num_elem_in_block(i), &
+!                   num_nodes_per_elem(i)
+!        write(6,*)
 
 !        if (i.eq.1) then
 !          nvert=num_nodes_per_elem(i)
@@ -395,10 +571,10 @@
 ! read nodal coordinates values from database
 !
       call exgcor (exoid, x_exo, y_exo, z_exo, ierr)
-      if (ierr.lt.0) then
-        write(6,'(a)') "ERROR: cannot read nodal coordinates (exgcor)"
-        STOP
-      endif
+!      if (ierr.lt.0) then
+!        write(6,'(a)') "ERROR: cannot read nodal coordinates (exgcor)"
+!       STOP
+!     endif
 !
 ! read element connectivity
 !
@@ -407,10 +583,10 @@
         istart = iend + 1
         call exgelc (exoid, idblk(i), connect(istart), ierr)
         iend = iend+num_nodes_per_elem(i)*num_elem_in_block(i)
-        if (ierr.lt.0) then
-          write(6,'(a)') "ERROR: cannot read elm. connectivity (exgelc)"
-          STOP
-        endif
+!        if (ierr.lt.0) then
+!          write(6,'(a)') "ERROR: cannot read elm. connectivity (exgelc)"
+!          STOP
+!        endif
 60    continue
 !
 ! read individual side sets
@@ -430,8 +606,8 @@
             "ERROR: cannot read parameters for SideSet No.",i," (exgsp)"
             STOP
           endif
-          write (6, '("side set ", i2, " num_sides = ", i8)') &
-                 idss(i), num_sides_in_set(i)
+!          write (6, '("side set ", i2, " num_sides = ", i8)') &
+!                 idss(i), num_sides_in_set(i)
           num_sides_tot = num_sides_tot + num_sides_in_set(i)
           maxnss        = max(maxnss,num_sides_in_set(i))
         enddo
@@ -456,30 +632,30 @@
 ! read QA records
 !
       call exinq (exoid, EXQA, num_qa_rec, fdum, cdum, ierr)
-      if (ierr.lt.0) then
-        write(6,'(a)') "ERROR: cannot read QA records (exinq QA) "
-        STOP
-      elseif (ierr.gt.0) then
-        write(6,'(a)') "INFO: file does not contain any QA records"
-      else
-        call exgqa (exoid, qa_record, ierr)
-        if (ierr.lt.0) then
-          write(6,'(a,i3)') "WARNING: cannot read QA records (exgqa)"
-        else
-          write (6, '("QA records = ")')
-          if (num_qa_rec.gt.10) then
-            write(6,'(2a)') &
-              'WARNING: Cannot handle more than 10 QA records', &
-              'Printing only the first 10...'
-          else
-            do i = 1, num_qa_rec
-              do j = 1, 4
-                write (6,'(a)') qa_record(j,i)
-              enddo
-            enddo
-          endif
-        endif
-      endif
+!      if (ierr.lt.0) then
+!        write(6,'(a)') "ERROR: cannot read QA records (exinq QA) "
+!        STOP
+!      elseif (ierr.gt.0) then
+!        write(6,'(a)') "INFO: file does not contain any QA records"
+!      else
+!        call exgqa (exoid, qa_record, ierr)
+!        if (ierr.lt.0) then
+!          write(6,'(a,i3)') "WARNING: cannot read QA records (exgqa)"
+!        else
+!          write (6, '("QA records = ")')
+!          if (num_qa_rec.gt.10) then
+!            write(6,'(2a)') &
+!              'WARNING: Cannot handle more than 10 QA records', &
+!              'Printing only the first 10...'
+!          else
+!            do i = 1, num_qa_rec
+!              do j = 1, 4
+!                write (6,'(a)') qa_record(j,i)
+!              enddo
+!            enddo
+!          endif
+!        endif
+!      endif
 
       return
       end
@@ -598,1023 +774,6 @@
       return
       end
 !--------------------------------------------------------------------
-!-----------------------------------------------------------------
-      subroutine split_convert1
-! split 1 TETRA4 to 4 HEX20
-! split 1 WEDGE6 to 3 HEX20
-
-      use SIZE
-      include 'exodusII.inc'
-
-!  in fortran arraysm higher order is at back.
-      real*8 hexver(3,27,8) ! hex coordinates
-      real*8 tetver(3,10),wedgever(3,15)
-      real*8 ehexver(3,20)
-
-!  exoss is used to store sideset information for all exo elements.
-!  tet,hex,wedge
-      integer exoss(6,num_elem) 
-
-      integer tetss(4),wedgess(5),ehexss(6),hexss(6,8)
-      integer*8 ehexnumber,tetnumber,wedgenumber,bctot
-      integer*8 vert_index_exo
-      integer*8 iel_nek,iel_exo,ifc_exo
-
-      save ehexnumber,tetnumber,wedgenumber,bctot
-      save vert_index_exo
-      save iel_nek,iel_exo,ifc_exo
-
-      eacc_old = eacc
-
-      call rzero_int(exoss,6*num_elem)
-! store sideset information
-      if (num_side_sets.ne.0) then
-      write(6,'(a)') ''
-      write(6,'(a)') 'Store SideSet information from EXO file'
-        do iss=1,num_side_sets   ! loop over ss
-           if(idss(iss).gt.0) then
-           write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
-           do i=1,num_sides_in_set(iss) ! loop over sides in ss
-             iel_exo = elem_list(i,iss) ! exo element number
-             ifc_exo = side_list(i,iss) ! exo element face number
-             exoss(ifc_exo,iel_exo) = idss(iss)
-           enddo
-           endif
-        enddo
-      endif
-
-      !deallocate(elem_list,side_list)
-
-      write(6,'(A)') ' '
-      write(6,'(A)') 'Converting elements ... '
-
-!      allocate   (ccurve (4+8*(num_dim-2),num_elem*4) )
-!      allocate   (curve  (2*num_dim,12,   num_elem*4) )
-!      call rzero (curve,2*num_dim*12*num_elem*4)
-!      call blank (ccurve,(4+8*(num_dim-2))*num_elem*4)
-!
-!      allocate   (cbc    (2*num_dim,      num_elem*4) )
-!      allocate   (bc     (5,2*num_dim,    num_elem*4) ) 
-!      call rzero (bc,5*2*num_dim*num_elem*4)
-!      call blank (cbc,3*2*num_dim*num_elem*4)
-
-
-!  assume block 1 (or 1st block) contains all tet4 elements
-!  assume block 2 (or 2nd block) contains all wedge6 elements
-      call rzero_int(hexss,6*8) 
-      tetnumber  = num_elem_in_block(1)
-      vert_index_exo = 0
-      iel_nek = eacc_old !0
-
-      write(6,'(A)') 'Splitting elements ... '
-      do iel_exo = 1, num_elem  
-
-!! number of elements == 4*number of tet + 3*number of wedge
-
-!  if tet.
-       if (iel_exo.le.tetnumber) then
-
-!  read tet 4 . 
-!  linear interpolate to tet10
-       do ivert = 1, 4
-       vert_index_exo = vert_index_exo + 1  
-       tetver(1,ivert) = x_exo(connect(vert_index_exo))
-       tetver(2,ivert) = y_exo(connect(vert_index_exo))
-       tetver(3,ivert) = z_exo(connect(vert_index_exo))
-       enddo
-
-       call average2vec(tetver(1,5),tetver(1,1),tetver(1,2))
-       call average2vec(tetver(1,6),tetver(1,2),tetver(1,3))
-       call average2vec(tetver(1,7),tetver(1,1),tetver(1,3))
-       call average2vec(tetver(1,8),tetver(1,1),tetver(1,4))
-       call average2vec(tetver(1,9),tetver(1,2),tetver(1,4))
-       call average2vec(tetver(1,10),tetver(1,3),tetver(1,4))
-
-!  assign sideset to tet elements
-       call rzero_int(tetss,4)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,4
-         tetss(ifc_exo) = 0
-         tetss(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-!  given tet10 vertices, and return you four hex27 coords.
-       call tettohex(hexver,tetver,hexss,tetss)
-
-       do ihex = 1, 4
-          iel_nek = iel_nek + 1
-          eacc = eacc + 1
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
-
-          !write(6,*)  iel_nek
-          do inekvert = 1,27
-             xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)& 
-       + shiftvector(1)
-             ym1(inekvert,1,1,iel_nek) = hexver(2,inekvert,ihex)&
-       + shiftvector(2)
-             zm1(inekvert,1,1,iel_nek) = hexver(3,inekvert,ihex)&
-       + shiftvector(3)
-          enddo
-          do ifc=1,6
-             if(hexss(ifc,ihex).gt.0) then
-              bc(5,ifc,iel_nek) = hexss(ifc,ihex)
-              bc(4,ifc,iel_nek) = iexo
-              cbc(ifc,iel_nek)   = 'EXO' ! dummy boundary condition
-             endif
-          enddo
-       enddo
-
-      else ! if wedge elements 
-
-!  read wedge 6,
-!  linear interpolate to wedge 15
-       do ivert = 1,6
-       vert_index_exo = vert_index_exo + 1  
-       wedgever(1,ivert) = x_exo(connect(vert_index_exo))
-       wedgever(2,ivert) = y_exo(connect(vert_index_exo))
-       wedgever(3,ivert) = z_exo(connect(vert_index_exo))
-       enddo
-
-       call average2vec(wedgever(1,7),wedgever(1,1), &
-       wedgever(1,2))
-       call average2vec(wedgever(1,8),wedgever(1,2), &
-       wedgever(1,3))
-       call average2vec(wedgever(1,9),wedgever(1,1), &
-       wedgever(1,3))
-       call average2vec(wedgever(1,10),wedgever(1,1), &
-       wedgever(1,4))
-       call average2vec(wedgever(1,11),wedgever(1,2), &
-       wedgever(1,5))
-       call average2vec(wedgever(1,12),wedgever(1,3), &
-      wedgever(1,6))
-       call average2vec(wedgever(1,13),wedgever(1,4), &
-      wedgever(1,5))
-       call average2vec(wedgever(1,14),wedgever(1,5), &
-      wedgever(1,6))
-       call average2vec(wedgever(1,15),wedgever(1,4), &
-      wedgever(1,6))
-
-!  assign sideset to wedge elements
-       call rzero_int(wedgess,5)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,5
-          wedgess(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-
-!  given wedge15 vertices, and return you 3 hex coords.
-       call wedgetohex(hexver,wedgever,hexss,wedgess)
-       
-       do ihex = 1,3
-          iel_nek = iel_nek + 1
-          eacc = eacc + 1
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
-
-          do inekvert = 1,27
-             xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
-       + shiftvector(1)
-             ym1(inekvert,1,1,iel_nek) = hexver(2,inekvert,ihex)& 
-       + shiftvector(2)
-             zm1(inekvert,1,1,iel_nek) = hexver(3,inekvert,ihex)&
-       + shiftvector(3)
-          enddo
-          do ifc=1,6
-             if(hexss(ifc,ihex).gt.0) then
-              bc(5,ifc,iel_nek) = hexss(ifc,ihex)
-              bc(4,ifc,iel_nek) = iexo
-              cbc(ifc,iel_nek)   = 'EXO' ! dummy boundary condition
-             endif
-          enddo
-       enddo
-
-      endif
-   
-      enddo
-      write(6,'(A)') ' Done :: Splitting elements ... '
-
-      deallocate (x_exo,y_exo,z_exo,connect)
-      deallocate (elem_list,side_list)
-      deallocate ( idblk )
-      deallocate ( num_nodes_per_elem )
-      deallocate ( num_attr           )
-      deallocate ( num_elem_in_block  )
-      deallocate ( num_sides_in_set   )
-      deallocate ( idss               )
-
-      write(6,*) 'Converted elements in nek:',iel_nek-eacc_old
-      write(6,'(A)') 'Done :: Converting elements '
- 
-      !num_elem = iel_nek
-	  
-      !bctot = 0
-      !do ihex = 1,num_elem
-      !  do ifc=1,6
-      !     if (cbc(ifc,ihex).eq.'EXO') then
-      !        bctot = bctot + 1 
-      !     endif		
-      !  enddo
-      !enddo
-      !write(6,*) 'Converted elem sides with BC :',bctot
-
-      return
-      end
-!--------------------------------------------------------------------
-      subroutine split_convert2
-! split 1 TETRA4 to 4 HEX20, block 1
-! split 1 exo HEX8 to 8 hex20, block 2
-! split 1 WEDGE6 to 6 HEX20, block 3
-!
-      use SIZE
-      include 'exodusII.inc'
-
-!  in fortran arrays higher order is at back.
-      real*8 hexver(3,27,8) ! hex coordinates
-      real*8 tetver(3,10),wedgever(3,15)
-      real*8 ehexver(3,20)
-
-!  exoss is used to store sideset information for all exo elements.
-!  tet,hex,wedge
-      integer exoss(6,num_elem) 
-
-      integer tetss(4),wedgess(5),ehexss(6),hexss(6,8)
-      integer*8 ehexnumber,tetnumber,wedgenumber,bctot
-      integer*8 vert_index_exo
-      integer*8 iel_nek,iel_exo,ifc_exo
-
-      save ehexnumber,tetnumber,wedgenumber,bctot
-      save vert_index_exo
-      save iel_nek,iel_exo,ifc_exo
-      eacc_old = eacc
-      
-      call rzero_int(exoss,6*num_elem)
-! store sideset information
-      if (num_side_sets.ne.0) then
-      write(6,'(a)') ''
-      write(6,'(a)') 'Store SideSet information from EXO file'
-        do iss=1,num_side_sets   ! loop over ss 
-        write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
-           do i=1,num_sides_in_set(iss) ! loop over sides in ss
-             iel_exo = elem_list(i,iss) ! exo element number
-             ifc_exo = side_list(i,iss) ! exo element face number
-             exoss(ifc_exo,iel_exo) = idss(iss)
-           enddo
-        enddo
-      endif
-
-      write(6,'(A)') ' '
-      write(6,'(A)') 'Converting elements ... '
-
-!      allocate   (ccurve (4+8*(num_dim-2),num_elem*8) )
-!      allocate   (curve  (2*num_dim,12,   num_elem*8) )
-!      call rzero (curve,2*num_dim*12*num_elem*8)
-!      call blank (ccurve,(4+8*(num_dim-2))*num_elem*8)
-!	  
-!      allocate   (cbc    (2*num_dim,      num_elem*8) )
-!      allocate   (bc     (5,2*num_dim,    num_elem*8) ) 
-!      call rzero (bc,5*2*num_dim*num_elem*8)
-!      call blank (cbc,3*2*num_dim*num_elem*8)
-
-      call rzero_int(hexss,6*8) 
-      tetnumber  = num_elem_in_block(1) ! all exo tet elements in block 1 (or first block)
-      ehexnumber = num_elem_in_block(2) ! all exo hex elements in block 2 (or second block)
-      wedgenumber = num_elem_in_block(3) ! all exo wedge elements in block 3 (or third block)
-
-      vert_index_exo = 0
-      iel_nek =  eacc_old !0
-
-      do iel_exo = 1, num_elem  
-
-!! number of elements == 4*number of tet + 6*number of wedge + 8*number of hex
-
-!  block 1, if tet.
-       if (iel_exo.le.tetnumber) then
-
-!  read tet 4 . 
-!  linear interpolate to tet10
-       do ivert = 1, 4
-       vert_index_exo = vert_index_exo + 1  
-       tetver(1,ivert) = x_exo(connect(vert_index_exo))
-       tetver(2,ivert) = y_exo(connect(vert_index_exo))
-       tetver(3,ivert) = z_exo(connect(vert_index_exo))
-       enddo
-
-       call average2vec(tetver(1,5),tetver(1,1),tetver(1,2))
-       call average2vec(tetver(1,6),tetver(1,2),tetver(1,3))
-       call average2vec(tetver(1,7),tetver(1,1),tetver(1,3))
-       call average2vec(tetver(1,8),tetver(1,1),tetver(1,4))
-       call average2vec(tetver(1,9),tetver(1,2),tetver(1,4))
-       call average2vec(tetver(1,10),tetver(1,3),tetver(1,4))
-
-
-!  assign sideset to tet elements
-       call rzero_int(tetss,4)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,4
-          tetss(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-
-!  given tet10 vertices, and return you four hex coords.
-       call tettohex(hexver,tetver,hexss,tetss) 
-
-       do ihex = 1,4
-          iel_nek = iel_nek + 1
-           eacc = eacc + 1
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
-
-		   
-          do inekvert = 1,27
-             xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
-       + shiftvector(1)
-             ym1(inekvert,1,1,iel_nek) = hexver(2,inekvert,ihex)&
-       + shiftvector(2)
-             zm1(inekvert,1,1,iel_nek) = hexver(3,inekvert,ihex)&
-       + shiftvector(3)
-          enddo
-          do ifc=1,6
-             if(hexss(ifc,ihex).gt.0) then
-              bc(5,ifc,iel_nek) = hexss(ifc,ihex)
-              bc(4,ifc,iel_nek) = iexo
-              cbc(ifc,iel_nek)   = 'EXO' ! dummy boundary condition
-             endif
-          enddo
-       enddo
-
-!  block 2, if exo hex element, convert to 8 nek hex elements
-       elseif (iel_exo.gt.tetnumber &
-      .and.(iel_exo.le.(tetnumber+ehexnumber))) then
-
-!  read hex8
-!  linear interpolate to hex20	   
-       do ivert = 1,8
-       vert_index_exo = vert_index_exo + 1  
-       ehexver(1,ivert) = x_exo(connect(vert_index_exo))
-       ehexver(2,ivert) = y_exo(connect(vert_index_exo))
-       ehexver(3,ivert) = z_exo(connect(vert_index_exo))
-       enddo
-
-       call average2vec(ehexver(1,9),ehexver(1,1),ehexver(1,2))
-       call average2vec(ehexver(1,10),ehexver(1,2),ehexver(1,3))
-       call average2vec(ehexver(1,11),ehexver(1,3),ehexver(1,4))
-       call average2vec(ehexver(1,12),ehexver(1,1),ehexver(1,4))
-       call average2vec(ehexver(1,13),ehexver(1,1),ehexver(1,5))
-       call average2vec(ehexver(1,14),ehexver(1,2),ehexver(1,6))
-       call average2vec(ehexver(1,15),ehexver(1,3),ehexver(1,7))
-       call average2vec(ehexver(1,16),ehexver(1,4),ehexver(1,8))
-       call average2vec(ehexver(1,17),ehexver(1,5),ehexver(1,6))
-       call average2vec(ehexver(1,18),ehexver(1,6),ehexver(1,7))
-       call average2vec(ehexver(1,19),ehexver(1,7),ehexver(1,8))
-       call average2vec(ehexver(1,20),ehexver(1,5),ehexver(1,8))
-
-!  assign sideset
-       call rzero_int(ehexss,6)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,6
-          ehexss(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-
-       call ehexto8hex(hexver,ehexver,hexss,ehexss) 
-
-       do ihex = 1,8
-          iel_nek = iel_nek + 1
-          eacc = eacc + 1
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
-
-          do inekvert = 1,27
-             xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
-       + shiftvector(1)
-             ym1(inekvert,1,1,iel_nek) = hexver(2,inekvert,ihex)& 
-       + shiftvector(2)
-             zm1(inekvert,1,1,iel_nek) = hexver(3,inekvert,ihex)& 
-       + shiftvector(3)
-          enddo
-          do ifc=1,6
-             if(hexss(ifc,ihex).gt.0) then
-              bc(5,ifc,iel_nek) = hexss(ifc,ihex)
-              bc(4,ifc,iel_nek) = iexo
-              cbc(ifc,iel_nek)   = 'EXO' ! dummy boundary condition
-             endif
-          enddo
-       enddo
-
-! block 3, if WEDGE15 elements
-      elseif (iel_exo.gt.(tetnumber+ehexnumber)) then
-!  read wedge 6,
-!  linear interpolate to wedge 15
-       do ivert = 1,6
-       vert_index_exo = vert_index_exo + 1  
-       wedgever(1,ivert) = x_exo(connect(vert_index_exo))
-       wedgever(2,ivert) = y_exo(connect(vert_index_exo))
-       wedgever(3,ivert) = z_exo(connect(vert_index_exo))
-       enddo
-
-       call average2vec(wedgever(1,7),wedgever(1,1),&
-       wedgever(1,2))
-       call average2vec(wedgever(1,8),wedgever(1,2),&
-       wedgever(1,3))
-       call average2vec(wedgever(1,9),wedgever(1,1),&
-       wedgever(1,3))
-       call average2vec(wedgever(1,10),wedgever(1,1),&
-       wedgever(1,4))
-       call average2vec(wedgever(1,11),wedgever(1,2),&
-       wedgever(1,5))
-       call average2vec(wedgever(1,12),wedgever(1,3),&
-       wedgever(1,6))
-       call average2vec(wedgever(1,13),wedgever(1,4),&
-       wedgever(1,5))
-       call average2vec(wedgever(1,14),wedgever(1,5),&
-       wedgever(1,6))
-       call average2vec(wedgever(1,15),wedgever(1,4),&
-       wedgever(1,6))
-
-
-!  assign sideset to wedge elements
-       call rzero_int(wedgess,5)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,5
-          wedgess(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-
-!  given wedge15 vertices, and return you 6 hex coords.
-       call wedgetohex2(hexver,wedgever,hexss,wedgess)
-
-       do ihex = 1,6
-          iel_nek = iel_nek + 1
-          eacc = eacc + 1
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
-
-          do inekvert = 1,27
-             xm1(inekvert,1,1,iel_nek) = hexver(1,inekvert,ihex)&
-       + shiftvector(1)
-             ym1(inekvert,1,1,iel_nek) = hexver(2,inekvert,ihex)& 
-       + shiftvector(2)
-             zm1(inekvert,1,1,iel_nek) = hexver(3,inekvert,ihex)& 
-       + shiftvector(3)
-          enddo
-          do ifc=1,6
-             if(hexss(ifc,ihex).gt.0) then
-              bc(5,ifc,iel_nek) = hexss(ifc,ihex)
-              bc(4,ifc,iel_nek) = iexo
-              cbc(ifc,iel_nek)   = 'EXO' ! dummy boundary condition
-             endif
-          enddo
-       enddo
-
-      endif
-      enddo
-
-      write(6,*) 'Converted elements in nek:',iel_nek-eacc_old
-      write(6,'(A)') 'Done :: Converting elements '
-
-      deallocate(x_exo,y_exo,z_exo,connect)
-      deallocate (elem_list,side_list)
-      deallocate ( idblk )
-      deallocate ( num_nodes_per_elem )
-      deallocate ( num_attr           )
-      deallocate ( num_elem_in_block  )
-      deallocate ( num_sides_in_set   )
-      deallocate ( idss               )
-
-      !num_elem = iel_nek
-      !
-      !bctot = 0
-      !do ihex = 1,num_elem
-      !  do ifc=1,6
-      !     if (cbc(ifc,ihex).eq.'EXO') then
-      !        bctot = bctot + 1 
-      !     endif		
-      !  enddo
-      !enddo
-      !write(6,*) 'Converted elem sides with BC :',bctot
-	  
-      return
-      end
-!--------------------------------------------------------------------
-      subroutine tettohex(hexver,tetver,hexss,tetss)
-      real*8 tetver(3,10) ! tet vertices
-      real*8 tetface(3,4) ! tet face center
-      real*8 tetcen(3,1)  ! tet vol center
-      real*8 hex8(3,8)
-      real*8 hexver(3,27,4) ! four hex vertices in nek format.
-      real*8 tempvec(3,3) ! temperary vector variable
-
-      integer tetss(4),hexss(6,4)
-
-      do i=1,6*4
-      hexss(i,1)=0
-      enddo
-
-!  get face center coords.
-      call average3vec(tetface(1,1),tetver(1,1),tetver(1,2),tetver(1,4))
-      call average3vec(tetface(1,2),tetver(1,2),tetver(1,3),tetver(1,4))
-      call average3vec(tetface(1,3),tetver(1,1),tetver(1,3),tetver(1,4))
-      call average3vec(tetface(1,4),tetver(1,1),tetver(1,2),tetver(1,3))
-
-!  get tet vol center
-      call average4vec(tetcen(1,1),tetver(1,1),tetver(1,2),&
-      tetver(1,3),tetver(1,4))
-
-!  assign coordinates to four hex.
-!  hex 1
-      hexss(1,1) = tetss(1)
-      hexss(4,1) = tetss(3)
-      hexss(5,1) = tetss(4)
-
-      call assignvec(hex8(1,1),tetver(1,1))
-      call assignvec(hex8(1,2),tetver(1,5))
-      call assignvec(hex8(1,3),tetface(1,4))
-      call assignvec(hex8(1,4),tetver(1,7))
-      call assignvec(hex8(1,5),tetver(1,8))
-      call assignvec(hex8(1,6),tetface(1,1))
-      call assignvec(hex8(1,7),tetcen(1,1))
-      call assignvec(hex8(1,8),tetface(1,3))
-      call hex8tohex27(hexver(1,1,1),hex8(1,1))	 
-!  hex 2
-      hexss(1,2) = tetss(1)
-      hexss(2,2) = tetss(2)
-      hexss(5,2) = tetss(4)
-
-      call assignvec(hex8(1,1),tetver(1,5))
-      call assignvec(hex8(1,2),tetver(1,2))
-      call assignvec(hex8(1,3),tetver(1,6))
-      call assignvec(hex8(1,4),tetface(1,4))
-      call assignvec(hex8(1,5),tetface(1,1))
-      call assignvec(hex8(1,6),tetver(1,9))
-      call assignvec(hex8(1,7),tetface(1,2))
-      call assignvec(hex8(1,8),tetcen(1,1))
-      call hex8tohex27(hexver(1,1,2),hex8(1,1))
-!  hex 3
-      hexss(2,3) = tetss(2)
-      hexss(3,3) = tetss(3)
-      hexss(5,3) = tetss(4)
-
-      call assignvec(hex8(1,1),tetface(1,4))
-      call assignvec(hex8(1,2),tetver(1,6))
-      call assignvec(hex8(1,3),tetver(1,3))
-      call assignvec(hex8(1,4),tetver(1,7))
-      call assignvec(hex8(1,5),tetcen(1,1))
-      call assignvec(hex8(1,6),tetface(1,2))
-      call assignvec(hex8(1,7),tetver(1,10))
-      call assignvec(hex8(1,8),tetface(1,3))
-      call hex8tohex27(hexver(1,1,3),hex8(1,1))
-
-!  hex 4
-      hexss(2,4) = tetss(2)
-      hexss(3,4) = tetss(3)
-      hexss(6,4) = tetss(1)
-
-      call assignvec(hex8(1,1),tetcen(1,1))
-      call assignvec(hex8(1,2),tetface(1,2))
-      call assignvec(hex8(1,3),tetver(1,10))
-      call assignvec(hex8(1,4),tetface(1,3))
-      call assignvec(hex8(1,5),tetface(1,1))
-      call assignvec(hex8(1,6),tetver(1,9))
-      call assignvec(hex8(1,7),tetver(1,4))
-      call assignvec(hex8(1,8),tetver(1,8))
-      call hex8tohex27(hexver(1,1,4),hex8(1,1))
-
-      return
-      end	  
-!--------------------------------------------------------------------
-      subroutine wedgetohex(hexver,wedgever,hexss,wedgess)
-!  convert 1 wedge to 3 hex
-      real*8 wedgever(3,15) ! tet vertices
-      real*8 wedgeface(3,5) ! tet face center
-      real*8 wedgecen(3,1) ! tet vol center
-      real*8 hex8(3,8)
-      real*8 hexver(3,27,4) ! four hex vertices in nek format.
-      real*8 tempvec(3,3) ! temperary vector variable
-
-      integer wedgess(5),hexss(6,4)
-
-      do i=1,6*4
-      hexss(i,1)=0
-      enddo
-
-      call average3vec(wedgeface(1,4),wedgever(1,1),wedgever(1,2),&
-      wedgever(1,3))
-      call average3vec(wedgeface(1,5),wedgever(1,4),wedgever(1,5),&
-      wedgever(1,6))
-
-!  assign coordinates to 3 hex.
-!  hex 1
-      hexss(1,1) = wedgess(1)
-      hexss(4,1) = wedgess(3)
-      hexss(5,1) = wedgess(4)
-      hexss(6,1) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgever(1,1))
-      call assignvec(hex8(1,2),wedgever(1,7))
-      call assignvec(hex8(1,3),wedgeface(1,4))
-      call assignvec(hex8(1,4),wedgever(1,9))
-      call assignvec(hex8(1,5),wedgever(1,4))
-      call assignvec(hex8(1,6),wedgever(1,13))
-      call assignvec(hex8(1,7),wedgeface(1,5))
-      call assignvec(hex8(1,8),wedgever(1,15))
-      call hex8tohex27(hexver(1,1,1),hex8(1,1))	 
-!  hex 2
-      hexss(1,2) = wedgess(1)
-      hexss(2,2) = wedgess(2)
-      hexss(5,2) = wedgess(4)
-      hexss(6,2) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgever(1,7))
-      call assignvec(hex8(1,2),wedgever(1,2))
-      call assignvec(hex8(1,3),wedgever(1,8))
-      call assignvec(hex8(1,4),wedgeface(1,4))
-      call assignvec(hex8(1,5),wedgever(1,13))
-      call assignvec(hex8(1,6),wedgever(1,5))
-      call assignvec(hex8(1,7),wedgever(1,14))
-      call assignvec(hex8(1,8),wedgeface(1,5))
-      call hex8tohex27(hexver(1,1,2),hex8(1,1))
-!  hex 3
-      hexss(2,3) = wedgess(2)
-      hexss(3,3) = wedgess(3)
-      hexss(5,3) = wedgess(4)
-      hexss(6,3) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgeface(1,4))
-      call assignvec(hex8(1,2),wedgever(1,8))
-      call assignvec(hex8(1,3),wedgever(1,3))
-      call assignvec(hex8(1,4),wedgever(1,9))
-      call assignvec(hex8(1,5),wedgeface(1,5))
-      call assignvec(hex8(1,6),wedgever(1,14))
-      call assignvec(hex8(1,7),wedgever(1,6))
-      call assignvec(hex8(1,8),wedgever(1,15))
-      call hex8tohex27(hexver(1,1,3),hex8(1,1))
-
-      return
-      end	  
-! -------------------------------------------------------------------
-      subroutine wedgetohex2(hexver,wedgever,hexss,wedgess)
-!  convert 1 wedge to 6 nek hex20 elements
-      real*8 wedgever(3,15) ! tet vertices
-      real*8 wedgeface(3,5) ! tet face center
-      real*8 wedgecen(3,1) ! tet vol center
-      real*8 hex8(3,8)
-      real*8 hexver(3,27,8) ! four hex vertices in nek format.
-      real*8 tempvec(3,3) ! temperary vector variable
-
-      integer wedgess(5),hexss(6,8)
-
-      do i=1,6*8
-      hexss(i,1)=0
-      enddo
-
-      call average4vec(wedgeface(1,1),wedgever(1,1),wedgever(1,2),&
-      wedgever(1,4),wedgever(1,5))	 
-      call average4vec(wedgeface(1,2),wedgever(1,2),wedgever(1,3),&
-      wedgever(1,5),wedgever(1,6))
-      call average4vec(wedgeface(1,3),wedgever(1,1),wedgever(1,3),&
-      wedgever(1,4),wedgever(1,6))
-      call average3vec(wedgeface(1,4),wedgever(1,1),wedgever(1,2),&
-      wedgever(1,3))
-      call average3vec(wedgeface(1,5),wedgever(1,4),wedgever(1,5),&
-      wedgever(1,6))
-      call average2vec(wedgecen(1,1),wedgeface(1,4),wedgeface(1,5))
-
-!  assign coordinates to 6 hex.
-!  hex 1
-      hexss(1,1) = wedgess(1)
-      hexss(4,1) = wedgess(3)
-      hexss(5,1) = wedgess(4)
-
-      call assignvec(hex8(1,1),wedgever(1,1))
-      call assignvec(hex8(1,2),wedgever(1,7))
-      call assignvec(hex8(1,3),wedgeface(1,4))
-      call assignvec(hex8(1,4),wedgever(1,9))
-      call assignvec(hex8(1,5),wedgever(1,10))
-      call assignvec(hex8(1,6),wedgeface(1,1))
-      call assignvec(hex8(1,7),wedgecen(1,1))
-      call assignvec(hex8(1,8),wedgeface(1,3))
-      call hex8tohex27(hexver(1,1,1),hex8(1,1))
-
-!  hex 2
-      hexss(1,2) = wedgess(1)
-      hexss(2,2) = wedgess(2)
-      hexss(5,2) = wedgess(4)
-
-      call assignvec(hex8(1,1),wedgever(1,7))
-      call assignvec(hex8(1,2),wedgever(1,2))
-      call assignvec(hex8(1,3),wedgever(1,8))
-      call assignvec(hex8(1,4),wedgeface(1,4))
-      call assignvec(hex8(1,5),wedgeface(1,1))
-      call assignvec(hex8(1,6),wedgever(1,11))
-      call assignvec(hex8(1,7),wedgeface(1,2))
-      call assignvec(hex8(1,8),wedgecen(1,1))
-      call hex8tohex27(hexver(1,1,2),hex8(1,1))
-!  hex 3
-      hexss(2,3) = wedgess(2)
-      hexss(3,3) = wedgess(3)
-      hexss(5,3) = wedgess(4)
-
-      call assignvec(hex8(1,1),wedgeface(1,4))
-      call assignvec(hex8(1,2),wedgever(1,8))
-      call assignvec(hex8(1,3),wedgever(1,3))
-      call assignvec(hex8(1,4),wedgever(1,9))
-      call assignvec(hex8(1,5),wedgecen(1,1))
-      call assignvec(hex8(1,6),wedgeface(1,2))
-      call assignvec(hex8(1,7),wedgever(1,12))
-      call assignvec(hex8(1,8),wedgeface(1,3))
-      call hex8tohex27(hexver(1,1,3),hex8(1,1))
-
-!  hex 4
-      hexss(1,4) = wedgess(1)
-      hexss(4,4) = wedgess(3)
-      hexss(6,4) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgever(1,10))
-      call assignvec(hex8(1,2),wedgeface(1,1))
-      call assignvec(hex8(1,3),wedgecen(1,1))
-      call assignvec(hex8(1,4),wedgeface(1,3))
-      call assignvec(hex8(1,5),wedgever(1,4))
-      call assignvec(hex8(1,6),wedgever(1,13))
-      call assignvec(hex8(1,7),wedgeface(1,5))
-      call assignvec(hex8(1,8),wedgever(1,15))
-      call hex8tohex27(hexver(1,1,4),hex8(1,1))	 
-!  hex 5
-      hexss(1,5) = wedgess(1)
-      hexss(2,5) = wedgess(2)
-      hexss(6,5) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgeface(1,1))
-      call assignvec(hex8(1,2),wedgever(1,11))
-      call assignvec(hex8(1,3),wedgeface(1,2))
-      call assignvec(hex8(1,4),wedgecen(1,1))
-      call assignvec(hex8(1,5),wedgever(1,13))
-      call assignvec(hex8(1,6),wedgever(1,5))
-      call assignvec(hex8(1,7),wedgever(1,14))
-      call assignvec(hex8(1,8),wedgeface(1,5))
-      call hex8tohex27(hexver(1,1,5),hex8(1,1))
-!  hex 6
-      hexss(2,6) = wedgess(2)
-      hexss(3,6) = wedgess(3)
-      hexss(6,6) = wedgess(5)
-
-      call assignvec(hex8(1,1),wedgecen(1,1))
-      call assignvec(hex8(1,2),wedgeface(1,2))
-      call assignvec(hex8(1,3),wedgever(1,12))
-      call assignvec(hex8(1,4),wedgeface(1,3))
-      call assignvec(hex8(1,5),wedgeface(1,5))
-      call assignvec(hex8(1,6),wedgever(1,14))
-      call assignvec(hex8(1,7),wedgever(1,6))
-      call assignvec(hex8(1,8),wedgever(1,15))
-      call hex8tohex27(hexver(1,1,6),hex8(1,1))
-
-      return
-      end	  
-! -------------------------------------------------------------------
-      subroutine ehexto8hex(hexver,ehexver,hexss,ehexss)
-!  convert exodus hex20 elements 
-!  to 8 nek hex20 elements
-      real*8 ehexver(3,20)
-      real*8 ehexface(3,6)
-      real*8 ehexcen(3,1) ! tet vol center
-      real*8 hex8(3,8)
-      real*8 hexver(3,27,8)
-      integer ehexss(6),hexss(6,8)
-
-      do i=1,6*8
-      hexss(i,1)=0
-      enddo
-
-      call average4vec(ehexface(1,1),ehexver(1,1),ehexver(1,2),&
-      ehexver(1,5),ehexver(1,6))
-      call average4vec(ehexface(1,2),ehexver(1,2),ehexver(1,3),&
-      ehexver(1,6),ehexver(1,7))
-      call average4vec(ehexface(1,3),ehexver(1,3),ehexver(1,4),&
-      ehexver(1,7),ehexver(1,8))
-      call average4vec(ehexface(1,4),ehexver(1,1),ehexver(1,4),&
-      ehexver(1,5),ehexver(1,8))
-      call average4vec(ehexface(1,5),ehexver(1,1),ehexver(1,2),&
-      ehexver(1,3),ehexver(1,4))
-      call average4vec(ehexface(1,6),ehexver(1,5),ehexver(1,6),&
-      ehexver(1,7),ehexver(1,8))
-      call average2vec(ehexcen(1,1),ehexface(1,5),ehexface(1,6))
-
-!  assign coordinates to 8 hex.
-!  hex 1
-      hexss(1,1) = ehexss(1)
-      hexss(4,1) = ehexss(4)
-      hexss(5,1) = ehexss(5)
-
-      call assignvec(hex8(1,1),ehexver(1,1))
-      call assignvec(hex8(1,2),ehexver(1,9))
-      call assignvec(hex8(1,3),ehexface(1,5))
-      call assignvec(hex8(1,4),ehexver(1,12))
-      call assignvec(hex8(1,5),ehexver(1,13))
-      call assignvec(hex8(1,6),ehexface(1,1))
-      call assignvec(hex8(1,7),ehexcen(1,1))
-      call assignvec(hex8(1,8),ehexface(1,4))
-      call hex8tohex27(hexver(1,1,1),hex8(1,1))	 
-
-!  hex 2
-      hexss(1,2) = ehexss(1)
-      hexss(2,2) = ehexss(2)
-      hexss(5,2) = ehexss(5)
-
-      call assignvec(hex8(1,1),ehexver(1,9))
-      call assignvec(hex8(1,2),ehexver(1,2))
-      call assignvec(hex8(1,3),ehexver(1,10))
-      call assignvec(hex8(1,4),ehexface(1,5))
-      call assignvec(hex8(1,5),ehexface(1,1))
-      call assignvec(hex8(1,6),ehexver(1,14))
-      call assignvec(hex8(1,7),ehexface(1,2))
-      call assignvec(hex8(1,8),ehexcen(1,1))
-      call hex8tohex27(hexver(1,1,2),hex8(1,1))
-!  hex 3
-      hexss(2,3) = ehexss(2)
-      hexss(3,3) = ehexss(3)
-      hexss(5,3) = ehexss(5)
-
-      call assignvec(hex8(1,1),ehexface(1,5))
-      call assignvec(hex8(1,2),ehexver(1,10))
-      call assignvec(hex8(1,3),ehexver(1,3))
-      call assignvec(hex8(1,4),ehexver(1,11))
-      call assignvec(hex8(1,5),ehexcen(1,1))
-      call assignvec(hex8(1,6),ehexface(1,2))
-      call assignvec(hex8(1,7),ehexver(1,15))
-      call assignvec(hex8(1,8),ehexface(1,3))
-      call hex8tohex27(hexver(1,1,3),hex8(1,1))
-
-!  hex 4
-      hexss(3,4) = ehexss(3)
-      hexss(4,4) = ehexss(4)
-      hexss(5,4) = ehexss(5)
-
-      call assignvec(hex8(1,1),ehexver(1,12))
-      call assignvec(hex8(1,2),ehexface(1,5))
-      call assignvec(hex8(1,3),ehexver(1,11))
-      call assignvec(hex8(1,4),ehexver(1,4))
-      call assignvec(hex8(1,5),ehexface(1,4))
-      call assignvec(hex8(1,6),ehexcen(1,1))
-      call assignvec(hex8(1,7),ehexface(1,3))
-      call assignvec(hex8(1,8),ehexver(1,16))
-      call hex8tohex27(hexver(1,1,4),hex8(1,1))
-
-!  hex 5
-      hexss(1,5) = ehexss(1)
-      hexss(4,5) = ehexss(4)
-      hexss(6,5) = ehexss(6)
-
-      call assignvec(hex8(1,1),ehexver(1,13))
-      call assignvec(hex8(1,2),ehexface(1,1))
-      call assignvec(hex8(1,3),ehexcen(1,1))
-      call assignvec(hex8(1,4),ehexface(1,4))
-      call assignvec(hex8(1,5),ehexver(1,5))
-      call assignvec(hex8(1,6),ehexver(1,17))
-      call assignvec(hex8(1,7),ehexface(1,6))
-      call assignvec(hex8(1,8),ehexver(1,20))
-      call hex8tohex27(hexver(1,1,5),hex8(1,1))	 
-!  hex 6
-      hexss(1,6) = ehexss(1)
-      hexss(2,6) = ehexss(2)
-      hexss(6,6) = ehexss(6)
-
-      call assignvec(hex8(1,1),ehexface(1,1))
-      call assignvec(hex8(1,2),ehexver(1,14))
-      call assignvec(hex8(1,3),ehexface(1,2))
-      call assignvec(hex8(1,4),ehexcen(1,1))
-      call assignvec(hex8(1,5),ehexver(1,17))
-      call assignvec(hex8(1,6),ehexver(1,6))
-      call assignvec(hex8(1,7),ehexver(1,18))
-      call assignvec(hex8(1,8),ehexface(1,6))
-      call hex8tohex27(hexver(1,1,6),hex8(1,1))
-!  hex 7
-      hexss(2,7) = ehexss(2)
-      hexss(3,7) = ehexss(3)
-      hexss(6,7) = ehexss(6)
-
-      call assignvec(hex8(1,1),ehexcen(1,1))
-      call assignvec(hex8(1,2),ehexface(1,2))
-      call assignvec(hex8(1,3),ehexver(1,15))
-      call assignvec(hex8(1,4),ehexface(1,3))
-      call assignvec(hex8(1,5),ehexface(1,6))
-      call assignvec(hex8(1,6),ehexver(1,18))
-      call assignvec(hex8(1,7),ehexver(1,7))
-      call assignvec(hex8(1,8),ehexver(1,19))
-      call hex8tohex27(hexver(1,1,7),hex8(1,1))
-
-!  hex 8
-      hexss(3,8) = ehexss(3)
-      hexss(4,8) = ehexss(4)
-      hexss(6,8) = ehexss(6)
-
-      call assignvec(hex8(1,1),ehexface(1,4))
-      call assignvec(hex8(1,2),ehexcen(1,1))
-      call assignvec(hex8(1,3),ehexface(1,3))
-      call assignvec(hex8(1,4),ehexver(1,16))
-      call assignvec(hex8(1,5),ehexver(1,20))
-      call assignvec(hex8(1,6),ehexface(1,6))
-      call assignvec(hex8(1,7),ehexver(1,19))
-      call assignvec(hex8(1,8),ehexver(1,8))
-      call hex8tohex27(hexver(1,1,8),hex8(1,1))	 
-
-      return
-      end
-!--------------------------------------------------------------------
-      subroutine hex8tohex27(hex27,hex8)
-!  convert hex8 coordinates to hex27 coordinates in nek.
-!  
-      real*8 hex8(3,8)
-      real*8 hex27(3,27)
-      real*8 tempvec(3,3)
-
-!   hex27 vert 1
-      call assignvec(hex27(1,1),hex8(1,1))
-!   hex27 vert 2
-      call average2vec(tempvec(1,1),hex8(1,1),hex8(1,2))
-      call assignvec(hex27(1,2),tempvec(1,1))
-!   hex27 vert 3
-      call assignvec(hex27(1,3),hex8(1,2))
-!   hex27 vert 4
-      call average2vec(tempvec(1,1),hex8(1,1),hex8(1,4))
-      call assignvec(hex27(1,4),tempvec(1,1))
-!   hex27 vert 5
-      call average4vec(tempvec(1,1),hex8(1,1), &
-      hex8(1,2),hex8(1,3),hex8(1,4))
-      call assignvec(hex27(1,5),tempvec(1,1))
-!   hex27 vert 6
-      call average2vec(tempvec(1,1),hex8(1,2),hex8(1,3))
-      call assignvec(hex27(1,6),tempvec(1,1))
-!   hex27 vert 7
-      call assignvec(hex27(1,7),hex8(1,4))
-!   hex27 vert 8
-      call average2vec(tempvec(1,1),hex8(1,3),hex8(1,4))
-      call assignvec(hex27(1,8),tempvec(1,1))
-!   hex27 vert 9
-      call assignvec(hex27(1,9),hex8(1,3))
-
-!   hex27 vert 10
-      call average2vec(tempvec(1,1),hex8(1,1),hex8(1,5))
-      call assignvec(hex27(1,10),tempvec(1,1))  
-!   hex27 vert 11
-      call average4vec(tempvec(1,1),hex8(1,1), &
-      hex8(1,2),hex8(1,5),hex8(1,6))
-      call assignvec(hex27(1,11),tempvec(1,1))
-!   hex27 vert 12
-      call average2vec(tempvec(1,1),hex8(1,2),hex8(1,6))
-      call assignvec(hex27(1,12),tempvec(1,1))
-
-!   hex27 vert 13
-      call average4vec(tempvec(1,1),hex8(1,1), &
-      hex8(1,4),hex8(1,5),hex8(1,8))
-      call assignvec(hex27(1,13),tempvec(1,1))
-!   hex27 vert 14
-      call average4vec(tempvec(1,1),hex8(1,1), &
-      hex8(1,4),hex8(1,5),hex8(1,8))
-      call average4vec(tempvec(1,2),hex8(1,2), &
-      hex8(1,3),hex8(1,6),hex8(1,7))
-      call average2vec(tempvec(1,3),tempvec(1,1),tempvec(1,2))
-      call assignvec(hex27(1,14),tempvec(1,3))
-!   hex27 vert 15
-      call average4vec(tempvec(1,1),hex8(1,2), & 
-      hex8(1,3),hex8(1,6),hex8(1,7))
-      call assignvec(hex27(1,15),tempvec(1,1))
-
-!   hex27 vert 16
-      call average2vec(tempvec(1,1),hex8(1,4),hex8(1,8))
-      call assignvec(hex27(1,16),tempvec(1,1))
-!   hex27 vert 17
-      call average4vec(tempvec(1,1),hex8(1,3), &
-      hex8(1,4),hex8(1,7),hex8(1,8))
-      call assignvec(hex27(1,17),tempvec(1,1))
-!   hex27 vert 18
-      call average2vec(tempvec(1,1),hex8(1,3),hex8(1,7))
-      call assignvec(hex27(1,18),tempvec(1,1))
-
-!   hex27 vert 19
-      call assignvec(hex27(1,19),hex8(1,5))
-!   hex27 vert 20
-      call average2vec(tempvec(1,1),hex8(1,5),hex8(1,6))
-      call assignvec(hex27(1,20),tempvec(1,1))	  
-!   hex27 vert 21
-      call assignvec(hex27(1,21),hex8(1,6))
-
-!   hex27 vert 22
-      call average2vec(tempvec(1,1),hex8(1,5),hex8(1,8))
-      call assignvec(hex27(1,22),tempvec(1,1))	  
-!   hex27 vert 23
-      call average4vec(tempvec(1,1),hex8(1,5), &
-      hex8(1,6),hex8(1,7),hex8(1,8))
-      call assignvec(hex27(1,23),tempvec(1,1))
-!   hex27 vert 24
-      call average2vec(tempvec(1,1),hex8(1,6),hex8(1,7))
-      call assignvec(hex27(1,24),tempvec(1,1))
-	  
-!   hex27 vert 25
-      call assignvec(hex27(1,25),hex8(1,8))
-!   hex27 vert 26
-      call average2vec(tempvec(1,1),hex8(1,7),hex8(1,8))
-      call assignvec(hex27(1,26),tempvec(1,1))	  
-!   hex27 vert 27
-      call assignvec(hex27(1,27),hex8(1,7))
-
-      return
-      end
-! -------------------------------------------------------------------
       subroutine assignvec(a,b)
       real*8 a(3),b(3)
       a(1) = b(1)
@@ -1648,139 +807,88 @@
       return
       end
 ! -------------------------------------------------------------------
-      subroutine setbc
-!  set boundary condition 
-!  read from a file casename.bc
+!--------------------------------------------------------------------
+      subroutine setbc_new
+! handle 2d 3d mesh together
       use SIZE
-      parameter (npbc_max=10) ! maximum pairs of periodic boundary condition
-
+	 
+      integer quad_edge_node(2,4)
+      data quad_edge_node /1,3,3,9,7,9,1,7/
+	 
+      integer hex_face_node(4,6)
+      data hex_face_node /1,3,21,19,3,9,27,21,7,9,27,25,1,7,25,19,1,7,9,3,19,21,27,25/
+      
       character*3 ubc
-      integer tags(2),ibc,nbc,io,er
-      integer ip,np
-      integer ptags(2,npbc_max)
-      real  pvecs(3,npbc_max)
+      integer tags(2),ibc,nbc,io
+      integer ip,np,ipe,ipe2,nipe(2)
+      integer ptags(2)
+      integer fnode(4)
+      real pvec(3)
+      real fpxyz(3,2)
+      real AB_v(3),AD_v(3),farea,product_v(3)
+      real dist,distMax,ptol
 
-      character*32 bcname
-      character*1 bcnam1(32)
-      equivalence(bcname,bcnam1)
-
-      call blank (bcname,32)
-
-      len = ltrunc(exoname,32)
-      call chcopy(bcnam1,exoname,(len-3))
-      call chcopy(bcnam1(len-3),'.bc' , 3)
-      len = ltrunc(bcnam1,32)
-
-      open(301,file=bcname,err=1010) ! if error, direct go to label 1010, return
-      write(6,*) 'Setting boundary condition from ',bcname(:len),' file' 
-
-      read(301,*,iostat=io) nbc
-      if(io.ne.0) then
-        write(6,*) bcname(:len),' file is empty '
-        write(6,*) 'please set boundary condition in .usr file'
-         return
+! boundary condition summary
+      write(6,*) '******************************************************'
+      write(6,*) 'Boundary info summary'
+      write(6,*) 'sideSet ID'
+      do ibc= 1,bcNumber
+      write(6,*) bcID(ibc)
+      enddo
+      write(6,*) '******************************************************'
+ 
+ 
+      write(6,*) 'Enter number of periodic boundary surface pairs:'
+      read (5,*) nbc
+	  
+      if(nbc.ne.0) then
+      write(6,*) 'Enter search tolerance:'
+      read (5,*) ptol
       endif
+	  
+      if(nbc.le.0) return
+	  
+      allocate ( parray (2,2,num_elem))
 
-       do ibc = 1,nbc
-        call blank (ubc,3)
-        read(301,*) tags(1),ubc
-! not periodic boundary condition, direct set it up
-          write(6,*) 'setting ',ubc,' to surface ',tags(1)
+      do ibc = 1,nbc 
+        write(6,*) 'input surface 1 and  surface 2  sideSet ID'
+        read (5,*) ptags(1),ptags(2)
+        write(6,*) 'input translation vector (surface 1 -> surface 2)'
+        if (num_dim.eq.2) then
+          read (5,*) pvec(1),pvec(2),pvec(3)
+        else
+          read (5,*) pvec(1),pvec(2),pvec(3)
+        endif 
+
+          ipe = 0
           do ihex = 1, num_elem
-            do iface = 1,6
-               if(bc(5,iface,ihex).eq.tags(1)) then
-                 cbc(iface,ihex) = ubc
+            do iface = 1,2*num_dim
+               if(bc(5,iface,ihex).eq.ptags(1)) then   
+                ipe = ipe + 1
+                parray(1,1,ipe) = ihex
+                parray(2,1,ipe) = iface
                endif
             enddo
           enddo
-      enddo
-      ip = 0
-      read(301,*,iostat=io) nbc,ptol 
-                       ! nbc is the number of pairs of periodic boundary condition
-                       ! ptol is the tolerance used to search periodic boundary condition
-
-      if(io.ne.0) then
-         write(6,*) 'No periodic boundary condition set.'
-         return
-      endif
-
-      if(nbc.gt.npbc_max) then
-         write(6,*) 'ERROR: increase npbc_max to ',nbc
-         write(6,*) 'and recompile exo2nek'
-         return
-      endif
-
-      do ibc = 1,nbc
-        ip = ip + 1
-        read(301,*) ptags(1,ip),ptags(2,ip),pvecs(1,ip),pvecs(2,ip),pvecs(3,ip)
-! ptags(1,ip) is surface 1 number sideset number
-! ptags(2,ip) is surface 2 number sideset number
-! pvecs(1,ip),pvecs(2,ip),pvecs(3,ip) is user defined projection vector
-!  pvecs = 1 -> 2 
-      enddo
-      close(301)
-
-      write(6,*) 'Setting periodic boundary condition' 
-      np = ip
-! np is the number of pairs of periodic bc now
-      do ip = 1,np
-! mapping surface ptags(1,ip) to surface ptags(2,ip)
-        call setPeriodic(ptags(1,ip),pvecs(1,ip),ptol)
-      enddo
-
-1010  return
-      end
-!--------------------------------------------------------------------
-      subroutine setPeriodic(ptags,pvec,ptol)
-      use SIZE
-
-      integer hex_face_node(4,6)
-      data hex_face_node /1,3,21,19,3,9,27,21,7,9,27,25,1,7,25,19,1,7,9,3,19,21,27,25/
-
-      !integer parray(2,2,num_elem)
-      real parea(2,num_elem)
-
-      integer fnode(4),ifnode,ptags(2),ipe,nipe(2),nperror
-      real pvec(3),ptol,fpxyz(3,2)
-      real dist,distMax
-
-      allocate ( parray (2,2,num_elem))	  
-
-      ipe = 0
-
-! collect ihex,iface for surface ptags(1)
-      do ihex = 1,num_elem
-         do iface = 1,6
-            if(bc(5,iface,ihex).eq.ptags(1)) then 
-              ipe = ipe + 1
-              parray(1,1,ipe) = ihex
-              parray(2,1,ipe) = iface
-            endif
-         enddo
-      enddo
-      nipe(1) = ipe
-
-! collect ihex,iface for surface ptags(2)
-      ipe = 0
-      do ihex = 1, num_elem
-         do iface = 1,6
-            if(bc(5,iface,ihex).eq.ptags(2)) then
+          nipe(1) = ipe
+	  
+          ipe = 0
+          do ihex = 1, num_elem
+            do iface = 1,2*num_dim
+               if(bc(5,iface,ihex).eq.ptags(2)) then
                 ipe = ipe + 1
                 parray(1,2,ipe) = ihex
                 parray(2,2,ipe) = iface
-             endif
-         enddo
-      enddo
-      nipe(2) = ipe
+               endif
+            enddo
+          enddo
+          nipe(2) = ipe
 
-      write(6,*)'mapping surface',ptags(1),'with',nipe(1),'faces'
-      write(6,*)'to surface',ptags(2),'with',nipe(2),'faces' 
-
-      if(nipe(1).ne.nipe(2))  then
-         write(6,*) 'EORROR, face numbers are not matching'
-         write(6,*) 'periodic faces should have conformal mesh'
-         return
-      endif
+          if(nipe(1).ne.nipe(2))  then
+            write(6,*)'mapping sideset ',ptags(1),'with',nipe(1),'faces'
+            write(6,*)'to sideset ',ptags(2),'with',nipe(2),'faces'
+            write(6,*) 'EORROR, face numbers are not matching'
+          endif
 
 ! 1st loop, loop faces on surface 1
       do ipe = 1,nipe(1)
@@ -1788,52 +896,73 @@
          iface = parray(2,1,ipe)
 ! get face center xyz
          call rzero(fpxyz(1,1),3)
-         do ifnode = 1,4
+
+         if (num_dim.eq.2) then
+		   do ifnode = 1,2
+             fnode(ifnode)=quad_edge_node(ifnode,iface)
+             fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.5
+             fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.5
+           enddo
+         else
+           do ifnode = 1,4
              fnode(ifnode)=hex_face_node(ifnode,iface)
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.25
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.25
-             fpxyz(3,1) = fpxyz(3,1)+zm1(fnode(ifnode),1,1,ihex)*0.25			 
-         enddo
+             fpxyz(3,1) = fpxyz(3,1)+zm1(fnode(ifnode),1,1,ihex)*0.25
+           enddo
+         endif
 
 ! 2nd loop over surface 2
-         distMax = 1000.0
+         distMax = ptol
          do ipe2 = 1,nipe(2)
                 ihex2 = parray(1,2,ipe2)
                 iface2 = parray(2,2,ipe2)
 ! get face center xyz
                call rzero(fpxyz(1,2),3)
+			 
+             if (num_dim.eq.2) then
+		       do ifnode = 1,2
+                fnode(ifnode)=quad_edge_node(ifnode,iface)
+                fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.5
+                fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.5
+               enddo
+             else
                do ifnode = 1,4
                fnode(ifnode)=hex_face_node(ifnode,iface2)
                fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.25
                fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.25
                fpxyz(3,2) = fpxyz(3,2)+zm1(fnode(ifnode),1,1,ihex2)*0.25
               enddo
+             endif
  
-         dist = sqrt((fpxyz(1,2)-fpxyz(1,1)-pvec(1))**2+(fpxyz(2,2)-fpxyz(2,1)-pvec(2))**2+(fpxyz(3,2)-fpxyz(3,1)-pvec(3))**2)
+       dist = sqrt((fpxyz(1,2)-fpxyz(1,1)-pvec(1))**2 &
+      +(fpxyz(2,2)-fpxyz(2,1)-pvec(2))**2 &
+      +(fpxyz(3,2)-fpxyz(3,1)-pvec(3))**2)
 
                if (dist.lt.distMax) then 
                   distMax = dist
-                  !write(6,*) distMax
-                  if(distMax.le.ptol) then
                   bc(1,iface,ihex) = ihex2*1.0
                   bc(2,iface,ihex) = iface2*1.0
-                  bc(1,iface2,ihex2) = ihex*1.0
-                  bc(2,iface2,ihex2) = iface*1.0
-                  cbc(iface,ihex) = 'P  '
-                  cbc(iface2,ihex2) = 'P  '
-! for debug use only
-!          write(6,*) ihex,iface,bc(1,iface,ihex),bc(2,iface,ihex)
-!          write(6,*) ihex2,iface2,bc(1,iface2,ihex2),bc(2,iface2,ihex2)
-!          write(6,*) fpxyz(1,1),fpxyz(2,1),fpxyz(3,1)
-!          write(6,*) fpxyz(1,2),fpxyz(2,2),fpxyz(3,2)
-!          write(6,*) dist,areadiff,parea(1,ipe),parea(2,ipe2)
-                  endif
                endif
          enddo
       enddo
 
-          nperror = 0
+! change. only assign periodic face at the end of loop.
+! this will assign the closest face for periodicity.
 
+     do ipe = 1,nipe(1)
+         ihex = parray(1,1,ipe)
+         iface = parray(2,1,ipe)
+         ihex2 = int(bc(1,iface,ihex))
+         iface2 = int(bc(2,iface,ihex)) 
+         bc(1,iface2,ihex2) = ihex*1.0
+         bc(2,iface2,ihex2) = iface*1.0
+         cbc(iface,ihex) = 'P  '
+         cbc(iface2,ihex2) = 'P  '
+     enddo
+
+        nperror = 0
+   
           write(6,*)'doing periodic check for surface',ptags(1)
 
           do ipe = 1,nipe(1)
@@ -1843,7 +972,7 @@
                   nperror = nperror +1 
              endif
           enddo
-          if (nperror.gt.0) write(6,*) 'ERROR,',nperror, ' faces did not map'
+          if (nperror.gt.0) write(6,*) 'ERROR,',nperror, ' faces did not for periodicity'
 
           nperror = 0
 
@@ -1855,42 +984,58 @@
              ihex3 = int(bc(1,iface2,ihex2))
              iface3 = int(bc(2,iface2,ihex2))
              if ((ihex.ne.ihex3).or.(iface.ne.iface3)) then
+               nperror = nperror + 1
+             endif
+          enddo
 
-! for debug use only
-!
-!                write(6,*) 'ERROR,',ihex,iface,' map to ',ihex2,iface2
-!                write(6,*) 'but,',ihex2,iface2,' map to ',ihex3,iface3
-!
-!		     do ifnode = 1,4
-!         fnode(ifnode)=hex_face_node(ifnode,iface)
-!      write(6,*)xm1(fnode(ifnode),1,1,ihex),ym1(fnode(ifnode),1,1,ihex),
-!     & zm1(fnode(ifnode),1,1,ihex) 
-!             enddo
-!			 
-!		     do ifnode = 1,4
-!         fnode(ifnode)=hex_face_node(ifnode,iface2)
-!      write(6,*)xm1(fnode(ifnode),1,1,ihex2),
-!     & ym1(fnode(ifnode),1,1,ihex2),zm1(fnode(ifnode),1,1,ihex2) 
-!             enddo
-!
-!		     do ifnode = 1,4
-!         fnode(ifnode)=hex_face_node(ifnode,iface3)
-!      write(6,*)xm1(fnode(ifnode),1,1,ihex3),
-!     & ym1(fnode(ifnode),1,1,ihex3),zm1(fnode(ifnode),1,1,ihex3) 
-!             enddo
+          if (nperror.gt.0) then
+          write(6,*) 'ERROR,',nperror,'faces are wrong out of total ',nipe(1),' faces'
+          endif
+  
+          write(6,*)'doing periodic check for surface',ptags(2)
+
+          nperror = 0
+
+          do ipe = 1,nipe(2)
+             ihex = parray(1,2,ipe)
+             iface = parray(2,2,ipe)
+             if (cbc(iface,ihex).ne.'P  ') then
+                  nperror = nperror +1 
+             endif
+          enddo
+          if (nperror.gt.0) write(6,*) 'ERROR,',nperror, ' faces did not map for periodicity'
+
+          nperror = 0
+          do ipe = 1,nipe(2)
+             ihex = parray(1,2,ipe)
+             iface = parray(2,2,ipe)
+             ihex2 = int(bc(1,iface,ihex))
+             iface2 = int(bc(2,iface,ihex))
+             ihex3 = int(bc(1,iface2,ihex2))
+             iface3 = int(bc(2,iface2,ihex2))
+             if ((ihex.ne.ihex3).or.(iface.ne.iface3)) then
                 nperror = nperror + 1
              endif
           enddo		  
 
           if (nperror.gt.0) then
-          write(6,*) 'ERROR,',nperror,'faces are wrong out of total ',nipe(1),' faces'
+          write(6,*) 'ERROR,',nperror,'faces are wrong out of total ',nipe(2),' faces'
           endif
+ 
+      enddo
+
+      deallocate(parray)
+	  
+      write(6,*) '******************************************************'
+      write(6,*) 'Please set boundary conditions to all non-periodic boundaries'
+      write(6,*) 'in .usr file usrdat2() subroutine'
+      write(6,*) '******************************************************'
 
       return
       end
-! -------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !--------------------------------------------------------------------
-      subroutine setbc_new
+      subroutine setbc_3d
       use SIZE
 	 
       integer hex_face_node(4,6)
@@ -2512,7 +1657,7 @@
       ! gather all boundary information
 	  
       do iel= 1,num_elem
-       do jfc =1,6
+       do jfc =1,2*num_dim
 
          if(ibc.eq.0) then
          if (bc(5,jfc,iel).ne.0) then
@@ -2744,7 +1889,7 @@
       call byte_open(re2name,ierr)
             
       num_elem = etot
-      num_dim = 3
+      !num_dim = 3
 
 !  Write the header
       call blank   (hdr,80)    

@@ -5,6 +5,9 @@ module SIZE
 !
       character(32) exoname ! MXSTLN=32 max string length in exodus file
 	  
+      character,allocatable,dimension(:,:) :: fluidexo
+      character,allocatable,dimension(:,:) :: solidexo
+	  
       integer,allocatable,dimension(:) :: idblk
       integer,allocatable,dimension(:) :: num_nodes_per_elem
       integer,allocatable,dimension(:) :: num_attr    !not used
@@ -36,6 +39,11 @@ module SIZE
 	 
       integer bcNumber
       integer,save,allocatable,dimension(:)   ::  bcID
+	  
+      integer converting_option,converting_option_old
+	  
+	  
+	  
 !
 !
 ! NEK CORE variables:
