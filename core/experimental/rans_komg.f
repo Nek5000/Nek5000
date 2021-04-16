@@ -23,7 +23,7 @@
       return
       end
 c-----------------------------------------------------------------------
-      real function rans_turbPrandtl
+      real function rans_turbPrandtl()
       include 'SIZE'
       include 'RANS_KOMG'
 
