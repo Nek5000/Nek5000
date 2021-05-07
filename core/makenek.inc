@@ -68,7 +68,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
-: ${LD:="mpif77"}
+: ${LD:=$FC}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
@@ -219,7 +219,7 @@ case $FCcomp in
                ;;
   *gfortran*)  FCPP="-cpp"
                FR8="-fdefault-real-8 -fdefault-double-8"
-               FF77="-std=legacy"
+               FF77="-w -std=legacy"
                ;;
   *ftn*)       FCPP="-eZ"
                FR8="-sreal64"
@@ -442,8 +442,8 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}/core:" \
 -e "s:^SCMT[ ]*=.*:SCMT=${NEK_SOURCE_ROOT}/core/cmt:" \
+-e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
 $NEK_SOURCE_ROOT/core/makefile.template >.makefile
 
 if [ $VISIT -ne 0 ]; then
@@ -506,6 +506,8 @@ fi
 if [ -f .makefile ]; then
   sed -e "1i\\
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
+-e "s:${NEK_SOURCE_ROOT}:\$S:g" \
+-e "s:^S[ ]*=.*:S\:=${NEK_SOURCE_ROOT}:" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
   printf "done\n"

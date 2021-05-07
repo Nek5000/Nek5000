@@ -172,7 +172,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   int nelMin, nelMax;
   int ncMin, ncMax, ncSum;
   int nsMin, nsMax, nsSum;
-  int nssMin, nssMax, nssSum;
+  int nssMin, nssMax;
+  long long nssSum;
 
   struct gs_data *gsh;
   int b;
@@ -222,7 +223,7 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   nssSum = nsSum;
   comm_allreduce(&comm, gs_int, gs_max, &nssMax , 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_add, &nssSum , 1, &b);
+  comm_allreduce(&comm, gs_long, gs_add, &nssSum , 1, &b);
 
   nsSum = nsSum/Nmsg;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
@@ -251,9 +252,8 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_free(&comm);
 }
 
-int redistributeData(int *nel_,long long *vl,long long *el,
-  int *part,int *seq,int nv,int lelt,struct comm *comm)
-{
+int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *seq, int nv, int lelt,
+                     struct comm *comm) {
   int nel=*nel_;
 
   struct crystal cr;
@@ -287,8 +287,10 @@ int redistributeData(int *nel_,long long *vl,long long *el,
   if (nel > lelt) count = 1;
   comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
   if (count > 0) {
+    count = nel;
+    comm_allreduce(comm, gs_int, gs_max, &count, 1, &ibuf);
     if (comm->id == 0)
-      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
+      printf("ERROR: resulting parition requires lelt=%d!\n", count);
     return 1;
   }
 
@@ -312,13 +314,12 @@ int redistributeData(int *nel_,long long *vl,long long *el,
 }
 
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, double *xyz,
-               const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fmode,int *rtval)
+void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
+               int *fcomm, int *fpartitioner, int *falgo, int *loglevel, int *rtval)
 {
   struct comm comm;
 
-  int nel, nv, mode;
+  int nel, nv, partitioner, algo;
   int e, n;
   int count, ierr, ibuf;
   int *part,*seq;
@@ -326,7 +327,8 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 
   nel  = *nell;
   nv   = *nve;
-  mode = *fmode;
+  partitioner = *fpartitioner;
+  algo = *falgo; // 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
 
 #if defined(MPI)
   comm_ext cext = MPI_Comm_f2c(*fcomm);
@@ -335,48 +337,51 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
-  part = (int*) malloc(*lelt * sizeof(int));
-  seq  = (int*) malloc(*lelt * sizeof(int));
+  part = (int *)malloc(*lelt * sizeof(int));
+  seq  = (int *)malloc(*lelt * sizeof(int));
 
   ierr = 1;
 #if defined(PARRSB)
-  int rsb,rcb;
-  rsb=mode&1;
-  rcb=mode&2;
+  parRSB_options options = parrsb_default_options;
+  options.print_timing_info = 0;
+  if(*loglevel > 2) options.print_timing_info = 1;
 
-  opt[0] = 1;
-  opt[1] = 1; /* verbosity */
-  opt[2] = 0;
+  if (partitioner & 1)
+    options.global_partitioner = 0;
+  else if (partitioner & 2)
+    options.global_partitioner = 1;
 
-  if(rcb){
-    ierr = parRCB_partMesh(part,seq,xyz,nel,nv,opt,comm.c);
-    if (ierr != 0) goto err;
+  if (partitioner & 1)
+    options.rsb_algo = algo;
 
-    ierr=redistributeData(&nel,vl,el,part,seq,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
-  }
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
 
-  if(rsb){
-    ierr = parRSB_partMesh(part,vl,xyz,nel,nv,opt,comm.c);
-    if (ierr != 0) goto err;
+  ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
+  if (ierr != 0)
+    goto err;
 
-    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
-  }
+  ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
+  if (ierr != 0)
+    goto err;
+
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
+
 #elif defined(PARMETIS)
-  int metis; metis=mode&4;
+  int metis;
+  metis = partitioner & 4;
 
-  if(metis){
+  if (metis) {
     opt[0] = 1;
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
 
     ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
 
-    ierr=redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
-    if (ierr != 0) goto err;
-
-    /* printPartStat(vl, nel, nv, cext); */
+    ierr = redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
+    if (ierr != 0)
+      goto err;
   }
 #endif
 
@@ -385,6 +390,8 @@ void fpartMesh(long long *el, long long *vl, double *xyz,
 
   *nell = nel;
   *rtval = 0;
+  if (comm.id == 0) printf("\n");
+  fflush(stdout);
   return;
 
 err:

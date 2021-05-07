@@ -7,12 +7,12 @@ set -a
 # source path 
 #NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
-# Linker
-#LD="mpif77"
-
 # Fortran/C compiler
 #FC="mpif77"
 #CC="mpicc"
+
+# Linker
+#LD="$FC"
 
 # config options (set to "?" to get a list)
 #PPLIST="" 
@@ -59,6 +59,7 @@ $NEK_SOURCE_ROOT/bin/nekconfig $@
 if [[ $1 != "clean" ]]; then
  $NEK_SOURCE_ROOT/bin/nekconfig -build-dep
  set -o pipefail
+ touch $1.usr 
  make -j4 2>&1 | tee -a build.log
  set +o pipefail
 fi

@@ -2352,7 +2352,8 @@ c     Quick check on maximum #dofs:
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve + ngvs  ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
-      if (nio.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
+      if (nio.eq.0 .and. loglevel.gt.1) 
+     $  write(6,1) nx,ngvv,ngvi,ngv,ngvm
     1 format('   setvert3d:',i4,4i16)
 
       return

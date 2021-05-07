@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VER=0.6
+VER=0.7
 
 if [ "$1" == "clean" ]; then
   rm -rf parRSB/build lib include 2>/dev/null
@@ -20,5 +20,5 @@ fi
 
 cd parRSB
 set -x
-make -j4 $PARRSB_OPT
+make lib install $PARRSB_OPT
 set +x
