@@ -177,6 +177,7 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 
   struct gs_data *gsh;
   int b;
+  long long b_long_long;
 
   int numPoints;
   long long *data;
@@ -223,7 +224,7 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   nssSum = nsSum;
   comm_allreduce(&comm, gs_int, gs_max, &nssMax , 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
-  comm_allreduce(&comm, gs_long, gs_add, &nssSum , 1, &b);
+  comm_allreduce(&comm, gs_long_long, gs_add, &nssSum , 1, &b_long_long);
 
   nsSum = nsSum/Nmsg;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
