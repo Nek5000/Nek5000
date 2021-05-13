@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - master
-      - github-actions
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -22,10 +21,12 @@ jobs:
     strategy:
       matrix:
         test_case: [ 
+            "Tools",
             "Axi::test_PnPn_Parallel",
             "CmtInviscidVortex::test_PnPn_Parallel",
             "ConjHt::test_PnPn_Parallel",
             "Eddy_EddyUv::test_PnPn_Parallel",
+            "Eddy_EddyUv::test_PnPn_Serial",
             "Eddy_LegacySize::test_PnPn2_Parallel",
             "Eddy_Neknek::test_PnPn2_Parallel",
             "Eddy_Neknek::test_PnPn_Parallel",
@@ -35,6 +36,7 @@ jobs:
             "Ethier::test_PnPn2_Parallel",
             "Ethier::test_PnPn_Parallel",
             "FsHydro::test_PnPn2_Parallel",
+            "InclDef::test_PnPn_Parallel",
             "IO_Test::test_PnPn2_Parallel",
             "KovStokes::test_PnPn2_Parallel",
             "KovStokes::test_PnPn_Parallel",
@@ -43,13 +45,24 @@ jobs:
             "chan2d::test_PnPn_Parallel",
             "eddy_mv::test_PnPn_Parallel",
             "lpm_one::test_PnPn_Parallel",
-            "lpm_two::test_PnPn_Parallel" ]
+            "lpm_two::test_PnPn_Parallel" 
+        ]
+        include:
+          - test_case: "Tools"
+            mpi: no
+          - test_case: "Eddy_EddyUv::test_PnPn_Serial"
+            mpi: no 
+          - test_case: "InclDef::test_PnPn_Parallel"
+            mpi: no
       fail-fast: false
 
     name: "${{ matrix.test_case }}"
 
     env:
       TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
+      CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
 
     steps:
       - uses: actions/checkout@v2

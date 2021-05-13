@@ -30,8 +30,8 @@ def build_tools(
     my_env["bin_nek_tools"] = tools_bin
 
     if targets[0] == "all":
-        targets = os.walk(tools_root).next()[1]
-        print(targets)
+        targets = [t for t in os.listdir(tools_root) if "maketools" not in t]
+        print("Targets:", targets)
 
     for t in targets:
         proc = Popen([maketools_in, t], env=my_env, cwd=tools_root, stderr=STDOUT)
