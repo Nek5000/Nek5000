@@ -14,43 +14,14 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
 
-      common /Anutex/ Anut
+      common /viscmol/mul   (lx1,ly1,lz1,lelv), mul_dx(lx1,ly1,lz1,lelv)
+     $               ,mul_dy(lx1,ly1,lz1,lelv), mul_dz(lx1,ly1,lz1,lelv)
+      real mul, mul_dx, mul_dy, mul_dz
 
-      integer icalld
-      save    icalld
-      data    icalld /0/
+      ie = gllel(ieg)
 
-      pi    = 4.*atan(1.0)
-      ie     = gllel(ieg)
-c      udiff  = ediff(ix,iy,iz,ie)
-c      utrans = 1.
-
-      if(icalld.eq.0) then
-         udiff =param(2)
-         utrans=param(1)  ! this is the density
-      endif
-
-      xmu = param(2)
-      Amp  =0.0
-      xlen =8.0
-      xloc = xm1(ix,iy,iz,ie)
-      yloc = ym1(ix,iy,iz,ie)
-      xmu_analyt = xmu*(1.0+Anut*(1.0-yloc*yloc)
-     $                *(1.0+Amp *sin(2.*pi*xloc/xlen)))
-
-      if (ifield.eq.1) then
-
-         utrans= param (1)  ! this is the density
-         udiff = param (2)
-         udiff = xmu_analyt
-
-      elseif (ifield.eq.2) then
-
-         utrans= param (7)  ! rhoCp
-         udiff = param (8)
-         udiff = xmu_analyt
-
-      endif
+      utrans = param(1) 
+      udiff  = mul(ix,iy,iz,ie) 
 
       return
       end
@@ -60,9 +31,14 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
 
-      ffx = 0.0
-      ffy = 0.0
-      ffz = 0.0
+      common /cforce/ forcx(lx1,ly1,lz1,lelv),forcy(lx1,ly1,lz1,lelv)
+     $               ,forcz(lx1,ly1,lz1,lelv)
+
+      ie = gllel(ieg)
+
+      ffx = forcx(ix,iy,iz,ie)
+      ffy = forcy(ix,iy,iz,ie)
+      ffz = forcz(ix,iy,iz,ie)
 
       return
       end
@@ -72,55 +48,6 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
 
-      integer e,f,eg
-      ie = gllel(ieg)
-
-      if (ifield.eq.2  )        qvol = 0.0
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine userchk
-      include 'SIZE'
-      include 'TOTAL'
-
-
-      parameter (lxyz=lx1*ly1*lz1)
-
-      real x0(3)
-      save x0
-
-      integer icalld
-      save    icalld
-      data    icalld /0/
-
-      integer icount
-      save    icount
-
-      integer e
-      logical ifverbose
-
-      ntot=nx2*ny2*nz2*nelv
-
-      xmu = param(2)
-      if (istep.lt.1) then
-         do i=1,ntot
-            xx = xm2(i,1,1,1)
-            pr(i,1,1,1) = 2.0*(8.0-xm2(i,1,1,1))*xmu
-         enddo
-        call outpost2(vx,vy,vz,pr,t,ldimt,'   ')
-      endif
-
-      pi    = 4.*atan(1.0)
-      rho   = 1.
-      dnu   = param(2)
-      delta = 1.           ! channel half height
-      A_w   = 2.*pi * pi   ! wall area
-
-      ntot = nx1*ny1*nz1*nelv
-
-      call post_minmax
-
       return
       end
 c-----------------------------------------------------------------------
@@ -128,22 +55,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-
-      external analyt_soln
-      common /Anutex/ Anut
-      real nu
-
-      nu=param(2)
-      ux=0.0
-      uy=0.0
-      uz=0.0
-c 
-      if     (ifield.eq.1) then
-         uex =analyt_soln(y,nu,Anut)
-         ux  = uex
-      elseif (ifield.eq.2) then
-         temp=1.0
-      endif
 
       return
       end
@@ -153,33 +64,54 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
 
-      external analyt_soln
-      common /Anutex/ Anut
-      real nu
+      common /exavel/ uxex (lx1,ly1,lz1,lelv),uyex (lx1,ly1,lz1,lelv)
+     $               ,uzex (lx1,ly1,lz1,lelv)
 
-      integer idum
-      save    idum 
-      data    idum / 0 /
+      ie = gllel(ieg)
 
-      if (idum.eq.0) idum = 99 + nid
-      nu=param(2)
+      ux = uxex(ix,iy,iz,ie)
+      uy = uyex(ix,iy,iz,ie)
+      uz = uzex(ix,iy,iz,ie)
 
-c     blunt profile w/ random perturbations
-      eps = 0.0 ! .05
-      uex =analyt_soln(y,nu,Anut)
-      ux  = uex
-      uy  = 0.0
-      uz  = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
 
-      temp=0
+      common /exavel/ uxex (lx1,ly1,lz1,lelv),uyex (lx1,ly1,lz1,lelv)
+     $               ,uzex (lx1,ly1,lz1,lelv)
 
-!entire domain initialized to a reference temperature, zero velocity
-! and inlet K and omega values
-c ---
+      common /viscmol/mul   (lx1,ly1,lz1,lelv), mul_dx(lx1,ly1,lz1,lelv)
+     $               ,mul_dy(lx1,ly1,lz1,lelv), mul_dz(lx1,ly1,lz1,lelv)
+      real mul, mul_dx, mul_dy, mul_dz
 
-      if (ifield.eq.2) then
-         temp=1.0
-      endif
+      common /scrns/ dv1  (lx1,ly1,lz1,lelv),
+     $               diffx(lx1,ly1,lz1,lelv),
+     $               diffy(lx1,ly1,lz1,lelv)
+
+      n = nx1*ny1*nz1*nelv
+
+      do i=1,n
+        diffx(i,1,1,1) = abs(vx(i,1,1,1)-uxex(i,1,1,1))
+        if (uxex(i,1,1,1).gt.1e-15) diffx(i,1,1,1) = 
+     $    diffx(i,1,1,1)/uxex(i,1,1,1)
+        diffy(i,1,1,1) = abs(vy(i,1,1,1)-uyex(i,1,1,1))
+        if (uyex(i,1,1,1).gt.1e-15) diffy(i,1,1,1) = 
+     $    diffy(i,1,1,1)/uyex(i,1,1,1)
+      enddo
+
+      difx1 = glmax(diffx,n)
+      dify1 = glmax(diffy,n)
+
+      if (nio.eq.0) 
+     $   write(6,'(1p2e13.4,A)') difx1,dify1,' Linf VX VY'
+
+c      if(ifoutfld) then
+c         call outpost2(diffx,diffy,diffz,mul,t,0,'dif')
+c         call outpost2(mul_dx,mul_dy,mul_dz,mul,t,0,'mul')
+c      endif
 
       return
       end
@@ -188,42 +120,19 @@ c-----------------------------------------------------------------------
       include 'SIZE'      ! _before_ mesh is generated, which 
       include 'TOTAL'     ! guarantees GLL mapping of mesh.
 
-      common /Anutex/ Anut
-
-      Anut =2.0
-      return
-      one  = 1.
-      pi   = 4.*atan(one)
-      twopi= 2.*pi
-      fctr  =1.0
-      fctr2 =fctr*fctr
-
-      xlen = twopi*fctr2  !  Here, map domain onto pi x [-1,1] x 2pi
-      zlen = pi*fctr      !  Assume that y is already in [-1,1].
-
-      n=8*nelv
-      xmin = glmin(xc,n)
-      xmax = glmax(xc,n)
-      zmin = glmin(zc,n)
-      zmax = glmax(zc,n)
-
-      xscale = xlen/(xmax-xmin)
-      zscale = zlen/(zmax-zmin)
-
-      do i=1,n
-         x       = xc(i,1)
-         xc(i,1) = xscale*x
-
-         z       = zc(i,1)
-         zc(i,1) = zscale*z
-      enddo
-
       return
       end
 c-----------------------------------------------------------------------
-      subroutine usrdat2   ! This routine to modify mesh coordinates
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+
       include 'SIZE'
       include 'TOTAL'
+
+      call get_mol_visc
+      call get_forcing
+      call get_analsol
+
+c      ifstrs = .false.
 
       return
       end
@@ -234,91 +143,110 @@ c-----------------------------------------------------------------------
 
       return
       end
-c-----------------------------------------------------------------------
-      subroutine post_minmax
+C-----------------------------------------------------------------------
+      subroutine get_mol_visc
       include 'SIZE'
       include 'TOTAL'
 
-      external analyt_soln
-      parameter (lxyz=lx1*ly1*lz1)
+      common /viscmol/mul   (lx1,ly1,lz1,lelv), mul_dx(lx1,ly1,lz1,lelv)
+     $               ,mul_dy(lx1,ly1,lz1,lelv), mul_dz(lx1,ly1,lz1,lelv)
+      real mul, mul_dx, mul_dy, mul_dz
 
-      common/visexct/ nut(lx1,ly1,lz1,lelv)
-     $               ,uex(lx1,ly1,lz1,lelv)
-     $               ,dfu(lx1,ly1,lz1,lelv)
-     $               ,dfe(lx1,ly1,lz1,lelv)
-      common /Anutex/ Anut
-      real nu
+      Re   = 1./param(2)
+      pi   = 4.0*atan(1.0)
+      ampl = 1.0
 
-      n = nx1*ny1*nz1*nelt
-      call rzero(dfe,n)
-      nu=param(2)
-
-      umax = glmax(vx,n)
-      umin = glmin(vx,n)
-      tmax = glmax(t ,n)
-      tmin = glmin(t ,n)
-
-      do ie = 1,nelv
-      do k = 1,nz1
-      do j = 1,ny1
-      do i = 1,nx1
-         xloc = xm1(i,j,k,ie)
-         yloc = ym1(i,j,k,ie)
-         nut(i,j,k,ie)=t(i,j,k,ie,1)
-         uex(i,j,k,ie)=analyt_soln(yloc,nu,Anut)
-         dfe(i,j,k,ie)=abs(vx(i,j,k,ie) - uex(i,j,k,ie))
-c         if (xloc.le.4.0) 
-c     $      dfe(i,j,k,ie)=abs(vx(i,j,k,ie) - uex(i,j,k,ie))
+      do ie=1,nelv
+      do iz=1,nz1
+      do iy=1,ny1
+      do ix=1,nx1
+        x=xm1(ix,iy,iz,ie)
+        y=ym1(ix,iy,iz,ie)
+        z=zm1(ix,iy,iz,ie)
+        pert_mul = y
+        mul(ix,iy,iz,ie)=(1./Re)*(1. + ampl*pert_mul)
       enddo
       enddo
       enddo
       enddo
 
-      dfu_max = glmax(dfe,n)
+      call opgrad  (mul_dx,mul_dy,mul_dz,mul)
+      call opdssum (mul_dx,mul_dy,mul_dz)
+      call opcolv  (mul_dx,mul_dy,mul_dz,binvm1)
 
-      if (nid.eq.0) then
-         write(6,2) istep,dt,time,dfu_max,' X err'
- 2       format(i9,3e15.5,a8)
-      endif
+      return
+      end
 
-c      if (mod(istep,iostep).eq.0 .and. istep.gt.0) then
-c         call outpost2(vx ,uex,uex,dfu,t,1,'dif')
-c      endif
+c-----------------------------------------------------------------------
+      subroutine get_analsol
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /exavel/ uxex (lx1,ly1,lz1,lelv),uyex (lx1,ly1,lz1,lelv)
+     $               ,uzex (lx1,ly1,lz1,lelv)
+
+      n=nx1*ny1*nz1*nelv
+
+      U0 = 1.
+      pi = 4.0*atan(1.0)
+      phx= pi/2.
+      phy= pi/2.
+
+      do i=1,n
+        x = xm1(i,1,1,1)
+        y = ym1(i,1,1,1)
+        z = zm1(i,1,1,1)
+        uxex (i,1,1,1) =     U0 * cos(pi*x+phx) * sin(2.*pi*y+phy)
+        uyex (i,1,1,1) =-0.5*U0 * sin(pi*x+phx) * cos(2.*pi*y+phy)
+        uzex (i,1,1,1) = 0.0*U0
+      enddo
+
+      return
+      end
+
+c-----------------------------------------------------------------------
+      subroutine get_forcing
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /cforce/ forcx(lx1,ly1,lz1,lelv),forcy(lx1,ly1,lz1,lelv)
+     $               ,forcz(lx1,ly1,lz1,lelv)
+      common /viscmol/mul   (lx1,ly1,lz1,lelv), mul_dx(lx1,ly1,lz1,lelv)
+     $               ,mul_dy(lx1,ly1,lz1,lelv), mul_dz(lx1,ly1,lz1,lelv)
+      real mul, mul_dx, mul_dy, mul_dz
+
+      n=nx1*ny1*nz1*nelv
+
+      U0 = 1.
+      pi = 4.0*atan(1.0)
+      phx= pi/2.
+      phy= pi/2.
+
+      do i=1,n
+        x = xm1(i,1,1,1)
+        y = ym1(i,1,1,1)
+        z = zm1(i,1,1,1)
+
+        valmu = mul   (i,1,1,1)
+        dmudx = mul_dx(i,1,1,1)
+        dmudy = mul_dy(i,1,1,1)
+        dmudz = mul_dz(i,1,1,1)
+  
+        Uvec  = (2.*pi*U0   ) * sin(pi*x+phx) * sin(2.*pi*y+phy)
+        Vvec  = (3.*pi*U0/2.) * cos(pi*x+phx) * cos(2.*pi*y+phy)
+        Wvec  =  0.
+  
+        xterm =-(5.*pi**2*U0   ) * cos(pi*x+phx) * sin(2.*pi*y+phy)
+        yterm = (5.*pi**2*U0/2.) * sin(pi*x+phx) * cos(2.*pi*y+phy)
+        zterm =  0.
+
+        forcx(i,1,1,1) = -xterm * valmu - (- Uvec*dmudx + Vvec * dmudy)
+        forcy(i,1,1,1) = -yterm * valmu - (+ Vvec*dmudx + Uvec * dmudy)
+        forcz(i,1,1,1) = -zterm * valmu
+      enddo
 
       return
       end
 c-----------------------------------------------------------------------
-      real function analyt_soln(yl,nu,Anut)
-
-      real uex, yl, nu
-      external analyt_integral
-
-      asq = 1.0 + 1.0/Anut
-      cnst= LOG(asq-1.0)
-      aint_ex = analyt_integral(Anut)
-      ap  = 2.0*nu*Anut/( cnst - 0.5*aint_ex)
-
-      nut  = ( 1.0+Anut*(1.0-yl*yl) ) * nu
-      uex  = (ap/2.0/nu/Anut)*( LOG(asq-1.0)-LOG(asq-yl*yl) )
-      analyt_soln = uex
-
-      return
-      end
-
-      real function analyt_integral(Anut)
-
-      a2=       1.0+1.0/Anut
-      a =  sqrt(1.0+1.0/Anut)
-
-      coef = (2.0*a)
-      x1   = -1.0
-      xnum1= x1
-      val1 = x1*log(a2-x1*x1) + a*(log(a+x1)-log(a-x1)) - 2.0*x1
-      x2   =  1.0
-      xnum2= x2
-      val2 = x2*log(a2-x2*x2) + a*(log(a+x2)-log(a-x2)) - 2.0*x2
-
-      analyt_integral = val2 - val1
-
-      return
-      end

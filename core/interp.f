@@ -197,11 +197,12 @@ c-----------------------------------------------------------------------
 
       common /intp_h/ ih_intp(2,INTP_HMAX)
 
-      ih_intp1 = ih_intp(1,ih)
-      ih_intp2 = ih_intp(2,ih)
-
-      call fgslib_findpts_free(ih_intp1)
-      call fgslib_findpts_free(ih_intp2)
+      if(ih_intp(2,ih) .ne. ih_intp(1,ih)) then
+        call fgslib_findpts_free(ih_intp(2,ih))
+        ih_intp(2,ih) = -1
+      endif
+      call fgslib_findpts_free(ih_intp(1,ih))
+      ih_intp(1,ih) = -1
 
       return
       end

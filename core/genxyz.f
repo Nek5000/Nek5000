@@ -383,8 +383,9 @@ C
 c
 c     Force IFDFRM=.true. for all elements (for timing purposes only)
 c
-      IF (param(59).ne.0.and.nio.eq.0) 
-     $   write(6,*) 'NOTE: All elements deformed , param(59) ^=0'
+c      IF (param(59).ne.0.and.nio.eq.0) 
+c     $   write(6,*) 'NOTE: All elements deformed , param(59) ^=0'
+
       IF (param(59).ne.0) return
 C
 C     Check against cases which won't allow for savings in HMHOLTZ

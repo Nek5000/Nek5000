@@ -41,7 +41,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 
-      loglevel = 1
+      loglevel = 2
       optlevel = 1
 
       call rzero(param,200)
@@ -829,10 +829,10 @@ c set partitioner options
       call capit(c_out,132)
       if(index(c_out,'RSB').eq.1) then
          meshPartitioner=1
-      else if(index(c_out,'RCB').eq.1) then
-         meshPartitioner=2
       else if (index(c_out,'RCBRSB').eq.1) then
          meshPartitioner=3
+      else if(index(c_out,'RCB').eq.1) then
+         meshPartitioner=2
       else if (index(c_out,'METIS').eq.1) then
          meshPartitioner=4
       endif
@@ -1069,7 +1069,7 @@ c
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         if(nid.eq.0) write(6,*)
+         if(nid.eq.0 .and. loglevel .gt. 1) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
 
@@ -1163,9 +1163,6 @@ c
      $    'for PN/PN-2$'
         call exitt
       endif
-
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: Characteristics not supported w/ conj. ht transfer$',1)
 
       if (param(99).gt.-1 .and. (lxd.lt.lx1 .or. lyd.lt.ly1 .or.
      &   lzd.lt.lz1)) then

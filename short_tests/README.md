@@ -1,11 +1,9 @@
 Short Test
-========
+==========
 
-
-The NekUnitTests.py module contains the Nek5000 short (verification) tests, implmented 
-using the Python standard-library unittests framework.  The modules require 
-Python 2.7 or higher.  
-
+The NekUnitTests.py module contains the Nek5000 short (verification) tests,
+implemented using the Python standard-library unittests framework. The modules
+require Python 3.6 or higher.
 
 Before running the tests, several environment variables may be optionally defined.
 
@@ -16,7 +14,7 @@ Before running the tests, several environment variables may be optionally define
 * `USR_LFLAGS`: Linking flags (default: none)
 * `MPI=[0|1]`: If 1, run tests with MPI. (default: 1)
 
-Setting the following in your enviroment will affect the execution
+Setting the following in your environment will affect the execution
 
 * `PARALLEL_PROCS`: The number of processes to use when running with MPI
   (default: 4)
@@ -26,9 +24,11 @@ Setting the following in your enviroment will affect the execution
    Nek5000 to terminal window.  Standard output will always be recorded in
    logfiles, whether VERBOSE_TESTS is true or false.  (default: false)
 
-
 To run all the tests, first `cd` into this directory and then run:
-`$ python -m 'unittest' NekTests >log`
+`$ python3 -m unittest NekTests >log`
 
 If you wish to run tests for one short run e.g.:
-`$ python -m 'unittest' NekTests.Eddy_EddyUv.test_PnPn2_Parallel`
+`$ python3 -m unittest NekTests.Eddy_EddyUv.test_PnPn2_Parallel`
+
+or with pytest:
+`$ pytest NekTests.py::LinCav_Dir`

@@ -10,15 +10,9 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
 c
-      if (nio.eq.0) then
-         write(6,12) 'nelgt/nelgv/lelt:',nelgt,nelgv,lelt
-         write(6,12) 'lx1/lx2/lx3/lxd: ',lx1,lx2,lx3,lxd
- 12      format(1X,A,4I12)
-         write(6,*)
-      endif
-
       etime0 = dnekclock_sync()
-      if(nio.eq.0) write(6,'(A)') ' partioning elements to MPI ranks'
+      if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)') 
+     $  ' partioning elements to MPI ranks'
 
       MFIELD=2
       IF (IFFLOW) MFIELD=1
@@ -84,8 +78,7 @@ C     Output the processor-element map:
       endif
 
       dtmp = dnekclock_sync() - etime0
-      if(nio.eq.0) then
-        write(6,*) ' '
+      if(nio.eq.0 .and. loglevel .gt. 1) then
         write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
       endif
 
@@ -129,80 +122,95 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(mdw=2+2**ldim)
-      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
-      common /scrns/ wk(mdw,ndw)
-      integer wk
-
-      common /ivrtx/ vertex ((2**ldim),lelt)
-      integer vertex
-
       integer icalld
       save    icalld
       data    icalld  /0/
 
       if(icalld.gt.0) return
-      icalld = 1
 
       nv = 2**ldim
-      call get_vert_map(vertex,nv,wk,mdw,ndw)
+      call get_vert_map(nv)
+
+      icalld = 1
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map(vertex,nlv,wk,mdw,ndw)
+      subroutine get_vert_map(nlv)
 
       include 'SIZE'
       include 'TOTAL'
 
-      integer vertex(nlv,1)
-      integer wk(mdw*ndw)
+      parameter(mdw=2+2**ldim)
+      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      common /scrns/ wk(mdw*ndw)
+      integer*8 wk
+
+      integer     wk4(2*mdw*ndw)
+      equivalence (wk4,wk)
+
+      common /ivrtx/ vertex ((2**ldim),lelt)
+      integer*8 vertex
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       integer ibuf(2)
-      integer hrsb
 
       integer*8 eid8(lelt), vtx8(lelt*2**ldim)
-      integer iwork(lelt)
-      common /SCRCG/ xyz(ldim*lelt*2**ldim)
+      integer   iwork(lelt)
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer tt,cnt,nrank,ierr
+      common /scrcg/ xyz(ldim*lelt*2**ldim)
 
+      integer cnt, algo
       integer opt_parrsb(3), opt_parmetis(10)
-      logical ifbswap
 
-      integer start
+      logical ifbswap, ifread_con
 
 #if !defined(PARRSB) && !defined(PARMETIS)
 #if defined(DPROCMAP)
       call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
 #else
-      call read_map(vertex,nlv,wk,mdw,ndw)
+      call read_map(vertex,nlv,wk4,mdw,ndw)
       return
 #endif      
 #endif
 
 #if defined(PARRSB) || defined(PARMETIS)
       neli = nelt
-      call get_con(wk,size(wk),neli,nlv)
+      ifread_con = .true.
+      call read_con(wk4,size(wk),neli,nlv,ierr)
+
+      if (ierr.ne.0) then
+        ifread_con = .false.
+        call find_con(wk,nwk,0.2,ierr)
+        if(ierr.ne.0) call find_con(wk,nwk,0.01,ierr)
+        call err_chk(ierr,' findConnectivity failed!$')
+      endif
 
 c fluid elements
       j  = 0
       ii = 0
       cnt= 0
       do i = 1,neli
-         if (wk(ii+1) .le. nelgv) then
-            j = j + 1
-            eid8(j) = wk(ii+1)
-            call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+         itmp = wk(ii+1)
+         if (ifread_con) itmp = wk4(ii+1)
 
-            do tt=1,nlv
-              xyz(cnt+1)=xc(tt,i)
-              xyz(cnt+2)=yc(tt,i)
+         if (itmp .le. nelgv) then
+            j = j + 1
+
+            eid8(j) = wk(ii+1)
+            call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            if (ifread_con) then
+              eid8(j) = wk4(ii+1)
+              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+            endif
+
+            do iv=1,nlv
+              xyz(cnt+1)=xc(iv,i)
+              xyz(cnt+2)=yc(iv,i)
               if(ldim.eq.3) then
-                xyz(cnt+3)=zc(tt,i)
+                xyz(cnt+3)=zc(iv,i)
                 cnt=cnt+3
               else
                 cnt=cnt+2
@@ -213,9 +221,10 @@ c fluid elements
       enddo
       neliv = j
 
+      algo = 0 ! 0 - Lanczos, 1 - MG
       nel = neliv
       call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,ierr)
+     $  meshPartitioner,algo,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -229,7 +238,7 @@ c fluid elements
       enddo
       call isort(lglel,iwork,nelv)
       do i = 1,nelv
-         call icopy84(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
+         call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
 
       cnt=0
@@ -238,16 +247,24 @@ c solid elements
          j  = 0
          ii = 0
          do i = 1,neli
-            if (wk(ii+1) .gt. nelgv) then
-               j = j + 1
-               eid8(j) = wk(ii+1)
-               call icopy48(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            itmp = wk(ii+1)
+            if (ifread_con) itmp = wk4(ii+1)
 
-               do tt=1,nlv
-                 xyz(cnt+1)=xc(tt,i)
-                 xyz(cnt+2)=yc(tt,i)
+            if (itmp .gt. nelgv) then
+               j = j + 1
+
+               eid8(j) = wk(ii+1)
+               call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+               if (ifread_con) then
+                 eid8(j) = wk4(ii+1)
+                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+               endif
+
+               do iv=1,nlv
+                 xyz(cnt+1)=xc(iv,i)
+                 xyz(cnt+2)=yc(iv,i)
                  if(ldim.eq.3) then
-                   xyz(cnt+3)=zc(tt,i)
+                   xyz(cnt+3)=zc(iv,i)
                    cnt=cnt+3
                  else
                    cnt=cnt+2
@@ -258,9 +275,10 @@ c solid elements
          enddo
          nelit = j
 
+         algo = 0 ! 0 - Lanczos, 1 - MG
          nel = nelit
          call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  meshPartitioner,ierr)
+     $                  meshPartitioner,algo,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
@@ -273,7 +291,7 @@ c solid elements
          enddo
          call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
          do i = 1,nel
-            call icopy84(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
+            call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
          enddo
       endif
 
@@ -307,14 +325,15 @@ c solid elements
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_con(wk,nwk,nelr,nv)
+      subroutine read_con(wk,nwk,nelr,nv,ierr)
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
 
-      integer nwk,nelr,nv
+      integer nwk,nelr,nv,ierr
       integer wk(nwk)
+     
 
       logical ifbswap,if_byte_swap_test
       logical ifco2, ifcon
@@ -327,7 +346,7 @@ c-----------------------------------------------------------------------
       character*5   version
       real*4        test
 
-      integer ierr,nvi
+      integer nvi
       integer*8 nelgti,nelgvi
       integer*8 offs, offs0
 
@@ -355,12 +374,12 @@ c-----------------------------------------------------------------------
       endif
 
       call bcast(ierr,sizeof(ierr))
-      if(ierr.ne.0) goto 50
+      if(ierr.ne.0) return
 
       call bcast(confle,sizeof(confle))
       if(nid.eq.0) write(6,'(A,A)') ' reading ', confle
-c      call err_chk(ierr,' Cannot find con file!$')
       call bcast(ifco2,lsize)
+
       ierr = 0
 
       ! read header
@@ -413,12 +432,6 @@ c    1       format(a5,2i12,i2)
 
       return
 
-  50  continue
-
-#if defined(PARRSB)      
-      call find_con(wk,nwk,ierr)
-      return
-#endif
 
  100  continue
       call err_chk(ierr,'Error opening/reading con file$')
@@ -427,24 +440,22 @@ c    1       format(a5,2i12,i2)
       end
 c-----------------------------------------------------------------------
 #if defined(PARRSB)      
-      subroutine find_con(wk,nwk,ierr)
+      subroutine find_con(wk,nwk,tol,ierr)
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
 
       integer nwk,ierr
-      integer wk(nwk)
+      integer*8 wk(nwk)
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-      common /SCRCG/ xyz(ldim*(2**ldim)*lelt)
+      common /scrcg/ xyz(ldim*(2**ldim)*lelt)
 
       integer*8 eid8(4*lelt),vtx8(lelt*(2**ldim+1))
       common /ctmp0/ eid8, vtx8, iwork
 
-      integer npf,nv,nf,i,j,k,verbose
-      integer*8 start
-      real*8 tol
+      ierr = 0
 
       nv=2**ndim
       nf=2*ndim
@@ -469,14 +480,14 @@ c-----------------------------------------------------------------------
         enddo
       endif
 
-      start=igl_running_sum(nelt)-nelt
+      istart=igl_running_sum(nelt)-nelt
 
       !calculate number of periodic pairs
       npf=0
       do i=1,nelt
         do j=1,nf
           if(cbc(j,i,1).eq.'P  ') then
-            eid8(4*npf+1)=i+start
+            eid8(4*npf+1)=i+istart
             eid8(4*npf+2)=j
             eid8(4*npf+3)=bc(1,j,i,1)
             eid8(4*npf+4)=bc(2,j,i,1)
@@ -485,15 +496,19 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      ierr = 0
-      toli = 5e-3
-      verbose = 1
       call fparrsb_findConnectivity(vtx8,xyz,nelt,ndim,
-     $  eid8,npf,tol,nekcomm,verbose,ierr)
-      call err_chk(ierr,' findConnectivity failed!$')
+     $  eid8,npf,tol,nekcomm,0,ierr)
 
-      do i=1,nelt*(nv+1)
-        wk(i)=vtx8(i)
+      k=1
+      l=1
+      do i=1,nelt
+        wk(k)=istart+i
+        k=k+1
+        do j=1,nv 
+          wk(k)=vtx8(l)
+          k=k+1
+          l=l+1
+        enddo
       enddo
 
       end
@@ -672,7 +687,7 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
 
-      integer vertex(nlv,1)
+      integer*8 vertex(nlv,1)
       integer wk(mdw,ndw)
 
       logical ifbswap,if_byte_swap_test
@@ -838,7 +853,7 @@ c     NOW: crystal route vertex by processor id
          iflag=1
       else
          do e=1,nelt
-            call icopy(vertex(1,e),wk(2,e),nlv)
+            call icopy48(vertex(1,e),wk(2,e),nlv)
          enddo
       endif
 

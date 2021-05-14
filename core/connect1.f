@@ -32,7 +32,7 @@ C
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       if(nio.eq.0) write(6,*) 'setup mesh topology'
 C
@@ -226,9 +226,6 @@ c-----------------------------------------------------------------------
       subroutine setedge
 C
 C     .Initialize EDGE arrays for face and edge specific tasks.
-C
-C     .NOTE: Sevaral arrays in common are initialized via 
-C            BLOCKDATA EDGEC
 C
 C     Computed arrays: 
 C
@@ -1623,7 +1620,7 @@ c-----------------------------------------------------------------------
       common /c_is1/ glo_num(1*lx1*ly1*lz1*lelv)
       integer*8 glo_num
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       parameter(lxyz=lx1*ly1*lz1)
       common /scrns/ enum(lxyz,lelt)
@@ -1631,6 +1628,7 @@ c-----------------------------------------------------------------------
      $             ,  tnx(lxyz,lelt) , tny(lxyz,lelt) , tnz(lxyz,lelt)
       common /scruz/  snx(lxz) , sny(lxz) , snz(lxz) ,  efc(lxz)
       common /scrsf/  jvrtex((2**ldim),lelt)
+      integer*8 jvrtex,mvertx,i8glmax
 
       integer e,f,eg
 
@@ -1699,8 +1697,8 @@ c     element that both have cbc = msi!
       call opdssum(rnx,rny,rnz)
 
       nv = nel*(2**ldim)
-      call icopy(jvrtex,vertex,nv)  ! Save vertex
-      mvertx=iglmax(jvrtex,nv)
+      call i8copy(jvrtex,vertex,nv)  ! Save vertex
+      mvertx=i8glmax(jvrtex,nv)
 
 
 c     Now, check to see if normal is aligned with incoming normal

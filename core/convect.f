@@ -31,7 +31,7 @@ c
       nc  = cs(0)            ! number of stored convecting fields
 
       ln  = lx1*ly1*lz1*lelt
-      n   = lx1*ly1*lz1*nelfld(ifield)
+      n   = lx1*ly1*lz1*nelc
       m   = lxd*lyd*lzd*nelc*ldim
 
 c      if(nid.eq.0) write(*,*) 'going into char_conv1 '
@@ -1247,7 +1247,8 @@ c     Global-to-local mapping for gs
       include 'SIZE'
       include 'TOTAL'
 
-      integer   dgh,vertex(1)
+      integer   dgh
+      integer*8 vertex(1)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
       common /c_is1/ glo_num_face(lf)

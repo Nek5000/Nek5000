@@ -502,9 +502,9 @@ c-----------------------------------------------------------------------
           call vdot3 (w1(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
      $               ,sij(1,1,e),sij(1,4,e),sij(1,6,e),nxyz1)
           call vdot3 (w2(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
-     $                  ,sij(1,4,e),sij(1,2,e),sij(1,5,e),nxyz1)
+     $               ,sij(1,4,e),sij(1,2,e),sij(1,5,e),nxyz1)
           call vdot3 (w3(1,e),ta1(1,e),ta2(1,e),ta3(1,e)
-     $                  ,sij(1,6,e),sij(1,5,e),sij(1,3,e),nxyz1)
+     $               ,sij(1,6,e),sij(1,5,e),sij(1,3,e),nxyz1)
         enddo
 
       else
@@ -512,7 +512,7 @@ c-----------------------------------------------------------------------
         do e=1,nelv
           call vdot2 (w1(1,e),ta1(1,e),ta2(1,e)
      $               ,sij(1,1,e),sij(1,3,e),nxyz1)
-          call vdot2 (w2,ta1(1,e),ta2(1,e)
+          call vdot2 (w2(1,e),ta1(1,e),ta2(1,e)
      $               ,sij(1,3,e),sij(1,2,e),nxyz1)
           call rzero (w3(1,e),nxyz1)
         enddo

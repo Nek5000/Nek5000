@@ -68,6 +68,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
+: ${LD:=$FC}
 : ${MPI:=1}
 : ${PROFILING:=1}
 : ${VISIT:=0}
@@ -218,10 +219,14 @@ case $FCcomp in
                ;;
   *gfortran*)  FCPP="-cpp"
                FR8="-fdefault-real-8 -fdefault-double-8"
-               FF77="-std=legacy"
+               FF77="-w -std=legacy"
                ;;
   *ftn*)       FCPP="-eZ"
                FR8="-sreal64"
+               ;;
+  *frt*)       FCPP="-Cpp"
+               FR8="-CcdRR"
+               FF77="-Fixed"
                ;;
   *armflang*)  FCPP="-cpp"
                FR8="-r8"
@@ -313,10 +318,11 @@ do
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
-     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI" 
-     PARRSB_OPT+=" GSLIBPATH=$SOURCE_ROOT_GSLIB"
-     USR_LFLAGS+=" -L$SOURCE_ROOT_PARRSB/lib -lparRSB"
-     PARRSB_INC="$SOURCE_ROOT_PARRSB/include"
+     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=1"
+     PARRSB_OPT+=" BLASLIBPATH=${SOURCE_ROOT_BLAS}" 
+     PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
+     USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
+     PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
    fi
    if [ "$i" == "PARMETIS" ]; then
      PARMETIS=1
@@ -420,6 +426,7 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
+-e "s:^LD[ ]*=.*:LD=$LD:" \
 -e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
 -e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
 -e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \
@@ -435,8 +442,8 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
--e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}/core:" \
 -e "s:^SCMT[ ]*=.*:SCMT=${NEK_SOURCE_ROOT}/core/cmt:" \
+-e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
 $NEK_SOURCE_ROOT/core/makefile.template >.makefile
 
 if [ $VISIT -ne 0 ]; then
@@ -499,6 +506,8 @@ fi
 if [ -f .makefile ]; then
   sed -e "1i\\
 ### makefile automatically created by makenek `date +"%m/%d/%Y %T"` ###" \
+-e "s:${NEK_SOURCE_ROOT}:\$S:g" \
+-e "s:^S[ ]*=.*:S\:=${NEK_SOURCE_ROOT}:" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
 -e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
   printf "done\n"

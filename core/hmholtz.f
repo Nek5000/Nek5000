@@ -697,6 +697,7 @@ C
       call rzero(p,n)
 
       fmax = glamax(f,n)
+      if (fmax.eq.0.0) ifsolv=.false.
       if (fmax.eq.0.0) return
 
 c     Check for non-trivial null-space

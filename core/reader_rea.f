@@ -16,7 +16,7 @@ C
       VNEKTON = 3 ! dummy not really used anymore
 
       optlevel = 1! fixed for now
-      loglevel = 1! fixed for now
+      loglevel = 2! fixed for now
       
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
@@ -346,7 +346,7 @@ C
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         if(nid.eq.0) write(6,*)
+         if(nid.eq.0 .and. loglevel .gt. 1) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
 
@@ -409,9 +409,6 @@ c      endif
 
       if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
-
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
 
       if (ifmhd .and. lbx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 

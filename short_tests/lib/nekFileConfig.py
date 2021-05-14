@@ -1,8 +1,10 @@
-import os, stat, re
+import os
+import stat
+import re
 
 
 def config_size(params, infile, outfile):
-    """ Redefine parameters in a SIZE file
+    """Redefine parameters in a SIZE file
 
     Given a path to infile, redefine the variables & values in params, then
     output to outfile.  The infile and outfile can be the same file.
@@ -18,24 +20,28 @@ def config_size(params, infile, outfile):
         outfile (str): Path to output SIZE file
 
     """
-    with open(infile, 'r') as f:
-        lines = f.readlines()
+    with open(infile, "r") as file:
+        lines = file.readlines()
 
     # Substitute all the variables
-    for key, value in params.iteritems():
+    for key, value in list(params.items()):
         if value:
             lines = [
                 re.sub(
-                    r'(.*\bparameter\b.*\b{0} *= *)\S+?( *[),])'.format(key),
-                    r'\g<1>{0}\g<2>'.format(value), l, flags=re.I)
-                for l in lines]
+                    fr"(.*\bparameter\b.*\b{key} *= *)\S+?( *[),])",
+                    fr"\g<1>{value}\g<2>",
+                    l,
+                    flags=re.I,
+                )
+                for l in lines
+            ]
 
-    with open(outfile, 'w') as f:
-        f.writelines(lines)
+    with open(outfile, "w") as file:
+        file.writelines(lines)
 
 
 def config_parfile(opts, infile, outfile):
-    """ Set values in a parfile using ConfigParser
+    """Set values in a parfile using ConfigParser
 
     Given a path to infile, substitute the options & values in opts, then
     output to outfile.  The infile and outfile can be the same file.
@@ -55,14 +61,14 @@ def config_parfile(opts, infile, outfile):
         outfile (str): Path to output parfile
 
     """
-    import ConfigParser
+    import configparser
 
-    parfile = ConfigParser.SafeConfigParser()
+    parfile = configparser.SafeConfigParser()
     parfile.read(infile)
 
-    for section, name_vals in opts.iteritems():
-        for name, val in name_vals.iteritems():
+    for section, name_vals in list(opts.items()):
+        for name, val in list(name_vals.items()):
             parfile.set(section, name, val)
 
-    with open(outfile, 'w') as f:
-        parfile.write(f)
+    with open(outfile, "w") as file:
+        parfile.write(file)

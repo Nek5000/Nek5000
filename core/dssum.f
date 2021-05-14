@@ -5,7 +5,7 @@
       include 'NONCON'
 
       integer gs_handle
-      integer vertex(1)
+      integer*8 vertex(1)
       integer*8 glo_num(1),ngv
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
