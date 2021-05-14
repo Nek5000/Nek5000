@@ -2397,7 +2397,7 @@ c     memory check...
 
 c     Count number of unique vertices
       nlv  = 2**ldim
-      ngvv = iglmax(vertex,nlv*nel)
+      ngvv = i8glmax(vertex,nlv*nel)
       ngv  = ngvv
 
 
