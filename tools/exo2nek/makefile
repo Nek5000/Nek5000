@@ -4,7 +4,7 @@ LIBS += ./3rd_party/seacas-exodus/build/packages/seacas/libraries/exoIIv2for32/l
 LIBS += ./3rd_party/seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a
 LIBS += ./3rd_party/netcdf/install/lib/libnetcdf.a
 
-OBJS = mod_SIZE.o exo2nek.o byte.o speclib.o mxm.o 
+OBJS = mod_SIZE.o exo2nek.o tet2hex.o byte.o speclib.o mxm.o 
 
 all: lib exo2nek
 
@@ -20,6 +20,7 @@ lib:
 
 mod_SIZE.o      : mod_SIZE.f90			;  $(FC) -c $(FFLAGS) mod_SIZE.f90
 exo2nek.o	: exo2nek.f90			;  $(FC) -c $(FFLAGS) $(INC) exo2nek.f90
+tet2hex.o	: tet2hex.f90			;  $(FC) -c $(FFLAGS) $(INC) tet2hex.f90
 byte.o		: ../../core/byte.c		;  $(CC) -c $(CFLAGS) ../../core/byte.c
 speclib.o	: ../../core/speclib.f		;  $(FC) -c $(FFLAGS) ../../core/speclib.f
 mxm.o		: mxm.f				;  $(FC) -c $(FFLAGS) mxm.f
