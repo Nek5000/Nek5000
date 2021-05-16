@@ -2,7 +2,6 @@
 set -e
 
 VER=2.7.0
-CHKSUM=3559c375ce9f875542e4a39978908f91792e6d57
 
 if [ "$1" == "clean" ]; then
   rm -rf sundials lib include 2>/dev/null 
@@ -14,13 +13,7 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  wget --no-check-certificate -O v$VER.tar.gz https://computation.llnl.gov/projects/sundials/download/sundials-$VER.tar.gz
-  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
-  if [ $SUM != $CHKSUM ] ; then
-    echo 'Invalid checksum!'
-    rm -rf v$VER.tar.gz
-    exit 1
-  fi
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/sundials/archive/refs/tags/v$VER.tar.gz
 fi
 
 rm -rf sundials 2>/dev/null
