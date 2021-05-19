@@ -1173,7 +1173,7 @@ class KovStokes(NekTestCase):
 
         err = self.get_value_from_log(label="err", column=-3, row=-1)
         self.assertAlmostEqualDelayed(
-            err, target_val=5.05960e-13, delta=5e-14, label="err"
+            err, target_val=5.05960e-13, delta=2e-13, label="err"
         )
 
         self.assertDelayedFailures()

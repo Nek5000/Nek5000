@@ -23,7 +23,6 @@ jobs:
         test_case: [ 
             "Tools",
             "Axi::test_PnPn_Parallel",
-            "CmtInviscidVortex::test_PnPn_Parallel",
             "ConjHt::test_PnPn_Parallel",
             "Eddy_EddyUv::test_PnPn_Parallel",
             "Eddy_EddyUv::test_PnPn_Serial",
