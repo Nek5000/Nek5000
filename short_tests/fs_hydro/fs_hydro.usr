@@ -101,7 +101,7 @@ c     iostep = 1000000
          vy2l = vy2/vy2l
          gr = log(vy2r)/time
          gl = log(vy2l)/dt
-         ge = (gr - gamma_r)/gamma_r
+         ge = abs(gr - gamma_r)/gamma_r
          if (nid.eq.0) write(6,1) istep,time,ymx,vy2,ymxr,vy2r,gr,gl,ge
     1    format(i8,1p8e15.7,' AMP')
       endif
