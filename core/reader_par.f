@@ -680,14 +680,9 @@ c set logical flags
             goto 999
          endif
       else if (index(c_out,'COMPNS') .eq. 1) then
-#ifdef CMTNEK
-         continue
-#else
          write(6,*) 'value: ',trim(c_out)
          write(6,*) 'not supported for problemType:equation!'
-         write(6,*) 'Recompile with CMTNEK ...'
          goto 999
-#endif
       else if (index(c_out,'INCOMPMHD') .eq. 1) then
          write(6,*) 'value: ',trim(c_out)
          write(6,*) 'not yet supported for problemType:equation!'

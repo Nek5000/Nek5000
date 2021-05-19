@@ -128,10 +128,6 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call usrdat3
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat3'
 
-#ifdef CMTNEK
-        call nek_cmt_init
-#endif
-
       call setics
       call setprop
 
@@ -260,12 +256,6 @@ c-----------------------------------------------------------------------
       if (ifmhd ) call cfl_check
       call setsolv
       call comment
-
-#ifdef CMTNEK
-      if (nio.eq.0.and.istep.le.1) write(6,*) 'CMT branch active'
-      call cmt_nek_advance
-      return
-#endif
 
       if (ifsplit) then   ! PN/PN formulation
 

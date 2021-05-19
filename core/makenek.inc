@@ -83,13 +83,12 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo ""
   echo "PPLIST config options:" 
   echo "  NOMPIIO       disable MPI-IO"
-  echo "  BGQ           use BGQ optimized mxm"
   echo "  XSMM          use libxsmm for mxm"
   echo "  CVODE         enable CVODE support"
   echo "  HYPRE         enable HYPRE support"
   echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
   echo "  DPROCMAP      use distributed processor mapping"
-  echo "  PARRSB        use online RSB partitioner (experimental)"
+  echo "  PARRSB        use online RSB partitioner"
   return 11
 fi
 
@@ -295,7 +294,6 @@ fi
 PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
-CMT=0
 MPIIO=1
 DPROCMAP=0
 PARRSB=0
@@ -307,9 +305,6 @@ VENDOR_BLAS=0
 
 for i in $PPLIST
 do
-   if [ "$i" == "CMTNEK" ]; then
-     CMT=1
-   fi
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
    fi
@@ -436,13 +431,11 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^BLAS[ ]*=.*:BLAS=$BLAS:" \
 -e "s/^MPI[ ]*=.*/MPI=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE=$CVODE/" \
--e "s/^CMT[ ]*=.*/CMT=$CMT/" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
 -e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
--e "s:^SCMT[ ]*=.*:SCMT=${NEK_SOURCE_ROOT}/core/cmt:" \
 -e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
 $NEK_SOURCE_ROOT/core/makefile.template >.makefile
 
@@ -604,15 +597,6 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
-  fi
-
-  if ! cat SIZE | grep -qi 'toteq' ; then
-  if [ $CMT -ne 0 ]; then
-      echo >>SIZE
-      echo 'c automatically added by makenek' >>SIZE
-      echo '      integer toteq' >> SIZE
-      echo '      parameter(toteq = 5  ) ! Number of conserved variables '  >>SIZE
-  fi
   fi
 fi
 

@@ -1091,16 +1091,10 @@ C     If no fields were explicitly specified, assume getting all fields.
          ENDIF
          if (ifflow) ifgetp=.true.
          if (ifheat) ifgett=.true.
-#ifdef CMTNEK
-         ifgett=.true. ! CMT-nek still not compatible with IFHEAT
-#endif
          do 410 i=1,ldimt-1
             ifgtps(i)=.TRUE.
   410    continue
       endif
-
-
-
 
       return
       END

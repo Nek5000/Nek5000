@@ -4,7 +4,6 @@ LIB=$(OBJDIR)/libnek5000.a
 CASENAME=
 CASEDIR=
 S=
-SCMT=
 OPT_INCDIR=./
 
 LD=
@@ -21,7 +20,6 @@ USR=
 USR_LFLAGS=
 
 MPI=0 
-CMT=0 
 DPROCMAP=0
 VISIT=0
 
@@ -66,16 +64,6 @@ ifeq ($(MPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
-# CMT append *.o files to CORE
-ifeq ($(CMT),0)
-  CMTCORE := 
-else
-  CMTCORE := drive1_cmt.o drive2_cmt.o driver3_cmt.o \
-   face.o ausm.o  state1.o intpdiff.o diffusive_cmt.o eqnsolver_cmt.o surface_fluxes.o \
-   bc.o inflow_bc.o outflow_bc.o wall_bc.o step.o \
-   filters_cmt.o diagnostics.o artvisc.o
-endif
-
 DUMMY:= $(shell cp $S/core/PARALLEL.default $S/core/PARALLEL)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
@@ -95,11 +83,6 @@ else
 endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
-
-ifeq ($(CMT),1)
-TMP1 += $(CMTCORE)
-OPT_INCDIR += -I $(SCMT)
-endif
 
 OPT_INCDIR += -I $S/core/experimental
 
@@ -227,27 +210,6 @@ $(OBJDIR)/reader_rea.o	:$S/core/reader_rea.f;	 	        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/core/reader_par.f $S/core/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/core/reader_re2.f;		        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hpf.o	       	:$S/core/hpf.f;         		$(FC) -c $(FL2) $< -o $@
-
-# CMT CORE     ##################################################################
-$(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/drive1_cmt.o	:$(SCMT)/drive1_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/drive2_cmt.o	:$(SCMT)/drive2_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/driver3_cmt.o	:$(SCMT)/driver3_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/gradient_solver.o	:$(SCMT)/gradient_solver.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/eqnsolver_cmt.o	:$(SCMT)/eqnsolver_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/ausm.o	:$(SCMT)/ausm.f;   		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/artvisc.o	:$(SCMT)/artvisc.f;   		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/face.o	:$(SCMT)/face.f;  		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/bc.o		:$(SCMT)/bc.f;			$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/surface_fluxes.o	:$(SCMT)/surface_fluxes.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/diffusive_cmt.o	:$(SCMT)/diffusive_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/state1.o	:$(SCMT)/state1.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/intpdiff.o	:$(SCMT)/intpdiff.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/inflow_bc.o	:$(SCMT)/inflow_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/outflow_bc.o	:$(SCMT)/outflow_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/wall_bc.o	:$(SCMT)/wall_bc.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/filters_cmt.o	:$(SCMT)/filters_cmt.f;		$(FC) -c $(FL2) $< -o $@
-$(OBJDIR)/diagnostics.o	:$(SCMT)/diagnostics.f;		$(FC) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/core/mxm_wrapper.f;	$(FC) -c $(FL2) $< -o $@ 
