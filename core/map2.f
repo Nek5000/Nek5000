@@ -167,6 +167,8 @@ c-----------------------------------------------------------------------
 
       logical ifbswap, ifread_con
 
+      real tol
+
 #if !defined(PARRSB) && !defined(PARMETIS)
 #if defined(DPROCMAP)
       call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
@@ -183,8 +185,12 @@ c-----------------------------------------------------------------------
 
       if (ierr.ne.0) then
         ifread_con = .false.
-        call find_con(wk,nwk,0.2,ierr)
-        if(ierr.ne.0) call find_con(wk,nwk,0.01,ierr)
+        tol = connectivityTol
+        call find_con(wk,nwk,tol,ierr)
+        if(ierr.ne.0) then
+          tol = tol / 2.0;
+          call find_con(wk,nwk,tol,ierr)
+        endif
         call err_chk(ierr,' findConnectivity failed!$')
       endif
 
@@ -448,6 +454,7 @@ c-----------------------------------------------------------------------
 
       integer nwk,ierr
       integer*8 wk(nwk)
+      real tol
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       common /scrcg/ xyz(ldim*(2**ldim)*lelt)

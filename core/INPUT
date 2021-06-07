@@ -21,10 +21,11 @@ c
      $    ,fem_amg_param(15)
      $    ,crs_param(15)
      $    ,filterType
+     $    ,connectivityTol
 
       common /input1/ param,rstim,vnekton,cpfld,cpgrp,qinteg,uparam,
      $                atol,restol,fem_amg_param,crs_param,
-     $                filterType
+     $                filterType,connectivityTol
 
       integer matype(-5:10,ldimt1)
      $       ,nktonv,nhis,lochis(4,lhis+maxobj)
