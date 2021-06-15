@@ -35,6 +35,7 @@ c-----------------------------------------------------------------------
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
+#if 0
 #ifndef NOMPIIO
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
@@ -51,6 +52,7 @@ c-----------------------------------------------------------------------
       call fgslib_crystal_free(cr_re2)
       call byte_close_mpi(fh_re2,ierr)
 #else
+      write(6,*) 'Calling bin_rd1_'
       call byte_open(re2fle,ierr)
       call byte_read(idummy,21,ierr) ! skip hdr+endian code 
 
@@ -62,6 +64,38 @@ c-----------------------------------------------------------------------
 
       call byte_close(ierr)
 #endif
+#endif
+
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
+#ifndef NOMPIIO
+
+      write(6,*) 'Calling byte_open_mpi (MPIIO)'
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call err_chk(ierr,' Cannot open .re2 file!$')
+
+      call readp_re2_mesh (ifbswap,ifxyz)
+      call readp_re2_curve(ifbswap,ifcur)
+      do ifield = ibc,nfldt
+        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+     &    ifbswap,ifbc)
+      enddo
+
+      call byte_close_mpi(fh_re2,ierr)
+#else
+      npr=min(1024,np)
+      re2off_b=21*4
+      
+      write(6,*) 'Calling bin_rd2_* (NOMPIIO)'
+      call bin_rd2_mesh (ifbswap,ifxyz,npr)
+      call bin_rd2_curve(ifbswap,ifcur,npr)
+      do ifield = ibc,nfldt
+         call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+     $      ifbswap,ifbc,npr)
+      enddo
+#endif
+      call fgslib_crystal_free(cr_re2)
+
+
 
       etime_t = dnekclock_sync() - etime0
       if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
@@ -844,3 +878,338 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+
+
+c-----------------------------------------------------------------------
+      subroutine bin_rd2_mesh(ifbswap,ifread,npr) ! version 2 of .re2 reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap,ifread
+
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+c     parameter(nrmax = lelt)             ! maximum number of records
+      parameter(nrmax = (4*lx1*ly1*lz1*lelt)/li) ! maximum number of records
+
+      integer         bufr(li-2,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      if (.not.ifread) then
+         re2off_b=re2off_b+lrs4*4*nelgt
+         return
+      endif
+
+      if (nio.eq.0) write (6,'(a25,i10,i8)')
+     $   'start reading mesh (rd2) ',re2off_b,nelgt
+
+      lrs4 = lrs*wdsizi/4
+
+      ieg0=1
+      ieg1=1
+      iloop=0
+
+      ierr=0
+      melgt=0
+
+      nelgmax=npr*(nrmax/4)
+
+      do while (ieg0.le.nelgt)
+         iloop=iloop+1
+         ieg1=min(ieg0+nelgmax-1,nelgt)
+         ieg00=ieg0
+         call byte_readp(bufr,vi,lrs4,ieg0,ieg1,re2off_b/4
+     $      ,li,npr,.false.,.false.,re2fle,ierr)
+         
+         n=ieg0
+         ieg0=ieg1+1
+         if (ierr.ne.0) goto 100
+
+         do i = 1,n
+             iel = gllel(vi(2,i)) 
+             call icopy     (bufr,vi(3,i),lrs4)
+             call buf_to_xyz(bufr,iel,ifbswap,ierr)
+             if (ierr.ne.0) goto 100
+         enddo
+         melgt=melgt+n
+      enddo
+
+      re2off_b=re2off_b+lrs4*4*nelgt
+      melgt=iglsum(melgt,1)
+
+      if (nio.eq.0) write (6,'(a25,i10,i8,i5)')
+     $   'done  reading mesh (rd2) ',re2off_b,melgt,iloop
+
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bin_rd2_curve(ifbswap,ifread,npr)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+      logical ifread
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(lrs   = 2+1+5)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+2) ! originally 2*lrs+1
+c     parameter(nrmax = 12*lelt) ! maximum number of records
+      parameter(nrmax = (4*lx1*ly1*lz1*lelt)/li) ! maximum number of records
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      integer*8       nrg
+      integer*4       nrg4(2)
+
+      ! read total number of records
+      nwds4r    = 1*wdsizi/4
+
+      ierr=0
+      if (nid.eq.0) then
+         call byte_open(re2fle,ierr)
+         call byte_seek(re2off_b/4,ierr)
+         call byte_read(nrg4,nwds4r,ierr)
+         call byte_close(ierr)
+      endif
+      call bcast(nrg4,wdsizi)
+      if (ierr.gt.0) goto 100
+
+      if (wdsizi.eq.8) then
+         if (ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if (ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+
+      lrs4     = lrs*wdsizi/4
+
+      re2off_b = re2off_b + 4*nwds4r
+
+      if (nio.eq.0) write (6,'(a33,i10,i8)')
+     $   'start reading curved sides (rd2) ',re2off_b,nrg
+
+      if (.not.ifread) then
+         re2off_b = re2off_b + nrg*lrs4*4
+         return
+      endif
+
+      nrgmax=npr*(nrmax/4)
+
+      ir0=1
+      ir1=1
+      iloop=0
+      mrg=0
+
+      do while (ir0.le.nrg)
+         iloop=iloop+1
+         ir1=min(ir0+nrgmax-1,nrg)
+         call byte_readp(bufr,vi,lrs4,ir0,ir1,re2off_b/4
+     $      ,li,npr,ifbswap,.true.,re2fle,ierr)
+         call nekgsync
+
+         n=ir0
+         ir0=ir1+1
+         if (ierr.ne.0) goto 100
+
+         do i = 1,n
+            call icopy       (bufr,vi(3,i),lrs4)
+            call buf_to_curve(bufr)
+         enddo
+         mrg=mrg+n
+      enddo
+
+      re2off_b = re2off_b + nrg*lrs4*4
+      mrg=iglsum(mrg,1)
+
+      if (nio.eq.0) write (6,'(a33,i10,i8,i5)')
+     $   'done  reading curved sides (rd2) ',re2off_b,mrg,iloop
+
+      return
+
+ 100  ierr = 1
+      call err_chk(ierr,'Error reading .re2 curved data$')
+
+      end
+c-----------------------------------------------------------------------
+      subroutine bin_rd2_bc(cbl,bl,ifbswap,ifread,npr)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3  cbl(  6,lelt)
+      real         bl (5,6,lelt)
+      logical      ifbswap
+      logical      ifread
+
+      parameter(lrs   = 2+1+5)  ! record size: eg iside bl(5) cbl
+      parameter(li    = 2*lrs+2) ! originally 2*lrs+1
+      parameter(nrmax = (4*lx1*ly1*lz1*lelt)/li) ! maximum number of records
+c     parameter(nrmax = 6*lelt) ! maximum number of records
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      integer*8       nrg
+      integer*4       nrg4(2)
+
+      nwds4r    = 1*wdsizi/4
+      ierr=0
+
+      if (nid.eq.0) then
+         call byte_open(re2fle,ierr)
+         call byte_seek(re2off_b/4,ierr)
+         call byte_read(nrg4,nwds4r,ierr)
+         call byte_close(ierr)
+      endif
+      call bcast(nrg4,wdsizi)
+      if (ierr.gt.0) goto 100
+
+      if (wdsizi.eq.8) then
+         if (ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if (ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+
+      lrs4     = lrs*wdsizi/4
+      re2off_b = re2off_b + 4*nwds4r
+
+      if (.not.ifread) then
+         re2off_b = re2off_b + nrg*4*lrs4
+         return
+      endif
+
+      if (nio.eq.0) write (6,'(a23,i5,i10,i8)')
+     $   'start reading bc (rd2) ',ifield,re2off_b,nrg
+
+      ! fill up with default
+      do iel=1,nelt
+      do k=1,6
+         cbl(k,iel) = 'E  '
+      enddo
+      enddo
+
+      nrgmax=npr*(nrmax/4)
+
+      ir0=1
+      ir1=1
+      iloop=0
+      mrg=0
+
+      do while (ir0.le.nrg)
+         iloop=iloop+1
+         ir1=min(ir0+nrgmax-1,nrg)
+         ir00=ir0
+         call byte_readp(bufr,vi,lrs4,ir0,ir1,re2off_b/4
+     $      ,li,npr,ifbswap,.true.,re2fle,ierr)
+
+         n=ir0
+         ir0=ir1+1
+         if (ierr.ne.0) goto 100
+
+         do i = 1,n
+            call icopy    (bufr,vi(3,i),lrs4)
+            call buf_to_bc(cbl,bl,bufr)
+         enddo
+         mrg=mrg+n
+      enddo
+
+      re2off_b = re2off_b + nrg*4*lrs4
+      mrg=iglsum(mrg,1)
+
+      if (nio.eq.0) write (6,'(a23,i5,i10,i8,i5)')
+     $   'done  reading bc (rd2) ',ifield,re2off_b,mrg,iloop
+
+      if (ierr.gt.0) goto 100
+
+      return
+
+ 100  ierr = 1
+      call err_chk(ierr,'Error reading .re2 boundary data$')
+
+      end
+c-----------------------------------------------------------------------
+      subroutine byte_readp(buf,vi,nbsize,ielg0,ielg1,ioff,
+     $   ni,npr,ifswp,if1ie,fname,ierr)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+
+      integer buf(ni-2,1),vi(ni,1)
+      logical ifswp,if1ie
+      character*132 fname
+
+      melg=ielg1-ielg0+1
+
+      idis=np/npr
+      mid=nid/idis
+
+      nel=0
+      if ((mid*idis).eq.nid.and.mid.lt.npr)
+     $   nel=melg/npr+min(1,max(0,mod(melg,npr)-mid))
+
+      jelg=igl_running_sum(nel)-nel+ielg0
+      joff=ioff+(jelg-1)*nbsize
+
+      if (nel.ne.0) then
+         call byte_open(fname,ierr)
+         call byte_seek(joff,ierr)
+         call byte_read(buf,nbsize*nel,ierr)
+
+         do i = 1,nel
+            jj      = (i-1)*nbsize + 1
+            if (ifswp) then 
+               lrs4s = nbsize - wdsizi/4 ! words to swap (last is char)
+               if (wdsizi.eq.8) call byte_reverse8(buf(jj,1),lrs4s,ierr)
+               if (wdsizi.eq.4) call byte_reverse (buf(jj,1),lrs4s,ierr)
+            endif
+
+            if (if1ie) then
+c              ielg = buf(jj,1)
+c              if (wdsizi.eq.8) call copyi4(ielg,buf(jj,1),1)
+               call copyi4(ielg,buf(jj,1),1)
+            else
+                ielg = jelg - 1 + i ! elements are stored in global order
+            endif
+
+            do j=1,ni
+               if (j.eq.1) vi(1,i) = gllnid(ielg)
+               if (j.eq.2) vi(2,i) = ielg
+               if (j.eq.3) call icopy(vi(3,i),buf(jj,1),nbsize)
+            enddo
+         enddo
+         call byte_close(ierr)
+      endif
+
+      nrmax=(lx1*ly1*lz1*lelt*4)/ni
+
+      call fgslib_crystal_tuple_transfer(cr_re2,nel,nrmax,vi,ni,
+     &   vl,0,vr,0,1)
+      call fgslib_crystal_tuple_sort(cr_re2,nel,vi,ni,vl,0,vr,0,2,1)
+
+      ielg0=nel
+
+      return
+      end
+c-----------------------------------------------------------------------
