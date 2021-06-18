@@ -11,7 +11,15 @@ c-----------------------------------------------------------------------
       integer idummy(100)
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
- 
+
+c TODO: set as a .par file param      
+      ifmpiio = .true.
+#ifdef NOMPIIO
+      ifmpiio = .false.
+#endif
+
+c TODO: hardcoding default 10, to set as a .par file param
+      cbnodes = min(1024,np)
  
       etime0 = dnekclock_sync()
 
@@ -36,42 +44,39 @@ c-----------------------------------------------------------------------
       call rzero(bc ,size(bc))
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-#ifndef NOMPIIO
-      write(6,*) 'readp_re2 (MPIIO)'
-      call nek_file_open(nekcomm,re2_h,re2fle,0,1,1,ierr)
+      call nek_file_open(nekcomm,re2_h,re2fle,0,ifmpiio,cbnodes,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
+      if (ifmpiio) then
+         write(6,*) 'readp_re2 (MPIIO)'
 
-      call readp_re2_mesh (ifbswap,ifxyz)
-      call readp_re2_curve(ifbswap,ifcur)
-      do ifield = ibc,nfldt
-       call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-     &    ifbswap,ifbc)
-      enddo
+         call readp_re2_mesh (ifbswap,ifxyz)
+         call readp_re2_curve(ifbswap,ifcur)
+         do ifield = ibc,nfldt
+          call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+     &                      ifbswap,ifbc)
+         enddo
+      else
+         write(6,*) 'Calling bin_rd1_ (NOMPIIO)'
+         call nek_file_read(re2_h,idummy,int8(21),int8(0),ierr)
+         call bin_rd1_mesh(ifbswap)
+         call bin_rd1_curve(ifbswap)
+         do ifield = ibc,nfldt
+            call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),
+     &                       ifbswap)
+         enddo
 
+c       write(6,*) 'Calling bin_rd2_* (NOMPIIO)'
+c       write(6,*) 'Calling bin_rd2_mesh (NOMPIIO)'
+c       call bin_rd2_mesh (ifbswap,ifxyz,cbnodes)
+c       write(6,*) 'Calling bin_rd2_curve (NOMPIIO)'
+c       call bin_rd2_curve(ifbswap,ifcur,cbnodes)
+c       write(6,*) 'Calling bin_rd2_bc (NOMPIIO)'
+c       do ifield = ibc,nfldt
+c          call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+c    &                     ifbswap,ifbc,cbnodes)
+c       enddo
+      endif
       call nek_file_close(re2_h,ierr)
-#else
-c     npr=min(1024,np)
-c     re2off_b=21*4
-c     
-c     write(6,*) 'Calling bin_rd2_* (NOMPIIO)'
-c     call bin_rd2_mesh (ifbswap,ifxyz,npr)
-c     call bin_rd2_curve(ifbswap,ifcur,npr)
-c     do ifield = ibc,nfldt
-c        call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-c    $      ifbswap,ifbc,npr)
-c     enddo
-
-      write(6,*) 'Calling bin_rd1_ (NOMPIIO)'
-      call nek_file_open(nekcomm,re2_h,re2fle,0,0,1,ierr)
-      call nek_file_read(re2_h,idummy,int8(21),int8(0),ierr)
-      call bin_rd1_mesh(ifbswap)
-      call bin_rd1_curve(ifbswap)
-      do ifield = ibc,nfldt
-         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),
-     &                    ifbswap)
-      enddo
-      call nek_file_close(re2_h,ierr)
-#endif
       call fgslib_crystal_free(cr_re2)
 
 
@@ -1150,6 +1155,7 @@ c-----------------------------------------------------------------------
 
       integer buf(ni-2,1),vi(ni,1)
       logical ifswp,if1ie
+c      integer tmp_hdl
       character*132 fname
 
       melg=ielg1-ielg0+1
@@ -1163,11 +1169,18 @@ c-----------------------------------------------------------------------
 
       jelg=igl_running_sum(nel)-nel+ielg0
       joff=ioff+(jelg-1)*nbsize
-
+      
+c TODO: use a temporary handle, very ugly... to refactor...
       if (nel.ne.0) then
          call byte_open(fname,ierr)
          call byte_seek(joff,ierr)
          call byte_read(buf,nbsize*nel,ierr)
+c         call nek_file_open(nekcomm,tmp_hdl,re2fle,
+c     $                      0,ifmpiio,cbnodes,ierr)
+         write(6,*) 'int8(nbsize*nel)', int8(nbsize*nel)
+         write(6,*) 'int8(joff)', int8(joff)
+         call nek_file_read(tmp_hdl,buf,int8(nbsize*nel),
+     $                      int8(joff),ierr)
 
          do i = 1,nel
             jj      = (i-1)*nbsize + 1
@@ -1192,6 +1205,8 @@ c              if (wdsizi.eq.8) call copyi4(ielg,buf(jj,1),1)
             enddo
          enddo
          call byte_close(ierr)
+c         call nek_file_close(tmp_hdl,ierr)
+c         tmp_hdl = 0 ! TODO: how to free memory?
       endif
 
       nrmax=(lx1*ly1*lz1*lelt*4)/ni
