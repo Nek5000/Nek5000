@@ -49,7 +49,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 {
     int i,istat,ierr;
     char dirname[MAX_NAME+1];
-    MPI_File *mpi_fh;
+    MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
 
     *((nekfh*)handle) = *((nekfh*) malloc(sizeof(nekfh)));
@@ -60,7 +60,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     (nek_fh->name)[i+1] = '\0';
     nek_fh->cbnodes = *cb_nodes;
     nek_fh->comm = fcomm;
-
+    
     if (*ifmpiio) {
         // Use MPIIO
         nek_fh->mpiio = 1;
@@ -77,6 +77,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
             default:
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
+
         MPI_File_open(fcomm,nek_fh->name,nek_fh->mpimode,MPI_INFO_NULL,mpi_fh);
         nek_fh->mpifh = mpi_fh;
     } else {
@@ -148,9 +149,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         if ((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE) {
             // TODO: deal with reverse byte
             fseek(nek_fh->file,(*offset)*sizeof(float),SEEK_CUR);
-            printf("Call fread\n");
             fread(buf,sizeof(float),*count,nek_fh->file);
-            printf("End fread\n");
             if (ferror(nek_fh->file)) {
                 printf("ABORT: Error reading %s\n",nek_fh->name);
                 *ierr=1;
@@ -234,6 +233,7 @@ void NEK_File_close(void *handle, int *ierr)
         }
     }
     // TODO: free handle!
+    // free(nek_fh->mpifh)
     // free(nek_fh);
     *ierr=0;
 }

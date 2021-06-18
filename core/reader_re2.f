@@ -37,20 +37,7 @@ c-----------------------------------------------------------------------
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 #ifndef NOMPIIO
-
-      write(6,*) 'Calling byte_open_mpi (MPIIO)'
-c      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
-c      call err_chk(ierr,' Cannot open .re2 file!$')
-
-c      call readp_re2_mesh (ifbswap,ifxyz)
-c      call readp_re2_curve(ifbswap,ifcur)
-c      do ifield = ibc,nfldt
-c        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-c     &    ifbswap,ifbc)
-c      enddo
-
-c      call byte_close_mpi(fh_re2,ierr)
-
+      write(6,*) 'readp_re2 (MPIIO)'
       call nek_file_open(nekcomm,re2_h,re2fle,0,1,1,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
@@ -61,7 +48,7 @@ c      call byte_close_mpi(fh_re2,ierr)
      &    ifbswap,ifbc)
       enddo
 
-      call byte_close_mpi(fh_re2,ierr)
+      call nek_file_close(re2_h,ierr)
 #else
 c     npr=min(1024,np)
 c     re2off_b=21*4
@@ -74,16 +61,7 @@ c        call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
 c    $      ifbswap,ifbc,npr)
 c     enddo
 
-c      call byte_open(re2fle,ierr)
-c      call byte_read(idummy,21,ierr) ! skip hdr+endian code 
-c      call bin_rd1_mesh (ifbswap)
-c      call bin_rd1_curve(ifbswap)
-c      do ifield = ibc,nfldt
-c         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
-c      enddo
-
-c      call byte_close(ierr)
-      write(6,*) 'Calling bin_rd1_'
+      write(6,*) 'Calling bin_rd1_ (NOMPIIO)'
       call nek_file_open(nekcomm,re2_h,re2fle,0,0,1,ierr)
       call nek_file_read(re2_h,idummy,int8(21),int8(0),ierr)
       call bin_rd1_mesh(ifbswap)
@@ -137,8 +115,9 @@ c-----------------------------------------------------------------------
 
       ! read coordinates from file
       nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+c      call byte_set_view(lre2off_b,fh_re2)
+c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
 
@@ -208,8 +187,9 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+c      call byte_set_view(lre2off_b,fh_re2)
+c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,nrg4,int8(nwds4r),int8(lre2off_b),ierr)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -240,8 +220,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'reading curved sides '
 
       nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+c      call byte_set_view(lre2off_b,fh_re2)
+c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
@@ -312,8 +293,9 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+c      call byte_set_view(lre2off_b,fh_re2)
+c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,nrg4,int8(nwds4r),int8(lre2off_b),ierr)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -344,8 +326,9 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'reading bc for ifld',ifield
 
       nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+c      call byte_set_view(lre2off_b,fh_re2)
+c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
