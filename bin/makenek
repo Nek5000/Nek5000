@@ -31,7 +31,6 @@ PPLIST="NOMPIIO"
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek
 #       a makefile_usr.inc has to be provided containing the build rules 
-#USR="foo.o"
 
 # MPI (default 1) 
 #MPI=0

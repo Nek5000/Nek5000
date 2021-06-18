@@ -35,63 +35,64 @@ c-----------------------------------------------------------------------
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
-#if 0
-#ifndef NOMPIIO
-      call fgslib_crystal_setup(cr_re2,nekcomm,np)
-
-      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
-      call err_chk(ierr,' Cannot open .re2 file!$')
-
-      call readp_re2_mesh (ifbswap,ifxyz)
-      call readp_re2_curve(ifbswap,ifcur)
-      do ifield = ibc,nfldt
-        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-     &    ifbswap,ifbc)
-      enddo
-
-      call fgslib_crystal_free(cr_re2)
-      call byte_close_mpi(fh_re2,ierr)
-#else
-      write(6,*) 'Calling bin_rd1_'
-      call byte_open(re2fle,ierr)
-      call byte_read(idummy,21,ierr) ! skip hdr+endian code 
-
-      call bin_rd1_mesh (ifbswap)
-      call bin_rd1_curve(ifbswap)
-      do ifield = ibc,nfldt
-         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
-      enddo
-
-      call byte_close(ierr)
-#endif
-#endif
-
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 #ifndef NOMPIIO
 
       write(6,*) 'Calling byte_open_mpi (MPIIO)'
-      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+c      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+c      call err_chk(ierr,' Cannot open .re2 file!$')
+
+c      call readp_re2_mesh (ifbswap,ifxyz)
+c      call readp_re2_curve(ifbswap,ifcur)
+c      do ifield = ibc,nfldt
+c        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+c     &    ifbswap,ifbc)
+c      enddo
+
+c      call byte_close_mpi(fh_re2,ierr)
+
+      call nek_file_open(nekcomm,re2_h,re2fle,0,1,1,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
       call readp_re2_mesh (ifbswap,ifxyz)
       call readp_re2_curve(ifbswap,ifcur)
       do ifield = ibc,nfldt
-        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+       call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
      &    ifbswap,ifbc)
       enddo
 
       call byte_close_mpi(fh_re2,ierr)
 #else
-      npr=min(1024,np)
-      re2off_b=21*4
-      
-      write(6,*) 'Calling bin_rd2_* (NOMPIIO)'
-      call bin_rd2_mesh (ifbswap,ifxyz,npr)
-      call bin_rd2_curve(ifbswap,ifcur,npr)
+c     npr=min(1024,np)
+c     re2off_b=21*4
+c     
+c     write(6,*) 'Calling bin_rd2_* (NOMPIIO)'
+c     call bin_rd2_mesh (ifbswap,ifxyz,npr)
+c     call bin_rd2_curve(ifbswap,ifcur,npr)
+c     do ifield = ibc,nfldt
+c        call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+c    $      ifbswap,ifbc,npr)
+c     enddo
+
+c      call byte_open(re2fle,ierr)
+c      call byte_read(idummy,21,ierr) ! skip hdr+endian code 
+c      call bin_rd1_mesh (ifbswap)
+c      call bin_rd1_curve(ifbswap)
+c      do ifield = ibc,nfldt
+c         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
+c      enddo
+
+c      call byte_close(ierr)
+      write(6,*) 'Calling bin_rd1_'
+      call nek_file_open(nekcomm,re2_h,re2fle,0,0,1,ierr)
+      call nek_file_read(re2_h,idummy,int8(21),int8(0),ierr)
+      call bin_rd1_mesh(ifbswap)
+      call bin_rd1_curve(ifbswap)
       do ifield = ibc,nfldt
-         call bin_rd2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-     $      ifbswap,ifbc,npr)
+         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),
+     &                    ifbswap)
       enddo
+      call nek_file_close(re2_h,ierr)
 #endif
       call fgslib_crystal_free(cr_re2)
 
@@ -547,7 +548,8 @@ c-----------------------------------------------------------------------
          if (mid.ne.nid.and.nid.eq.0) then              ! read & send
 
             if(ierr.eq.0) then
-              call byte_read  (buf,nwds,ierr)
+c              call byte_read  (buf,nwds,ierr)
+              call nek_file_read(re2_h,buf,int8(nwds),int8(0),ierr)
               call csend(e,ierr,len1,mid,0)
               if(ierr.eq.0) call csend(e,buf,len,mid,0)
             else
@@ -565,7 +567,8 @@ c-----------------------------------------------------------------------
          elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
 
             if(ierr.eq.0) then
-              call byte_read  (buf,nwds,ierr)
+c              call byte_read  (buf,nwds,ierr)
+              call nek_file_read(re2_h,buf,int8(nwds),int8(0),ierr)
               call buf_to_xyz (buf,e,ifbswap,ierr2)
             endif
          endif
@@ -601,18 +604,21 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then  ! read & send/process
 
          if(wdsizi.eq.8) then
-           call byte_read(rcurve,2,ierr)
+c           call byte_read(rcurve,2,ierr)
+           call nek_file_read(re2_h,rcurve,int8(2),int8(0),ierr)
            if (ifbswap) call byte_reverse8(rcurve,2,ierr)
            ncurve = rcurve
          else
-           call byte_read(ncurve,1,ierr)
+c           call byte_read(ncurve,1,ierr)
+           call nek_file_read(re2_h,ncurve,int8(1),int8(0),ierr)
            if (ifbswap) call byte_reverse(ncurve,1,ierr)
          endif
 
          if(ncurve.ne.0) write(6,*) '  reading curved sides '
          do k=1,ncurve
            if(ierr.eq.0) then
-              call byte_read(buf,nwds,ierr)
+c              call byte_read(buf,nwds,ierr)
+              call nek_file_read(re2_h,buf,int8(nwds),int8(0),ierr)
               if(wdsizi.eq.8) then
                 if(ifbswap) call byte_reverse8(buf,nwds-2,ierr)
                 call copyi4(eg,buf(1),1)  !1,2
@@ -695,11 +701,13 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then  ! read & send/process
   
          if(wdsizi.eq.8) then
-           call byte_read(rbc_max,2,ierr)
+c           call byte_read(rbc_max,2,ierr)
+           call nek_file_read(re2_h,rbc_max,int8(2),int8(0),ierr)
            if (ifbswap) call byte_reverse8(rbc_max,2,ierr) ! last is char
            nbc_max = rbc_max
          else
-           call byte_read(nbc_max,1,ierr)
+c           call byte_read(nbc_max,1,ierr)
+           call nek_file_read(re2_h,nbc_max,int8(1),int8(0),ierr)
            if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
          endif
 
@@ -707,7 +715,8 @@ c-----------------------------------------------------------------------
          do k=1,nbc_max
 c           write(6,*) k,' dobc1 ',nbc_max
             if(ierr.eq.0) then
-               call byte_read(buf,nwds,ierr)
+c               call byte_read(buf,nwds,ierr)
+               call nek_file_read(re2_h,buf,int8(nwds),int8(0),ierr)
                if(wdsizi.eq.8) then
                  if (ifbswap) call byte_reverse8(buf,nwds-2,ierr)
                  call copyi4(eg,buf(1),1) !1&2 of buf
