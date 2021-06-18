@@ -195,7 +195,7 @@ void NEK_file_write(void *handle, void *buf, long long int *count, long long int
     } else {
         // byte write
         if ((nek_fh->bmode)==WRITE || (nek_fh->bmode)==READWRITE) {
-            fseek(nek_fh->file,(*offset)*sizeof(float),SEEK_SET);
+            fseek(nek_fh->file,(*offset)*sizeof(float),SEEK_CUR);
             fwrite(buf,sizeof(float),*count,(nek_fh->file));
             if (ferror(nek_fh->file))
             {
@@ -232,6 +232,7 @@ void NEK_File_close(void *handle, int *ierr)
             return;
         }
     }
+
     // TODO: free handle!
     // free(nek_fh->mpifh)
     // free(nek_fh);
