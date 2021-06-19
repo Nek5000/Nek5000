@@ -12,14 +12,15 @@
 #include "name.h"
 
 #define fNEK_File_open    FORTRAN_UNPREFIXED(nek_file_open, NEK_FILE_OPEN )
-#define NEK_File_read     FORTRAN_UNPREFIXED(nek_file_read, NEK_FILE_READ )
-#define NEK_File_write    FORTRAN_UNPREFIXED(nek_file_write,NEK_FILE_WRITE)
-#define NEK_File_close    FORTRAN_UNPREFIXED(nek_file_close,NEK_FILE_CLOSE)
+#define fNEK_File_read    FORTRAN_UNPREFIXED(nek_file_read, NEK_FILE_READ )
+#define fNEK_File_write   FORTRAN_UNPREFIXED(nek_file_write,NEK_FILE_WRITE)
+#define fNEK_File_close   FORTRAN_UNPREFIXED(nek_file_close,NEK_FILE_CLOSE)
 
-#define READ       0
-#define READWRITE  1
-#define WRITE      2
-#define MAX_NAME 132
+#define READ        0
+#define READWRITE   1
+#define WRITE       2
+#define MAX_NAME    132
+#define MAX_FHANDLE 100
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
@@ -38,6 +39,8 @@ typedef struct NEK_File_handle {
     char      bytemode[4];       // "rb", "rwb", "wb" correspond to bmode = 0,1,2 
 } nekfh;
 
+static int handle_n                    = 0;
+static nekfh *fhandle_arr[MAX_FHANDLE] = {NULL};
 
 #ifdef UNDERSCORE
   void exitt_();
@@ -51,8 +54,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     char dirname[MAX_NAME+1];
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
-
-    *((nekfh*)handle) = *((nekfh*) malloc(sizeof(nekfh)));
+    
     nek_fh = (nekfh*) handle;
 
     strncpy(nek_fh->name,filename,MAX_NAME);
@@ -112,15 +114,6 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     return 0;
 }
 
-// Wrapper for Fortran
-void fNEK_File_open(const int *fcomm, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *ierr, int nlen) {
-    *ierr = 1;
-    comm_ext c = MPI_Comm_f2c(*fcomm);
-    *ierr = NEK_File_open(c,handle,filename,amode,ifmpiio,cb_nodes,nlen);
-}
-
-
-
 void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
@@ -170,7 +163,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     *ierr = 0;
 }
 
-void NEK_file_write(void *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
+void NEK_File_write(void *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
 {
     nekfh *nek_fh = (nekfh*) handle;
 
@@ -233,8 +226,40 @@ void NEK_File_close(void *handle, int *ierr)
         }
     }
 
-    // TODO: free handle!
-    // free(nek_fh->mpifh)
-    // free(nek_fh);
     *ierr=0;
 }
+
+
+// Wrapper for Fortran
+void fNEK_File_open(const int *fcomm, int *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *ierr, int nlen) {
+    *ierr = 1;
+    comm_ext c = MPI_Comm_f2c(*fcomm);
+    // TODO: case when *handle > MAX_FHANDLE
+    fhandle_arr[handle_n] = (nekfh*) malloc(sizeof(nekfh));
+    *ierr = NEK_File_open(c,fhandle_arr[handle_n],filename,amode,ifmpiio,cb_nodes,nlen);
+    *handle = handle_n;
+    handle_n++;
+}
+
+
+void fNEK_File_read(int *handle, void *buf, long long int *count, long long int *offset, int *ierr)
+{
+    nekfh *fh = fhandle_arr[*handle];
+    NEK_File_read(fh,buf,count,offset,ierr);
+}
+
+void fNEK_file_write(int *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
+{
+    nekfh *fh = fhandle_arr[*handle];
+    NEK_File_write(fh,buf,count,offset,ierr);
+}
+
+void fNEK_File_close(int *handle, int *ierr)
+{
+    nekfh *fh = fhandle_arr[*handle];
+    NEK_File_close(fh,ierr);
+    free(fhandle_arr[*handle]->mpifh);
+    free(fhandle_arr[*handle]);
+}
+
+
