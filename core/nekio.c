@@ -28,8 +28,9 @@ typedef struct NEK_File_handle {
     // General
     char      name[MAX_NAME+1];  // name of the file
     int       mpiio;             // 1 if use mpiio
-    int       cbnodes;           // TODO: to implement
-    MPI_Comm  comm;             // MPI comm
+    int       cbnodes;           // Number of aggregators
+    MPI_Comm  comm;              // MPI comm
+    MPI_Info  info;              // MPI info
     // MPIIO specific
     MPI_File *mpifh;             // mpi file pointer
     int       mpimode;           // MPI_MODE_RDONLY, MPI_MODE_RDWR, or MPI_MODE_WRONLY
@@ -52,8 +53,11 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 {
     int i,istat,ierr;
     char dirname[MAX_NAME+1];
+    MPI_Info info;
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
+    char cbnodes_str[12];
+    sprintf(cbnodes_str, "%d", *cb_nodes);
     
     nek_fh = (nekfh*) handle;
 
@@ -62,6 +66,10 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     (nek_fh->name)[i+1] = '\0';
     nek_fh->cbnodes = *cb_nodes;
     nek_fh->comm = fcomm;
+
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "cb_nodes", cbnodes_str);
+    nek_fh->info = info;
     
     if (*ifmpiio) {
         // Use MPIIO
@@ -80,7 +88,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
 
-        MPI_File_open(fcomm,nek_fh->name,nek_fh->mpimode,MPI_INFO_NULL,mpi_fh);
+        MPI_File_open(fcomm,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
         nek_fh->mpifh = mpi_fh;
     } else {
         // Use byte.c 
@@ -117,6 +125,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
+    MPI_Comm fcomm = nek_fh->comm;
 
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
@@ -134,7 +143,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         if (*(nek_fh->mpifh) == NULL) {
             printf("Nek_File_read :: no file opened");
         }
-        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
+        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
         MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_REAL,MPI_STATUS_IGNORE);
     
     } else {
@@ -183,6 +192,7 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
         if (*(nek_fh->mpifh) == NULL) {
             printf("Nek_File_write :: no file opened\n");
         }
+        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
         MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_REAL,MPI_STATUS_IGNORE);
         
     } else {
@@ -258,7 +268,9 @@ void fNEK_File_close(int *handle, int *ierr)
 {
     nekfh *fh = fhandle_arr[*handle];
     NEK_File_close(fh,ierr);
-    free(fhandle_arr[*handle]->mpifh);
+    if (fhandle_arr[*handle]->mpiio) {
+        free(fhandle_arr[*handle]->mpifh);
+    }
     free(fhandle_arr[*handle]);
 }
 
