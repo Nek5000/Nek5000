@@ -57,8 +57,9 @@ typedef struct NEK_File_tuple {
     long long int end;        // end of the file
 } nektp;
 
-static int handle_n                    = 0;
-static nekfh *fhandle_arr[MAX_FHANDLE] = {NULL};
+static int handle_n        = 0;
+static int handle_max      = 0;
+static nekfh **fhandle_arr = 0;
 
 #ifdef UNDERSCORE
   void exitt_();
@@ -431,11 +432,13 @@ void NEK_File_close(void *handle, int *ierr)
 void fNEK_File_open(const int *fcomm, sint *cr, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
     *ierr = 1;
     comm_ext c = MPI_Comm_f2c(*fcomm);
-    // TODO: case when *handle > MAX_FHANDLE
-    fhandle_arr[handle_n] = (nekfh*) malloc(sizeof(nekfh));
+    if (handle_n == handle_max) {
+        handle_max += handle_max/2+1;
+        fhandle_arr = trealloc(nekfh*,fhandle_arr,handle_max);
+    }
+    fhandle_arr[handle_n]= (nekfh*) tmalloc(nekfh,1);
     *ierr = NEK_File_open(c,cr,fhandle_arr[handle_n],filename,amode,ifmpiio,cb_nodes,nlen);
-    *handle = handle_n;
-    handle_n++;
+    *handle = handle_n++;
 }
 
 
@@ -461,6 +464,7 @@ void fNEK_File_close(int *handle, int *ierr)
         free(fhandle_arr[*handle]->mpifh);
     }
     free(fhandle_arr[*handle]);
+    fhandle_arr[*handle] = 0;
 }
 
 
