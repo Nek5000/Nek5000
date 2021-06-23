@@ -428,7 +428,6 @@ void NEK_File_close(void *handle, int *ierr)
 
 
 // Wrapper for Fortran
-// TODO: put output to the end of argument list!
 void fNEK_File_open(const int *fcomm, sint *cr, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
     *ierr = 1;
     comm_ext c = MPI_Comm_f2c(*fcomm);
