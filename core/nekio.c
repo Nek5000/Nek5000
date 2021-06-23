@@ -71,6 +71,7 @@ int NEK_File_open(const MPI_Comm fcomm, sint *cr, void *handle, char *filename, 
     int i,istat,ierr;
     char dirname[MAX_NAME+1];
     MPI_Info info;
+    MPI_Comm new_comm;
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
     char cbnodes_str[12];
@@ -82,7 +83,8 @@ int NEK_File_open(const MPI_Comm fcomm, sint *cr, void *handle, char *filename, 
     for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] != ' ') break;
     (nek_fh->name)[i+1] = '\0';
     nek_fh->cbnodes = *cb_nodes;
-    nek_fh->comm = fcomm;
+    MPI_Comm_dup(fcomm, &new_comm);
+    nek_fh->comm = new_comm;
     nek_fh->cr = cr;
 
     MPI_Info_create(&info);
@@ -353,6 +355,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     *ierr = 0;
 }
 
+// TODO: parallel write
 void NEK_File_write(void *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
 {
     nekfh *nek_fh = (nekfh*) handle;
