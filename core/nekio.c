@@ -171,7 +171,7 @@ long long int get_start_io(long long int start_g, long long int nbyte_g, int num
 
 /*
    offset: in number of bytes
-   count: number of element (real/floats)
+   count: number of bytes to read
 */
 void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
 {
@@ -209,7 +209,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             return;
         }
         MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
-        MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_REAL,MPI_STATUS_IGNORE);
+        MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
     
     } else {
         // byte read
@@ -238,7 +238,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // Send info to processor 1 to determine total number of bytes to read
         p = array_reserve(nektp, &garr, 1), garr.n = 1;
         p->start  = *offset;
-        p->end    = *offset+*count*sizeof(float);
+        p->end    = *offset+*count;
         p->iorank = 0;
 
         sarray_transfer(nektp,&garr,iorank,1,&(nek_fh->cr));
@@ -291,7 +291,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         
         // Tuple list on each process, add the iorank correspond to current process        
         start_p = *offset;
-        end_p   = *offset+(*count)*sizeof(float);
+        end_p   = *offset+*count;
         p = array_reserve(nektp, &tarr, num_ionode);
 
         p  = tarr.ptr;
@@ -385,13 +385,13 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
             return;
         }
         MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
-        MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_REAL,MPI_STATUS_IGNORE);
+        MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
         
     } else {
         // byte write
         if ((nek_fh->bmode)==WRITE || (nek_fh->bmode)==READWRITE) {
             fseek(nek_fh->file,*offset,SEEK_CUR);
-            fwrite(buf,sizeof(float),*count,(nek_fh->file));
+            fwrite(buf,1,*count,(nek_fh->file));
             if (ferror(nek_fh->file))
             {
                 printf("ABORT: Error writing %s\n",nek_fh->name);

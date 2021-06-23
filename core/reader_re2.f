@@ -98,7 +98,7 @@ c-----------------------------------------------------------------------
 
       ! read coordinates from file
       nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
+      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
 
@@ -168,7 +168,7 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),nrg4,ierr)
+      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),nrg4,ierr)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -199,7 +199,7 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'reading curved sides '
 
       nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
+      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
@@ -270,7 +270,7 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),nrg4,ierr)
+      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),nrg4,ierr)
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
@@ -301,7 +301,7 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'reading bc for ifld',ifield
 
       nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
+      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
