@@ -44,8 +44,8 @@ c TODO: hardcoding default 10, to set as a .par file param
       call rzero(bc ,size(bc))
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-      call nek_file_open(nekcomm,cr_re2,re2_h,re2fle,0,
-     &                   ifmpiio,cbnodes,ierr)
+      call nek_file_open(nekcomm,cr_re2,re2fle,0,
+     &                   ifmpiio,cbnodes,re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
       if (nid.eq.0) write(6,*) 'ifmpiio: ', ifmpiio
       if (nid.eq.0) write(6,*) 'calling readp_re2_*'
@@ -99,9 +99,7 @@ c-----------------------------------------------------------------------
 
       ! read coordinates from file
       nwds4r = nr*lrs4
-c      call byte_set_view(lre2off_b,fh_re2)
-c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
+      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
 
@@ -171,9 +169,7 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-c      call byte_set_view(lre2off_b,fh_re2)
-c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
-      call nek_file_read(re2_h,nrg4,int8(nwds4r),int8(lre2off_b),ierr)
+      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),nrg4,ierr)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -204,9 +200,7 @@ c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
       if(nio.eq.0) write(6,*) 'reading curved sides '
 
       nwds4r = nr*lrs4
-c      call byte_set_view(lre2off_b,fh_re2)
-c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
+      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
@@ -277,9 +271,7 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-c      call byte_set_view(lre2off_b,fh_re2)
-c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
-      call nek_file_read(re2_h,nrg4,int8(nwds4r),int8(lre2off_b),ierr)
+      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),nrg4,ierr)
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
@@ -310,9 +302,7 @@ c      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
       if(nio.eq.0) write(6,*) 'reading bc for ifld',ifield
 
       nwds4r = nr*lrs4
-c      call byte_set_view(lre2off_b,fh_re2)
-c      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      call nek_file_read(re2_h,bufr,int8(nwds4r),int8(lre2off_b),ierr)
+      call nek_file_read(re2_h,int8(nwds4r),int8(lre2off_b),bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer

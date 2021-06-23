@@ -429,7 +429,7 @@ void NEK_File_close(void *handle, int *ierr)
 
 // Wrapper for Fortran
 // TODO: put output to the end of argument list!
-void fNEK_File_open(const int *fcomm, sint *cr, int *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *ierr, int nlen) {
+void fNEK_File_open(const int *fcomm, sint *cr, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
     *ierr = 1;
     comm_ext c = MPI_Comm_f2c(*fcomm);
     // TODO: case when *handle > MAX_FHANDLE
@@ -440,13 +440,13 @@ void fNEK_File_open(const int *fcomm, sint *cr, int *handle, char *filename, int
 }
 
 
-void fNEK_File_read(int *handle, void *buf, long long int *count, long long int *offset, int *ierr)
+void fNEK_File_read(int *handle, long long int *count, long long int *offset, void *buf, int *ierr)
 {
     nekfh *fh = fhandle_arr[*handle];
     NEK_File_read(fh,buf,count,offset,ierr);
 }
 
-void fNEK_file_write(int *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
+void fNEK_file_write(int *handle, long long int *count, long long int *offset, void *buf, int *ierr) 
 {
     nekfh *fh = fhandle_arr[*handle];
     NEK_File_write(fh,buf,count,offset,ierr);
