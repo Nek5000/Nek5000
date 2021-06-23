@@ -174,7 +174,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int shmrank, nodeid, num_node, num_ionode;
-    long long int count_io, count_last; // number of elements to read for node 0,...,num_ionode-2. And num_ionode-1
     int size;
 
     MPI_Comm_rank(fcomm,&rank);
@@ -183,8 +182,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
     num_ionode = num_node/(nek_fh->cbnodes)+1;
-    count_io   = *count/num_ionode;
-    count_last = *count-count_io*(num_ionode-1);
     
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
@@ -209,6 +206,22 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     
     } else {
         // byte read
+        uint8_t *tmp_buf;
+        // starting byte and ending byte of global, each iorank and each process
+        // total number of bytes to read in global, and each iorank
+        long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte;
+        struct array garr    = null_array;
+        struct array tarr    = null_array;
+        struct array io2parr = null_array;
+        long long int nr, idx;
+        uint8_t val;
+        nektp *p, *e;
+        nekfd *d, *s; 
+        start_g = LLONG_MAX;
+        end_g   = LLONG_MIN;
+        nbyte_g = 0;
+
+        // Check access mode
         if (!((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE)) {
             printf("Nek_File_read :: invalid access mode\n");
             *ierr=1;
@@ -216,55 +229,43 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         }
 
         // Send info to processor 1 to determine total number of bytes to read
-        uint8_t *tmp_buf;
-        long long int start_g, end_g, nbyte_g, nbyte;
-        struct array tuple_array = null_array;
-        nektp *p, *e;
-        
-        p = array_reserve(nektp, &tuple_array, 1), tuple_array.n = 1;
+        p = array_reserve(nektp, &garr, 1), garr.n = 1;
         p->start  = *offset;
         p->end    = *offset+*count*sizeof(float);
         p->iorank = 0;
 
-        sarray_transfer(nektp,&tuple_array,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&garr,iorank,1,get_crystal(nek_fh->cr));
         
-        p = tuple_array.ptr;
-        e = tuple_array.ptr;
-        start_g = LLONG_MAX;
-        end_g   = LLONG_MIN;
-        nbyte_g = 0;
+        p = garr.ptr;
+        e = garr.ptr;
         if (rank == 0) {
-            for (int pid = 0; pid < size; ++pid) {
-                e = p+pid;
+            for (int i = 0; i < size; ++i) {
+                e = p+i;
                 start_g = (start_g < e->start) ? start_g : e->start;
-                end_g   = (end_g > e->end) ? end_g : e->end;
+                end_g   = (end_g > e->end)     ? end_g   : e->end;
             }
         }
         
-        // Pass back global start and global end to processes
+        // Pass back global start and ending byte to processes
         if (rank == 0) {
-            for (int pid = 0; pid < size; ++pid) {
-                e = p+pid;
+            for (int i = 0; i < size; ++i) {
+                e = p+i;
                 e->start = start_g;
                 e->end   = end_g;
             }
         }
 
-        sarray_transfer(nektp,&tuple_array,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&garr,iorank,1,get_crystal(nek_fh->cr));
         start_g = p->start;
         end_g   = p->end;
 
         // Determine byte to read for each iorank
         nbyte_g = end_g-start_g;
-        nbyte = get_nbyte(nbyte_g, num_ionode, rank);
-
+        nbyte   = get_nbyte(nbyte_g, num_ionode, rank);
 
         // If we are in a io node, read file to tmp_buf
-        long long int start_io, end_io;     // On iorank, the starting byte and ending byte
-        start_io = 0;
-        end_io = 0;
         start_io = get_start_io(start_g, nbyte_g, num_ionode, rank);
-        end_io = start_io + nbyte;
+        end_io   = start_io + nbyte;
         if (rank < num_ionode) {
             tmp_buf = (uint8_t*) malloc(nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
@@ -282,14 +283,12 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         }
         
         // Tuple list on each process, add the iorank correspond to current process        
-        long long int start_p, end_p, sid, eid;    // On each process, the starting byte and ending byte
         start_p = *offset;
         end_p   = *offset+(*count)*sizeof(float);
-        struct array tuple_array2 = null_array;  // TODO: duplicate variable
-        p = array_reserve(nektp, &tuple_array2, num_ionode);
+        p = array_reserve(nektp, &tarr, num_ionode);
 
-        int nr = 0;
-        p = tuple_array2.ptr;
+        p  = tarr.ptr;
+        nr = 0;
         for (int io = 0; io < num_ionode; ++io) {
             sid = get_start_io(start_g, nbyte_g, num_ionode, io);
             eid = sid+get_nbyte(nbyte_g, num_ionode, io);
@@ -302,56 +301,51 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
                 p = p+1;
             }
         }
-        tuple_array2.n = nr;
+        tarr.n = nr;
         
         // Pass tuple list to io ranks
-        sarray_transfer(nektp,&tuple_array2,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&tarr,iorank,1,get_crystal(nek_fh->cr));
         
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
-        nekfd *d, *s;
-        struct array io_to_proc_array = null_array;
-        d = array_reserve(nekfd, &io_to_proc_array, nbyte*size); // TODO: over allocate?
-        d = io_to_proc_array.ptr;
-        s = io_to_proc_array.ptr;
-        p = tuple_array2.ptr;
-        e = tuple_array2.ptr;
-        long long int t = 0;
-        long long int idx;
-        uint8_t val;
+        d = array_reserve(nekfd, &io2parr, nbyte*size);
+        d = io2parr.ptr;
+        s = io2parr.ptr;
+        p = tarr.ptr;
+        e = tarr.ptr;
+        nr = 0;
         for (long long int i = start_io; i < end_io; i++) {
             idx = i-start_io;
             val = tmp_buf[idx];
-            for (int k = 0; k < tuple_array2.n; ++k) {
+            for (int k = 0; k < tarr.n; ++k) {
                 e = p+k;
                 // If the byte should be sent to process
                 if ((i >= e->start) && (i < e->end)) {
                     s->data = val;
                     s->pos  = i;
                     s->proc = e->iorank;
-                    t++;
+                    nr++;
                     s = s+1;
                 }
             }
         }
-        io_to_proc_array.n = t;
+        io2parr.n = nr;
 
         // Pass data in iorank to individual processes
-        sarray_transfer(nekfd,&io_to_proc_array,proc,1,get_crystal(nek_fh->cr));
-        printf(" ==== io_to_proc_array at rank %d with length %zu\n",rank, io_to_proc_array.n);
-               
+        sarray_transfer(nekfd,&io2parr,proc,1,get_crystal(nek_fh->cr));
+        
         // Traverse through io_to_proc_array, and put byte into buffer
-        d = io_to_proc_array.ptr;
-        s = io_to_proc_array.ptr;
-        for (int i = 0; i < io_to_proc_array.n; i++) {
+        d = io2parr.ptr;
+        s = io2parr.ptr;
+        for (int i = 0; i < io2parr.n; i++) {
             s = d+i;
             ((uint8_t*) buf)[(s->pos-start_p)] = s->data;
         }
 
         // Free memory
-        array_free(&tuple_array);
-        array_free(&tuple_array2);
-        array_free(&io_to_proc_array);
+        array_free(&garr);
+        array_free(&tarr);
+        array_free(&io2parr);
         if (rank < num_ionode) {
             free(tmp_buf);
         }
