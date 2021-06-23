@@ -22,5 +22,6 @@ bin/reatore2
 
 # Misc
 *.swp
+.DS_Store
 
 __pycache__
