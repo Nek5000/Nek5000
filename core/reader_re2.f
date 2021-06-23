@@ -19,7 +19,7 @@ c TODO: set as a .par file param
 #endif
 
 c TODO: hardcoding default 10, to set as a .par file param
-      cbnodes = min(1024,np)
+      cbnodes = 1
  
       etime0 = dnekclock_sync()
 
