@@ -27,14 +27,14 @@
 
 typedef struct NEK_File_handle {
     // General
-    char      name[MAX_NAME+1];  // name of the file
-    int       mpiio;             // 1 if use mpiio
-    int       cbnodes;           // Number of aggregators
-    MPI_Comm  comm;              // MPI comm
-    MPI_Info  info;              // MPI info
-    MPI_Comm  shmcomm;           // MPI comm within compute nodes
-    MPI_Comm  nodecomm;          // MPI comm across compute nodes
-    sint     *cr;                // crystal
+    char           name[MAX_NAME+1];  // name of the file
+    int            mpiio;             // 1 if use mpiio
+    int            cbnodes;           // Number of aggregators
+    MPI_Comm       comm;              // MPI comm
+    MPI_Info       info;              // MPI info
+    MPI_Comm       shmcomm;           // MPI comm within compute nodes
+    MPI_Comm       nodecomm;          // MPI comm across compute nodes
+    struct crystal cr;                // crystal router
     // MPIIO specific
     MPI_File *mpifh;             // mpi file pointer
     int       mpimode;           // MPI_MODE_RDONLY, MPI_MODE_RDWR, or MPI_MODE_WRONLY
@@ -67,7 +67,7 @@ static nekfh **fhandle_arr = 0;
   void exitt();
 #endif
 
-int NEK_File_open(const MPI_Comm fcomm, sint *cr, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int nlen)
+int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int nlen)
 {
     int i,istat,ierr;
     char dirname[MAX_NAME+1];
@@ -75,6 +75,8 @@ int NEK_File_open(const MPI_Comm fcomm, sint *cr, void *handle, char *filename, 
     MPI_Comm new_comm;
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
+    struct crystal crs;
+    struct comm c;
     char cbnodes_str[12];
     sprintf(cbnodes_str, "%d", *cb_nodes);
     
@@ -86,7 +88,9 @@ int NEK_File_open(const MPI_Comm fcomm, sint *cr, void *handle, char *filename, 
     nek_fh->cbnodes = *cb_nodes;
     MPI_Comm_dup(fcomm, &new_comm);
     nek_fh->comm = new_comm;
-    nek_fh->cr = cr;
+    comm_init(&c, new_comm);
+    crystal_init(&crs, &c);
+    nek_fh->cr = crs;
 
     MPI_Info_create(&info);
     MPI_Info_set(info, "cb_nodes", cbnodes_str);
@@ -237,7 +241,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         p->end    = *offset+*count*sizeof(float);
         p->iorank = 0;
 
-        sarray_transfer(nektp,&garr,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&garr,iorank,1,&(nek_fh->cr));
         
         p = garr.ptr;
         e = garr.ptr;
@@ -258,7 +262,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             }
         }
 
-        sarray_transfer(nektp,&garr,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&garr,iorank,1,&(nek_fh->cr));
         start_g = p->start;
         end_g   = p->end;
 
@@ -307,7 +311,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         tarr.n = nr;
         
         // Pass tuple list to io ranks
-        sarray_transfer(nektp,&tarr,iorank,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nektp,&tarr,iorank,1,&(nek_fh->cr));
         
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
@@ -335,7 +339,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         io2parr.n = nr;
 
         // Pass data in iorank to individual processes
-        sarray_transfer(nekfd,&io2parr,proc,1,get_crystal(nek_fh->cr));
+        sarray_transfer(nekfd,&io2parr,proc,1,&(nek_fh->cr));
         
         // Traverse through io_to_proc_array, and put byte into buffer
         d = io2parr.ptr;
@@ -429,7 +433,7 @@ void NEK_File_close(void *handle, int *ierr)
 
 
 // Wrapper for Fortran
-void fNEK_File_open(const int *fcomm, sint *cr, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
+void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
     *ierr = 1;
     comm_ext c = MPI_Comm_f2c(*fcomm);
     if (handle_n == handle_max) {
@@ -437,7 +441,7 @@ void fNEK_File_open(const int *fcomm, sint *cr, char *filename, int *amode, int 
         fhandle_arr = trealloc(nekfh*,fhandle_arr,handle_max);
     }
     fhandle_arr[handle_n]= (nekfh*) tmalloc(nekfh,1);
-    *ierr = NEK_File_open(c,cr,fhandle_arr[handle_n],filename,amode,ifmpiio,cb_nodes,nlen);
+    *ierr = NEK_File_open(c,fhandle_arr[handle_n],filename,amode,ifmpiio,cb_nodes,nlen);
     *handle = handle_n++;
 }
 
@@ -460,6 +464,7 @@ void fNEK_File_close(int *handle, int *ierr)
     NEK_File_close(fh,ierr);
     MPI_Comm_free(&(fh->shmcomm));
     MPI_Comm_free(&(fh->nodecomm)); 
+    crystal_free(&(fh->cr));
     if (fhandle_arr[*handle]->mpiio) {
         free(fhandle_arr[*handle]->mpifh);
     }

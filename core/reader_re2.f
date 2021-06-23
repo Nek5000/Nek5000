@@ -44,8 +44,7 @@ c TODO: hardcoding default 10, to set as a .par file param
       call rzero(bc ,size(bc))
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-      call nek_file_open(nekcomm,cr_re2,re2fle,0,
-     &                   ifmpiio,cbnodes,re2_h,ierr)
+      call nek_file_open(nekcomm,re2fle,0,ifmpiio,cbnodes,re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
       if (nid.eq.0) write(6,*) 'ifmpiio: ', ifmpiio
       if (nid.eq.0) write(6,*) 'calling readp_re2_*'
