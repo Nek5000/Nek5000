@@ -6,6 +6,7 @@
 #include <math.h>
 #include <time.h>
 #include <limits.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <mpi.h>
@@ -227,7 +228,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         start_g = LLONG_MAX;
         end_g   = LLONG_MIN;
         nbyte_g = 0;
-
+        
         // Check access mode
         if (!((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE)) {
             printf("Nek_File_read :: invalid access mode\n");
