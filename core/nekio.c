@@ -45,13 +45,6 @@ typedef struct NEK_File_handle {
 } nekfh;
 
 // Struct for sarray_transfer
-typedef struct NEK_File_map {
-    uint proc;              // processor id
-    // TODO: long long int?
-    int count;    // number of elements
-    int offset;   // offset from file
-} nekfp;
-
 typedef struct NEK_File_data {
     uint proc;
     long long int pos;   // position in the buffer
@@ -232,10 +225,8 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         p->start  = *offset;
         p->end    = *offset+*count*sizeof(float);
         p->iorank = 0;
-        printf("getting info from childs... rank %d, start %lld, end %lld\n", rank,p->start, p->end);
 
         sarray_transfer(nektp,&tuple_array,iorank,1,get_crystal(nek_fh->cr));
-//        printf("!!!!!! After transfer, size of tuple_array is: %zu\n", tuple_array.n);
         
         p = tuple_array.ptr;
         e = tuple_array.ptr;
@@ -245,11 +236,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         if (rank == 0) {
             for (int pid = 0; pid < size; ++pid) {
                 e = p+pid;
-//                printf("After sarray_transfer, at rank 0..., start %lld, end %lld\n",e->start, e->end);
                 start_g = (start_g < e->start) ? start_g : e->start;
                 end_g   = (end_g > e->end) ? end_g : e->end;
             }
-//            printf("rank0, updated global start, global end, total_byte: %lld, %lld,%lld\n", start_g, end_g, nbyte_g);
         }
         
         // Pass back global start and global end to processes
@@ -264,7 +253,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         sarray_transfer(nektp,&tuple_array,iorank,1,get_crystal(nek_fh->cr));
         start_g = p->start;
         end_g   = p->end;
-//        printf("-------   rank %d, start_g is %lld, end_g is %lld\n", rank, start_g, end_g);
 
         // Determine byte to read for each iorank
         nbyte_g = end_g-start_g;
@@ -277,18 +265,26 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         end_io = 0;
         start_io = get_start_io(start_g, nbyte_g, num_ionode, rank);
         end_io = start_io + nbyte;
-//        printf("rank %d, before fread offset is %lld, read till %lld\n", rank, start_io, end_io);
         if (rank < num_ionode) {
             tmp_buf = (uint8_t*) malloc(nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
             fread(tmp_buf,1,nbyte,nek_fh->file);
+            if (ferror(nek_fh->file)) {
+                printf("ABORT: Error reading %s\n",nek_fh->name);
+                *ierr=1;
+                return;
+            }
+            else if (feof(nek_fh->file)) {
+                printf("ABORT: EOF found while reading %s\n",nek_fh->name);
+                *ierr=1;
+                return;
+            }
         }
         
         // Tuple list on each process, add the iorank correspond to current process        
         long long int start_p, end_p, sid, eid;    // On each process, the starting byte and ending byte
         start_p = *offset;
         end_p   = *offset+(*count)*sizeof(float);
-//        printf("rank %d, before constrcut tuple list, start_p is %lld, end_p is %lld\n", rank, start_p, end_p);
         struct array tuple_array2 = null_array;  // TODO: duplicate variable
         p = array_reserve(nektp, &tuple_array2, num_ionode);
 
@@ -310,7 +306,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         
         // Pass tuple list to io ranks
         sarray_transfer(nektp,&tuple_array2,iorank,1,get_crystal(nek_fh->cr));
-//        printf(" ==== new tuple list at rank %d with length %zu\n",rank, tuple_array2.n);
         
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
@@ -353,7 +348,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             ((uint8_t*) buf)[(s->pos-start_p)] = s->data;
         }
 
-
         // Free memory
         array_free(&tuple_array);
         array_free(&tuple_array2);
@@ -361,167 +355,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         if (rank < num_ionode) {
             free(tmp_buf);
         }
-
-        if (ferror(nek_fh->file)) {
-            printf("ABORT: Error reading %s\n",nek_fh->name);
-            *ierr=1;
-            return;
-        }
-        else if (feof(nek_fh->file)) {
-            printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-            *ierr=1;
-            return;
-        }
-/*
-        // Serial read
-        if ((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE) {
-            fseek(nek_fh->file,*offset,SEEK_SET);
-            fread(buf,sizeof(float),*count,nek_fh->file);
-
-            if (ferror(nek_fh->file)) {
-                printf("ABORT: Error reading %s\n",nek_fh->name);
-                *ierr=1;
-                return;
-            }
-            else if (feof(nek_fh->file)) {
-                printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-                *ierr=1;
-                return;
-            }
-        } else {
-            printf("Nek_File_read :: invalid access mode\n");
-            *ierr=1;
-            return;
-        }
-*/
-
-        /*
-        // Here we assume we have 4 processes, rank 0 will read all the things, and distribute to processes 
-
-        // Send offset and count info to processor 1
-        struct array A = null_array;
-        struct array B = null_array;
-        nekfp *p, *e;
-        nekfd *b_ptr, *b_ptr2;
-
-        p = array_reserve(nekfp, &A, 1), A.n = 1;
-        p->count  = (int) *count;
-        p->offset = (int) *offset;
-        p->proc   = 0;   
-        printf("getting info from childs... rank %d, count %d, offset %d, from proc %d\n", rank,p->count, p->offset, p->proc);
-
-        sarray_transfer(nekfp,&A,proc,1,get_crystal(nek_fh->cr));
-        
-        // Accumulate total count
-        p = A.ptr;
-        e = A.ptr;
-        int total_count = 0;
-        if (rank == 0) {
-            for (int pid = 0; pid < 4; ++pid) {
-                e = p + pid;
-                printf("accumulating total count... rank 0, process %d, count %d, offset %d, from proc %d\n", pid, e->count, e->offset, e->proc);
-                total_count += e->count;
-            }
-            printf("Total count is %d\n", total_count);
-        }
-        
-        array_reserve(nekfd, &B, total_count), B.n = total_count;
-        b_ptr = B.ptr;
-        
-        // io rank read file and put to B
-        p = A.ptr;
-        e = A.ptr;
-        float* tmp_buf;
-        if (rank == 0) {
-            for (int pid = 0; pid < 4; ++pid) {
-                e = p + pid;
-                printf("freading... rank 0, process %d, count %d, offset %d, from proc %d\n", pid, e->count, e->offset, e->proc);
-                fseek(nek_fh->file,e->offset,SEEK_SET);
-                tmp_buf = malloc(e->count*sizeof(float));
-                fread(tmp_buf,sizeof(float),e->count,nek_fh->file);
-                
-                for (int i = 0; i < e->count; ++i) {
-                    b_ptr->data = tmp_buf[i];
-                    b_ptr->proc = e->proc;
-                    b_ptr->pos  = i;
-                    //printf(" i %d, tmp_buf[i] %.2f, proc %d\n ", i, tmp_buf[i], e->proc);
-                    b_ptr++;
-                }
-                free(tmp_buf);
-            }
-        }
-
-       
-        sarray_transfer(nekfp,&B,proc,1,get_crystal(nek_fh->cr));
-        
-        // Each process receive and put into buffer
-        b_ptr = B.ptr;
-        for (int i = 0; i < *count; i++) {
-            b_ptr2 = b_ptr + i; 
-            printf("receive ... rank 1, B's index %d, pos %d, data %.2f, from proc %d\n", i, b_ptr2->pos, b_ptr2->data, b_ptr2->proc);
-            ((float*) buf)[b_ptr2->pos] = b_ptr2->data;
-        } 
-
-        // Free arrays
-        array_free(&A);
-        array_free(&B);
-        */
-
-
-/*
-
-    // TODO: how to pass in long long int to MPI functions?
-    float sbuf[count_io];
-    float rbuf[*count];
-    int   recvcounts[num_node];
-    int   displs[num_node];
-    for (int i = 0; i < num_node; i++) {
-        if (i < num_ionode-1) {
-            recvcounts[i] = count_io;
-            displs[i]     = i*count_io;
-        } else if (i == num_ionode-1) {
-            recvcounts[i] = count_last;
-            displs[i]     = i*count_io;
-        } else {
-            recvcounts[i] = 0;
-            displs[i]     = *count;
-        }
-    }
-
-        // For the first $cbnodes compute nodes, use a MPI rank to do IO
-        if ((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE) {
-            if ((shmrank == 0) && (nodeid < num_node)) {
-                fseek(nek_fh->file,*offset+nodeid*count_io*sizeof(float),SEEK_SET);
-                if (nodeid < nek_fh->cbnodes-1) {
-                    // If not in the last node, read count_io floats
-                    fread(sbuf,sizeof(float),count_io,nek_fh->file);
-                    //fseek(nek_fh->file,((num_ionode-nodeid-1)*count_io)*sizeof(float),SEEK_SET); // Move all file pointer to finish reading $count bytes
-                } else {
-                    // If in the last node, read count_last floats
-                    fread(sbuf,sizeof(float),count_last,nek_fh->file);
-                }
-                if (ferror(nek_fh->file)) {
-                    printf("ABORT: Error reading %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
-                }
-                else if (feof(nek_fh->file)) {
-                    printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
-                }
-            }
-        } else {
-            printf("Nek_File_read :: invalid access mode\n");
-            *ierr=1;
-            return;
-        }
-
-        MPI_Gatherv(sbuf,count_io,MPI_FLOAT,rbuf,recvcounts,displs,MPI_FLOAT,0,nek_fh->nodecomm);
-        MPI_Bcast(rbuf,*count,MPI_FLOAT,0,nek_fh->comm);
-        memcpy(buf,rbuf,*count*sizeof(float));
-
-*/
     }
     *ierr = 0;
 }
