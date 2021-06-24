@@ -235,38 +235,14 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             *ierr=1;
             return;
         }
-
-        // Send info to processor 1 to determine total number of bytes to read
-        p = array_reserve(nektp, &garr, 1), garr.n = 1;
-        p->start  = *offset;
-        p->end    = *offset+*count;
-        p->iorank = 0;
-
-        sarray_transfer(nektp,&garr,iorank,1,&(nek_fh->cr));
         
-        p = garr.ptr;
-        e = garr.ptr;
-        if (rank == 0) {
-            for (int i = 0; i < size; ++i) {
-                e = p+i;
-                start_g = (start_g < e->start) ? start_g : e->start;
-                end_g   = (end_g > e->end)     ? end_g   : e->end;
-            }
-        }
-        
-        // Pass back global start and ending byte to processes
-        if (rank == 0) {
-            for (int i = 0; i < size; ++i) {
-                e = p+i;
-                e->start = start_g;
-                e->end   = end_g;
-            }
-        }
+        // Determine total number of bytes to read and global start/end index 
+        start_p = *offset;
+        end_p   = *offset+*count;
+        MPI_Allreduce(&start_p,&start_g,1,MPI_LONG_LONG,MPI_MIN,nek_fh->comm);
+        MPI_Allreduce(&end_p,  &end_g,  1,MPI_LONG_LONG,MPI_MAX,nek_fh->comm);
 
-        sarray_transfer(nektp,&garr,iorank,1,&(nek_fh->cr));
-        start_g = p->start;
-        end_g   = p->end;
-
+        // TODO: Check overlapping
         // Determine byte to read for each iorank
         nbyte_g = end_g-start_g;
         nbyte   = get_nbyte(nbyte_g, num_ionode, rank);
@@ -290,9 +266,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             }
         }
         
-        // Tuple list on each process, add the iorank correspond to current process        
-        start_p = *offset;
-        end_p   = *offset+*count;
+        // Tuple list on each process, add the iorank correspond to current process
         p = array_reserve(nektp, &tarr, num_ionode);
 
         p  = tarr.ptr;
