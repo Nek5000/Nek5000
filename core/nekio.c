@@ -156,18 +156,25 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     return 0;
 }
 
-// TODO: num_ionode, rank long long int
-long long int get_nbyte(long long int nbyte_g, int num_ionode, int rank) {
-    if (rank >= num_ionode) { return 0; }
-    long long int nbyte = nbyte_g/num_ionode;
-    int mid = num_ionode-(nbyte_g%num_ionode); // rank < mid then has nbyte elem, otherwise nbyte+1 elems
-    return (rank < mid) ? nbyte : nbyte+1;
+int is_iorank(int rank, int iorank_interval, int num_iorank) {
+    int rank_id = rank/iorank_interval;
+    // For every iorank_interval, the first rank will be iorank. (Uniform sampling)
+    return (rank % iorank_interval == 0 && rank_id < num_iorank); 
 }
 
-long long int get_start_io(long long int start_g, long long int nbyte_g, int num_ionode, int rank) {
-    if (rank >= num_ionode) { return 0; }
-    int mid = num_ionode-(nbyte_g%num_ionode);
-    return (rank < mid) ? start_g+rank*(nbyte_g/num_ionode) : start_g+rank*(nbyte_g/num_ionode)+(rank-mid);
+// TODO: num_iorank, rank long long int
+long long int get_nbyte(long long int nbyte_g, int num_iorank, int rank, int iorank_interval) {
+    if (!is_iorank(rank,iorank_interval,num_iorank)) { return 0; }
+    long long int nbyte = nbyte_g/num_iorank;
+    int mid = num_iorank-(nbyte_g%num_iorank); // rank/iorank_interval < mid then has nbyte elem, otherwise nbyte+1 elems
+    return (rank/iorank_interval < mid) ? nbyte : nbyte+1;
+}
+
+long long int get_start_io(long long int start_g, long long int nbyte_g, int num_iorank, int rank, int iorank_interval) {
+    if (!is_iorank(rank,iorank_interval,num_iorank)) { return 0; }
+    int mid = num_iorank-(nbyte_g%num_iorank);
+    int rank_id = rank/iorank_interval;
+    return (rank_id < mid) ? start_g+rank_id*(nbyte_g/num_iorank) : start_g+rank_id*(nbyte_g/num_iorank)+(rank_id-mid);
 }
 
 /*
@@ -181,7 +188,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
-    int shmrank, nodeid, num_node, num_ionode;
+    int shmrank, nodeid, num_node, num_iorank, iorank_interval;
     int nproc;
 
     MPI_Comm_rank(fcomm,&rank);
@@ -189,8 +196,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
-    num_ionode = (num_node-1)/(nek_fh->cbnodes)+1;
-    
+    num_iorank = (num_node-1)/(nek_fh->cbnodes)+1;
+    iorank_interval = nproc/num_iorank;
+
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
         *ierr = 1;
@@ -245,13 +253,14 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
         // Determine byte to read for each iorank
         nbyte_g = end_g-start_g;
-        nbyte   = get_nbyte(nbyte_g, num_ionode, rank);
+        nbyte   = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
 
         // Check overlapping
         if (nbyte_t != nbyte_g) {
             if (nbyte_t == nproc*nbyte_g) {
-                num_ionode = 1; // If all processes read the same chunk, only one io rank do the read
-                nbyte      = get_nbyte(nbyte_g, num_ionode, rank);
+                num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
+                iorank_interval = nproc;
+                nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
             } else {
                 printf("ABORT: nekio doesn't support overlapping read across processors. \n");
                 *ierr = 1;
@@ -260,9 +269,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         }
 
         // If we are in a io node, read file to tmp_buf
-        start_io = get_start_io(start_g, nbyte_g, num_ionode, rank);
+        start_io = get_start_io(start_g, nbyte_g, num_iorank, rank, iorank_interval);
         end_io   = start_io + nbyte;
-        if (rank < num_ionode) {
+        if (is_iorank(rank,iorank_interval,num_iorank)) {
             tmp_buf = (uint8_t*) malloc(nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
             fread(tmp_buf,1,nbyte,nek_fh->file);
@@ -279,18 +288,18 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         }
         
         // Tuple list on each process, add the iorank correspond to current process
-        p = array_reserve(nektp, &tarr, num_ionode);
+        p = array_reserve(nektp, &tarr, num_iorank);
 
         p  = tarr.ptr;
         nr = 0;
-        for (int io = 0; io < num_ionode; ++io) {
-            sid = get_start_io(start_g, nbyte_g, num_ionode, io);
-            eid = sid+get_nbyte(nbyte_g, num_ionode, io);
+        for (int io = 0; io < num_iorank; ++io) {
+            sid = get_start_io(start_g, nbyte_g, num_iorank, io*iorank_interval, iorank_interval);
+            eid = sid+get_nbyte(nbyte_g, num_iorank, io*iorank_interval, iorank_interval);
             // If overlap
             if (sid <= end_p && start_p <= eid) {
                 p->start  = start_p;
                 p->end    = end_p;
-                p->iorank = io;
+                p->iorank = io*iorank_interval;
                 nr++;
                 p = p+1;
             }
@@ -341,7 +350,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         array_free(&garr);
         array_free(&tarr);
         array_free(&io2parr);
-        if (rank < num_ionode) {
+        if (is_iorank(rank,iorank_interval,num_iorank)) {
             free(tmp_buf);
         }
     }
