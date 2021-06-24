@@ -226,7 +226,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // starting byte and ending byte of global, each iorank and each process
         // total number of bytes to read in global, and each iorank
         long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte_t, nbyte;
-        struct array garr    = null_array;
         struct array tarr    = null_array;
         struct array io2parr = null_array;
         long long int nr, idx;
@@ -347,7 +346,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         }
 
         // Free memory
-        array_free(&garr);
         array_free(&tarr);
         array_free(&io2parr);
         if (is_iorank(rank,iorank_interval,num_iorank)) {
