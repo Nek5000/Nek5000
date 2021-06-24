@@ -182,14 +182,14 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int shmrank, nodeid, num_node, num_ionode;
-    int size;
+    int nproc;
 
     MPI_Comm_rank(fcomm,&rank);
-    MPI_Comm_size(fcomm,&size);
+    MPI_Comm_size(fcomm,&nproc);
     MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
-    num_ionode = (size == 1) ? 1 : num_node/(nek_fh->cbnodes)+1;
+    num_ionode = (nproc == 1) ? 1 : num_node/(nek_fh->cbnodes)+1;
     
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
@@ -217,7 +217,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         uint8_t *tmp_buf;
         // starting byte and ending byte of global, each iorank and each process
         // total number of bytes to read in global, and each iorank
-        long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte;
+        long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte_t, nbyte;
         struct array garr    = null_array;
         struct array tarr    = null_array;
         struct array io2parr = null_array;
@@ -240,12 +240,24 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         start_p = *offset;
         end_p   = *offset+*count;
         MPI_Allreduce(&start_p,&start_g,1,MPI_LONG_LONG,MPI_MIN,nek_fh->comm);
-        MPI_Allreduce(&end_p,  &end_g,  1,MPI_LONG_LONG,MPI_MAX,nek_fh->comm);
+        MPI_Allreduce(&end_p  ,&end_g  ,1,MPI_LONG_LONG,MPI_MAX,nek_fh->comm);
+        MPI_Allreduce(count   ,&nbyte_t,1,MPI_LONG_LONG,MPI_SUM,nek_fh->comm);
 
-        // TODO: Check overlapping
         // Determine byte to read for each iorank
         nbyte_g = end_g-start_g;
         nbyte   = get_nbyte(nbyte_g, num_ionode, rank);
+
+        // Check overlapping
+        if (nbyte_t != nbyte_g) {
+            if (nbyte_t == nproc*nbyte_g) {
+                num_ionode = 1; // If all processes read the same chunk, only one io rank do the read
+                nbyte      = get_nbyte(nbyte_g, num_ionode, rank);
+            } else {
+                printf("ABORT: nekio doesn't support overlapping read across processors. \n");
+                *ierr = 1;
+                return;
+            }
+        }
 
         // If we are in a io node, read file to tmp_buf
         start_io = get_start_io(start_g, nbyte_g, num_ionode, rank);
@@ -291,7 +303,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // TODO: change data structure to send chunk
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
-        d = array_reserve(nekfd, &io2parr, nbyte*size);
+        d = array_reserve(nekfd, &io2parr, nbyte*nproc);
         d = io2parr.ptr;
         s = io2parr.ptr;
         p = tarr.ptr;
