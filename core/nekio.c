@@ -189,7 +189,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
-    num_ionode = num_node/(nek_fh->cbnodes)+1;
+    num_ionode = (size == 1) ? 1 : num_node/(nek_fh->cbnodes)+1;
     
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
@@ -288,6 +288,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // Pass tuple list to io ranks
         sarray_transfer(nektp,&tarr,iorank,1,&(nek_fh->cr));
         
+        // TODO: change data structure to send chunk
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
         d = array_reserve(nekfd, &io2parr, nbyte*size);
