@@ -43,7 +43,6 @@ typedef struct NEK_File_handle {
     // Byte file specific
     FILE        *file;              // byte file pointer
     int          bmode;             // READ, READWRITE, or WRITE
-    char         bytemode[4];       // "rb", "rwb", "wb" correspond to bmode = 0,1,2 
     struct array tarr;              // Array holding tuples (nektp)
     struct array io2parr;           // Array holding file blocks (nekfb)
 } nekfh;
@@ -83,6 +82,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     struct crystal crs;
     struct comm c;
     char cbnodes_str[12];
+    char bytemode[4];       // "rb", "rwb", "wb" correspond to bmode = 0,1,2 
     sprintf(cbnodes_str, "%d", *cb_nodes);
     
     nek_fh = (nekfh*) handle;
@@ -135,21 +135,20 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
         nek_fh->mpifh = mpi_fh;
     } else {
         // Use byte.c 
-        // TODO: clean up bytemode
         nek_fh->mpiio = 0;
         nek_fh->bmode = *amode;
         switch (*amode) {
             case READ:
-                strncpy(nek_fh->bytemode,"rb",4);
+                strncpy(bytemode,"rb",4);
                 break;
             case READWRITE:
-                strncpy(nek_fh->bytemode,"rwb",4);
+                strncpy(bytemode,"rwb",4);
                 break;
             case WRITE:
-                strncpy(nek_fh->bytemode,"wb",4);
+                strncpy(bytemode,"wb",4);
                 break;
         }
-        if (!((nek_fh->file)=fopen(nek_fh->name,nek_fh->bytemode))) {
+        if (!((nek_fh->file)=fopen(nek_fh->name,bytemode))) {
             printf("%s\n",nek_fh->name);
             printf("Nek_File_open() :: fopen failure2!\n");
             return 1;
