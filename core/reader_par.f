@@ -72,7 +72,8 @@ C
       param(47) = 0.4  ! viscosity for mesh elasticity solver
 
       param(59) = 1    ! No fast operator eval
-
+      
+      param(61) = 0    ! number of io aggregators = number of compute nodes
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
@@ -471,6 +472,10 @@ c set parameters
            goto 999
          endif
       endif 
+
+      call finiparser_getDbl(d_out,'general:cbnodes',ifnd)
+      if(ifnd .eq. 1) param(61) = int(d_out)
+      if(ifnd .eq. 1) cbnodes = int(d_out)
 
       call finiparser_getBool(i_out,'general:writeDoublePrecision',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 

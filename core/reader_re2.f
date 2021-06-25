@@ -12,14 +12,10 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
-c TODO: set as a .par file param      
       ifmpiio = .true.
 #ifdef NOMPIIO
       ifmpiio = .false.
 #endif
-
-c TODO: hardcoding default 10, to set as a .par file param
-      cbnodes = 1
  
       etime0 = dnekclock_sync()
 
@@ -528,8 +524,6 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
       
       ierr=0
-c TODO: hardcoded
-      cbnodes=1
 
       if (nid.eq.0) then
          if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
