@@ -5,7 +5,7 @@ set -a
 #-------------------------------------------------------------------------------
 
 # source path 
-# NEK_SOURCE_ROOT="$HOME/Nek5000/" 
+#NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
@@ -15,7 +15,7 @@ set -a
 #LD="$FC"
 
 # config options (set to "?" to get a list)
-# PPLIST="NOMPIIO" 
+#PPLIST="NOMPIIO" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
@@ -31,6 +31,7 @@ set -a
 # auxilliary files to compile
 # NOTE: source files have to located in the same directory as makenek
 #       a makefile_usr.inc has to be provided containing the build rules 
+#USR="foo.o"
 
 # MPI (default 1) 
 #MPI=0
