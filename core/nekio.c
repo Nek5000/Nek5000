@@ -275,6 +275,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             tmp_buf = (uint8_t*) malloc(nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
             fread(tmp_buf,1,nbyte,nek_fh->file);
+            fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
             if (ferror(nek_fh->file)) {
                 printf("ABORT: Error reading %s\n",nek_fh->name);
                 *ierr=1;
