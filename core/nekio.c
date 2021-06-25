@@ -23,7 +23,7 @@
 #define WRITE          2
 #define MAX_NAME       132
 #define MAX_FHANDLE    100
-#define CB_BUFFER_SIZE 100
+#define CB_BUFFER_SIZE 16777216     // default 16 MB. TODO: pass in as user param?
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
@@ -197,7 +197,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
-    num_iorank = (num_node-1)/(nek_fh->cbnodes)+1;
+    num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
     iorank_interval = nproc/num_iorank;
 
     if (*count < 0) {
@@ -257,17 +257,11 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         nbyte   = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
 
         // Check overlapping
-        if (nbyte_t != nbyte_g) {
-            if (nbyte_t == nproc*nbyte_g) {
-                num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
-                iorank_interval = nproc;
-                nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
-            } else {
-                printf("ABORT: nekio doesn't support overlapping read across processors. \n");
-                *ierr = 1;
-                return;
-            }
-        }
+        if (nbyte_t == nproc*nbyte_g) {
+            num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
+            iorank_interval = nproc;
+            nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
+        } 
 
         // If we are in a io node, read file to tmp_buf
         start_io = get_start_io(start_g, nbyte_g, num_iorank, rank, iorank_interval);
