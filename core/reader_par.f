@@ -473,10 +473,6 @@ c set parameters
          endif
       endif 
 
-      call finiparser_getDbl(d_out,'general:cbnodes',ifnd)
-      if(ifnd .eq. 1) param(61) = int(d_out)
-      if(ifnd .eq. 1) cbnodes = int(d_out)
-
       call finiparser_getBool(i_out,'general:writeDoublePrecision',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 
 

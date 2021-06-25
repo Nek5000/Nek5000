@@ -5,7 +5,7 @@ set -a
 #-------------------------------------------------------------------------------
 
 # source path 
-NEK_SOURCE_ROOT="$HOME/Desktop/github/Nek5000" 
+#NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 #FC="mpif77"
@@ -15,7 +15,7 @@ NEK_SOURCE_ROOT="$HOME/Desktop/github/Nek5000"
 #LD="$FC"
 
 # config options (set to "?" to get a list)
-PPLIST="NOMPIIO" 
+#PPLIST="" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS

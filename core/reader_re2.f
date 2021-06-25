@@ -41,7 +41,7 @@ c-----------------------------------------------------------------------
 
       write(6,*) 'start nek_file_open'
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-      call nek_file_open(nekcomm,re2fle,0,ifmpiio,cbnodes,re2_h,ierr)
+      call nek_file_open(nekcomm,re2fle,0,ifmpiio,param(61),re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
       if (nid.eq.0) write(6,*) 'ifmpiio: ', ifmpiio
       if (nid.eq.0) write(6,*) 'calling readp_re2_*'
@@ -537,7 +537,7 @@ c-----------------------------------------------------------------------
       endif
       call err_chk(ierr,' Cannot find re2 file!$')
 
-      call nek_file_open(nekcomm,re2fle,0,ifmpiio,cbnodes,re2_h,ierr)
+      call nek_file_open(nekcomm,re2fle,0,ifmpiio,param(61),re2_h,ierr)
       if(ierr.ne.0) goto 100
       call nek_file_read(re2_h,int8(20*4),int8(0),hdr,ierr)
       if(ierr.ne.0) goto 100
