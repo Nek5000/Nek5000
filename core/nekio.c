@@ -412,11 +412,15 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
 void NEK_File_close(void *handle, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
-    int rank;
-    MPI_Comm_rank(nek_fh->comm,&rank);
+    MPI_Comm_free(&(nek_fh->shmcomm));
+    MPI_Comm_free(&(nek_fh->nodecomm)); 
+    crystal_free(&(nek_fh->cr));
+    array_free(&(nek_fh->tarr));
+    array_free(&(nek_fh->io2parr));
 
     if (nek_fh->mpiio) {
         MPI_File_close(nek_fh->mpifh);
+        free(nek_fh->mpifh);
     } else {
         if (!nek_fh->file) {
             return;
@@ -461,16 +465,7 @@ void fNEK_file_write(int *handle, long long int *count, long long int *offset, v
 
 void fNEK_File_close(int *handle, int *ierr)
 {
-    nekfh *fh = fhandle_arr[*handle];
-    NEK_File_close(fh,ierr);
-    MPI_Comm_free(&(fh->shmcomm));
-    MPI_Comm_free(&(fh->nodecomm)); 
-    crystal_free(&(fh->cr));
-    array_free(&(fh->tarr));
-    array_free(&(fh->io2parr));
-    if (fhandle_arr[*handle]->mpiio) {
-        free(fhandle_arr[*handle]->mpifh);
-    }
+    NEK_File_close(fhandle_arr[*handle],ierr);
     free(fhandle_arr[*handle]);
     fhandle_arr[*handle] = 0;
 }
