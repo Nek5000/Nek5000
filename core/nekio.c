@@ -45,6 +45,7 @@ typedef struct NEK_File_handle {
     int          bmode;             // READ, READWRITE, or WRITE
     struct array tarr;              // Array holding tuples (nektp)
     struct array io2parr;           // Array holding file blocks (nekfb)
+    struct array tmp_buf;           // Array holding temporary buffer in ioranks
 } nekfh;
 
 // Struct for sarray_transfer
@@ -113,8 +114,10 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 
     struct array tarr    = null_array;
     struct array io2parr = null_array;
+    struct array tmp_buf = null_array;
     nek_fh->tarr    = tarr;
     nek_fh->io2parr = io2parr;
+    nek_fh->tmp_buf = tmp_buf;
 
     if (*ifmpiio) {
         // Use MPIIO
@@ -237,6 +240,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         int num_buffer;
         long long int nr, idx;
         char val;
+        char  *tmp_buffer;
         nektp *p, *e;
         nekfb *d, *s; 
         start_g = LLONG_MAX;
@@ -272,9 +276,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         start_io = get_start_io(start_g, nbyte_g, num_iorank, rank, iorank_interval);
         end_io   = start_io + nbyte;
         if (is_iorank(rank,iorank_interval,num_iorank)) {
-            tmp_buf = (char*) malloc(nbyte);
+            tmp_buffer = array_reserve(char,&(nek_fh->tmp_buf),nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
-            fread(tmp_buf,1,nbyte,nek_fh->file);
+            fread(tmp_buffer,1,nbyte,nek_fh->file);
             fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
             if (ferror(nek_fh->file)) {
                 printf("ABORT: Error reading %s\n",nek_fh->name);
@@ -333,7 +337,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
                 // Fill buffer
                 idx = s->global_offset-start_io;   // start idx in tmp_buf
                 for (int i = 0; i < s->bytes; ++i) {
-                    s->buf[i] = tmp_buf[idx+i];
+                    s->buf[i] = tmp_buffer[idx+i];
                 }
                 nr++;
                 s = s+1;
@@ -350,12 +354,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         for (int k = 0; k < (nek_fh->io2parr).n; k++) {
             s = d+k;
             memcpy(buf+s->global_offset-start_p,s->buf,s->bytes);
-        }
-        
-
-        // Free memory
-        if (is_iorank(rank,iorank_interval,num_iorank)) {
-            free(tmp_buf);
         }
     }
     *ierr = 0;
@@ -417,6 +415,7 @@ void NEK_File_close(void *handle, int *ierr)
     crystal_free(&(nek_fh->cr));
     array_free(&(nek_fh->tarr));
     array_free(&(nek_fh->io2parr));
+    array_free(&(nek_fh->tmp_buf));
 
     if (nek_fh->mpiio) {
         MPI_File_close(nek_fh->mpifh);
