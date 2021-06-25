@@ -83,23 +83,18 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     struct comm c;
     char cbnodes_str[12];
     char bytemode[4];       // "rb", "rwb", "wb" correspond to bmode = 0,1,2 
-    sprintf(cbnodes_str, "%d", *cb_nodes);
+    int num_node;
     
     nek_fh = (nekfh*) handle;
 
     strncpy(nek_fh->name,filename,MAX_NAME);
     for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] != ' ') break;
     (nek_fh->name)[i+1] = '\0';
-    nek_fh->cbnodes = *cb_nodes;
     MPI_Comm_dup(fcomm, &new_comm);
     nek_fh->comm = new_comm;
     comm_init(&c, new_comm);
     crystal_init(&crs, &c);
     nek_fh->cr = crs;
-
-    MPI_Info_create(&info);
-    MPI_Info_set(info, "cb_nodes", cbnodes_str);
-    nek_fh->info = info;
 
     int shmrank;
     MPI_Comm shmcomm, nodecomm; 
@@ -108,6 +103,13 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     MPI_Comm_split(nek_fh->comm, shmrank, 0, &nodecomm);
     nek_fh->shmcomm  = shmcomm;
     nek_fh->nodecomm = nodecomm;
+    MPI_Comm_size(nek_fh->nodecomm, &num_node);
+    
+    nek_fh->cbnodes = *cb_nodes;
+    sprintf(cbnodes_str, "%d", ((*cb_nodes == 0) ? num_node : *cb_nodes));
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "cb_nodes", cbnodes_str);
+    nek_fh->info = info;
 
     struct array tarr    = null_array;
     struct array io2parr = null_array;
