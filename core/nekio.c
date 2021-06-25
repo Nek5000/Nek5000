@@ -18,11 +18,12 @@
 #define fNEK_File_write   FORTRAN_UNPREFIXED(nek_file_write,NEK_FILE_WRITE)
 #define fNEK_File_close   FORTRAN_UNPREFIXED(nek_file_close,NEK_FILE_CLOSE)
 
-#define READ        0
-#define READWRITE   1
-#define WRITE       2
-#define MAX_NAME    132
-#define MAX_FHANDLE 100
+#define READ           0
+#define READWRITE      1
+#define WRITE          2
+#define MAX_NAME       132
+#define MAX_FHANDLE    100
+#define CB_BUFFER_SIZE 100
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
@@ -46,11 +47,12 @@ typedef struct NEK_File_handle {
 } nekfh;
 
 // Struct for sarray_transfer
-typedef struct NEK_File_data {
+typedef struct NEK_File_block {
     uint proc;
-    long long int pos;   // position in the buffer
-    uint8_t data;        // data at the position    
-} nekfd;
+    long long int global_offset;   
+    long long int bytes;
+    uint8_t buf[CB_BUFFER_SIZE];   // data start at the position    
+} nekfb;
 
 typedef struct NEK_File_tuple {
     uint iorank;              // the iorank in charge of this process
@@ -99,9 +101,9 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 
     int shmrank;
     MPI_Comm shmcomm, nodecomm; 
-    MPI_Comm_split_type(fcomm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
+    MPI_Comm_split_type(nek_fh->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
     MPI_Comm_rank(shmcomm, &shmrank);
-    MPI_Comm_split(fcomm, shmrank, 0, &nodecomm);
+    MPI_Comm_split(nek_fh->comm, shmrank, 0, &nodecomm);
     nek_fh->shmcomm  = shmcomm;
     nek_fh->nodecomm = nodecomm;
 
@@ -122,7 +124,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
 
-        MPI_File_open(fcomm,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
+        MPI_File_open(nek_fh->comm,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
         nek_fh->mpifh = mpi_fh;
     } else {
         // Use byte.c 
@@ -184,19 +186,19 @@ long long int get_start_io(long long int start_g, long long int nbyte_g, int num
 void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
-    MPI_Comm fcomm = nek_fh->comm;
 
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int shmrank, nodeid, num_node, num_iorank, iorank_interval;
     int nproc;
 
-    MPI_Comm_rank(fcomm,&rank);
-    MPI_Comm_size(fcomm,&nproc);
+    MPI_Comm_rank(nek_fh->comm,&rank);
+    MPI_Comm_size(nek_fh->comm,&nproc);
     MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
-    num_iorank = (num_node-1)/(nek_fh->cbnodes)+1;
+//    num_iorank = (num_node-1)/(nek_fh->cbnodes)+1;
+    num_iorank = 3;
     iorank_interval = nproc/num_iorank;
 
     if (*count < 0) {
@@ -226,12 +228,13 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // starting byte and ending byte of global, each iorank and each process
         // total number of bytes to read in global, and each iorank
         long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte_t, nbyte;
+        int num_buffer;
         struct array tarr    = null_array;
         struct array io2parr = null_array;
         long long int nr, idx;
         uint8_t val;
         nektp *p, *e;
-        nekfd *d, *s; 
+        nekfb *d, *s; 
         start_g = LLONG_MAX;
         end_g   = LLONG_MIN;
         nbyte_g = 0;
@@ -308,42 +311,49 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // Pass tuple list to io ranks
         sarray_transfer(nektp,&tarr,iorank,1,&(nek_fh->cr));
         
-        // TODO: change data structure to send chunk
         // In io ranks, traverse through each byte read before, and put into sarray_transform if
         // appears in the tuple list
-        d = array_reserve(nekfd, &io2parr, nbyte*nproc);
+        d = array_reserve(nekfb, &io2parr, ((end_io-start_io-1)/CB_BUFFER_SIZE+1)*nproc);
         d = io2parr.ptr;
         s = io2parr.ptr;
         p = tarr.ptr;
         e = tarr.ptr;
         nr = 0;
-        for (long long int i = start_io; i < end_io; i++) {
-            idx = i-start_io;
-            val = tmp_buf[idx];
-            for (int k = 0; k < tarr.n; ++k) {
-                e = p+k;
-                // If the byte should be sent to process
-                if ((i >= e->start) && (i < e->end)) {
-                    s->data = val;
-                    s->pos  = i;
-                    s->proc = e->iorank;
-                    nr++;
-                    s = s+1;
+
+        // For each child of iorank
+        for (int k = 0; k < tarr.n; ++k) {
+            e = p+k;
+            sid = (e->start < start_io) ? start_io : e->start;
+            eid = (e->end   > end_io  ) ? end_io   : e->end;
+            num_buffer = (eid-sid-1)/CB_BUFFER_SIZE+1;
+            // Send num_buffer blocks back to processes
+            for (int bi = 0; bi < num_buffer; ++bi) {
+                s->proc          = e->iorank;
+                s->global_offset = sid+bi*CB_BUFFER_SIZE;
+                s->bytes         = (bi < num_buffer-1) ? CB_BUFFER_SIZE : (eid-sid)-(num_buffer-1)*CB_BUFFER_SIZE;
+                // Fill buffer
+                idx = s->global_offset-start_io;   // start idx in tmp_buf
+                for (int i = 0; i < s->bytes; ++i) {
+                    s->buf[i] = tmp_buf[idx+i];
                 }
+                nr++;
+                s = s+1;
             }
         }
         io2parr.n = nr;
 
         // Pass data in iorank to individual processes
-        sarray_transfer(nekfd,&io2parr,proc,1,&(nek_fh->cr));
+        sarray_transfer(nekfb,&io2parr,proc,1,&(nek_fh->cr));
         
         // Traverse through io_to_proc_array, and put byte into buffer
         d = io2parr.ptr;
         s = io2parr.ptr;
-        for (int i = 0; i < io2parr.n; i++) {
-            s = d+i;
-            ((uint8_t*) buf)[(s->pos-start_p)] = s->data;
+        printf("=== after sarraytransfer, At rank %d, is_iorank? %d, with start_io %lld, end_io %lld, start_p %lld, end_p %lld, io2parr.n %zu\n", rank, is_iorank(rank,iorank_interval,num_iorank),start_io,end_io,start_p,end_p,io2parr.n);
+        for (int k = 0; k < io2parr.n; k++) {
+            s = d+k;
+            memcpy(buf+s->global_offset-start_p,s->buf,s->bytes);
         }
+        
 
         // Free memory
         array_free(&tarr);
