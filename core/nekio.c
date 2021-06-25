@@ -346,7 +346,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // Traverse through io_to_proc_array, and put byte into buffer
         d = (nek_fh->io2parr).ptr;
         s = (nek_fh->io2parr).ptr;
-        printf("=== after sarraytransfer, At rank %d, is_iorank? %d, with start_io %lld, end_io %lld, start_p %lld, end_p %lld, io2parr.n %zu\n", rank, is_iorank(rank,iorank_interval,num_iorank),start_io,end_io,start_p,end_p,(nek_fh->io2parr).n);
         for (int k = 0; k < (nek_fh->io2parr).n; k++) {
             s = d+k;
             memcpy(buf+s->global_offset-start_p,s->buf,s->bytes);
