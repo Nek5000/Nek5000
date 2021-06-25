@@ -9,6 +9,7 @@ c-----------------------------------------------------------------------
       logical ifbswap
       logical ifxyz, ifcur, ifbc
       integer idummy(100)
+      integer re2_h
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
@@ -34,16 +35,13 @@ c-----------------------------------------------------------------------
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
-      write(6,*) 'start nek_file_open'
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
       call nek_file_open(nekcomm,re2fle,0,0,param(61),re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
-      if (nid.eq.0) write(6,*) 'ifmpiio: ', ifmpiio
-      if (nid.eq.0) write(6,*) 'calling readp_re2_*'
-      call readp_re2_mesh (ifbswap,ifxyz)
-      call readp_re2_curve(ifbswap,ifcur)
+      call readp_re2_mesh (re2_h,ifbswap,ifxyz)
+      call readp_re2_curve(re2_h,ifbswap,ifcur)
       do ifield = ibc,nfldt
-      call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+      call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),re2_h,
      &                  ifbswap,ifbc)
       enddo
       call nek_file_close(re2_h,ierr)
@@ -59,7 +57,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_mesh(ifbswap,ifread) ! version 2 of .re2 reader
+      subroutine readp_re2_mesh(re2_h,ifbswap,ifread) ! version 2 of .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
@@ -131,7 +129,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_curve(ifbswap,ifread)
+      subroutine readp_re2_curve(re2_h,ifbswap,ifread)
 
       include 'SIZE'
       include 'TOTAL'
@@ -233,7 +231,7 @@ c-----------------------------------------------------------------------
 
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_bc(cbl,bl,ifbswap,ifread)
+      subroutine readp_re2_bc(cbl,bl,re2_h,ifbswap,ifread)
 
       include 'SIZE'
       include 'TOTAL'
@@ -514,7 +512,8 @@ c-----------------------------------------------------------------------
       character*132 hdr
       character*5 version
       real*4      test
-
+        
+      integer re2_h
       logical iffound
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal

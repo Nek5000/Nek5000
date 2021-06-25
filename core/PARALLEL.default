@@ -23,8 +23,8 @@ c     Maximum number of elements (limited to 2**31/12, at least for now)
       integer        wdsize,isize,isize8,lsize,csize,wdsizi
       common/precsn/ wdsize,isize,isize8,lsize,csize,wdsizi
 
-      integer cr_h,gsh,gsh_fld(0:ldimt3),xxth(ldimt3),re2_h
-      common /comm_handles/ cr_h,gsh,gsh_fld,xxth,re2_h
+      integer cr_h,gsh,gsh_fld(0:ldimt3),xxth(ldimt3)
+      common /comm_handles/ cr_h,gsh,gsh_fld,xxth
 
       logical ifgsh_fld_same
       common /lcomm_handles/ ifgsh_fld_same
