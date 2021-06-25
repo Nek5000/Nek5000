@@ -525,7 +525,11 @@ c-----------------------------------------------------------------------
 
       logical iffound
 
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+      
       ierr=0
+c TODO: hardcoded
+      cbnodes=1
 
       if (nid.eq.0) then
          if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
@@ -538,30 +542,28 @@ c-----------------------------------------------------------------------
       endif
       call err_chk(ierr,' Cannot find re2 file!$')
 
-      if (nid.eq.0) then
-         call byte_open(fname,ierr)
-         if(ierr.ne.0) goto 100
-         call byte_read(hdr,20,ierr)
-         if(ierr.ne.0) goto 100
+      call nek_file_open(nekcomm,re2fle,0,ifmpiio,cbnodes,re2_h,ierr)
+      if(ierr.ne.0) goto 100
+      call nek_file_read(re2_h,int8(20*4),int8(0),hdr,ierr)
+      if(ierr.ne.0) goto 100
 
-         read (hdr,1) version,nelgt,ldimr,nelgv
-    1    format(a5,i9,i3,i9)
- 
-         wdsizi = 4
-         if(version.eq.'#v002') wdsizi = 8
-         if(version.eq.'#v003') then
-           wdsizi = 8
-           param(32)=1
-         endif
+      read (hdr,1) version,nelgt,ldimr,nelgv
+    1 format(a5,i9,i3,i9)
 
-         call byte_read(test,1,ierr)
-         if(ierr.ne.0) goto 100
-         ifbswap = if_byte_swap_test(test,ierr)
-         if(ierr.ne.0) goto 100
-        
-         call byte_close(ierr)
+      wdsizi = 4
+      if(version.eq.'#v002') wdsizi = 8
+      if(version.eq.'#v003') then
+        wdsizi = 8
+        param(32)=1
       endif
- 
+
+      call nek_file_read(re2_h,int8(1*4),int8(20*4),test,ierr)
+      if(ierr.ne.0) goto 100
+      ifbswap = if_byte_swap_test(test,ierr)
+      if(ierr.ne.0) goto 100
+    
+      call nek_file_close(re2_h,ierr)
+
  100  call err_chk(ierr,'Error reading re2 header$')
 
       call bcast(wdsizi, ISIZE)
