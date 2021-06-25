@@ -39,6 +39,7 @@ c-----------------------------------------------------------------------
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
+      write(6,*) 'start nek_file_open'
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
       call nek_file_open(nekcomm,re2fle,0,ifmpiio,cbnodes,re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')

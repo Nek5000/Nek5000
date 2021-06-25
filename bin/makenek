@@ -15,7 +15,7 @@ NEK_SOURCE_ROOT="$HOME/Desktop/github/Nek5000/"
 #LD="$FC"
 
 # config options (set to "?" to get a list)
-PPLIST="NOMPIIO" 
+#PPLIST="NOMPIIO" 
 
 #-------------------------------------------------------------------------------
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
