@@ -52,7 +52,7 @@ typedef struct NEK_File_block {
     uint proc;
     long long int global_offset;   
     long long int bytes;
-    uint8_t buf[CB_BUFFER_SIZE];   // data start at the position    
+    char buf[CB_BUFFER_SIZE];   // data start at the position    
 } nekfb;
 
 typedef struct NEK_File_tuple {
@@ -230,13 +230,13 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     
     } else {
         // byte read
-        uint8_t *tmp_buf;
+        char *tmp_buf;
         // starting byte and ending byte of global, each iorank and each process
         // total number of bytes to read in global, and each iorank
         long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte_t, nbyte;
         int num_buffer;
         long long int nr, idx;
-        uint8_t val;
+        char val;
         nektp *p, *e;
         nekfb *d, *s; 
         start_g = LLONG_MAX;
@@ -272,7 +272,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         start_io = get_start_io(start_g, nbyte_g, num_iorank, rank, iorank_interval);
         end_io   = start_io + nbyte;
         if (is_iorank(rank,iorank_interval,num_iorank)) {
-            tmp_buf = (uint8_t*) malloc(nbyte);
+            tmp_buf = (char*) malloc(nbyte);
             fseek(nek_fh->file,start_io,SEEK_SET);
             fread(tmp_buf,1,nbyte,nek_fh->file);
             fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
