@@ -170,7 +170,6 @@ int is_iorank(int rank, int iorank_interval, int num_iorank) {
     return (rank % iorank_interval == 0 && rank_id < num_iorank); 
 }
 
-// TODO: num_iorank, rank long long int
 long long int get_nbyte(long long int nbyte_g, int num_iorank, int rank, int iorank_interval) {
     if (!is_iorank(rank,iorank_interval,num_iorank)) { return 0; }
     long long int nbyte = nbyte_g/num_iorank;
