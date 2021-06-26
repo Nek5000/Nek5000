@@ -377,7 +377,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     *ierr = 0;
 }
 
-// TODO: parallel write
 void NEK_File_write(void *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
 {
     nekfh *nek_fh = (nekfh*) handle;
@@ -388,7 +387,6 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
         return;
     }
 
-    // TODO: didn't test
     if (nek_fh->mpiio) {
         // Use MPIIO
          if (nek_fh->mpimode == MPI_MODE_RDONLY) {
@@ -406,6 +404,12 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
         
     } else {
         // byte write
+        // TODO: parallel write
+        printf("Parallel write currently not supported!");
+        *ierr = 1;
+        return;
+        /*
+        // Serial write
         if ((nek_fh->bmode)==WRITE || (nek_fh->bmode)==READWRITE) {
             fseek(nek_fh->file,*offset,SEEK_CUR);
             fwrite(buf,1,*count,(nek_fh->file));
@@ -420,6 +424,7 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
             *ierr=1;
             return;
         }
+        */
     }
 
     *ierr = 0;
