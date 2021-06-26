@@ -23,7 +23,7 @@
 #define WRITE          2
 #define MAX_NAME       132
 #define MAX_FHANDLE    100
-#define CB_BUFFER_SIZE 16777216     // default 16 MB. TODO: pass in as user param?
+#define CB_BUFFER_SIZE 16777216
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
@@ -208,6 +208,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
     MPI_Comm_size(nek_fh->nodecomm, &num_node);
     num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
+    num_iorank = 3;
     iorank_interval = nproc/num_iorank;
 
     if (*count < 0) {
@@ -234,10 +235,10 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     } else {
         // byte read
         char *tmp_buf;
-        // starting byte and ending byte of global, each iorank and each process
-        // total number of bytes to read in global, and each iorank
-        long long int start_g, end_g, start_io, end_io, start_p, end_p, sid, eid, nbyte_g, nbyte_t, nbyte;
-        int num_buffer;
+        // starting byte and ending byte of global, each iorank, each process, and each batch
+        // total number of bytes to read in global, each iorank, and each batch
+        long long int start_g, end_g, start_io, end_io, start_p, end_p, start_b, end_b, sid, eid, nbyte_g, nbyte_t, nbyte_b, nbyte;
+        int num_pass;
         long long int nr, idx;
         char val;
         char  *tmp_buffer;
@@ -262,36 +263,25 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         MPI_Allreduce(count   ,&nbyte_t,1,MPI_LONG_LONG,MPI_SUM,nek_fh->comm);
 
         // Determine byte to read for each iorank
-        nbyte_g = end_g-start_g;
-        nbyte   = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
-
-        // Check overlapping
-        if (nbyte_t == nproc*nbyte_g) {
-            num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
-            iorank_interval = nproc;
-            nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
-        } 
-
-        // If we are in a io node, read file to tmp_buf
+        nbyte_g  = end_g-start_g;
+        nbyte    = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
         start_io = get_start_io(start_g, nbyte_g, num_iorank, rank, iorank_interval);
         end_io   = start_io + nbyte;
-        if (is_iorank(rank,iorank_interval,num_iorank)) {
-            tmp_buffer = array_reserve(char,&(nek_fh->tmp_buf),nbyte);
-            fseek(nek_fh->file,start_io,SEEK_SET);
-            fread(tmp_buffer,1,nbyte,nek_fh->file);
-            fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
-            if (ferror(nek_fh->file)) {
-                printf("ABORT: Error reading %s\n",nek_fh->name);
-                *ierr=1;
+
+        // Check overlapping
+        if (nbyte_t != nbyte_g) {
+            // TODO: remove support for full overlap
+            if (nbyte_t == nproc*nbyte_g) {
+                num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
+                iorank_interval = nproc;
+                nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
+            } else {
+                printf("ABORT: nekio doesn't support overlapping read across processors. \n");
+                *ierr = 1;
                 return;
-            }
-            else if (feof(nek_fh->file)) {
-                printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-                *ierr=1;
-                return;
-            }
+            } 
         }
-        
+
         // Tuple list on each process, add the iorank correspond to current process
         p = array_reserve(nektp, &(nek_fh->tarr), num_iorank);
 
@@ -313,47 +303,76 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         
         // Pass tuple list to io ranks
         sarray_transfer(nektp,&(nek_fh->tarr),iorank,1,&(nek_fh->cr));
-        
-        // In io ranks, traverse through each byte read before, and put into sarray_transform if
-        // appears in the tuple list
-        d = array_reserve(nekfb, &(nek_fh->io2parr), ((end_io-start_io-1)/CB_BUFFER_SIZE+1)*nproc);
-        d = (nek_fh->io2parr).ptr;
-        s = (nek_fh->io2parr).ptr;
-        p = (nek_fh->tarr).ptr;
-        e = (nek_fh->tarr).ptr;
-        nr = 0;
 
-        // For each child of iorank
-        for (int k = 0; k < (nek_fh->tarr).n; ++k) {
-            e = p+k;
-            sid = (e->start < start_io) ? start_io : e->start;
-            eid = (e->end   > end_io  ) ? end_io   : e->end;
-            num_buffer = (eid-sid-1)/CB_BUFFER_SIZE+1;
-            // Send num_buffer blocks back to processes
-            for (int bi = 0; bi < num_buffer; ++bi) {
-                s->proc          = e->iorank;
-                s->global_offset = sid+bi*CB_BUFFER_SIZE;
-                s->bytes         = (bi < num_buffer-1) ? CB_BUFFER_SIZE : (eid-sid)-(num_buffer-1)*CB_BUFFER_SIZE;
-                // Fill buffer
-                idx = s->global_offset-start_io;   // start idx in tmp_buf
-                for (int i = 0; i < s->bytes; ++i) {
-                    s->buf[i] = tmp_buffer[idx+i];
+        // Send read data in CB_BUFFER_SIZE chunks
+        num_pass = (nbyte_g % num_iorank == 0) ? (nbyte_g/num_iorank-1)/CB_BUFFER_SIZE+1 : (nbyte_g/num_iorank)/CB_BUFFER_SIZE+1;
+        for (int n_pass = 0; n_pass < num_pass; ++n_pass) {
+            nbyte_b = (n_pass < num_pass-1) ? CB_BUFFER_SIZE : nbyte-n_pass*CB_BUFFER_SIZE; 
+            start_b = start_io+n_pass*CB_BUFFER_SIZE;
+            end_b   = start_io+n_pass*CB_BUFFER_SIZE+nbyte_b;
+
+            // If we are in a io node, read blocks with size <= CB_BUFFER_SIZE to tmp_buf
+            if (is_iorank(rank,iorank_interval,num_iorank)) {
+                tmp_buffer = array_reserve(char,&(nek_fh->tmp_buf),nbyte_b);
+                fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
+                fread(tmp_buffer,1,nbyte_b,nek_fh->file);
+                fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
+                if (ferror(nek_fh->file)) {
+                    printf("ABORT: Error reading %s\n",nek_fh->name);
+                    *ierr=1;
+                    return;
                 }
-                nr++;
-                s = s+1;
+                else if (feof(nek_fh->file)) {
+                    printf("ABORT: EOF found while reading %s\n",nek_fh->name);
+                    *ierr=1;
+                    return;
+                }
             }
-        }
-        (nek_fh->io2parr).n = nr;
 
-        // Pass data in iorank to individual processes
-        sarray_transfer(nekfb,&(nek_fh->io2parr),proc,1,&(nek_fh->cr));
-        
-        // Traverse through io_to_proc_array, and put byte into buffer
-        d = (nek_fh->io2parr).ptr;
-        s = (nek_fh->io2parr).ptr;
-        for (int k = 0; k < (nek_fh->io2parr).n; k++) {
-            s = d+k;
-            memcpy(buf+s->global_offset-start_p,s->buf,s->bytes);
+            // In io ranks, traverse through each byte read before, and put into sarray_transform if
+            // appears in the tuple list
+            d = array_reserve(nekfb, &(nek_fh->io2parr), nproc);
+            d = (nek_fh->io2parr).ptr;
+            s = (nek_fh->io2parr).ptr;
+            p = (nek_fh->tarr).ptr;
+            e = (nek_fh->tarr).ptr;
+            nr = 0;
+            
+            // For each child of iorank
+            for (int k = 0; k < (nek_fh->tarr).n; ++k) {
+                e = p+k;
+
+                // If the current block overlaps with the processor block, send the blocks back to processes
+                if (start_b <= e->end && e->start <= end_b) {
+                    sid = (e->start < start_b) ? start_b : e->start;
+                    eid = (e->end   > end_b  ) ? end_b   : e->end;
+                    s->proc          = e->iorank;
+                    s->global_offset = sid;
+                    s->bytes         = eid-sid;
+                    // Fill buffer
+                    idx = s->global_offset-start_b;
+
+                    for (int i = 0; i < s->bytes; ++i) {
+                        s->buf[i] = tmp_buffer[idx+i];
+                    }
+                    nr++;
+                    s = s+1;
+                }
+
+            }
+            (nek_fh->io2parr).n = nr;
+
+            // Pass data in iorank to individual processes
+            sarray_transfer(nekfb,&(nek_fh->io2parr),proc,1,&(nek_fh->cr));
+     
+            // Traverse through io_to_proc_array, and put byte into buffer
+            d = (nek_fh->io2parr).ptr;
+            s = (nek_fh->io2parr).ptr;
+
+            for (int k = 0; k < (nek_fh->io2parr).n; k++) {
+                s = d+k;
+                memcpy(buf+s->global_offset-start_p,s->buf,s->bytes);
+            }
         }
     }
     *ierr = 0;
