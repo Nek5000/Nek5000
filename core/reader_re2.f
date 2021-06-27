@@ -161,10 +161,10 @@ c-----------------------------------------------------------------------
       ierr = 0
 
       if (nid.eq.0) then
-         call byte_open(re2fle,ierr)
-         call byte_seek(lre2off_b/4,ierr)
-         call byte_read(nrg4,nwds4r,ierr)
-         call byte_close(ierr)
+         call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),
+     &                      nrg4,ierr)
+      else 
+         call nek_file_read(re2_h,int8(0),int8(lre2off_b),nrg4,ierr)
       endif
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
@@ -271,10 +271,10 @@ c-----------------------------------------------------------------------
       ierr = 0
 
       if (nid.eq.0) then
-         call byte_open(re2fle,ierr)
-         call byte_seek(lre2off_b/4,ierr)
-         call byte_read(nrg4,nwds4r,ierr)
-         call byte_close(ierr)
+         call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),
+     &                      nrg4,ierr)
+      else 
+         call nek_file_read(re2_h,int8(0),int8(lre2off_b),nrg4,ierr)
       endif
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
