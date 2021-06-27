@@ -75,13 +75,17 @@ static nekfh **fhandle_arr = 0;
 int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int nlen)
 {
     int i,istat,ierr;
+    int shmrank;
     char dirname[MAX_NAME+1];
     MPI_Info info;
-    MPI_Comm new_comm;
+    MPI_Comm new_comm, shmcomm, nodecomm;
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
     struct crystal crs;
     struct comm c;
+    struct array tarr    = null_array;
+    struct array io2parr = null_array;
+    struct array tmp_buf = null_array;
     char cbnodes_str[12];
     char bytemode[4];       // "rb", "rwb", "wb" correspond to bmode = 0,1,2 
     int num_node;
@@ -91,14 +95,13 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     strncpy(nek_fh->name,filename,MAX_NAME);
     for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] != ' ') break;
     (nek_fh->name)[i+1] = '\0';
+
     MPI_Comm_dup(fcomm, &new_comm);
     nek_fh->comm = new_comm;
     comm_init(&c, new_comm);
     crystal_init(&crs, &c);
     nek_fh->cr = crs;
 
-    int shmrank;
-    MPI_Comm shmcomm, nodecomm; 
     MPI_Comm_split_type(nek_fh->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
     MPI_Comm_rank(shmcomm, &shmrank);
     MPI_Comm_split(nek_fh->comm, shmrank, 0, &nodecomm);
@@ -112,9 +115,6 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     MPI_Info_set(info, "cb_nodes", cbnodes_str);
     nek_fh->info = info;
 
-    struct array tarr    = null_array;
-    struct array io2parr = null_array;
-    struct array tmp_buf = null_array;
     nek_fh->tarr    = tarr;
     nek_fh->io2parr = io2parr;
     nek_fh->tmp_buf = tmp_buf;
@@ -233,7 +233,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     
     } else {
         // byte read
-        char *tmp_buf;
         // starting byte and ending byte of global, each iorank, each process, and each batch
         // total number of bytes to read in global, each iorank, and each batch
         long long int start_g, end_g, start_io, end_io, start_p, end_p, start_b, end_b, sid, eid, nbyte_g, nbyte_t, nbyte_b, nbyte;
