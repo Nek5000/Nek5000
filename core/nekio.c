@@ -269,16 +269,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
         // Check overlapping
         if (nbyte_t != nbyte_g) {
-            // TODO: remove support for full overlap
-            if (nbyte_t == nproc*nbyte_g) {
-                num_iorank      = 1; // If all processes read the same chunk, only one io rank do the read
-                iorank_interval = nproc;
-                nbyte           = get_nbyte(nbyte_g, num_iorank, rank, iorank_interval);
-            } else {
-                printf("ABORT: nekio doesn't support overlapping read across processors. \n");
-                *ierr = 1;
-                return;
-            } 
+            printf("ABORT: nekio doesn't support overlapping read across processors. \n");
+            *ierr = 1;
+            return;
         }
 
         // Tuple list on each process, add the iorank correspond to current process

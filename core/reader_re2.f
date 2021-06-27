@@ -158,7 +158,15 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),nrg4,ierr)
+      ierr = 0
+
+      if (nid.eq.0) then
+         call byte_open(re2fle,ierr)
+         call byte_seek(lre2off_b/4,ierr)
+         call byte_read(nrg4,nwds4r,ierr)
+         call byte_close(ierr)
+      endif
+      call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -260,7 +268,14 @@ c-----------------------------------------------------------------------
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),nrg4,ierr)
+      ierr = 0
+
+      if (nid.eq.0) then
+         call byte_open(re2fle,ierr)
+         call byte_seek(lre2off_b/4,ierr)
+         call byte_read(nrg4,nwds4r,ierr)
+         call byte_close(ierr)
+      endif
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
@@ -512,12 +527,9 @@ c-----------------------------------------------------------------------
       character*132 hdr
       character*5 version
       real*4      test
-        
-      integer re2_h
+
       logical iffound
 
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-      
       ierr=0
 
       if (nid.eq.0) then
@@ -531,28 +543,30 @@ c-----------------------------------------------------------------------
       endif
       call err_chk(ierr,' Cannot find re2 file!$')
 
-      call nek_file_open(nekcomm,re2fle,0,0,param(61),re2_h,ierr)
-      if(ierr.ne.0) goto 100
-      call nek_file_read(re2_h,int8(20*4),int8(0),hdr,ierr)
-      if(ierr.ne.0) goto 100
+      if (nid.eq.0) then
+         call byte_open(fname,ierr)
+         if(ierr.ne.0) goto 100
+         call byte_read(hdr,20,ierr)
+         if(ierr.ne.0) goto 100
 
-      read (hdr,1) version,nelgt,ldimr,nelgv
-    1 format(a5,i9,i3,i9)
+         read (hdr,1) version,nelgt,ldimr,nelgv
+    1    format(a5,i9,i3,i9)
+ 
+         wdsizi = 4
+         if(version.eq.'#v002') wdsizi = 8
+         if(version.eq.'#v003') then
+           wdsizi = 8
+           param(32)=1
+         endif
 
-      wdsizi = 4
-      if(version.eq.'#v002') wdsizi = 8
-      if(version.eq.'#v003') then
-        wdsizi = 8
-        param(32)=1
+         call byte_read(test,1,ierr)
+         if(ierr.ne.0) goto 100
+         ifbswap = if_byte_swap_test(test,ierr)
+         if(ierr.ne.0) goto 100
+        
+         call byte_close(ierr)
       endif
-
-      call nek_file_read(re2_h,int8(1*4),int8(20*4),test,ierr)
-      if(ierr.ne.0) goto 100
-      ifbswap = if_byte_swap_test(test,ierr)
-      if(ierr.ne.0) goto 100
-    
-      call nek_file_close(re2_h,ierr)
-
+ 
  100  call err_chk(ierr,'Error reading re2 header$')
 
       call bcast(wdsizi, ISIZE)
