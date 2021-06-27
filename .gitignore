@@ -20,8 +20,4 @@ bin/prex
 bin/re2torea
 bin/reatore2
 
-# Misc
-*.swp
-.DS_Store
-
 __pycache__
