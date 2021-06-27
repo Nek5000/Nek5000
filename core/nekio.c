@@ -22,7 +22,6 @@
 #define READWRITE      1
 #define WRITE          2
 #define MAX_NAME       132
-#define MAX_FHANDLE    100
 #define CB_BUFFER_SIZE 16777216
 
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
