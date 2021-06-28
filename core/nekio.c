@@ -32,7 +32,7 @@ typedef struct NEK_File_handle {
     int            mpiio;             // 1 if use mpiio
     int            cbnodes;           // Number of aggregators
     int            num_node;          // Number of compute nodes
-    MPI_Comm       comm;              // MPI comm
+    struct comm    comm;              // MPI comm
     MPI_Info       info;              // MPI info
     struct crystal cr;                // crystal router
     // MPIIO specific
@@ -76,7 +76,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     int shmrank;
     char dirname[MAX_NAME+1];
     MPI_Info info;
-    MPI_Comm new_comm, shmcomm, nodecomm;
+    MPI_Comm shmcomm, nodecomm;
     MPI_File *mpi_fh = malloc(sizeof(MPI_File));
     nekfh *nek_fh; 
     struct crystal crs;
@@ -94,15 +94,14 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] != ' ') break;
     (nek_fh->name)[i+1] = '\0';
 
-    MPI_Comm_dup(fcomm, &new_comm);
-    nek_fh->comm = new_comm;
-    comm_init(&c, new_comm);
-    crystal_init(&crs, &c);
+    comm_init(&c, fcomm);
+    nek_fh->comm = c;
+    crystal_init(&crs, &nek_fh->comm);
     nek_fh->cr = crs;
 
-    MPI_Comm_split_type(nek_fh->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
+    MPI_Comm_split_type(c.c, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
     MPI_Comm_rank(shmcomm, &shmrank);
-    MPI_Comm_split(nek_fh->comm, shmrank, 0, &nodecomm);
+    MPI_Comm_split(c.c, shmrank, 0, &nodecomm);
     MPI_Comm_size(nodecomm, &num_node);
     MPI_Comm_free(&shmcomm);
     MPI_Comm_free(&nodecomm); 
@@ -135,7 +134,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
 
-        MPI_File_open(nek_fh->comm,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
+        MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
         nek_fh->mpifh = mpi_fh;
     } else {
         // Use byte.c 
@@ -200,9 +199,11 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int num_node, num_iorank, iorank_interval;
     int nproc;
+    struct comm c = nek_fh->comm;
+    MPI_Comm comm = c.c;
 
-    MPI_Comm_rank(nek_fh->comm,&rank);
-    MPI_Comm_size(nek_fh->comm,&nproc);
+    MPI_Comm_rank(comm,&rank);
+    MPI_Comm_size(comm,&nproc);
     num_node   = nek_fh->num_node;
     num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
     iorank_interval = nproc/num_iorank;
@@ -253,9 +254,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         // Determine total number of bytes to read and global start/end index 
         start_p = *offset;
         end_p   = *offset+*count;
-        MPI_Allreduce(&start_p,&start_g,1,MPI_LONG_LONG,MPI_MIN,nek_fh->comm);
-        MPI_Allreduce(&end_p  ,&end_g  ,1,MPI_LONG_LONG,MPI_MAX,nek_fh->comm);
-        MPI_Allreduce(count   ,&nbyte_t,1,MPI_LONG_LONG,MPI_SUM,nek_fh->comm);
+        MPI_Allreduce(&start_p,&start_g,1,MPI_LONG_LONG,MPI_MIN,comm);
+        MPI_Allreduce(&end_p  ,&end_g  ,1,MPI_LONG_LONG,MPI_MAX,comm);
+        MPI_Allreduce(count   ,&nbyte_t,1,MPI_LONG_LONG,MPI_SUM,comm);
 
         // Determine byte to read for each iorank
         nbyte_g  = end_g-start_g;
@@ -426,6 +427,7 @@ void NEK_File_close(void *handle, int *ierr)
     array_free(&(nek_fh->tarr));
     array_free(&(nek_fh->io2parr));
     array_free(&(nek_fh->tmp_buf));
+    comm_free(&(nek_fh->comm));
 
     if (nek_fh->mpiio) {
         MPI_File_close(nek_fh->mpifh);
