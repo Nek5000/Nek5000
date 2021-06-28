@@ -203,7 +203,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int num_node, num_iorank, iorank_interval;
     int nproc;
-    int ferr;
+    int ferr,ierr_p,ierr_g;
     struct comm c = nek_fh->comm;
     MPI_Comm comm = c.c;
 
@@ -212,6 +212,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     num_node   = nek_fh->num_node;
     num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
     iorank_interval = nproc/num_iorank;
+
+    ierr_p = 0;
+    ierr_g = 0;
 
     if (*count < 0) {
         printf("Nek_File_read() :: count must be positive\n");
@@ -280,7 +283,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
         // Check overlapping
         if (nbyte_t != nbyte_g) {
-            printf("ABORT: nekio doesn't support overlapping read across processors. \n");
+            printf("ABORT: nekio doesn't support overlapping partitions! \n");
             *ierr = 1;
             return;
         }
@@ -320,24 +323,25 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
                 ferr = fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
                 if (ferr) {
                     printf("ABORT: Error fseeking %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
+                    ierr_p=1;
                 }
 
                 fread(tmp_buffer,1,nbyte_b,nek_fh->file);
 
                 if (ferror(nek_fh->file)) {
                     printf("ABORT: Error reading %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
+                    ierr_p=1;
                 }
                 else if (feof(nek_fh->file)) {
                     printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
+                    ierr_p=1;
                 }
             }
 
+            // Check for file error
+            MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_MAX,comm);
+            if (ierr_g) { *ierr = 1; return; }
+            
             // In io ranks, traverse through each byte read before, and put into sarray_transform if
             // appears in the tuple list
             d = array_reserve(nekfb, &(nek_fh->io2parr), nproc);
