@@ -260,7 +260,7 @@ c-----------------------------------------------------------------------
       integer         vi  (li  ,nrmax)
       common /ctmp1/  vi
 
-      integer*8       lre2off_b,dtmp8
+      integer*8       lre2off_b,dtmp8,nbcs
       integer*8       nrg
       integer*4       nrg4(2)
       integer*8       count_b
@@ -334,6 +334,10 @@ c-----------------------------------------------------------------------
 
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
+
+      nbcs = n
+      nbcs = i8glsum(nbcs,1)
+      if(nio.eq.0) write(6,*) nbcs,' boundary conditions read from .re2'
 
       ! fill up with default
       do iel=1,nelt
