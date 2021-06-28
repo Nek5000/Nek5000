@@ -77,6 +77,7 @@ c-----------------------------------------------------------------------
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
+      integer*8       count_b
 
       nrg       = nelgt
       nr        = nelt
@@ -87,8 +88,9 @@ c-----------------------------------------------------------------------
       lrs4      = lrs*wdsizi/4
 
       ! read coordinates from file
-      nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
+      nwds4r  = nr*lrs4
+      count_b = int(nwds4r,8)*4
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
 
@@ -152,6 +154,7 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
       integer*4       nrg4(2)
+      integer*8       count_b
      
       integer*8       i8gl_running_sum 
 
@@ -159,13 +162,10 @@ c-----------------------------------------------------------------------
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
       ierr = 0
-
-      if (nid.eq.0) then
-         call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),
-     &                      nrg4,ierr)
-      else 
-         call nek_file_read(re2_h,int8(0),int8(lre2off_b),nrg4,ierr)
-      endif
+      
+      count_b = int(nwds4r,8)*4
+      if (nid.ne.0) count_b = 0
+      call nek_file_read(re2_h,count_b,lre2off_b,nrg4,ierr)
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
@@ -196,8 +196,9 @@ c-----------------------------------------------------------------------
       if (.not.ifread) return
       if(nio.eq.0) write(6,*) 'reading curved sides '
 
-      nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
+      nwds4r  = nr*lrs4
+      count_b = int(nwds4r,8)*4
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer
@@ -262,6 +263,7 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
       integer*4       nrg4(2)
+      integer*8       count_b
 
       integer*8       i8gl_running_sum 
 
@@ -270,12 +272,9 @@ c-----------------------------------------------------------------------
       lre2off_b = re2off_b
       ierr = 0
 
-      if (nid.eq.0) then
-         call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),
-     &                      nrg4,ierr)
-      else 
-         call nek_file_read(re2_h,int8(0),int8(lre2off_b),nrg4,ierr)
-      endif
+      count_b = int(nwds4r,8)*4
+      if (nid.ne.0) count_b = 0
+      call nek_file_read(re2_h,count_b,lre2off_b,nrg4,ierr)
       call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
@@ -306,7 +305,8 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,*) 'reading bc for ifld',ifield
 
       nwds4r = nr*lrs4
-      call nek_file_read(re2_h,int8(nwds4r*4),int8(lre2off_b),bufr,ierr)
+      count_b = int(nwds4r,8)*4
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       if(ierr.gt.0) goto 100
 
       ! pack buffer

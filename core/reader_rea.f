@@ -476,6 +476,9 @@ c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
       param(44) = 0 ! base top-level additive Schwarz on restrictions of E
                 ! 1 base top-level additive Schwarz on restrictions of A
 
+c     SET DEFAULT NUMBER OF AGGREGATOR TO 0 
+      param(61) = 0
+
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
       param(67) = 6
