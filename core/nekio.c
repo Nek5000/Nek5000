@@ -72,7 +72,7 @@ static nekfh **fhandle_arr = 0;
 
 int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int nlen)
 {
-    int i,istat,ierr;
+    int i,istat,ierr,ferr;
     int shmrank;
     char dirname[MAX_NAME+1];
     MPI_Info info;
@@ -134,7 +134,11 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
 
-        MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
+        ferr = MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
+        if (ferr != MPI_SUCCESS) {
+            printf("Nek_File_open() :: MPI_File_open failure!\n");
+            return 1;
+        }
         nek_fh->mpifh = mpi_fh;
     } else {
         // Use byte.c 
@@ -153,7 +157,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
         }
         if (!((nek_fh->file)=fopen(nek_fh->name,bytemode))) {
             printf("%s\n",nek_fh->name);
-            printf("Nek_File_open() :: fopen failure2!\n");
+            printf("Nek_File_open() :: fopen failure!\n");
             return 1;
         }
         for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] == '/') break;
@@ -199,6 +203,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int num_node, num_iorank, iorank_interval;
     int nproc;
+    int ferr;
     struct comm c = nek_fh->comm;
     MPI_Comm comm = c.c;
 
@@ -226,9 +231,18 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             *ierr = 1;
             return;
         }
-        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
-        MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
-    
+        ferr = MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
+        if (ferr != MPI_SUCCESS) {
+            printf("Nek_File_read :: MPI_File_set_view failure!\n");
+            *ierr = 1;
+            return;
+        }
+        ferr = MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
+        if (ferr != MPI_SUCCESS) {
+            printf("Nek_File_read :: MPI_File_read_all failure!\n");
+            *ierr = 1;
+            return;
+        }   
     } else {
         // byte read
         // starting byte and ending byte of global, each iorank, each process, and each batch
@@ -303,9 +317,21 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             // If we are in a io node, read blocks with size <= CB_BUFFER_SIZE to tmp_buf
             if (is_iorank(rank,iorank_interval,num_iorank)) {
                 tmp_buffer = array_reserve(char,&(nek_fh->tmp_buf),nbyte_b);
-                fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
+                ferr = fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
+                if (ferr) {
+                    printf("ABORT: Error fseeking %s\n",nek_fh->name);
+                    *ierr=1;
+                    return;
+                }
+
                 fread(tmp_buffer,1,nbyte_b,nek_fh->file);
-                fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
+
+                ferr = fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
+                if (ferr) {
+                    printf("ABORT: Error fseeking %s\n",nek_fh->name);
+                    *ierr=1;
+                    return;
+                }
                 if (ferror(nek_fh->file)) {
                     printf("ABORT: Error reading %s\n",nek_fh->name);
                     *ierr=1;
