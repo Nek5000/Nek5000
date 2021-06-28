@@ -326,12 +326,6 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
                 fread(tmp_buffer,1,nbyte_b,nek_fh->file);
 
-                ferr = fseek(nek_fh->file,0,SEEK_SET);        // Move file pointer back
-                if (ferr) {
-                    printf("ABORT: Error fseeking %s\n",nek_fh->name);
-                    *ierr=1;
-                    return;
-                }
                 if (ferror(nek_fh->file)) {
                     printf("ABORT: Error reading %s\n",nek_fh->name);
                     *ierr=1;
