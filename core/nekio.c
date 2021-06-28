@@ -31,10 +31,9 @@ typedef struct NEK_File_handle {
     char           name[MAX_NAME+1];  // name of the file
     int            mpiio;             // 1 if use mpiio
     int            cbnodes;           // Number of aggregators
+    int            num_node;          // Number of compute nodes
     MPI_Comm       comm;              // MPI comm
     MPI_Info       info;              // MPI info
-    MPI_Comm       shmcomm;           // MPI comm within compute nodes
-    MPI_Comm       nodecomm;          // MPI comm across compute nodes
     struct crystal cr;                // crystal router
     // MPIIO specific
     MPI_File *mpifh;             // mpi file pointer
@@ -104,9 +103,10 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     MPI_Comm_split_type(nek_fh->comm, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
     MPI_Comm_rank(shmcomm, &shmrank);
     MPI_Comm_split(nek_fh->comm, shmrank, 0, &nodecomm);
-    nek_fh->shmcomm  = shmcomm;
-    nek_fh->nodecomm = nodecomm;
-    MPI_Comm_size(nek_fh->nodecomm, &num_node);
+    MPI_Comm_size(nodecomm, &num_node);
+    MPI_Comm_free(&shmcomm);
+    MPI_Comm_free(&nodecomm); 
+    nek_fh->num_node = num_node;
     
     nek_fh->cbnodes = *cb_nodes;
     sprintf(cbnodes_str, "%d", ((*cb_nodes == 0) ? num_node : *cb_nodes));
@@ -198,14 +198,12 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
 
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
-    int shmrank, nodeid, num_node, num_iorank, iorank_interval;
+    int num_node, num_iorank, iorank_interval;
     int nproc;
 
     MPI_Comm_rank(nek_fh->comm,&rank);
     MPI_Comm_size(nek_fh->comm,&nproc);
-    MPI_Comm_rank(nek_fh->shmcomm, &shmrank);
-    MPI_Comm_rank(nek_fh->nodecomm, &nodeid);
-    MPI_Comm_size(nek_fh->nodecomm, &num_node);
+    num_node   = nek_fh->num_node;
     num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
     iorank_interval = nproc/num_iorank;
 
@@ -424,8 +422,6 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
 void NEK_File_close(void *handle, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
-    MPI_Comm_free(&(nek_fh->shmcomm));
-    MPI_Comm_free(&(nek_fh->nodecomm)); 
     crystal_free(&(nek_fh->cr));
     array_free(&(nek_fh->tarr));
     array_free(&(nek_fh->io2parr));
