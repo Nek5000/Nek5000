@@ -17,6 +17,7 @@
 #define fNEK_File_read    FORTRAN_UNPREFIXED(nek_file_read, NEK_FILE_READ )
 #define fNEK_File_write   FORTRAN_UNPREFIXED(nek_file_write,NEK_FILE_WRITE)
 #define fNEK_File_close   FORTRAN_UNPREFIXED(nek_file_close,NEK_FILE_CLOSE)
+#define fNEK_File_EOF     FORTRAN_UNPREFIXED(nek_file_eof  ,NEK_FILE_EOF  )
 
 #define READ           0
 #define READWRITE      1
@@ -33,6 +34,8 @@
 #define NEKIO_RDERR_ACCMD  6
 #define NEKIO_RDERR_OVRLP  7
 #define NEKIO_RDERR_CREAD  8
+#define NEKIO_RDERR_GTPOS  8
+#define NEKIO_RDERR_FSEEK  9
 
 #define NEKIO_WRERR_COUNT  1
 #define NEKIO_WRERR_RDONL  2
@@ -445,30 +448,91 @@ int NEK_File_write(void *handle, void *buf, long long int *count, long long int 
 void NEK_File_close(void *handle, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
-    crystal_free(&(nek_fh->cr));
-    array_free(&(nek_fh->tarr));
-    array_free(&(nek_fh->io2parr));
-    array_free(&(nek_fh->tmp_buf));
-    comm_free(&(nek_fh->comm));
+    int ferr, rank;
+    struct comm c = nek_fh->comm;
+    MPI_Comm comm = c.c;
+    rank = c.id;
 
     if (nek_fh->mpiio) {
-        MPI_File_close(nek_fh->mpifh);
+        ferr = MPI_File_close(nek_fh->mpifh);
         free(nek_fh->mpifh);
+        if (ferr != MPI_SUCCESS) {
+            // collective call 
+            if (rank == 0) {
+                printf("Nek_File_close() :: MPI_File_close failure!\n");
+            }
+            *ierr=1;
+        }
     } else {
         if (!nek_fh->file) {
             return;
         }
 
         if (fclose(nek_fh->file)) {
-            printf("Nek_File_close() :: couldn't fclose file\n");
+            // collective call
+            if (rank == 0) {
+                printf("Nek_File_close() :: couldn't fclose file\n");
+            }
             *ierr=1;
             return;
         }
     }
 
+    crystal_free(&(nek_fh->cr));
+    array_free(&(nek_fh->tarr));
+    array_free(&(nek_fh->io2parr));
+    array_free(&(nek_fh->tmp_buf));
+    comm_free(&(nek_fh->comm));
     *ierr=0;
 }
 
+int NEK_File_EOF(void *handle, int* ifeof) {
+    nekfh *nek_fh = (nekfh*) handle;
+    void *tmp_buf;
+    int eof_g, eof_p, ierr_p, ierr_g;
+    MPI_Offset curr, end;
+    struct comm c = nek_fh->comm;
+    MPI_Comm comm = c.c;
+    eof_p = 0;
+    eof_g = 0;
+    ierr_p = 0;
+    ierr_g = 0;
+
+    if (nek_fh->mpiio) {
+        ierr_p = (*(nek_fh->mpifh) == NULL);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_NONFL; }
+
+        ierr_p = MPI_File_get_position(*(nek_fh->mpifh),&curr);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_GTPOS; }
+        
+        ierr_p = MPI_File_seek(*(nek_fh->mpifh),0,MPI_SEEK_END);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_FSEEK; }
+
+        ierr_p = MPI_File_get_position(*(nek_fh->mpifh),&end);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_GTPOS; }
+ 
+        ierr_p = MPI_File_seek(*(nek_fh->mpifh),curr,MPI_SEEK_SET); // Put individual file pointer back
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_FSEEK; }
+        
+        eof_p = (curr == end);
+        MPI_Allreduce(&eof_p,&eof_g,1,MPI_INT,MPI_LOR,comm);
+        *ifeof = eof_g;
+    } else {
+        // Test read to active eof indicator, safe operation since every
+        // fread in nekio is preceded by fseek
+        fread(tmp_buf,1,1,nek_fh->file); 
+        eof_p = feof(nek_fh->file);
+        MPI_Allreduce(&eof_p,&eof_g,1,MPI_INT,MPI_LOR,comm);
+        *ifeof = eof_g;
+    }
+
+    return 0;
+}
 
 // Wrapper for Fortran
 void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int *handle, int *ierr, int nlen) {
@@ -579,4 +643,30 @@ void fNEK_File_close(int *handle, int *ierr)
     fhandle_arr[*handle] = 0;
 }
 
-
+void fNEK_File_EOF(int *handle, int *ifeof, int *ierr)
+{
+   int err_code,rank;
+   nekfh *fh = fhandle_arr[*handle];
+   rank = (fh->comm).id;
+   err_code = NEK_File_EOF(fh,ifeof);
+    
+    switch (err_code) {
+        case 0:
+            *ierr = 0;
+            break;
+        case NEKIO_RDERR_NONFL:
+            if (rank == 0) { printf("Nek_File_EOF :: no file opened"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_GTPOS:
+            if (rank == 0) { printf("Nek_File_EOF :: NEK_File_get_position error"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_FSEEK:
+            if (rank == 0) { printf("Nek_File_EOF :: NEK_File_seek error"); }
+            *ierr = 1;
+            break;
+        default:
+            *ierr = 1;
+    }
+}
