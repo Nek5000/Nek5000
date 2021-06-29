@@ -24,6 +24,23 @@
 #define MAX_NAME       132
 #define CB_BUFFER_SIZE 16777216
 
+// Error code
+#define NEKIO_RDERR_COUNT  1
+#define NEKIO_RDERR_WRONL  2
+#define NEKIO_RDERR_NONFL  3
+#define NEKIO_RDERR_MPISV  4
+#define NEKIO_RDERR_MPIRA  5
+#define NEKIO_RDERR_ACCMD  6
+#define NEKIO_RDERR_OVRLP  7
+#define NEKIO_RDERR_CREAD  8
+
+#define NEKIO_WRERR_COUNT  1
+#define NEKIO_WRERR_RDONL  2
+#define NEKIO_WRERR_NONFL  3
+#define NEKIO_WRERR_MPISV  4
+#define NEKIO_WRERR_MPIWA  5
+#define NEKIO_WRERR_NSUPP  6
+
 #define SWAP(a,b)       temp=(a); (a)=(b); (b)=temp;
 
 typedef struct NEK_File_handle {
@@ -133,7 +150,10 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 
         ferr = MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,MPI_INFO_NULL,mpi_fh);
         if (ferr != MPI_SUCCESS) {
-            printf("Nek_File_open() :: MPI_File_open failure!\n");
+            // collective call 
+            if (rank == 0) {
+                printf("Nek_File_open() :: MPI_File_open failure!\n");
+            }
             return 1;
         }
         nek_fh->mpifh = mpi_fh;
@@ -153,8 +173,10 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 break;
         }
         if (!((nek_fh->file)=fopen(nek_fh->name,bytemode))) {
-            printf("%s\n",nek_fh->name);
-            printf("Nek_File_open() :: fopen failure!\n");
+            // collective call 
+            if (rank == 0) {
+                printf("Nek_File_open() :: fopen failure! Filename: %s\n",nek_fh->name);
+            }
             return 1;
         }
         for (i=nlen-1; i>0; i--) if ((nek_fh->name)[i] == '/') break;
@@ -192,7 +214,7 @@ long long int get_start_io(long long int start_g, long long int nbyte_g, int num
    offset: in number of bytes
    count: number of bytes to read
 */
-void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
+int NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset)
 {
     nekfh *nek_fh = (nekfh*) handle;
     int rank;
@@ -212,36 +234,30 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     ierr_p = 0;
     ierr_g = 0;
 
-    if (*count < 0) {
-        printf("Nek_File_read() :: count must be positive\n");
-        *ierr = 1;
-        return;
-    }
-    
+    ierr_p = (*count < 0);
+    MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+    if (ierr_g) { return NEKIO_RDERR_COUNT; }
+
     if (nek_fh->mpiio) {
         // MPIIO read
-        if (nek_fh->mpimode == MPI_MODE_WRONLY) {
-            printf("Nek_File_read :: file is write only\n");
-            *ierr = 1;
-            return;
-        }
-        if (*(nek_fh->mpifh) == NULL) {
-            printf("Nek_File_read :: no file opened");
-            *ierr = 1;
-            return;
-        }
+        ierr_p = (nek_fh->mpimode == MPI_MODE_WRONLY);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_WRONL; }
+
+        ierr_p = (*(nek_fh->mpifh) == NULL);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_NONFL; }
+
         ferr = MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
-        if (ferr != MPI_SUCCESS) {
-            printf("Nek_File_read :: MPI_File_set_view failure!\n");
-            *ierr = 1;
-            return;
-        }
+        ierr_p = (ferr != MPI_SUCCESS);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_MPISV; }
+
         ferr = MPI_File_read_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
-        if (ferr != MPI_SUCCESS) {
-            printf("Nek_File_read :: MPI_File_read_all failure!\n");
-            *ierr = 1;
-            return;
-        }   
+        ierr_p = (ferr != MPI_SUCCESS);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_MPIRA; }
+        
     } else {
         // byte read
         // starting byte and ending byte of global, each iorank, each process, and each batch
@@ -258,11 +274,9 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         nbyte_g = 0;
         
         // Check access mode
-        if (!((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE)) {
-            printf("Nek_File_read :: invalid access mode\n");
-            *ierr=1;
-            return;
-        }
+        ierr_p = (!((nek_fh->bmode)==READ || (nek_fh->bmode)==READWRITE));
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_ACCMD; }
         
         // Determine total number of bytes to read and global start/end index 
         start_p = *offset;
@@ -278,12 +292,10 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
         end_io   = start_io + nbyte;
 
         // Check overlapping
-        if (nbyte_t != nbyte_g) {
-            printf("ABORT: nekio doesn't support overlapping partitions! \n");
-            *ierr = 1;
-            return;
-        }
-
+        ierr_p = (nbyte_t != nbyte_g);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_RDERR_OVRLP; }
+        
         // Tuple list on each process, add the iorank correspond to current process
         p = array_reserve(nektp, &(nek_fh->tarr), num_iorank);
 
@@ -316,27 +328,14 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             // If we are in a io node, read blocks with size <= CB_BUFFER_SIZE to tmp_buf
             if (is_iorank(rank,iorank_interval,num_iorank)) {
                 tmp_buffer = array_reserve(char,&(nek_fh->tmp_buf),nbyte_b);
-                ferr = fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
-                if (ferr) {
-                    printf("ABORT: Error fseeking %s\n",nek_fh->name);
-                    ierr_p=1;
-                }
-
+                ierr_p = fseek(nek_fh->file,start_io+n_pass*CB_BUFFER_SIZE,SEEK_SET);
                 fread(tmp_buffer,1,nbyte_b,nek_fh->file);
-
-                if (ferror(nek_fh->file)) {
-                    printf("ABORT: Error reading %s\n",nek_fh->name);
-                    ierr_p=1;
-                }
-                else if (feof(nek_fh->file)) {
-                    printf("ABORT: EOF found while reading %s\n",nek_fh->name);
-                    ierr_p=1;
-                }
             }
 
             // Check for file error
-            MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_MAX,comm);
-            if (ierr_g) { *ierr = 1; return; }
+            ierr_p = (ierr_p || ferror(nek_fh->file) || feof(nek_fh->file));
+            MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+            if (ierr_g) { return NEKIO_RDERR_CREAD; }
             
             // In io ranks, traverse through each byte read before, and put into sarray_transform if
             // appears in the tuple list
@@ -384,40 +383,46 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             }
         }
     }
-    *ierr = 0;
+    return 0;
 }
 
-void NEK_File_write(void *handle, void *buf, long long int *count, long long int *offset, int *ierr) 
-{
+int NEK_File_write(void *handle, void *buf, long long int *count, long long int *offset) 
+{   
+    int ierr_p, ierr_g, ferr;
     nekfh *nek_fh = (nekfh*) handle;
+    struct comm c = nek_fh->comm;
+    MPI_Comm comm = c.c;
+    ierr_p = 0;
+    ierr_g = 0;
 
-    if (*count < 0) {
-        printf("Nek_File_write() :: count must be positive\n");
-        *ierr = 1;
-        return;
-    }
+    ierr_p = (*count < 0);
+    MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+    if (ierr_g) { return NEKIO_WRERR_COUNT; }
 
     if (nek_fh->mpiio) {
         // Use MPIIO
-         if (nek_fh->mpimode == MPI_MODE_RDONLY) {
-            printf("Nek_File_write :: file is read only\n");
-            *ierr = 1;
-            return;
-        }
-        if (*(nek_fh->mpifh) == NULL) {
-            printf("Nek_File_write :: no file opened\n");
-            *ierr = 1;
-            return;
-        }
-        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
-        MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
+        ierr_p = (nek_fh->mpimode == MPI_MODE_RDONLY);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_WRERR_RDONL; }
+
+        ierr_p = (*(nek_fh->mpifh) == NULL);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_WRERR_NONFL; }
+
+        ferr = MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
+        ierr_p = (ferr != MPI_SUCCESS);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_WRERR_MPISV; }
+
+        ferr = MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
+        ierr_p = (ferr != MPI_SUCCESS);
+        MPI_Allreduce(&ierr_p,&ierr_g,1,MPI_INT,MPI_LOR,comm);
+        if (ierr_g) { return NEKIO_WRERR_MPIWA; }
         
     } else {
         // byte write
         // TODO: parallel write
-        printf("Parallel write currently not supported!");
-        *ierr = 1;
-        return;
+        return NEKIO_WRERR_NSUPP;
         /*
         // Serial write
         if ((nek_fh->bmode)==WRITE || (nek_fh->bmode)==READWRITE) {
@@ -426,18 +431,15 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
             if (ferror(nek_fh->file))
             {
                 printf("ABORT: Error writing %s\n",nek_fh->name);
-                *ierr=1;
                 return;
             }
         } else {
             printf("Nek_File_write() :: invalid access mode.\n");
-            *ierr=1;
             return;
         }
         */
     }
-
-    *ierr = 0;
+    return 0;
 }
 
 void NEK_File_close(void *handle, int *ierr)
@@ -484,14 +486,90 @@ void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio, 
 
 void fNEK_File_read(int *handle, long long int *count, long long int *offset, void *buf, int *ierr)
 {
+    int err_code,rank;
     nekfh *fh = fhandle_arr[*handle];
-    NEK_File_read(fh,buf,count,offset,ierr);
+    rank = (fh->comm).id;
+    err_code = NEK_File_read(fh,buf,count,offset);
+
+    switch (err_code) {
+        case 0:
+            *ierr = 0;
+            break;
+        case NEKIO_RDERR_COUNT:
+            if (rank == 0) { printf("Nek_File_read() :: count must be positive\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_WRONL:
+            if (rank == 0) { printf("Nek_File_read :: file is write only\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_NONFL:
+            if (rank == 0) { printf("Nek_File_read :: no file opened"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_MPISV:
+            if (rank == 0) { printf("Nek_File_read :: MPI_File_set_view failure!\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_MPIRA:
+            if (rank == 0) { printf("Nek_File_read :: MPI_File_read_all failure!\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_ACCMD:
+            if (rank == 0) { printf("Nek_File_read :: invalid access mode\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_OVRLP:
+            if (rank == 0) { printf("ABORT: nekio doesn't support overlapping partitions! \n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_RDERR_CREAD:
+            if (rank == 0) { printf("ABORT: Error reading %s\n",fh->name); }
+            *ierr = 1;
+            break;
+        default:
+            *ierr = 1;
+    }
 }
 
 void fNEK_file_write(int *handle, long long int *count, long long int *offset, void *buf, int *ierr) 
 {
+    int err_code,rank;
     nekfh *fh = fhandle_arr[*handle];
-    NEK_File_write(fh,buf,count,offset,ierr);
+    rank = (fh->comm).id;
+    err_code = NEK_File_write(fh,buf,count,offset);
+
+    switch (err_code) {
+        case 0:
+            *ierr = 0;
+            break;
+        case NEKIO_WRERR_COUNT:
+            if (rank == 0) { printf("Nek_File_write :: count must be positive\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_WRERR_RDONL:
+            if (rank == 0) { printf("Nek_File_write :: file is read only\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_WRERR_NONFL:
+            if (rank == 0) { printf("Nek_File_write :: no file opened"); }
+            *ierr = 1;
+            break;
+        case NEKIO_WRERR_MPISV:
+            if (rank == 0) { printf("Nek_File_write :: MPI_File_set_view failure!\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_WRERR_MPIWA:
+            if (rank == 0) { printf("Nek_File_write :: MPI_File_write_all failure!\n"); }
+            *ierr = 1;
+            break;
+        case NEKIO_WRERR_NSUPP:
+            if (rank == 0) { printf("Parallel write currently not supported!"); }
+            *ierr = 1;
+            break;
+        default:
+            *ierr = 1;
+    } 
 }
 
 void fNEK_File_close(int *handle, int *ierr)
