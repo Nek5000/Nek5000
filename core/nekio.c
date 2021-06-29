@@ -73,7 +73,7 @@ static nekfh **fhandle_arr = 0;
 int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode, int *ifmpiio, int *cb_nodes, int nlen)
 {
     int i,istat,ierr,ferr;
-    int shmrank;
+    int rank,shmrank;
     char dirname[MAX_NAME+1];
     MPI_Info info;
     MPI_Comm shmcomm, nodecomm;
@@ -98,6 +98,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     nek_fh->comm = c;
     crystal_init(&crs, &nek_fh->comm);
     nek_fh->cr = crs;
+    rank = c.id;
 
     MPI_Comm_split_type(c.c, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
     MPI_Comm_rank(shmcomm, &shmrank);
@@ -206,8 +207,8 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
     int ferr,ierr_p,ierr_g;
     struct comm c = nek_fh->comm;
     MPI_Comm comm = c.c;
-
-    MPI_Comm_rank(comm,&rank);
+    
+    rank = c.id;
     MPI_Comm_size(comm,&nproc);
     num_node   = nek_fh->num_node;
     num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
