@@ -33,7 +33,6 @@ typedef struct NEK_File_handle {
     int            cbnodes;           // Number of aggregators
     int            num_node;          // Number of compute nodes
     struct comm    comm;              // MPI comm
-    MPI_Info       info;              // MPI info
     struct crystal cr;                // crystal router
     // MPIIO specific
     MPI_File *mpifh;             // mpi file pointer
@@ -75,9 +74,8 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     int i,istat,ierr,ferr;
     int rank,shmrank;
     char dirname[MAX_NAME+1];
-    MPI_Info info;
     MPI_Comm shmcomm, nodecomm;
-    MPI_File *mpi_fh = malloc(sizeof(MPI_File));
+    MPI_File *mpi_fh;
     nekfh *nek_fh; 
     struct crystal crs;
     struct comm c;
@@ -110,9 +108,6 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
     
     nek_fh->cbnodes = *cb_nodes;
     sprintf(cbnodes_str, "%d", ((*cb_nodes == 0) ? num_node : *cb_nodes));
-    MPI_Info_create(&info);
-    MPI_Info_set(info, "cb_nodes", cbnodes_str);
-    nek_fh->info = info;
 
     nek_fh->tarr    = tarr;
     nek_fh->io2parr = io2parr;
@@ -120,6 +115,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
 
     if (*ifmpiio) {
         // Use MPIIO
+        mpi_fh = malloc(sizeof(MPI_File));
         nek_fh->mpiio = 1;
         switch (*amode) {
             case READ:
@@ -135,7 +131,7 @@ int NEK_File_open(const MPI_Comm fcomm, void *handle, char *filename, int *amode
                 nek_fh->mpimode = MPI_MODE_RDONLY;
         }
 
-        ferr = MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,nek_fh->info,mpi_fh);
+        ferr = MPI_File_open(c.c,nek_fh->name,nek_fh->mpimode,MPI_INFO_NULL,mpi_fh);
         if (ferr != MPI_SUCCESS) {
             printf("Nek_File_open() :: MPI_File_open failure!\n");
             return 1;
@@ -199,7 +195,6 @@ long long int get_start_io(long long int start_g, long long int nbyte_g, int num
 void NEK_File_read(void *handle, void *buf, long long int *count, long long int *offset, int *ierr)
 {
     nekfh *nek_fh = (nekfh*) handle;
-
     int rank;
     // MPI rank on the compute node, compute node id, number of compute nodes, number of compute nodes doing io
     int num_node, num_iorank, iorank_interval;
@@ -235,7 +230,7 @@ void NEK_File_read(void *handle, void *buf, long long int *count, long long int 
             *ierr = 1;
             return;
         }
-        ferr = MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
+        ferr = MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
         if (ferr != MPI_SUCCESS) {
             printf("Nek_File_read :: MPI_File_set_view failure!\n");
             *ierr = 1;
@@ -414,7 +409,7 @@ void NEK_File_write(void *handle, void *buf, long long int *count, long long int
             *ierr = 1;
             return;
         }
-        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",nek_fh->info);
+        MPI_File_set_view(*(nek_fh->mpifh),*offset,MPI_BYTE,MPI_BYTE,"native",MPI_INFO_NULL);
         MPI_File_write_all(*(nek_fh->mpifh),buf,*count,MPI_BYTE,MPI_STATUS_IGNORE);
         
     } else {
