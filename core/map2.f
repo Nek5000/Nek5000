@@ -188,7 +188,7 @@ c-----------------------------------------------------------------------
         tol = connectivityTol
         call find_con(wk,nwk,tol,ierr)
         if(ierr.ne.0) then
-          tol = tol / 2.0;
+          tol = tol / 10.0;
           call find_con(wk,nwk,tol,ierr)
         endif
         call err_chk(ierr,' findConnectivity failed!$')
