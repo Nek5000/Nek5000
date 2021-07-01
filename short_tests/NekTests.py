@@ -76,7 +76,7 @@ class FsHydro(NekTestCase):
 
         amp = self.get_value_from_log("AMP", column=-2, row=-1)
         self.assertAlmostEqualDelayed(
-            amp, target_val=-5.2985368e-05, delta=4e-05, label="AMP"
+            amp, target_val=-5.2985368e-05, delta=1e-04, label="AMP"
         )
 
         self.assertDelayedFailures()
@@ -1159,7 +1159,7 @@ class KovStokes(NekTestCase):
 
         err = self.get_value_from_log(label="err", column=-3, row=-1)
         self.assertAlmostEqualDelayed(
-            err, target_val=3.93249e-08, delta=6e-08, label="err"
+            err, target_val=3.93249e-08, delta=1e-07, label="err"
         )
 
         self.assertDelayedFailures()
@@ -1173,7 +1173,7 @@ class KovStokes(NekTestCase):
 
         err = self.get_value_from_log(label="err", column=-3, row=-1)
         self.assertAlmostEqualDelayed(
-            err, target_val=5.05960e-13, delta=1e-14, label="err"
+            err, target_val=5.05960e-13, delta=2e-13, label="err"
         )
 
         self.assertDelayedFailures()

@@ -6,12 +6,6 @@ else
    CVODE=0
 fi
 
-if echo $PPS | grep -q 'CMT' ; then
-   CMT=1
-else
-   CMT=0
-fi
-
 rm -f $CASENAME.f
 cp -p $CASENAME.usr $CASENAME.f
 
@@ -173,51 +167,6 @@ cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
 #include "cvode_preco_dummy.h"
-_ACEOF
-fi
-
-fi
-
-if [ $CMT -ne 0 ]; then
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_usrflt" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_usrflt(rmult) ! user defined filter
-      include 'SIZE'
-      real rmult(lx1)
-      call rone(rmult,lx1)
-      return
-      end
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmt_userEOS" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmt_userEOS ! user defined EOS 
-
-      return
-      end
-_ACEOF
-fi
-
-if ! cat $CASENAME.f | grep -qi "subroutine.*cmtchk" ; then
-cat >> $CASENAME.f << _ACEOF
-
-c automatically added by makenek
-      subroutine cmtchk
-      include 'SIZE'
-      include 'TOTAL'
-      include 'CMTDATA'
-
-      ifxyo=.true.
-      if (istep.gt.1) ifxyo=.false.
-
-      return
-      end
 _ACEOF
 fi
 

@@ -89,13 +89,6 @@ c      include 'GLOBALCOM' ! already inclued in NEKNEK
       include 'ZPER'
       include 'OBJDATA'
 
-c     cmt
-      include 'cmt/CMTBCDATA'
-      include 'cmt/CMTDATA'
-      include 'cmt/CMTTIMERS'
-      include 'cmt/DG'
-      include 'cmt/PERFECTGAS'
-
       if (nid.eq.0) then
         write(6,*) '-------------------------------------'
         write(6,*) 'All include files added with success.'

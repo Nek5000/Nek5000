@@ -54,6 +54,8 @@ if [ ! -f ./seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a ] |
   cd seacas-exodus
   sed -e "s:^NETCDF_PATH=.*:NETCDF_PATH=${NETCDFPATH} \\\:" \
       -e "s:CC=.*: CC=${CC}:" \
+      -e 's:CMAKE_C_FLAGS=\(.*\)\\:CMAKE_C_FLAGS="\1" \\:' \
+      -e 's:CMAKE_CXX_FLAGS=\(.*\)\\:CMAKE_CXX_FLAGS="\1" \\:' \
       -e "s:FC=.*: FC=${FC}:" cmake-exodus > cmake-exo
   chmod 755 cmake-exo
   rm -rf build
