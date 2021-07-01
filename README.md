@@ -2,7 +2,7 @@
 
 | **`Short Tests`** | **`Examples`** |
 |-----------------|---------------------|
-| [![Build](https://travis-ci.com/Nek5000/Nek5000.svg?branch=master)](https://travis-ci.com/Nek5000/Nek5000) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
+| [![Build](https://github.com/Nek5000/Nek5000/actions/workflows/ci.yml/badge.svg)](https://github.com/Nek5000/Nek5000/actions/workflows/ci.yml/badge.svg) | [![Build Status](https://jenkins-ci.cels.anl.gov/buildStatus/icon?job=Nek5000)](https://jenkins-ci.cels.anl.gov/job/Nek5000/) |
 
 Nek5000 is a fast and scalable open source CFD solver.
 
