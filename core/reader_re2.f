@@ -10,7 +10,6 @@ c-----------------------------------------------------------------------
       logical ifxyz, ifcur, ifbc
       integer idummy(100)
       integer re2_h
-      integer ifeof
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
@@ -44,8 +43,7 @@ c-----------------------------------------------------------------------
       do ifield = ibc,nfldt
       call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),re2_h,
      &                  ifbswap,ifbc)
-      call nek_file_eof(re2_h,ifeof,ierr) 
-      if (ifeof.gt.0) goto 80
+      if (nek_file_eof(re2_h,ierr).gt.0) goto 80
       if (ierr.gt.0)  goto 100
       enddo
   80  call nek_file_close(re2_h,ierr)

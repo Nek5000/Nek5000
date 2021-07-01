@@ -643,12 +643,13 @@ void fNEK_File_close(int *handle, int *ierr)
     fhandle_arr[*handle] = 0;
 }
 
-void fNEK_File_EOF(int *handle, int *ifeof, int *ierr)
+int fNEK_File_EOF(int *handle, int *ierr)
 {
-   int err_code,rank;
+   int err_code,rank,ifeof;
    nekfh *fh = fhandle_arr[*handle];
    rank = (fh->comm).id;
-   err_code = NEK_File_EOF(fh,ifeof);
+   ifeof = 0;
+   err_code = NEK_File_EOF(fh,&ifeof);
     
     switch (err_code) {
         case 0:
@@ -669,4 +670,6 @@ void fNEK_File_EOF(int *handle, int *ifeof, int *ierr)
         default:
             *ierr = 1;
     }
+
+    return ifeof;
 }
