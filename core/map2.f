@@ -816,6 +816,7 @@ c-----------------------------------------------------------------------
             close(80)
          endif
       else
+         eg = 0
          do ipass=1,npass
            eg1 = min(eg0+ndw,neli)
            nwds = (eg1 - eg0)*(mdw-1)
