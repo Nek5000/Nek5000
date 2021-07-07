@@ -525,8 +525,10 @@ int NEK_File_EOF(void *handle, int* ifeof) {
     } else {
         // Test read to active eof indicator, safe operation since every
         // fread in nekio is preceded by fseek
+        tmp_buf = malloc(1);
         fread(tmp_buf,1,1,nek_fh->file); 
         eof_p = feof(nek_fh->file);
+        free(tmp_buf);
         MPI_Allreduce(&eof_p,&eof_g,1,MPI_INT,MPI_LOR,comm);
         *ifeof = eof_g;
     }
