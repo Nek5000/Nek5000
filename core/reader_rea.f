@@ -12,6 +12,7 @@ C
       INCLUDE 'CTIMER'
 
       character*132 string(100)
+      integer np_io
 
       VNEKTON = 3 ! dummy not really used anymore
 
@@ -477,7 +478,10 @@ c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
                 ! 1 base top-level additive Schwarz on restrictions of A
 
 c     SET DEFAULT NUMBER OF AGGREGATOR
-      param(61) = 0
+      np_io = min(1000,np/100)
+      if (param(61).gt.0) np_io = param(61)
+      np_io = max(1,np_io)
+      param(61) = np_io
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6

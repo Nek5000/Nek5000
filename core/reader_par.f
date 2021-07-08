@@ -73,7 +73,8 @@ C
 
       param(59) = 1    ! No fast operator eval
       
-      param(61) = 0    ! number of aggregators (if < 1 use one aggregator per compute nodes)
+      param(61) = max(1,min(1000,np/100))
+                       ! number of aggregators 
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary

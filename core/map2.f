@@ -351,10 +351,12 @@ c-----------------------------------------------------------------------
       integer*8 offs, offs0
       integer*8 count_b
       integer co2_h
+      integer np_io
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
       
       ierr = 0
+      np_io = param(61)
 
       ifco2 = .false.
       ifmpiio = .true.
@@ -419,7 +421,7 @@ c    1       format(a5,2i12,i2)
 
       if (ifco2) then
         if (nid.eq.0) call byte_close(ierr)
-        call nek_file_open(nekcomm,confle,0,0,int(param(61)),co2_h,ierr)
+        call nek_file_open(nekcomm,confle,0,0,np_io,co2_h,ierr)
         offs0 = sizeof(hdr) + sizeof(test)
 
         call lim_chk(nelr*(nvi+1),nwk,'nelr ','nwk   ','read_con  ')
@@ -709,11 +711,13 @@ c-----------------------------------------------------------------------
       integer itmp20(20)
       integer ma2_h
       integer*8 lma2off_b,count_b
+      integer np_io
 
       common /nekmpi/ nnid,npp,nekcomm,nekgroup,nekreal
       
       ierr = 0
       ifma2 = .false.
+      np_io = param(61)
 
       if (nid.eq.0) then
          lfname = ltrunc(reafle,132) - 4
@@ -769,7 +773,7 @@ c-----------------------------------------------------------------------
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
 
-      call nek_file_open(nekcomm,mapfle,0,0,int(param(61)),ma2_h,ierr)
+      call nek_file_open(nekcomm,mapfle,0,0,np_io,ma2_h,ierr)
       lma2off_b = 136
       if (nid.eq.0) then
          eg0 = 0
