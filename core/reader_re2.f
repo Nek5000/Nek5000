@@ -34,9 +34,9 @@ c-----------------------------------------------------------------------
 
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
-
+      
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-      call nek_file_open(nekcomm,re2fle,0,0,param(61),re2_h,ierr)
+      call nek_file_open(nekcomm,re2fle,0,0,int(param(61)),re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
       call readp_re2_mesh (re2_h,ifbswap,ifxyz)
       call readp_re2_curve(re2_h,ifbswap,ifcur)

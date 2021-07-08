@@ -419,7 +419,7 @@ c    1       format(a5,2i12,i2)
 
       if (ifco2) then
         if (nid.eq.0) call byte_close(ierr)
-        call nek_file_open(nekcomm,confle,0,0,param(61),co2_h,ierr)
+        call nek_file_open(nekcomm,confle,0,0,int(param(61)),co2_h,ierr)
         offs0 = sizeof(hdr) + sizeof(test)
 
         call lim_chk(nelr*(nvi+1),nwk,'nelr ','nwk   ','read_con  ')
@@ -769,7 +769,7 @@ c-----------------------------------------------------------------------
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
 
-      call nek_file_open(nekcomm,mapfle,0,0,param(61),ma2_h,ierr)
+      call nek_file_open(nekcomm,mapfle,0,0,int(param(61)),ma2_h,ierr)
       lma2off_b = 136
       if (nid.eq.0) then
          eg0 = 0
