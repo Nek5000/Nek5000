@@ -73,7 +73,7 @@ C
 
       param(59) = 1    ! No fast operator eval
       
-      param(61) = min(1000,np/100)    ! number of aggregators (if < 1 use one aggregator per compute nodes)
+      param(61) = 0    ! number of aggregators (if < 1 use one aggregator per compute nodes)
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
@@ -472,9 +472,6 @@ c set parameters
            goto 999
          endif
       endif 
-      
-      call finiparser_getDbl(d_out,'general:np_io',ifnd)
-      if(ifnd .eq. 1) param(61) = int(d_out)
 
       call finiparser_getBool(i_out,'general:writeDoublePrecision',ifnd)
       if(ifnd .eq. 1 .and. i_out .eq. 1) param(63) = 1 

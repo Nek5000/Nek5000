@@ -49,8 +49,6 @@ c-----------------------------------------------------------------------
   80  call nek_file_close(re2_h,ierr)
       call fgslib_crystal_free(cr_re2)
 
-
-
       etime_t = dnekclock_sync() - etime0
       if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
      &                   ' done :: read .re2 file   ',
