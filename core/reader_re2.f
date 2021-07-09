@@ -15,7 +15,14 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
       etime0 = dnekclock_sync()
+
+!
+!     NOTE: When using .par file, p61 can be redefined only by 
+!           calling usrdat0() from the .usr file.  usrdat0() is 
+!           not native to the .usr file - you must add it.
+!
       np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
                   ibc = 2
       if (ifflow) ibc = 1
@@ -589,3 +596,4 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------

@@ -478,10 +478,23 @@ c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
                 ! 1 base top-level additive Schwarz on restrictions of A
 
 c     SET DEFAULT NUMBER OF AGGREGATOR
+
+!
+!     NOTE: When using .par file, p61 can be redefined only by 
+!           calling usrdat0() from the .usr file.  usrdat0() is
+!           not native to the .usr file - you must add it.
+!
+ 
       np_io = min(1000,np/100)
       if (param(61).gt.0) np_io = param(61)
       np_io = max(1,np_io)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
       param(61) = np_io
+      if (nid.eq.0) then
+        write(6,*) ' '
+        write(6,*) ' Number of ioranks :', np_io
+        write(6,*) ' '
+      endif
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
@@ -1167,5 +1180,5 @@ C
       NOBJ=0
  
       return
-      END
-
+      end
+c-----------------------------------------------------------------------

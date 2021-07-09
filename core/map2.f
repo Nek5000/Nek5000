@@ -357,6 +357,7 @@ c-----------------------------------------------------------------------
       
       ierr = 0
       np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       ifco2 = .false.
       ifmpiio = .true.
@@ -718,6 +719,7 @@ c-----------------------------------------------------------------------
       ierr = 0
       ifma2 = .false.
       np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       if (nid.eq.0) then
          lfname = ltrunc(reafle,132) - 4

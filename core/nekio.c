@@ -231,7 +231,7 @@ int NEK_File_read(void *handle, void *buf, long long int *count, long long int *
     rank = c.id;
     MPI_Comm_size(comm,&nproc);
     num_node   = nek_fh->num_node;
-    num_iorank = ((nek_fh->cbnodes >= num_node) || (nek_fh->cbnodes <= 0)) ? num_node : nek_fh->cbnodes;
+    num_iorank = nek_fh->cbnodes;
     iorank_interval = nproc/num_iorank;
     ierr_p = 0;
     ierr_g = 0;

@@ -10,6 +10,7 @@ C
       INCLUDE 'CTIMER'
 c
       logical ifbswap
+      integer np_io
 
       call setDefaultParam
 
@@ -19,6 +20,16 @@ c
       call bcastParam
 
       call usrdat0
+      
+      np_io = param(61)
+      np_io = max(1,np_io)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
+      param(61) = np_io
+      if (nid.eq.0) then
+        write(6,*) ' '
+        write(6,*) ' Number of ioranks :', np_io
+        write(6,*) ' '
+      endif
 
       call read_re2_hdr(ifbswap, .true.)
 
@@ -72,8 +83,8 @@ C
       param(47) = 0.4  ! viscosity for mesh elasticity solver
 
       param(59) = 1    ! No fast operator eval
-      
-      param(61) = max(1,min(1000,np/100))
+ 
+      param(61) = min(1000,np/100)
                        ! number of aggregators 
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
