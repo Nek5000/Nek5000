@@ -823,13 +823,15 @@ c-----------------------------------------------------------------------
          endif
       else
          eg = 0
-         do ipass=1,npass
-           eg1 = min(eg0+ndw,neli)
-           nwds = (eg1 - eg0)*(mdw-1)
-           count_b = 0
-           call nek_file_read(ma2_h,count_b,lma2off_b,wk,ierr)
-           lma2off_b = lma2off_b+int(nwds,8)*4
-         enddo
+         if (ifma2) then
+           do ipass=1,npass
+             eg1 = min(eg0+ndw,neli)
+             nwds = (eg1 - eg0)*(mdw-1)
+             count_b = 0
+             call nek_file_read(ma2_h,count_b,lma2off_b,wk,ierr)
+             lma2off_b = lma2off_b+int(nwds,8)*4
+           enddo
+         endif
          if (nid.lt.npass) then
            call msgwait(msg_id)
            ntuple = ndw
