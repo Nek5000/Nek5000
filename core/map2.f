@@ -191,7 +191,7 @@ c-----------------------------------------------------------------------
           tol = tol / 10.0;
           call find_con(wk,nwk,tol,ierr)
         endif
-        call err_chk(ierr,' findConnectivity failed!$')
+        call err_chk(ierr,' find_con failed!$')
       endif
 
 c fluid elements
@@ -503,8 +503,8 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      call fparrsb_findConnectivity(vtx8,xyz,nelt,ndim,
-     $  eid8,npf,tol,nekcomm,0,ierr)
+      call fparrsb_find_conn(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
+     $  0,ierr)
 
       k=1
       l=1

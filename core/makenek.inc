@@ -318,8 +318,7 @@ do
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
-     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=1"
-     PARRSB_OPT+=" BLASLIBPATH=${SOURCE_ROOT_BLAS}" 
+     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=0"
      PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
@@ -354,6 +353,8 @@ done
 
 if [ $VENDOR_BLAS -ne 1 ]; then
   USR_LFLAGS+=" -L$SOURCE_ROOT_BLAS -lblasLapack"
+  PARRSB_OPT+=" BLASDIR=${SOURCE_ROOT_BLAS}"
+  PARRSB_OPT+=" BLASFLAGS=-lblasLapack"
 fi
 
 # gslib build options
