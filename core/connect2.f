@@ -37,7 +37,6 @@ C
 
 C     Read parameters and logical flags
       call rdparam
-      meshPartitioner=3 ! HYBRID (RSB+RCB)
 
 C     Read Mesh Info 
       if(nid.eq.0) then
