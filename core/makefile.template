@@ -64,10 +64,10 @@ ifeq ($(MPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
-DUMMY:= $(shell cp $S/core/PARALLEL.default $S/core/PARALLEL)
+DUMMY:= $(shell cp $S/core/PARALLEL.default $S/core/PARALLEL 2>/dev/null)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
- 	DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $S/core/PARALLEL)
+ 	DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $S/core/PARALLEL 2>/dev/null)
 endif
 
 ifneq ($(VISIT),0)

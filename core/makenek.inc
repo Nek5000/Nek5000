@@ -313,8 +313,7 @@ do
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
-     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=1"
-     PARRSB_OPT+=" BLASLIBPATH=${SOURCE_ROOT_BLAS}" 
+     PARRSB_OPT=" DESTDIR=.. UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=0"
      PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
@@ -339,9 +338,6 @@ do
      USR_LFLAGS+=" -L$SOURCE_ROOT_HYPRE/lib -lHYPRE"
      HYPRE_INC="$SOURCE_ROOT_HYPRE/include"
    fi
-   if [ "$i" == "BGQ" ]; then
-     MXM_USER+=" mxm_bgq.o" 
-   fi
    if [ "$i" == "VENDOR_BLAS" ]; then
      VENDOR_BLAS=1
    fi
@@ -349,6 +345,8 @@ done
 
 if [ $VENDOR_BLAS -ne 1 ]; then
   USR_LFLAGS+=" -L$SOURCE_ROOT_BLAS -lblasLapack"
+  PARRSB_OPT+=" BLASDIR=${SOURCE_ROOT_BLAS}"
+  PARRSB_OPT+=" BLASFLAGS=-lblasLapack"
 fi
 
 # gslib build options
@@ -358,14 +356,6 @@ GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_IFLAGS=" -I$SOURCE_ROOT_GSLIB/include"
 USR_LFLAGS+=" -L$SOURCE_ROOT_GSLIB/lib -lgs"
 
-if ! which openssl >/dev/null; then
-  echo "FATAL ERROR: Cannot find openssl!"
-  return 11
-fi
-if ! which wget >/dev/null; then
-  echo "FATAL ERROR: Cannot find wget!"
-  return 11
-fi
 if ! which tar >/dev/null; then
   echo "FATAL ERROR: Cannot find tar!"
   return 11

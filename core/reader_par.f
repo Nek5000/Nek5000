@@ -146,6 +146,7 @@ C
       enddo 
 
       meshPartitioner=3 ! HYBRID (RSB+RCB)
+      connectivityTol=0.2
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -832,6 +833,10 @@ c set partitioner options
          meshPartitioner=4
       endif
 
+c set connectivity tolerance
+      call finiparser_getDbl(d_out,'mesh:connectivityTol',ifnd)
+      if(ifnd .eq. 1) connectivityTol = d_out
+
 100   if(ierr.eq.0) call finiparser_dump()
       return
 
@@ -893,6 +898,7 @@ C
       call bcast(idpss    ,  ldimt*isize)
 
       call bcast(meshPartitioner,isize)
+      call bcast(connectivityTol,wdsize)
 
       call bcast(iftmsh   , (ldimt1+1)*lsize)
       call bcast(ifprojfld, (ldimt1+1)*lsize)

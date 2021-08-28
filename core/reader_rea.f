@@ -45,6 +45,10 @@ C
          call exitt
       ENDIF
 
+c     Set default values for parCon and parRSB
+      connectivityTol=0.2
+      meshPartitioner=3 ! HYBRID (RSB+RCB)
+
 c     Use same tolerances for all fields 
       restol(0) = param(22) ! mesh
       restol(1) = param(22)

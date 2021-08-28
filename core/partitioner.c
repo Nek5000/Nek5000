@@ -343,14 +343,16 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
 
   ierr = 1;
 #if defined(PARRSB)
-  parRSB_options options = parrsb_default_options;
-  options.print_timing_info = 0;
-  if(*loglevel > 2) options.print_timing_info = 1;
+  parrsb_options options = parrsb_default_options;
+
+  options.debug_level = 0;
+  if (*loglevel > 2)
+    options.debug_level = 1;
 
   if (partitioner & 1)
-    options.global_partitioner = 0;
+    options.partitioner = 0;
   else if (partitioner & 2)
-    options.global_partitioner = 1;
+    options.partitioner = 1;
 
   if (partitioner & 1)
     options.rsb_algo = algo;
@@ -358,7 +360,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *
   if(*loglevel >2)
     printPartStat(vl, nel, nv, cext);
 
-  ierr = parRSB_partMesh(part, seq, vl, xyz, nel, nv, &options, comm.c);
+  ierr = parrsb_part_mesh(part, seq, vl, xyz, nel, nv, options, comm.c);
   if (ierr != 0)
     goto err;
 
