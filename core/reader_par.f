@@ -818,6 +818,13 @@ c set restart options
       do i = 1,min(ifnd,15)
          call finiparser_getToken(initc(i),i)
          if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
+         irstt=1
+      enddo
+      call finiparser_findTokens('general:interpolateFrom', ',' , ifnd)
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(initc(i),i)
+         if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
+         irstt=2
       enddo
 
 c set partitioner options

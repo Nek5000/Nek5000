@@ -114,7 +114,8 @@ C     If any pre-solv, do pre-solv for all temperatur/passive scalar fields
      
 
       call nekgsync()
-      call restart(nfiles) !  Check restart files
+      if(irstt.eq.1) call restart(nfiles) !  Check restart files
+      if(irstt.eq.2) call gfldr(initc(1)) ! use interpolation for restart
       call nekgsync()
 
 
