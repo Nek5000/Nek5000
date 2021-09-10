@@ -690,7 +690,7 @@
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /        ! symmetric face numbering
 
       eacc_old = eacc
-      nvert = 20
+      nvert = num_nodes_per_elem(1)
       write(6,'(A)') ' '
       write(6,'(A)') 'Converting elements ... '
       do iel=1,num_elem
