@@ -857,17 +857,21 @@ C
       COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
       common /cvflow_i/ icvflow,iavflow
 
+      common /cbplan_vol_ms/  vxcp, dvxc, vycp,
+     $                        dvyc, vzcp, dvzc,
+     $                        resbc 
+      REAL vxcp   (LX1,LY1,LZ1,LELV)
+      REAL dvxc   (LX1,LY1,LZ1,LELV)
+      REAL vycp   (LX1,LY1,LZ1,LELV)
+      REAL dvyc   (LX1,LY1,LZ1,LELV)
+      REAL vzcp   (LX1,LY1,LZ1,LELV)
+      REAL dvzc   (LX1,LY1,LZ1,LELV)
+      real resbc(lx1*ly1*lz1*lelv,ldim+1)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      REAL           vxcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvxc   (LX1,LY1,LZ1,LELV)
-      REAL           vycp   (LX1,LY1,LZ1,LELV)
-      REAL           dvyc   (LX1,LY1,LZ1,LELV)
-      REAL           vzcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvzc   (LX1,LY1,LZ1,LELV)
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc
-      real resbc(lx1*ly1*lz1*lelv,ldim+1)
 c
 c
 c     Compute velocity, 1st part 
@@ -1002,20 +1006,23 @@ c     (Tombo splitting scheme).
 
       common /cvflow_i/ icvflow,iavflow
 
+      common /cbplan_vol_ms/  vxcp, dvxc, vycp,
+     $                        dvyc, vzcp, dvzc,
+     $                        resbc 
+      REAL vxcp   (LX1,LY1,LZ1,LELV)
+      REAL dvxc   (LX1,LY1,LZ1,LELV)
+      REAL vycp   (LX1,LY1,LZ1,LELV)
+      REAL dvyc   (LX1,LY1,LZ1,LELV)
+      REAL vzcp   (LX1,LY1,LZ1,LELV)
+      REAL dvzc   (LX1,LY1,LZ1,LELV)
+      real resbc(lx1*ly1*lz1*lelv,ldim+1)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      REAL           vxcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvxc   (LX1,LY1,LZ1,LELV)
-      REAL           vycp   (LX1,LY1,LZ1,LELV)
-      REAL           dvyc   (LX1,LY1,LZ1,LELV)
-      REAL           vzcp   (LX1,LY1,LZ1,LELV)
-      REAL           dvzc   (LX1,LY1,LZ1,LELV)
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc
-      real resbc(lx1*ly1*lz1*lelv,ldim+1)
 
       CHARACTER CB*3
-
 
       n = lx1*ly1*lz1*nelv
       NXYZ1  = lx1*ly1*lz1

@@ -325,6 +325,7 @@ c-----------------------------------------------------------------------
       real scalar(lxyz,1)
       real fh(nx*nx),fht(nx*nx),tf(nx)
 
+      common /screv/ w1
       real w1(lxyz,lelt)
 
 c     Build 1D-filter based on the transfer function (tf)

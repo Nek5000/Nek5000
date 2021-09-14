@@ -1007,12 +1007,12 @@ c     call exitti('this is wdsizo A:$',wdsizo)
 
       dnbyte = glsum(dnbyte,1)
       dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
-      dnbyte = dnbyte/1024/1024
+      dnbyte = dnbyte/1e9
       if(nio.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
      &             nfileo
     7 format(/,i9,1pe12.4,' done :: Write checkpoint',/,
-     &       30X,'file size = ',3pG12.2,'MB',/,
-     &       30X,'avg data-throughput = ',0pf7.1,'MB/s',/,
+     &       30X,'file size = ',3pG12.2,'GB',/,
+     &       30X,'avg data-throughput = ',0pf7.1,'GB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
       ifxyo = ifxyo_s ! restore old value
