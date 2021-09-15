@@ -132,7 +132,7 @@ nek5000: ${LIB} $(USRF)
 lib: ${LIB} 
 
 ${LIB}: $(NOBJS)
-	@$(AR) cru ./${LIB} $(NOBJS)
+	@$(AR) cr ./${LIB} $(NOBJS)
 	@ranlib ${LIB}
 	@if test -f ${LIB}; then \
 	printf "done\n"; \
