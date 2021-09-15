@@ -690,7 +690,7 @@
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /        ! symmetric face numbering
 
       eacc_old = eacc
-      nvert = 20
+      nvert = num_nodes_per_elem(1)
       write(6,'(A)') ' '
       write(6,'(A)') 'Converting elements ... '
       do iel=1,num_elem
@@ -854,8 +854,13 @@
         write(6,*) 'input surface 1 and  surface 2  sideSet ID'
         read (5,*) ptags(1),ptags(2)
         write(6,*) 'input translation vector (surface 1 -> surface 2)'
+
+        pvec(1) = 0.0
+        pvec(2) = 0.0
+        pvec(3) = 0.0
+	
         if (num_dim.eq.2) then
-          read (5,*) pvec(1),pvec(2),pvec(3)
+          read (5,*) pvec(1),pvec(2)
         else
           read (5,*) pvec(1),pvec(2),pvec(3)
         endif 
@@ -895,10 +900,13 @@
          ihex = parray(1,1,ipe)
          iface = parray(2,1,ipe)
 ! get face center xyz
-         call rzero(fpxyz(1,1),3)
+         !call rzero(fpxyz(1,1),3)
+         fpxyz(1,1) = 0.0
+         fpxyz(2,1) = 0.0
+         fpxyz(3,1) = 0.0
 
          if (num_dim.eq.2) then
-		   do ifnode = 1,2
+           do ifnode = 1,2
              fnode(ifnode)=quad_edge_node(ifnode,iface)
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.5
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.5
@@ -918,10 +926,12 @@
                 ihex2 = parray(1,2,ipe2)
                 iface2 = parray(2,2,ipe2)
 ! get face center xyz
-               call rzero(fpxyz(1,2),3)
-			 
+               !call rzero(fpxyz(1,2),3)
+               fpxyz(1,2) = 0.0
+               fpxyz(2,2) = 0.0
+               fpxyz(3,2) = 0.0
              if (num_dim.eq.2) then
-		       do ifnode = 1,2
+               do ifnode = 1,2
                 fnode(ifnode)=quad_edge_node(ifnode,iface)
                 fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.5
                 fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.5
