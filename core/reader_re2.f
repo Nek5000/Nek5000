@@ -202,7 +202,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + nrg*4*lrs4
 
       if (.not.ifread) return
-      if(nio.eq.0) write(6,*) 'reading curved sides '
+      if(nio.eq.0) write(6,*) 'reading curved sides ', nrg
 
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
