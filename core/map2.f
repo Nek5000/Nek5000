@@ -227,10 +227,9 @@ c fluid elements
       enddo
       neliv = j
 
-      algo = 0 ! 0 - Lanczos, 1 - MG
       nel = neliv
       call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,algo,loglevel,ierr)
+     $  meshPartitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -281,10 +280,9 @@ c solid elements
          enddo
          nelit = j
 
-         algo = 0 ! 0 - Lanczos, 1 - MG
          nel = nelit
          call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  meshPartitioner,algo,loglevel,ierr)
+     $                  2,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
