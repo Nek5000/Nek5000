@@ -1993,7 +1993,7 @@ c     check pressure format
         call crecv(mtype,idum,4)          ! hand-shake
         
         lglist(0) = nelt
-        call icopy(lglist(1),lglel,nelt)
+        call intcopy(lglist(1),lglel,nelt)
 
         len = 4*(nelt+1)
         call csend(mtype,lglist,len,pid0,0)  

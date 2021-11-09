@@ -119,7 +119,7 @@ c
 c
       do j=1,ndim
 c
-c       Sort within each segment
+c       sort within each segment
 c
          ioff=1
          do iseg=1,nseg
@@ -130,8 +130,8 @@ c
             else
                call rank (zp(ioff),ind,ninseg(iseg))
             endif
-            call iswap (start_pt(ioff),ww,ind,ninseg(iseg))
-            call iswap (start_el(ioff),ww,ind,ninseg(iseg))
+            call intswap (start_pt(ioff),ww,ind,ninseg(iseg))
+            call intswap (start_el(ioff),ww,ind,ninseg(iseg))
             call  swap (xp      (ioff),ww,ind,ninseg(iseg))
             call  swap (yp      (ioff),ww,ind,ninseg(iseg))
             call  swap (zp      (ioff),ww,ind,ninseg(iseg))

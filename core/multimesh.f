@@ -935,7 +935,7 @@ c
 c
         call rzero   (h1,ntot1)
         call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
-        call cmult   (h2,dtinv,ntot1)
+        call constMult   (h2,dtinv,ntot1)
         call invers2 (h2inv,h2,ntot1)
         call opdiv   (respr,vxc,vyc,vzc)
         call chsign  (respr,ntot2)
@@ -952,7 +952,7 @@ c
         call opbinv  (dv1,dv2,dv3,rw1,rw2,rw3,h2inv)
         call opadd2  (vxc,vyc,vzc,dv1,dv2,dv3)
 c
-        call cmult2  (prc,respr,bd(1),ntot2)
+        call constMult2  (prc,respr,bd(1),ntot2)
 
         call sub3(dvxc,vxcp,vxc,ntot1)
         call sub3(dvyc,vycp,vyc,ntot1)
@@ -1069,7 +1069,7 @@ C     surface terms
      $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
             IF (CB(1:1).EQ.'v'.and.intflag(ifc,iel).eq.1) then
-              CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
+              CALL constMult(W1(1,IEL),dtbd,NXYZ1)
             endif
             CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
   300     CONTINUE

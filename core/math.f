@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine icopy48(a,b,n)
+      subroutine intcopy48(a,b,n)
       integer*8 a(1)
       integer*4 b(1)
       do 100 i = 1, n
@@ -7,7 +7,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine icopy84(a,b,n)
+      subroutine intcopy84(a,b,n)
       integer*4 a(1)
       integer*8 b(1)
       do 100 i = 1, n
@@ -285,7 +285,7 @@ C
       return
       end
 C
-      subroutine icopy(a,b,n)
+      subroutine intcopy(a,b,n)
       INTEGER A(1), B(1)
 C
       DO 100 I = 1, N
@@ -311,7 +311,7 @@ C
       end
 C
 c-----------------------------------------------------------------------
-      subroutine cmult(a,const,n)
+      subroutine constMult(a,const,n)
       REAL A(1)
 C
       include 'OPCTR'
@@ -545,7 +545,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine iswap(b,ind,n,temp)
+      subroutine intswap(b,ind,n,temp)
       INTEGER B(1),IND(1),TEMP(1)
 C***
 C***  SORT ASSOCIATED ELEMENTS BY PUTTING ITEM(JJ)
@@ -1243,7 +1243,7 @@ c-----------------------------------------------------------------------
       subroutine sorts(xout,xin,work,n)
       real xout(1),xin(1),work(1)
       call copy(xout,xin,n)
-      call sort(xout,work,n)
+      call realSort(xout,work,n)
       return
       end
 C
@@ -1270,9 +1270,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sortp 231 Num. Rec., 1st Ed.)
 C
       integer a(1),ind(1)
       integer aa
@@ -1325,7 +1325,7 @@ C
 c-----------------------------------------------------------------------
       subroutine i8sort(a,ind,n)
 
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 
       integer*8 a(1),aa
       integer ind(1)
@@ -1376,9 +1376,9 @@ C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
       goto 100
       end
 c-----------------------------------------------------------------------
-      subroutine sort(a,ind,n)
+      subroutine realSort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(1),aa
       integer ind(1)

@@ -45,7 +45,7 @@ C
          DO 10 I=0,63
             ALPSRT(4,I)=ALPH64(I)
    10    CONTINUE
-         CALL ISORT(INTALP,INDEX,64)
+         CALL intsort(INTALP,INDEX,64)
          DO 20 I=0,63
    20    INDEX(I)=INDEX(I)-1
          LOG64=7

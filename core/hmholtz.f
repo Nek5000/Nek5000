@@ -142,7 +142,7 @@ C
            call col2  (tm1,g4m1(1,1,1,e),nxyz)
            call col2  (tm2,g5m1(1,1,1,e),nxyz)
            call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-           call cmult (au(1,1,1,e),h1,nxyz)
+           call constMult (au(1,1,1,e),h1,nxyz)
 C
            else
 C
@@ -183,7 +183,7 @@ C
            call col2  (tm3,g6m1(1,1,1,e),nxyz)
            call add3  (au(1,1,1,e),tm1,tm2,nxyz)
            call add2  (au(1,1,1,e),tm3,nxyz)
-           call cmult (au(1,1,1,e),h1,nxyz)
+           call constMult (au(1,1,1,e),h1,nxyz)
 C
            else
 C

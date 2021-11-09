@@ -117,7 +117,7 @@ c-----------------------------------------------------------------------
          ielg    = irankoff + i ! elements are stored in global order
          vi(1,i) = gllnid(ielg)
          vi(2,i) = ielg
-         call icopy(vi(3,i),bufr(jj,1),lrs4)
+         call intcopy(vi(3,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
@@ -135,7 +135,7 @@ c-----------------------------------------------------------------------
 
       do i = 1,n
          iel = gllel(vi(2,i)) 
-         call icopy     (bufr,vi(3,i),lrs4)
+         call intcopy     (bufr,vi(3,i),lrs4)
          call buf_to_xyz(bufr,iel,ifbswap,ierr)
       enddo
 
@@ -225,7 +225,7 @@ c-----------------------------------------------------------------------
          if(ielg.le.0 .or. ielg.gt.nelgt) goto 100
          vi(1,i) = gllnid(ielg)
 
-         call icopy (vi(2,i),bufr(jj,1),lrs4)
+         call intcopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
@@ -237,7 +237,7 @@ c-----------------------------------------------------------------------
       ! unpack buffer
       if(n.gt.nrmax) goto 100
       do i = 1,n
-         call icopy       (bufr,vi(2,i),lrs4)
+         call intcopy       (bufr,vi(2,i),lrs4)
          call buf_to_curve(bufr)
       enddo
 
@@ -329,7 +329,7 @@ c-----------------------------------------------------------------------
          if(ielg.le.0 .or. ielg.gt.nelgt) goto 100
          vi(1,i) = gllnid(ielg)
 
-         call icopy (vi(2,i),bufr(jj,1),lrs4)
+         call intcopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
@@ -349,7 +349,7 @@ c-----------------------------------------------------------------------
       ! unpack buffer
       if(n.gt.nrmax) goto 100
       do i = 1,n
-         call icopy    (bufr,vi(2,i),lrs4)
+         call intcopy    (bufr,vi(2,i),lrs4)
          call buf_to_bc(cbl,bl,bufr)
       enddo
 

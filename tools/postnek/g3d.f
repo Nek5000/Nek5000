@@ -49,7 +49,7 @@ c      -2D-
      $                1,2,0,0, 3,4,0,0  /
 C
 C
-C     Sort the faces according to Z-location
+C     realSort the faces according to Z-location
 C     for the color fill plotting routines
 c     IF (IF3D) CALL SORTZ
 C

@@ -56,7 +56,7 @@ c
             enddo
             enddo
 
-c           Solve eigenvalue problemand sort 
+c           Solve eigenvalue problem and sort 
 c           eigenvalues in ascending order.
             call find_lam3(lam,vv,w,ldim,ierr)
 
@@ -137,7 +137,7 @@ c
       a3 =  a*f*f + b*e*e + c*d*d - a*b*c - 2*d*e*f
 c
       call cubic  (lam,a1,a2,a3,ierr)
-      call sort   (lam,w,3)
+      call realSort   (lam,w,3)
 c
       return
       end
@@ -996,8 +996,8 @@ c        imid = 2  ! All nontrivial midside node defs
                         call chcopy(buf2(8),cc,4)
                         iz = 16
                      else
-                        call icopy(buf(1),eg,1) 
-                        call icopy(buf(2), i,1) 
+                        call intcopy(buf(1),eg,1) 
+                        call intcopy(buf(2), i,1) 
                         call copyX4(buf(3),vcurve(1,i,kb),5) !real*4 write
                         call blank(buf(8),4)
                         call chcopy(buf(8),cc,4)
@@ -1109,16 +1109,16 @@ c-----------------------------------------------------------------------
                         call blank   (buf2(8),8)
                         call chcopy  (buf2(8),s3,3)
                        if(nlg.ge.1000000) then
-                            call icopy(i_vbc,vbc(1,i,kb),1)
+                            call intcopy(i_vbc,vbc(1,i,kb),1)
                             buf2(3)=i_vbc
                         endif
                         iz=16
                      else
-                        call icopy   (buf(1),eg,1)
-                        call icopy   (buf(2),i,1)
+                        call intcopy   (buf(1),eg,1)
+                        call intcopy   (buf(2),i,1)
                         call copyX4  (buf(3),vbc(1,i,kb),5)
                         call blank   (buf(8),4)
-                      if(nlg.ge.1000000)call icopy(buf(3),vbc(1,i,kb),1)
+                      if(nlg.ge.1000000)call intcopy(buf(3),vbc(1,i,kb),1)
                         call chcopy  (buf(8),s3,3)
                         iz=8
                      endif

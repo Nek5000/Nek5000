@@ -107,10 +107,10 @@ c     v =  alpha*v
       ltotv=lx1*ly1*lz1*lelv
       ltott=lx1*ly1*lz1*lelt
 
-      call cmult(v1,alpha,ltotv)
-      call cmult(v2,alpha,ltotv)
-      if (if3d)   call cmult(v3,alpha,ltotv)
-      if (ifheat) call cmult(temp,alpha,ltott*ldimt)
+      call constMult(v1,alpha,ltotv)
+      call constMult(v2,alpha,ltotv)
+      if (if3d)   call constMult(v3,alpha,ltotv)
+      if (ifheat) call constMult(temp,alpha,ltott*ldimt)
 
       return
       end
@@ -125,10 +125,10 @@ c     v =  alpha*v
 
       ntotv=lx1*ly1*lz1*nelv
 
-      call cmult(v1,alpha,ntotv)
-      call cmult(v2,alpha,ntotv)
+      call constMult(v1,alpha,ntotv)
+      call constMult(v2,alpha,ntotv)
 
-      if (if3d)   call cmult(v3,alpha,ntotv)
+      if (if3d)   call constMult(v3,alpha,ntotv)
 c
       return
       end
@@ -240,7 +240,7 @@ c-----------------------------------------------------------------------
 
       call opscale                     !normalize vectors to unit norm
      $      (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),pertinvnorm)
-      call cmult(prp(1,jpp),pertinvnorm,ntotp)
+      call constMult(prp(1,jpp),pertinvnorm,ntotp)
 
       call opscale(exx1p(1,jpp),exy1p(1,jpp),exz1p(1,jpp)
      $                           ,vgradt1p(1,1,jpp),pertinvnorm)
@@ -250,11 +250,11 @@ c-----------------------------------------------------------------------
       ltotv = lx1*ly1*lz1*lelv
       ltotp = lx2*ly2*lz2*lelv
 
-      call cmult( tlagp(1,1,1,jpp),pertinvnorm,ltotv*(lorder-1)*ldimt)
-      call cmult(vxlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(vylagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
+      call constMult( tlagp(1,1,1,jpp),pertinvnorm,ltotv*(lorder-1)*ldimt)
+      call constMult(vxlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(vylagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
 
       if (nio.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
   1   format(i4,1p2e12.4,i4,a5)

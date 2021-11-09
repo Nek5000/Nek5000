@@ -91,7 +91,7 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          if (ifconv) goto 2000
 
 C        Radiation case, smooth convergence, avoid flip-flop (ER).
-         call cmult (ta,0.5,n)
+         call constMult (ta,0.5,n)
          call sub2  (t(1,1,1,1,ifield-1),ta,n)
 
  1000    continue

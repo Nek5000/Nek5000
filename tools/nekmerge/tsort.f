@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -18,19 +18,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -44,7 +44,7 @@ c              a(1) = aa
             endif
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -54,14 +54,14 @@ c              a(i) = a(j)
          GOTO 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       GOTO 100
       end
 c-----------------------------------------------------------------------
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -226,9 +226,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(1),ind(1)
       integer aa

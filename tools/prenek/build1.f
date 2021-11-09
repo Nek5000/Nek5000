@@ -1204,11 +1204,11 @@ c
          xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
          xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
-         CALL CMULT(XYZCTR,TMP,18)
+         CALL constMult(XYZCTR,TMP,18)
          DO 71 I=1,6
             ZBUFF(I)=ZISO(XYZCTR(1,I),XYZCTR(2,I),XYZCTR(3,I))
    71    CONTINUE
-         CALL SORT(ZBUFF,IND,6)
+         CALL realSort(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
             if (j.eq.1) then
@@ -1547,8 +1547,8 @@ C
          ISRT(IE) = IE
 1     CONTINUE
 C
-      CALL SORT(ZDEPTH,IND,NEL)
-      CALL ISWAP(ISRT,ZDEPTH,IND,NEL)
+      CALL realSort(ZDEPTH,IND,NEL)
+      CALL intswap(ISRT,ZDEPTH,IND,NEL)
 C
       return
       end
@@ -1606,11 +1606,11 @@ C
          xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
          xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
-         CALL CMULT(XYZCTR,TMP,18)
+         CALL constMult(XYZCTR,TMP,18)
          DO 71 I=1,6
             ZBUFF(I)=ZISO(XYZCTR(1,I),XYZCTR(2,I),XYZCTR(3,I))
    71    CONTINUE
-         CALL SORT(ZBUFF,IND,6)
+         CALL realSort(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
             if (j.eq.1) then
@@ -1807,11 +1807,11 @@ C
          xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
          xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
-         CALL CMULT(XYZCTR,TMP,18)
+         CALL constMult(XYZCTR,TMP,18)
          DO 71 I=1,6
             ZBUFF(I)=ZISO(XYZCTR(1,I),XYZCTR(2,I),XYZCTR(3,I))
    71    CONTINUE
-         CALL SORT(ZBUFF,IND,6)
+         CALL realSort(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
             if (j.eq.1) then
@@ -2010,11 +2010,11 @@ C
          xyzctr(3,5)=z(1,ie)+z(2,ie)+z(3,ie)+z(4,ie)
          xyzctr(3,6)=z(5,ie)+z(6,ie)+z(7,ie)+z(8,ie)
          TMP=.25
-         CALL CMULT(XYZCTR,TMP,18)
+         CALL constMult(XYZCTR,TMP,18)
          DO 71 I=1,6
             ZBUFF(I)=ZISO(XYZCTR(1,I),XYZCTR(2,I),XYZCTR(3,I))
    71    CONTINUE
-         CALL SORT(ZBUFF,IND,6)
+         CALL realSort(ZBUFF,IND,6)
          DO 72 I=1,6
             J=IND(I)
             if (j.eq.1) then

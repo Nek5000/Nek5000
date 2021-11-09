@@ -373,7 +373,7 @@ c     Plot planes
                         ii=ii+1
       NLSTP=ISTAT(II,IS)
                         ii=ii+1
-      CALL ICOPY(LIST,ISTAT(II,IS),NLSTP)
+      CALL intcopy(LIST,ISTAT(II,IS),NLSTP)
                         ii=ii+nlstp
 c
 c     Now save resolution always (pff 4/6/98)
@@ -548,7 +548,7 @@ c     plot planes
                               ii=ii+1
       ISTAT(II,IS)=NLSTP
                               ii=ii+1
-      CALL ICOPY(ISTAT(II,IS),LIST,NLSTP)
+      CALL intcopy(ISTAT(II,IS),LIST,NLSTP)
                               ii=ii+nlstp
 c     Now save resolution always (pff 4/6/98)
 ccc   if (name.eq.'quit') then

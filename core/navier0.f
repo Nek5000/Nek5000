@@ -102,7 +102,7 @@ c-----------------------------------------------------------------------
 
          if (nid.eq.0) then
             if (mid.eq.0) then
-               call icopy(buf(1),ia(e),1)
+               call intcopy(buf(1),ia(e),1)
                call  copy(buf(2),a(1,e),lda)
             else
                call csend (mtype,dum,wdsize,mid,nullpid)
@@ -111,7 +111,7 @@ c-----------------------------------------------------------------------
             write(49,49) mid,ibuf(1),(buf(k+1),k=1,lda)
    49       format(2i12,1p3e16.7)
          elseif (nid.eq.mid) then
-            call icopy(buf(1),ia(e),1)
+            call intcopy(buf(1),ia(e),1)
             call  copy(buf(2),a(1,e),lda)
             call crecv2 (mtype,dum,wdsize,0)
             call csend (mtype,buf,len,node0,nullpid)

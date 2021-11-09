@@ -503,7 +503,7 @@ c solve for omega_pert
 c add mut*delsqf
         sigma_omega1 = 1.0/sigma_omega
         call copy   (mu_omeg,rhoalpk,lxyz)
-        call cmult  (mu_omeg,sigma_omega1,lxyz)
+        call constMult  (mu_omeg,sigma_omega1,lxyz)
         call col4   (extra_src_omega,mu_omeg ,omwom
      $                                ,delsqf_omegb(1,1,1,e),lxyz)
 
@@ -523,7 +523,7 @@ c  form 1: (del_yw/yw) del_k
 c  form 2: 2(omw/om) (del_omw/yw)^2
         call col3   (term2,omwom,delfsq_omegb(1,1,1,e),   lxyz)
         call col2   (term2           ,t(1,1,1,e,ifld_k-1),lxyz)
-        call cmult  (term2,expm,lxyz)
+        call constMult  (term2,expm,lxyz)
         call add3   (tempv, term1, term2, lxyz)
 
 c  form 3: -(omw/om) k (del_yw/yw) \del_omp/omw
@@ -774,7 +774,7 @@ c solve for omega_pert
 c add mut*delsqf
         sigma_omega1 = 1.0/sigma_omega
         call copy   (mu_omeg,rhoalpk,lxyz)
-        call cmult  (mu_omeg,sigma_omega1,lxyz)
+        call constMult  (mu_omeg,sigma_omega1,lxyz)
         call col4   (extra_src_omega,mu_omeg ,omwom
      $                                ,delsqf_omegb(1,1,1,e),lxyz)
 
@@ -794,7 +794,7 @@ c  form 1: (del_yw/yw) del_k
 c  form 2: 2(omw/om) (del_omw/yw)^2
         call col3   (term2,omwom,delfsq_omegb(1,1,1,e),   lxyz)
         call col2   (term2           ,t(1,1,1,e,ifld_k-1),lxyz)
-        call cmult  (term2,expm,lxyz)
+        call constMult  (term2,expm,lxyz)
         call add3   (tempv, term1, term2, lxyz)
 
 c  form 3: -(omw/om) k (del_yw/yw) \del_omp/omw
@@ -1030,13 +1030,13 @@ c solve for omega_pert
 
 c add mut*delsqf
         call copy   (mu_omeg,rhoalpk,lxyz)
-        call cmult  (mu_omeg,sigom1, lxyz)
+        call constMult  (mu_omeg,sigom1, lxyz)
         call col4   (extra_src_omega,mu_omeg ,omwom
      $                                ,delsqf_omegb(1,1,1,e),lxyz)
 
 c add mu*delsqf
         call copy   (tempv,delsqf_omegb(1,1,1,e),lxyz)
-        call cmult  (tempv,mu,lxyz)
+        call constMult  (tempv,mu,lxyz)
         call col2   (tempv,f_omegb(1,1,1,e),lxyz)
         call add2   (extra_src_omega, tempv,lxyz)
 
@@ -1051,7 +1051,7 @@ c  form 2: 2(omw/om) (del_omw/yw)^2
         expm = -expn
         call col3   (term2,omwom,delfsq_omegb(1,1,1,e),   lxyz)
         call col2   (term2           ,t(1,1,1,e,ifld_k-1),lxyz)
-        call cmult  (term2,expm,lxyz)
+        call constMult  (term2,expm,lxyz)
         call add3   (tempv, term1, term2, lxyz)
 
 c  form 3: -(omw/om) k (del_yw/yw) \del_omp/omw
@@ -3132,7 +3132,7 @@ c                                                                     ! Om_mag2=
          call add3   (DivQ(1,e), sij(1,1,e), sij(1,2,e), lxyz)
          if(if3d.or.ifaxis)
      $   call add2   (DivQ(1,e), sij(1,3,e),             lxyz)
-         if(iflmc)     call cmult(DivQ(1,e), thqrt,      lxyz)
+         if(iflmc)     call constMult(DivQ(1,e), thqrt,  lxyz)
       enddo
 
       return
@@ -3534,7 +3534,7 @@ c
 
       endif
 
-      call  cmult (St_mag2, onehalf, ntot) ! St_mag2=2*Sij*Sij=S'ij*S'ij/2
+      call  constMult (St_mag2, onehalf, ntot) ! St_mag2=2*Sij*Sij=S'ij*S'ij/2
 
       return
       end

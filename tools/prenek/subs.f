@@ -14,9 +14,9 @@ C without prior authorization.
 C
 C------------------------------------------------------------------------------
 C
-      subroutine sort(a,ind,n)
+      subroutine realSort(a,ind,n)
 C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       DIMENSION A(1),IND(1)
 C
@@ -78,9 +78,9 @@ C
    20 continue
       return
       end
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 233 Num. Rec.)
+C     Use Heap sort (p 233 Num. Rec.)
 C
       INTEGER A(1),IND(1)
       INTEGER Q
@@ -144,7 +144,7 @@ C
    20 continue
       return
       end
-      subroutine iswap(a,w,ind,n)
+      subroutine intswap(a,w,ind,n)
 C
 C     Use IND to sort array A
 C
@@ -303,7 +303,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult(a,b,n)
+      subroutine constMult(a,b,n)
       DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I) = B*A(I)
@@ -619,7 +619,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult2(x,y,c,n)
+      subroutine constMult2(x,y,c,n)
       real x(1),y(1),c
       do i=1,n
          x(i) = c*y(i)
@@ -674,7 +674,7 @@ c     call outmat(y,1,3,'yorth',2)
 c-----------------------------------------------------------------------
       subroutine rank(A,IND,N)
 C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       integer ind(1)
       real      a(1)
@@ -726,7 +726,7 @@ C-----------------------------------------------------------------------
 C
       subroutine irank(a,ind,n)
 C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       integer a(1),ind(1),q
 C

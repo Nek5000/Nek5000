@@ -209,7 +209,7 @@ C
         DO 200 JROW=JROW1+1,NXX-1
           JROFF=NXX*(JROW-1)+1
           IF (NXVR(JROW).GT.1) THEN
-             CALL SORT(RXVR(1,JROW),    INDX,NXVR(JROW))
+             CALL realSort(RXVR(1,JROW),    INDX,NXVR(JROW))
              CALL SWAP(RXVR(1,JROW),WKK,INDX,NXVR(JROW))
           ENDIF
           CALL CTRSCAN(IFOK,TWRK(JROFF),R1,RXVR(1,JROW),NXVR(JROW),NXX)
@@ -1379,7 +1379,7 @@ c           ENDIF
             VEC1(2)=YVEC(I,J)
             VEC1(3)=ZVEC(I,J)
             ALPHA=DOTPROD(VEC1,VEC3)
-            CALL CMULT(VEC3,ALPHA,3)
+            CALL constMult(VEC3,ALPHA,3)
             CALL SUB2(VEC1,VEC3,3)
 C           We'll call a new Arrow routine which plots a vector
 C           and the projection onto the plane determined by the
@@ -1465,7 +1465,7 @@ c
          if (i.ne.imax) then
             call cross (uu,nhat(1,i),d)
             call norm3d(uu)
-            call cmult (uu,dn,3)
+            call constMult (uu,dn,3)
 c
             v1 = o1+uu(1)
             v2 = o2+uu(2)
@@ -2402,7 +2402,7 @@ c
          if (i.ne.imax) then
             call cross (uu,nhat(1,i),d)
             call norm3d(uu)
-            call cmult (uu,dn,3)
+            call constMult (uu,dn,3)
 c
             v1 = o1+uu(1)
             v2 = o2+uu(2)

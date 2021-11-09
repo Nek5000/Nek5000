@@ -392,7 +392,7 @@ c     $   write(6,'(A,1p1e13.5)') 'perturbation amount is ',hval
       call gradf(f2,dfdx,x8,y8,z8,mlt,gshl,siz,opt,hval)
       do i=1,ldim
         call copy(sk(1,1,i),dfdx(1,1,i),n2)
-        call cmult(sk(1,1,i),-1.,n2)
+        call constMult(sk(1,1,i),-1.,n2)
       enddo
 
       do iter=1,itmax
@@ -647,7 +647,7 @@ c-----------------------------------------------------------------------
 
       dmax   = glamax(dd1,lx1*ly1*lz1*nelv)
       dscale = 1./dmax
-      call cmult(dd1,dscale,lx1*ly1*lz1*nelv) !normalized 0 to 1
+      call constMult(dd1,dscale,lx1*ly1*lz1*nelv) !normalized 0 to 1
 c      call outpost(dd1,vy,vz,pr,t,'   ')
 
       nxyz = lx1*ly1*lz1
@@ -702,7 +702,7 @@ c     dis*smoothmesh + (1-dis)*original mesh
       call x8toxm(dis2,dis)
       dum2 = glamax(dis2,lxc*lyc*lzc*nelv)
       dum2 = 1./dum2
-      call cmult(dis2,dum2,lxc*lyc*lzc*nelv)
+      call constMult(dis2,dum2,lxc*lyc*lzc*nelv)
 
       call col2(xmc,dis2,lxc*lyc*lzc*nelv)   !w*xs
       call col2(ymc,dis2,lxc*lyc*lzc*nelv)
@@ -759,7 +759,7 @@ c-----------------------------------------------------------------------
         call dsop(d,'mul',nx1,ny1,nz1)
          do e=1,nelv
           val = glamin(d(1,e),lx1**ldim)
-          call cmult(d(1,e),val,lx1**ldim)
+          call constMult(d(1,e),val,lx1**ldim)
          enddo
       enddo
 
@@ -876,14 +876,14 @@ c-----------------------------------------------------------------------
       if (l02.gt.0) then
          l02 = sqrt(l02)
          scl = 1./l02
-         call cmult2(u2,v2,scl,3)  ! Unit tangent
+         call constMult2(u2,v2,scl,3)  ! Unit tangent
       endif
 
       l01 = vlsc2(v1,v1,3)   ! || x1-x0 ||
       if (l01.gt.0) then
          l01 = sqrt(l01)
          scl = 1./l01
-         call cmult2(u1,v1,scl,3)  ! Unit tangent
+         call constMult2(u1,v1,scl,3)  ! Unit tangent
       endif
 
       dot = vlsc2(v1,u2,3)
@@ -1055,7 +1055,7 @@ c      calculate inverse matrix
        endif
        
        dumc = 1/jac(i)
-       call cmult(jin,dumc,ldim**2) !scale inverse by inv det
+       call constMult(jin,dumc,ldim**2) !scale inverse by inv det
   
        call rzero(frn,ldim**2)
        call col3(frn,jm,jm,ldim**2) !square the entries
@@ -1124,7 +1124,7 @@ c     bzindx tells what node is connected to what node
       n2 = n1*(2**ldim)
       curval = 1e+10
       call rone(scalek,n2)
-      call cmult(scalek,curval,n2)
+      call constMult(scalek,curval,n2)
 
       do e=1,nelv*(2**ldim)
       do i=1,2**ldim
@@ -1143,7 +1143,7 @@ c     bzindx tells what node is connected to what node
       enddo
 c
       fac = 1.e-2
-      call cmult(scalek,fac,n2)
+      call constMult(scalek,fac,n2)
       call fgslib_gs_op(gshl,scalek,1,3,0)
 
       return

@@ -219,8 +219,8 @@ c     Establish local to global node numbering for mx points
       write(6,*) 'this is nglb',nglb,ntot,mx,nel
 
 c     Now, use jglob to sort data
-      call icopy (loc ,jglob   ,ntot)
-      call isort (loc ,ind     ,ntot)
+      call intcopy (loc ,jglob   ,ntot)
+      call intsort (loc ,ind     ,ntot)
 c
 c     Compress and output coordinate data
       call prsii('call mapreg3d mx,nx$',mx,nx)

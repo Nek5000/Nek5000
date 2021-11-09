@@ -48,7 +48,7 @@ c
          dd = dd * dp0thdt
          ntot = nxyz*nelfld(2)
          call invers2(dtmp,vtrans(1,1,1,1,2),ntot)
-         call cmult(dtmp,dd,ntot)
+         call constMult(dtmp,dd,ntot)
          call add2 (w1,dtmp,ntot)
       endif
 

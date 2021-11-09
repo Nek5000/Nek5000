@@ -23,7 +23,7 @@ c*********************************************************************72
 
       else if ( datatype .eq. mpi_integer ) then
 
-        call icopy (  data2, data1, n )
+        call intcopy (  data2, data1, n )
 
       else if ( datatype .eq. mpi_integer8 ) then
 

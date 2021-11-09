@@ -179,7 +179,7 @@ c     terms in the adjoint momentum equations
 c     coefficient in front of the buoyancy term, depends on the
 c     nondimensionalization
             call rone(BETA_B,n)
-            call cmult(BETA_B,Pr_,n)
+            call constMult(BETA_B,Pr_,n)
          endif
 
 c     gravity

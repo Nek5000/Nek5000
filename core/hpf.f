@@ -70,9 +70,9 @@ c       to velocity fields
           if (if3d) call build_hpf_fld(ta3,vz,hpf_op,lx1,lz1)
 
 c         Multiply by filter weight (chi)
-          call cmult(ta1,hpf_chi,n)    
-          call cmult(ta2,hpf_chi,n)    
-          if (if3d) call cmult(ta3,hpf_chi,n)    
+          call constMult(ta1,hpf_chi,n)    
+          call constMult(ta2,hpf_chi,n)    
+          if (if3d) call constMult(ta3,hpf_chi,n)    
 
 c         Multiply by Mass matrix 
 c         and add to forcing term 
@@ -84,9 +84,9 @@ c         Apply filter on velocity perturbation fields
           if (if3d) call build_hpf_fld(ta3,vzp(1,jp),hpf_op,lx1,lz1)
 
 c         Multiply by filter weight (chi)
-          call cmult(ta1,hpf_chi,n)    
-          call cmult(ta2,hpf_chi,n)    
-          if (if3d) call cmult(ta3,hpf_chi,n)    
+          call constMult(ta1,hpf_chi,n)    
+          call constMult(ta2,hpf_chi,n)    
+          if (if3d) call constMult(ta3,hpf_chi,n)    
 
 c         Multiply by Mass matrix 
 c         and add to forcing term 
@@ -102,7 +102,7 @@ c       Apply filter to temp/passive scalar fields
      $         hpf_op,lx1,lz1)
 
 c         Multiply by filter weight (chi)
-          call cmult(ta1,hpf_chi,n)    
+          call constMult(ta1,hpf_chi,n)    
 
 c         Multiply by Mass matrix    
 c         and add to source term
@@ -112,7 +112,7 @@ c         Apply filter on scalar perturbation field
           call build_hpf_fld(ta1,tp(1,ifield-1,jp),hpf_op,lx1,lz1)
 
 c         Multiply by filter weight (chi)
-          call cmult(ta1,hpf_chi,n)    
+          call constMult(ta1,hpf_chi,n)    
 
 c         Multiply by Mass matrix    
 c         and add to source term

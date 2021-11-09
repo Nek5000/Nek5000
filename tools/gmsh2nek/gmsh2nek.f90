@@ -1998,7 +1998,7 @@
       return
       END
 !-----------------------------------------------------------------------
-      subroutine icopy(a,b,n)
+      subroutine intcopy(a,b,n)
       INTEGER A(1), B(1)
 
       DO 100 I = 1, N

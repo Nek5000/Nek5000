@@ -32,7 +32,7 @@ c-----------------------------------------------------------------------
       real xm(3),x0(3),x1(3)
 
       call add3 (xm,x0,x1,3)
-      call cmult(xm,0.5,3)
+      call constMult(xm,0.5,3)
 
       return
       end
@@ -1442,7 +1442,7 @@ c
          call sub3 (v(1,k),v(1,k+4),x1,3)
          vnrm = vlsc2(v(1,k),v(1,k),3)
          vnrm = r/sqrt(vnrm)
-         call cmult(v(1,k),vnrm,3)
+         call constMult(v(1,k),vnrm,3)
          call add2 (v(1,k),x1,3)
       enddo
 c
@@ -1456,11 +1456,11 @@ c
          do k=2,3 
             h  = .5
             call add2 (w(1,k+4),v(1,k+4),3)
-            call cmult(w(1,k+4),h,3)
+            call constMult(w(1,k+4),h,3)
             call sub3 (v(1,k),w(1,k+4),x1,3)
             vnrm = vlsc2(v(1,k),v(1,k),3)
             vnrm = r/sqrt(vnrm)
-            call cmult(v(1,k),vnrm,3)
+            call constMult(v(1,k),vnrm,3)
             call add2 (v(1,k),x1,3)
          enddo
       endif
@@ -1492,7 +1492,7 @@ c
          call sub3 (v(1,k),v(1,k+4),x1,3)
          vnrm = vlsc2(v(1,k),v(1,k),3)
          vnrm = r/sqrt(vnrm)
-         call cmult(v(1,k),vnrm,3)
+         call constMult(v(1,k),vnrm,3)
          call add2 (v(1,k),x1,3)
       enddo
 c
@@ -1797,7 +1797,7 @@ c
       enddo
       enddo
       scale = 0.25
-      call cmult(x00,scale,3)
+      call constMult(x00,scale,3)
 c
       do k=1,4
          do i=1,3
@@ -2109,13 +2109,13 @@ c
       call sub3(p1,x1,xc,3)
 
       scale = 1./r
-      call cmult(p0,scale,3)  ! scale out radius
-      call cmult(p1,scale,3)
+      call constMult(p0,scale,3)  ! scale out radius
+      call constMult(p1,scale,3)
 
       call sub3(dx,p1,p0,3)   ! compute unit vector pointing x0 --> x1
       scale = 1./dot(dx,dx,3)
       scale = sqrt(scale)
-      call cmult(dx,scale,3)
+      call constMult(dx,scale,3)
 
       c = dot(p0,p0,3) - 1.   ! find intersection w/ unit sphere
       b = 2.*dot(p0,dx,3)
@@ -2126,7 +2126,7 @@ c
       call add2s2(xi,dx,ap,3)
 
       scale = r
-      call cmult (xi,scale,3)  ! rescale by radius
+      call constMult (xi,scale,3)  ! rescale by radius
       call add2  (xi,xc   ,3)  ! add back sphere center
 
 c     write(6,*)
@@ -3762,9 +3762,9 @@ c     Generate new sub-elements as a result of the oct-split action.
       nnew = neln-nel
       nel  = neln
 
-C     Elements are all set. Sort.
+C     Elements are all set. sort.
 
-      call sort   (enew,ind,nel)
+      call realSort   (enew,ind,nel)
       call swapel (ind,nel,nelm1)
       call curcnt
 c     call vertadj

@@ -432,7 +432,7 @@ c----------------------------------------------------------------------
 
       call h1mg_schwarz_part1 (e,r,l)
       call hsmg_schwarz_wt    (e,l)          ! e  := W e
-      call cmult              (e,sigma,n)    !  l       l
+      call constMult          (e,sigma,n)    !  l       l
 
       return
       end
@@ -1459,7 +1459,7 @@ c     if (param(41).eq.1) if_hybrid = .true.
          ! w := E e
          rbd1dt = rhoavg*bd(1)/dt ! Assumes constant density!!!
          call cdabdtp(mg_work2,e,h1,h2,h2inv,1)
-         call cmult  (mg_work2,rbd1dt,nt)
+         call constMult  (mg_work2,rbd1dt,nt)
          time_2 = dnekclock()
          if (istep.eq.1) then
             copt(1)  = vlsc2(r       ,mg_work2,nt)
@@ -1562,7 +1562,7 @@ c        call exitti('quit in mg$',l)
       if (if_hybrid.and.istep.eq.1) then
          ! ecrs := E e_c
          call cdabdtp(ecrs,mg_work2,h1,h2,h2inv,1)
-         call cmult  (ecrs,rbd1dt,nt)
+         call constMult  (ecrs,rbd1dt,nt)
          copt(1)  = vlsc2(ecrs2,ecrs,nt)
          copt(2)  = vlsc2(ecrs ,ecrs,nt)
          call gop(copt,copw,'+  ', 2)

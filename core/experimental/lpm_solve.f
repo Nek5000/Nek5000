@@ -563,7 +563,7 @@ c     ndum = lpm_npart_gp
 
       neltbc = lpm_neltb
       ndum = LPM_LRMAX*neltbc
-      call icopy(lpm_er_mapc,lpm_er_map,ndum)
+      call intcopy(lpm_er_mapc,lpm_er_map,ndum)
       do ie=1,neltbc
          lpm_er_mapc(5,ie) = lpm_er_mapc(2,ie)
          lpm_er_mapc(6,ie) = lpm_er_mapc(2,ie)
@@ -659,7 +659,7 @@ c     if (icalld .lt. 5) goto 123
 
       call opgrad(ur,us,ut,phigin)
       call sub3(phig_qtl,phigin,phig_last,nxyze)
-      call cmult(phig_qtl,rdt_in,nxyze)
+      call constMult(phig_qtl,rdt_in,nxyze)
       call vdot3(grad_dot,vx,vy,vz,ur,us,ut,nxyze)
       call add2(phig_qtl,grad_dot,nxyze)
       call invcol2(phig_qtl,phigin,nxyze)
@@ -736,7 +736,7 @@ c-----------------------------------------------------------------------
                call copy(lpm_ydotc (1,ic),lpm_ydotc(1,i) ,LPM_LRS)
                call copy(lpm_rprop (1,ic),lpm_rprop(1,i) ,LPM_LRP)
                call copy(lpm_rprop2(1,ic),lpm_rprop2(1,i),LPM_LRP2)
-               call icopy(lpm_iprop(1,ic),lpm_iprop(1,i) ,LPM_LIP)
+               call intcopy(lpm_iprop(1,ic),lpm_iprop(1,i) ,LPM_LIP)
             endif
          endif
       enddo

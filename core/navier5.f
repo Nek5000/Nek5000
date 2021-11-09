@@ -1720,7 +1720,7 @@ c
             ie = gllel(ieg)
             call drgtrq(dgtq,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
 
-            call cmult(dgtq,scale,12)
+            call constMult(dgtq,scale,12)
 
             dragpx(iobj) = dragpx(iobj) + dgtq(1,1)  ! pressure 
             dragpy(iobj) = dragpy(iobj) + dgtq(2,1)
@@ -2033,12 +2033,12 @@ c
       if (nid.eq.0) close(77)
 
       scale = 1./icount
-      call cmult2(vx,ua,scale,n)
-      call cmult2(vy,va,scale,n)
-      call cmult2(vz,wa,scale,n)
-      call cmult2(pr,pa,scale,n2)
+      call constMult2(vx,ua,scale,n)
+      call constMult2(vy,va,scale,n)
+      call constMult2(vz,wa,scale,n)
+      call constMult2(pr,pa,scale,n2)
       do k=1,npscal+1
-         call cmult2(t(1,1,1,1,k),ta(1,k),scale,n)
+         call constMult2(t(1,1,1,1,k),ta(1,k),scale,n)
       enddo
       return
 
@@ -2211,7 +2211,7 @@ c
          if (gllnid(ieg).eq.nid) then ! this processor has a contribution
             ie = gllel(ieg)
             call get_strsmax(strsmxl,xm0,ym0,zm0,sij,pm1,vdiff,ifc,ie)
-            call cmult(strsmxl,scale,1)
+            call constMult(strsmxl,scale,1)
             strsmx(ii)=max(strsmx(ii),strsmxl)
          endif
       enddo
@@ -3383,7 +3383,7 @@ c     enddo
          cpfld(nfld,k)=cpfld(nfield,k)
          call copy (cpgrp(-5,nfld,k),cpgrp(-5,nfield,k),16)
       enddo
-      call icopy(matype(-5,nfld),matype(-5,nfield),16)
+      call intcopy(matype(-5,nfld),matype(-5,nfield),16)
 
       param(7) = param(1)  ! rhoCP   = rho
       param(8) = param(2)  ! conduct = dyn. visc

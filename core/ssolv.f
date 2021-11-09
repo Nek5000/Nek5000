@@ -293,7 +293,7 @@ C
          NTOT  = lx1*ly1*lz1*NELFLD(IFIELD)
          TAU   = .02*TAUSS(IFIELD)
          DECAY = 1.+99.*EXP(-TIME/TAU)
-         CALL CMULT (VDIFF(1,1,1,1,IFIELD),DECAY,NTOT)
+         CALL constMult (VDIFF(1,1,1,1,IFIELD),DECAY,NTOT)
 c         if (nid.eq.0)
 c     $   write (6,*) '.......... diff = ',IFIELD,vdiff(1,1,1,1,IFIELD)
  100  CONTINUE

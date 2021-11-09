@@ -246,7 +246,7 @@ C
          CALL DSSUM   (X1,lx1,ly1,lz1)
          YY = GLSC3  (X1,Y1,MULT,NTOT1)
          YNORM = 1./SQRT(YY)
-         CALL CMULT   (Y1,YNORM,NTOT1)
+         CALL constMult   (Y1,YNORM,NTOT1)
          CALL COPY    (X1,Y1,NTOT1)
  1000 CONTINUE
  2000 CONTINUE
@@ -298,7 +298,7 @@ C         endif
          CALL COL3 (X1,BINVM1,Y1,NTOT1)
          XX     = GLSC3 (X1,Y1,MULT,NTOT1)
          XNORM  = 1./SQRT(XX)
-         CALL CMULT (X1,XNORM,NTOT1)
+         CALL constMult (X1,XNORM,NTOT1)
  1000 CONTINUE
  2000 CONTINUE
 C
@@ -343,7 +343,7 @@ c        write (6,*) 'new eigenvalue ************* eigas = ',evnew
          CALL COL3   (Y2,BM2,X2,NTOT2)
          XX = GLSC2 (X2,Y2,NTOT2)
          XNORM = 1./SQRT(XX)
-         CALL CMULT  (X2,XNORM,NTOT2)
+         CALL constMult  (X2,XNORM,NTOT2)
  1000 CONTINUE
  2000 CONTINUE
 C
@@ -385,7 +385,7 @@ C
          CALL INVCOL3 (X2,Y2,BM2,NTOT2)
          XX     = GLSC2  (Y2,X2,NTOT2)
          XNORM  = 1./SQRT(XX)
-         CALL CMULT   (X2,XNORM,NTOT2)
+         CALL constMult   (X2,XNORM,NTOT2)
  1000 CONTINUE
  2000 CONTINUE
 C
@@ -421,7 +421,7 @@ c     Normalization: XT*B*X = 1
       CALL DSSUM      (Y1,lx1,ly1,lz1)
       XX     = GLSC3 (X1,Y1,MULT,NTOT1)
       XNORM  = 1./SQRT(XX)
-      CALL CMULT      (X1,XNORM,NTOT1)
+      CALL constMult      (X1,XNORM,NTOT1)
 
       RETURN
       END
@@ -459,7 +459,7 @@ C
       CALL COL3 (Y2,BM2,X2,NTOT2)
       XX     = GLSC2 (X2,Y2,NTOT2)
       XNORM  = 1./SQRT(XX)
-      CALL CMULT (X2,XNORM,NTOT2)
+      CALL constMult (X2,XNORM,NTOT2)
 C
       RETURN
       END

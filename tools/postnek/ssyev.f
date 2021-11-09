@@ -2577,7 +2577,7 @@
 *  Sort the numbers in D in increasing order (if ID = 'I') or
 *  in decreasing order (if ID = 'D' ).
 *
-*  Use Quick Sort, reverting to Insertion sort on arrays of
+*  Use Quick sort, reverting to Insertion sort on arrays of
 *  size <= 20. Dimension of STACK limits N to about 2**32.
 *
 *  Arguments
@@ -2659,7 +2659,7 @@
 *
          IF( DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             DO 30 I = START + 1, ENDD
                DO 20 J = I, START + 1, -1
@@ -2675,7 +2675,7 @@
 *
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             DO 50 I = START + 1, ENDD
                DO 40 J = I, START + 1, -1
@@ -2721,7 +2721,7 @@
 *
          IF( DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -2757,7 +2757,7 @@
             END IF
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -4803,13 +4803,13 @@
   160 CONTINUE
       IF( ICOMPZ.EQ.0 ) THEN
 *
-*        Use Quick Sort
+*        Use Quick sort
 *
          CALL SLASRT( 'I', N, D, INFO )
 *
       ELSE
 *
-*        Use Selection Sort to minimize swaps of eigenvectors
+*        Use Selection sort to minimize swaps of eigenvectors
 *
          DO 180 II = 2, N
             I = II - 1
@@ -5204,7 +5204,7 @@
       END IF
       GO TO 10
 *
-*     Sort eigenvalues in increasing order.
+*     sort eigenvalues in increasing order.
 *
   170 CONTINUE
       CALL SLASRT( 'I', N, D, INFO )

@@ -2931,7 +2931,7 @@ C
       ELSE
 c
 C        3-D
-C        Sort the selected list of planes according to visibility
+C        realSort the selected list of planes according to visibility
 C
          CALL SORTL
 C
@@ -3936,7 +3936,7 @@ c
 c
       IF (IF3D) THEN
 C
-C        Sort the selected list of planes according to visibility
+C        realSort the selected list of planes according to visibility
          CALL SORTL
 C
 C        Plot the selected planes
@@ -4603,7 +4603,7 @@ C
 C
       ELSE
 C     3-D
-C        Sort the selected list of planes according to visibility
+C        realSort the selected list of planes according to visibility
 C
          CALL SORTL
 C

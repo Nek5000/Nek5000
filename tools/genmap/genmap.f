@@ -126,7 +126,7 @@ c     Recursive bisection of element graph; reverse-order interface points
      $                                           ,w1,w2,w3,w4,w5)
 
 c     Clean up 
-      call isort     (elist,w1,nelv)
+      call intsort     (elist,w1,nelv)
       call iswap_ip  (pmap ,w1,nelv)
 
 
@@ -145,7 +145,7 @@ c     Clean up
          call rec_bisect 
      $        (elist,pmap(e1),order,mo,cell(c1),nv,nels,ndim
      $                                           ,w1,w2,w3,w4,w5)
-         call isort     (elist   ,w1,nels)
+         call intsort     (elist   ,w1,nels)
          call iswap_ip  (pmap(e1),w1,nels)
 
 c         call maptest   (pmap,nelv,nelt,'map test A',w1,w2)
@@ -759,7 +759,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine icopy(x,y,n)
+      subroutine intcopy(x,y,n)
       integer x(1),y(1)
       do i=1,n
          x(i) = y(i)
@@ -767,7 +767,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult2(x,y,c,n)
+      subroutine constMult2(x,y,c,n)
       real x(1),y(1)
       do i=1,n
          x(i) = c*y(i)
@@ -847,7 +847,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult(x,c,n)
+      subroutine constMult(x,c,n)
       real x(1)
       do i=1,n
          x(i) = x(i)*c
@@ -910,9 +910,9 @@ c     Get file name
       return
       end
 c-----------------------------------------------------------------------
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(1),ind(1)
       integer aa
@@ -1038,9 +1038,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sort(a,p,n)
+      subroutine realSort(a,p,n)
 c
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 c
 c     returns sorted list a(), and permutation vector p()
 c
@@ -1095,7 +1095,7 @@ c
       do i=1,n
          j0 = ia(i-1)
          nj = ia(i)-j0
-         call isort(ja(j0),ind,nj)
+         call intsort(ja(j0),ind,nj)
       enddo
 c
       return
@@ -1128,13 +1128,13 @@ c
 c     Return r = rank of a() in place of a(), where r =< n
 c     so that a() is the number of unique pts sorted such that
 c     it is in the original spot
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 c
 c
       integer a(1),p(1)
       integer rank
 
-      call isort(a,p,n)
+      call intsort(a,p,n)
 
       rank = 1
       last = a(1)
@@ -1348,10 +1348,10 @@ c
       integer w1(1),w2(1)
       integer e,etype,ndim
 
-      call isort (elist,w1,nel)
+      call intsort (elist,w1,nel)
       do k = 1,nel           ! extract cell sublist
          e = elist(k)
-         call icopy(c(1,k),cell(1,e),nv)
+         call intcopy(c(1,k),cell(1,e),nv)
 c        write(6,6) k,e,(c(j,k),j=1,8)
 c 6      format(2i6,2x,8i8,' bp_cell')
       enddo
@@ -1378,13 +1378,13 @@ c 6      format(2i6,2x,8i8,' bp_cell')
 
             j1 = n1+1
             j2 = n2+1
-            call icopy(w1,elist(j1),n2)
-            call icopy(elist(j2),elist,n1)
-            call icopy(elist,w1,n2)
+            call intcopy(w1,elist(j1),n2)
+            call intcopy(elist(j2),elist,n1)
+            call intcopy(elist,w1,n2)
 
-            call icopy(w1,pmap(j1),n2)
-            call icopy(pmap(j2),pmap,n1)
-            call icopy(pmap,w1,n2)
+            call intcopy(w1,pmap(j1),n2)
+            call intcopy(pmap(j2),pmap,n1)
+            call intcopy(pmap,w1,n2)
 
             m1 = n1
             n1 = n2
@@ -1396,7 +1396,7 @@ c 6      format(2i6,2x,8i8,' bp_cell')
             call count_sep( w1, order, nsep, elist, cell, nv, n1, n2 )
             j0 = 1
             j1 = n1+1
-            call isort   ( w1    ,w2,n1)
+            call intsort   ( w1    ,w2,n1)
             call iswap_ip( elist ,w2,n1)
             pmap(n1) = pmap(nel)
             n1 = n1-1
@@ -1443,11 +1443,11 @@ c
          j0 = 1
          j1 = n1+1
 
-         call isort   ( count(j0),wk,n1)
+         call intsort   ( count(j0),wk,n1)
          call iswap_ip( elist(j0),wk,n1)
          m1 = iglmax  ( count(j0),n1)
 
-         call isort   ( count(j1),wk,n2)
+         call intsort   ( count(j1),wk,n2)
          call iswap_ip( elist(j1),wk,n2)
          m2 = iglmax  ( count(j1),n2)
 
@@ -1696,7 +1696,7 @@ c      ifma2 = .false. ! force .map
       if (ifma2) then
          do e=1,nel
             iwrk(1) = pmap(e)-1
-            call icopy(iwrk(2),cell(1,e),nv)
+            call intcopy(iwrk(2),cell(1,e),nv)
             call byte_write(iwrk,nv+1,ierr)
          enddo
       else
@@ -1711,7 +1711,7 @@ c      ifma2 = .false. ! force .map
 c-----------------------------------------------------------------------
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -1728,19 +1728,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -1754,7 +1754,7 @@ c              a(1) = aa
             endif
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -1764,14 +1764,14 @@ c              a(i) = a(j)
          GOTO 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       GOTO 100
       end
 c-----------------------------------------------------------------------
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -2193,7 +2193,7 @@ c-----------------------------------------------------------------------
 
       icalld = icalld+1
 
-      if (ndim.eq.2) call icopy(vface,wface,24)
+      if (ndim.eq.2) call intcopy(vface,wface,24)
 
       nvf = nv/2     ! # vertices/face = 1/2 # vertices/cell
       
@@ -2541,7 +2541,7 @@ c     m = max # 50rations
       call ortho1(f,n)
       ftf = glsc2(f,f,n)
       fnm = 1./sqrt(ftf)
-      call cmult(f,fnm,n)
+      call constMult(f,fnm,n)
 
       npass =50
       do k=1,npass
@@ -2561,7 +2561,7 @@ c----------------------------------------------------------------------
       integer pmap(n),p(n),w(n)
 
 c     if (n.gt.2) then
-         call sort     (f,w,n)
+         call realSort     (f,w,n)
          call jjnt     (p,n)
          call iswap_ip (p,w,n)
 c     else
@@ -2611,7 +2611,7 @@ c
       rnorm = sqrt(rtr)
       rtol  = rnorm*eps
       rni   = 1./rnorm
-      call cmult2  (rr,r,rni,n)
+      call constMult2  (rr,r,rni,n)
       iter = 0
  
       do 1000 iter=1,niter
@@ -2636,7 +2636,7 @@ c        call outmat (r,16,16,'resid ',iter)
          if (rtr.le.0) goto 1001
          rnorm = sqrt(rtr)
          rni   = 1./rnorm
-         call cmult2  (rr(1,iter+1),r,rni,n)
+         call constMult2  (rr(1,iter+1),r,rni,n)
 
 c        Generate tridiagonal matrix for Lanczos scheme
          if (iter.eq.1) then
@@ -2827,7 +2827,7 @@ c
 c        write(6,9) d(ko),(e(ki),ki=1,n10)
 c   9    format(1pe12.4,' e:',1p10e12.4)
          scale = 1.0/e(ko)
-         call cmult(z(1,ko),scale,n)
+         call constMult(z(1,ko),scale,n)
       enddo
 c
       return
@@ -2916,7 +2916,7 @@ c-----------------------------------------------------------------------
          ifseg (i) = .false.
       enddo
 
-c     Sort by directions
+c     sort by directions
 
       lda         = 1+ndim
       nseg        = 1
@@ -2924,7 +2924,7 @@ c     Sort by directions
       ninseg(1)   = n
 
       do ipass=1,ndim   ! Multiple passes eliminates false positives
-      do j=1,ndim       ! Sort within each segment
+      do j=1,ndim       ! sort within each segment
          write(6,*) 'locglob:',j,nseg,n
          i =1
          j1=j+1
@@ -2976,7 +2976,7 @@ c     Unshuffle geometry:
 
 c     Reassign cell to hold global index numbering
 
-      call icopy     (cell,ind,n)
+      call intcopy     (cell,ind,n)
       call self_chk  (cell,nvtx,nel,0)       ! check for not self-ptg.
 
 
@@ -3957,13 +3957,13 @@ c
          do k  = 1,n1                 ! extract cell sublist for A
             e  = elist(k)
             k4 = 1 + nv*(k-1)
-            call icopy(w1(k4),cell(1,e),nv)
+            call intcopy(w1(k4),cell(1,e),nv)
          enddo
          j=1
          do k  = n1+1,nel              ! extract cell sublist for B
             e  = elist(k)
             j4 = 1 + nv*(j-1)
-            call icopy(w2(j4),cell(1,e),nv)
+            call intcopy(w2(j4),cell(1,e),nv)
             j  = j+1
          enddo
 
@@ -3981,11 +3981,11 @@ c              write(6,*) 'N2 was not connected-Lanczos', n0,n2,nel
 c           write(6,*) 'N1 was not connected-Lanczos', n0,n1, nel
          endif
 c
-c  Sort cell and bisect - almost the same as last resort..
+c  sort cell and bisect - almost the same as last resort..
 c
          do k  = 1,nel
             e  = elist(k)
-            call icopy(c(1,k),cell(1,e),nv)
+            call intcopy(c(1,k),cell(1,e),nv)
          enddo
 
          nkey = nv 
@@ -4008,13 +4008,13 @@ c
          do k  = 1,n1                 ! extract cell sublist for A
             e  = elist(k)
             k4 = 1 + nv*(k-1)
-            call icopy(w1(k4),cell(1,e),nv)
+            call intcopy(w1(k4),cell(1,e),nv)
          enddo
          j=1
          do k  = n1+1,nel              ! extract cell sublist for B
             e  = elist(k)
             j4 = 1 + nv*(j-1)
-            call icopy(w2(j4),cell(1,e),nv)
+            call intcopy(w2(j4),cell(1,e),nv)
             j  = j+1
          enddo
 
@@ -4096,7 +4096,7 @@ c
             pmap(i) = 2
          enddo
 
-         call icopy    (w1(size1+1),w2,size2)
+         call intcopy    (w1(size1+1),w2,size2)
          call iswap_ip (elist,w1,nel)
 c
 c Transfer separator nodes, checking for connectivity
@@ -4115,7 +4115,7 @@ c
                   do k = 1,nel
                      if (pmap(k).eq.1) then
                         e  = elist(k)
-                        call icopy(w1(k4),cell(1,e),nv)
+                        call intcopy(w1(k4),cell(1,e),nv)
                         k4 = k4+nv
                      endif
                   enddo
@@ -4144,7 +4144,7 @@ c
                   do k = 1,nel
                      if (pmap(k).eq.2) then
                         e  = elist(k)
-                        call icopy(w1(k4),cell(1,e),nv)
+                        call intcopy(w1(k4),cell(1,e),nv)
                         k4 = k4+nv
                      endif
                   enddo
@@ -4171,13 +4171,13 @@ c
          do k = 1,n1                 ! extract cell sublist for A
             e  = elist(k)
             k4 = 1 + nv*(k-1)
-            call icopy(w1(k4),cell(1,e),nv)
+            call intcopy(w1(k4),cell(1,e),nv)
          enddo
          j=1
          do k = n1+1,nel              ! extract cell sublist for B
             e  = elist(k)
             j4 = 1 + nv*(j-1)
-            call icopy(w2(j4),cell(1,e),nv)
+            call intcopy(w2(j4),cell(1,e),nv)
             j  = j+1
          enddo
 
@@ -4341,7 +4341,7 @@ c  where i = np-mod(nelgt,np) ... np
       npp   = np - nmod      ! how many paritions of size nel 
  
       ! sort gllnid  
-      call isort(gllnid,iunsort,nelgt)
+      call intsort(gllnid,iunsort,nelgt)
 
       ! setup partitions of size nel 
       k   = 0
@@ -4454,7 +4454,7 @@ c     cell   : global vertex numbering
             enddo
          enddo
 
-         call isort(share,w3,n_shared)
+         call intsort(share,w3,n_shared)
 
          ilast = 0
          icount = 0

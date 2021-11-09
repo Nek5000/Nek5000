@@ -326,12 +326,12 @@ c
          imax = wr/dxhex
          jmin = wb/dyhex
          jmax = wt/dyhex
-         call cmult2(hexscale,hexbase,griddx,16)
+         call constMult2(hexscale,hexbase,griddx,16)
          do j=jmin,jmax
             j2 = j + 2*abs(jmin)
 c           if (mod(j2,2).eq.0) then
                do i=imin,imax
-                  call cmult2(hexscale,hexbase,griddx,16)
+                  call constMult2(hexscale,hexbase,griddx,16)
                   xi = i*dxhex
                   yj = j*dyhex
                   call cadd  (hexscale(1,1),xi,8)

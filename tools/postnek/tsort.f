@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -18,19 +18,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -46,7 +46,7 @@ c              if ( a(j).lt.a(j+1) ) j=j+1
 c           if (aa.lt.a(j)) then
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -56,14 +56,14 @@ c              a(i) = a(j)
          GOTO 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       GOTO 100
       end
 c-----------------------------------------------------------------------
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -192,10 +192,10 @@ c-----------------------------------------------------------------------
 *  Purpose
 *  =======
 *
-*  Sort the numbers in D in increasing order (if ID = 'I') or
+*  sort the numbers in D in increasing order (if ID = 'I') or
 *  in decreasing order (if ID = 'D' ).
 *
-*  Use Quick Sort, reverting to Insertion sort on arrays of
+*  Use Quick sort, reverting to Insertion sort on arrays of
 *  size <= 20. Dimension of STACK limits N to about 2**32.
 *
 *  Arguments
@@ -275,7 +275,7 @@ c-----------------------------------------------------------------------
 *
          IF (DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             DO 30 I = START + 1, ENDD
                DO 20 J = I, START + 1, -1
@@ -291,7 +291,7 @@ c-----------------------------------------------------------------------
 *
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             DO 50 I = START + 1, ENDD
                DO 40 J = I, START + 1, -1
@@ -337,7 +337,7 @@ c-----------------------------------------------------------------------
 *
          IF (DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -373,7 +373,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -447,7 +447,7 @@ c
       integer ind(1),key(nkey)
       logical iftuple_ialtb
 c
-c     Sort a(tuple,i) and merge by removing repeated entries
+c     sort a(tuple,i) and merge by removing repeated entries
 c
       call ituple_sort(a,lda,n,key,nkey,ind,aa)
 c

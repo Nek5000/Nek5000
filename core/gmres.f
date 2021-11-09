@@ -85,7 +85,7 @@ c           call copy(r_gmres,res,ntot2)
          rnorm = 0.
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
-         call cmult2(v_gmres(1,1),r_gmres,temp,ntot2)! v  = r / gamma
+         call constMult2(v_gmres(1,1),r_gmres,temp,ntot2)! v  = r / gamma
                                                      !  1            1
          do j=1,m
             iter = iter+1
@@ -179,7 +179,7 @@ c            call outmat(h,m,j,' h    ',j)
             if (j.eq.m) goto 1000 !not converged, restart
 
             temp = 1./alpha
-            call cmult2(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
+            call constMult2(v_gmres(1,j+1),w_gmres,temp,ntot2) ! v    = w / alpha
                                                            !  j+1            
          enddo
   900    iconv = 1
@@ -391,7 +391,7 @@ c           call copy(r,res,n)
          rnorm = 0.
          if(gamma_gmres(1) .eq. 0.) goto 9000
          temp = 1./gamma_gmres(1)
-         call cmult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
+         call constMult2(v_gmres(1,1),r_gmres,temp,n) ! v  = r / gamma
                                                   !  1            1
          do j=1,m
             iter = iter+1
@@ -505,7 +505,7 @@ c           enddo
             if (j.eq.m) goto 1000 !not converged, restart
 
             temp = 1./alpha
-            call cmult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
+            call constMult2(v_gmres(1,j+1),w_gmres,temp,n) ! v    = w / alpha
                                                        !  j+1            
          enddo
   900    iconv = 1

@@ -3035,7 +3035,7 @@ c     Unshuffle geometry:
 
 c     Reassign cell to hold global index numbering
 
-      call icopy     (cell,ind,n)
+      call intcopy     (cell,ind,n)
       write(6,*) 'Performing unique_vertex2 self_chk',n
       call self_chk  (cell,nv,nel,0)       ! check for not self-ptg.
 
@@ -3152,7 +3152,7 @@ c
 c     Return r = rank of a() in place of a(), where r =< n
 c     so that a() is the number of unique pts sorted such that
 c     it is in the original spot
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 c
 c
       integer a(1),p(1)
@@ -3440,7 +3440,7 @@ c     enddo
 c-----------------------------------------------------------------------
       subroutine isortg(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(1),ind(1)
       integer aa

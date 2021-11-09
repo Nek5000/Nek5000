@@ -40,7 +40,7 @@ c
              xx(9) = xx(9) + bm1(i,1,1,ie)*z10*z10
           enddo
           vi = 1./vol
-          call cmult(xx,vi,9)
+          call constMult(xx,vi,9)
 c         call eig3(xx,eign,eig1)
           call eig2(xx,eign,eig1)
           ar(ie) = sqrt(eign/eig1)
@@ -61,7 +61,7 @@ c
              xx(4) = xx(4) + bm1(i,1,1,ie)*y10*y10
           enddo
           vi = 1./vol
-          call cmult(xx,vi,4)
+          call constMult(xx,vi,4)
           call eig2(xx,eign,eig1)
 c         write(6,6) ie,vol,eign,eig1
 c  6      format(i5,' veig:',1p3e16.6)

@@ -296,14 +296,14 @@ c     Find unique a's
 c
       nn=1
 c
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       a(1,1) = nn
       a(2,1)=ind(1)
 c
       do i=2,n
          a_ne_b = iftuple_ianeb(aa,a(1,i),key,nk)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn
@@ -324,7 +324,7 @@ c-----------------------------------------------------------------------
 
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -341,19 +341,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -367,7 +367,7 @@ c              a(1) = aa
             endif
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -377,7 +377,7 @@ c              a(i) = a(j)
          goto 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       goto 100
       end
@@ -386,7 +386,7 @@ c-----------------------------------------------------------------------
 
       subroutine i8tuple_sort(a,lda,n,key,nkey,ind,aa)
 
-c     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+c     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 
       integer*8 a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -448,7 +448,7 @@ c-----------------------------------------------------------------------
 c
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -1079,7 +1079,7 @@ c
 c-----------------------------------------------------------------------
       subroutine irank(a,ind,n)
 
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 
       integer a(1),q
       integer ind(1)
@@ -1130,7 +1130,7 @@ c-----------------------------------------------------------------------
 
       subroutine i8rank(a,ind,n)
 
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 
       integer*8 a(1),q
       integer ind(1)
@@ -1189,8 +1189,8 @@ c                w(i) = sorted & compressed list of input values
 
       integer r(1),input(1),ind(1),w(1),rlast
 
-      call icopy(r,input,n)
-      call isort(r,ind,n)
+      call intcopy(r,input,n)
+      call intsort(r,ind,n)
 c
       maxr  = 1
       rlast = r(1) 
@@ -1361,12 +1361,12 @@ c               a(1,i) tally of preceding structure values
 c
 c     Input:    a(j,i) j=1,...,m;  i=1,...,n  
 c               m      :   leading dim. of v  (ldv must be .ge. m)
-c               key    :   sort key
+c               key    :   realSort key
 c               nkey   :   
 c
 c     Although not mandatory, this ranking procedure is probably
 c     most effectively employed when the keys are pre-sorted. Thus,
-c     the option is provided to sort vi() prior to the ranking.
+c     the option is provided to realSort vi() prior to the ranking.
 c
 c
       integer ind(n),a(m,n)
@@ -1377,13 +1377,13 @@ c
       nk = min(nkey,m)
       call ituple_sort(a,m,n,key,nk,ind,aa)
 c     do i=1,n
-c        write(6,*) i,' sort:',(a(k,i),k=1,3)
+c        write(6,*) i,' realSort:',(a(k,i),k=1,3)
 c     enddo
 c
 c
 c     Find unique a's
 c
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       nn=1
       mm=0
 c
@@ -1397,7 +1397,7 @@ c
             ms = aa(3)                 ! structure type
             if (aa(2).eq.0) ms = aa(2) ! structure type
             mm = mm+key2(ms)           ! n dofs
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn
@@ -1797,12 +1797,12 @@ c               a(j,i) is permuted
 c
 c     Input:    a(j,i) j=1,...,m;  i=1,...,n  
 c               m      :   leading dim. of v  (ldv must be .ge. m)
-c               key    :   sort key
+c               key    :   realSort key
 c               nkey   :   
 c
 c     Although not mandatory, this ranking procedure is probably
 c     most effectively employed when the keys are pre-sorted. Thus,
-c     the option is provided to sort vi() prior to the ranking.
+c     the option is provided to realSort vi() prior to the ranking.
 c
 c
       integer*8 a(m,n),aa(m)
@@ -1839,12 +1839,12 @@ c               a(j,i) is permuted
 c
 c     Input:    a(j,i) j=1,...,m;  i=1,...,n  
 c               m      :   leading dim. of v  (ldv must be .ge. m)
-c               key    :   sort key
+c               key    :   realSort key
 c               nkey   :   
 c
 c     Although not mandatory, this ranking procedure is probably
 c     most effectively employed when the keys are pre-sorted. Thus,
-c     the option is provided to sort vi() prior to the ranking.
+c     the option is provided to realSort vi() prior to the ranking.
 c
 c
       integer ind(n),a(m,n)
@@ -1855,14 +1855,14 @@ c
       call ituple_sort(a,m,n,key,nk,ind,aa)
 
 c     Find unique a's
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       nn     = 1
       ind(1) = nn
 c
       do i=2,n
          a_ne_b = iftuple_ianeb(aa,a(1,i),key,nk)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          ind(i) = nn ! set ind() to rank
@@ -1879,7 +1879,7 @@ c     tuple is destroyed.
 c
 c     By "balanced" we mean that none of the tuple entries is likely to
 c     be much more uniquely populated than any other, so that any of
-c     the tuples can serve as an initial (parallel) sort key
+c     the tuples can serve as an initial (parallel) realSort key
 c
 c     First two slots in tuple(:,i) assumed empty
 c
@@ -1939,7 +1939,7 @@ c     tuple is destroyed.
 c
 c     By "balanced" we mean that none of the tuple entries is likely to
 c     be much more uniquely populated than any other, so that any of
-c     the tuples can serve as an initial (parallel) sort key
+c     the tuples can serve as an initial (parallel) realSort key
 c
 c     First two slots in tuple(:,i) assumed empty
 c
@@ -2080,7 +2080,7 @@ c     Assign edge labels by bounding vertices.
          enddo
       enddo
 c
-c     Sort edges by bounding vertices.
+c     realSort edges by bounding vertices.
       do i=0,12*nel-1
          if (edge(0,i,0,1,1).gt.edge(1,i,0,1,1)) then
             kswap = edge(0,i,0,1,1)
@@ -2424,7 +2424,7 @@ c     Assign edge labels by bounding vertices.
          enddo
       enddo
 
-c     Sort edges by bounding vertices.
+c     realSort edges by bounding vertices.
       do i=0,4*nel-1
          if (edge(0,i,1,1).gt.edge(1,i,1,1)) then
             kswap = edge(0,i,1,1)

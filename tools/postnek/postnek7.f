@@ -539,10 +539,10 @@ C           Get an XYZ point close to the center of the requested sub-plane.
          ENDIF
 100   CONTINUE
       NLSTK=K
-      CALL ICOPY(LIST  ,IZDPTH,NLSTP)
+      CALL intcopy(LIST  ,IZDPTH,NLSTP)
       CALL CHCOPY(NAMELS,SCRNAM,NLSTP*16)
-      CALL SORT  (ZDEPTH ,IND,NLSTK)
-      CALL ISWAP (LIST  ,SCRNAM,IND,NLSTK)
+      CALL realSort  (ZDEPTH ,IND,NLSTK)
+      CALL intswap (LIST  ,SCRNAM,IND,NLSTK)
       CALL CHSWAP(NAMELS,SCRNAM,16,IND,NLSTK)
 C
       RETURN

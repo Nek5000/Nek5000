@@ -58,7 +58,7 @@ c-----------------------------------------------------------------------
      $             dProcmapH,ierr)
       call mpi_win_unlock(nids,dProcmapH,ierr)
 #else
-      call icopy(dProcmapWin(2*(ieg-1) + ioff + 1),ibuf,lbuf)
+      call intcopy(dProcmapWin(2*(ieg-1) + ioff + 1),ibuf,lbuf)
 #endif
 
       return
@@ -107,7 +107,7 @@ c         write(6,*) nid, 'cache hit ', 'ieg:', ieg
      $                dProcmapH,ierr)
          call mpi_win_unlock(nidt,dProcmapH,ierr)
 #else
-         call icopy(ibuf,dProcmapWin(2*(ieg-1) + 1),2)
+         call intcopy(ibuf,dProcmapWin(2*(ieg-1) + 1),2)
 #endif
          if (dProcmapCache) then
             if (ibuf(2).eq.nid) then

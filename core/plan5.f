@@ -92,7 +92,7 @@ c-----------------------------------------------------------------------
 
       dti = 1/dtl
       call copy    (h1,vdiff ,n)
-      call cmult2  (h2,vtrans,dti,n)
+      call constMult2  (h2,vtrans,dti,n)
 
       if (iresv.eq.0) then ! bfx etc is preserved if iresv=1
 

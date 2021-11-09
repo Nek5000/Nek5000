@@ -441,7 +441,7 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       lpm_neltbb = lpm_neltb
 
       do ie=1,lpm_neltbb
-         call icopy(lpm_er_maps(1,ie),lpm_er_map(1,ie),LPM_LRMAX)
+         call intcopy(lpm_er_maps(1,ie),lpm_er_map(1,ie),LPM_LRMAX)
       enddo
 
 

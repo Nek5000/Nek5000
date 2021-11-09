@@ -760,7 +760,7 @@ C
          CG(3,I)=CG(3,I)+XYZ(3,IC,I)
   100 CONTINUE
       TMP=1.0/(NCRNR)
-      CALL CMULT(CG,TMP,3*N)
+      CALL constMult(CG,TMP,3*N)
       return
       END
 c-----------------------------------------------------------------------

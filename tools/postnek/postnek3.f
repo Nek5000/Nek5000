@@ -1568,11 +1568,11 @@ c
       call rerr(c0,c1)
 c
       ntot = nx*ny*nz*nel
-      call cmult2(wkv1,u,c0,ntot)
-      call cmult2(wkv2,v,c0,ntot)
-      call cmult2(wkv3,w,c0,ntot)
-      call cmult2(work,p,c0,ntot)
-      call cmult2(wrk2,t,c0,ntot)
+      call constMult2(wkv1,u,c0,ntot)
+      call constMult2(wkv2,v,c0,ntot)
+      call constMult2(wkv3,w,c0,ntot)
+      call constMult2(work,p,c0,ntot)
+      call constMult2(wrk2,t,c0,ntot)
 c
       u1max = glmax(u,ntot)
       u2max = glmax(v,ntot)

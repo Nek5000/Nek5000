@@ -767,7 +767,7 @@ C
 C
 C     Scale by actual radius
 C
-      CALL CMULT(XYSRF,RADIUS,NXY3)
+      CALL constMult(XYSRF,RADIUS,NXY3)
 C
 C     Add back the sphere center offset
 C

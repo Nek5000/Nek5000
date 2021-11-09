@@ -742,7 +742,7 @@ c
 c
 c     Sort eigenvalues and vectors
 c
-      call sort(atd,atu,n)
+      call realSort(atd,atu,n)
       call transpose(sft,n,sf,n)
       do j=1,n
          call swap(sft(1,j),atu,n,au)
@@ -778,7 +778,7 @@ c
       do j=1,n
          alpha = vlsc3(bh,sf(1,j),sf(1,j),n)
          alpha = 1.0/sqrt(alpha)
-         call cmult(sf(1,j),alpha,n)
+         call constMult(sf(1,j),alpha,n)
       enddo
 c
 c     Diagnostics
@@ -1121,7 +1121,7 @@ c
 c
 c     Sort eigenvalues and vectors
 c
-      call sort(atd,atu,n)
+      call realSort(atd,atu,n)
       call transpose(sft,n,sf,n)
       do j=1,n
          call swap(sft(1,j),atu,n,au)
@@ -1157,7 +1157,7 @@ c
       do j=1,n
          alpha = vlsc3(bh,sf(1,j),sf(1,j),n)
          alpha = 1.0/sqrt(alpha)
-         call cmult(sf(1,j),alpha,n)
+         call constMult(sf(1,j),alpha,n)
       enddo
 c
 c     Diagnostics

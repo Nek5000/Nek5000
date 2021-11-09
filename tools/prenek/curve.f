@@ -765,7 +765,7 @@ c
          do k=1,2
             xi = i*dxhex + xshift
             yj = j*dyhex + yshift
-            call cmult2(hexscale,hexbase,griddx,16)
+            call constMult2(hexscale,hexbase,griddx,16)
             call cadd  (hexscale(1,1),xi,8)
             call cadd  (hexscale(1,2),yj,8)
 c
@@ -1769,7 +1769,7 @@ c-----------------------------------------------------------------------
       v(1,3)=x1
       v(2,3)=y1
       v(2,4)=y1
-      call cmult(v,2.0,10) ! Make domain bigger for "in_triangle" check
+      call constMult(v,2.0,10) ! Make domain bigger for "in_triangle" check
 
       ks=0
       do k=1,4

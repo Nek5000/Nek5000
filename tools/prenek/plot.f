@@ -595,9 +595,9 @@ C            ZLEFT(IEL,IFACE)=.TRUE.
 250   continue
 C     Sort so that they are output in the right order
       NFCTOT=6*NEL
-      CALL SORT(ZDEPTH,IND,NFCTOT)
-      CALL ISWAP(IZDPTH(1,1),Wk,IND,NFCTOT)
-      CALL ISWAP(IZDPTH(1,2),Wk,IND,NFCTOT)
+      CALL realSort(ZDEPTH,IND,NFCTOT)
+      CALL intswap(IZDPTH(1,1),Wk,IND,NFCTOT)
+      CALL intswap(IZDPTH(1,2),Wk,IND,NFCTOT)
 C
       RETURN
       END

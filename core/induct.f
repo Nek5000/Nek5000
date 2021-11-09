@@ -196,7 +196,7 @@ C
 C
       NTOT1 = lx1*ly1*lz1*NELV
       CONST = 1./DT
-      CALL CMULT2(H2,vtrans(1,1,1,1,ifield),CONST,NTOT1)
+      CALL constMult2(H2,vtrans(1,1,1,1,ifield),CONST,NTOT1)
       CALL OPCOLV3c (TB1,TB2,TB3,BX,BY,BZ,BM1,bd(2))
 C
       DO 100 ILAG=2,NBD
@@ -337,7 +337,7 @@ c
       call opdiv   (dp,ux,uy,uz)
 
       bdti = -bd(1)/dt
-      call cmult   (dp,bdti,ntot2)
+      call constMult   (dp,bdti,ntot2)
 
       call add2col2(dp,bm2,usrdiv,ntot2) ! User-defined divergence.
 
@@ -347,9 +347,9 @@ c
       if (ifprjp)   call setrhsp  (dp,h1,h2,h2inv,pset(1,i),nprv(i))
                     scaledt = dt/bd(1)
                     scaledi = 1./scaledt
-                    call cmult(dp,scaledt,ntot2)        ! scale for tol
+                    call constMult(dp,scaledt,ntot2)        ! scale for tol
                     call esolver  (dp,h1,h2,h2inv,intype)
-                    call cmult(dp,scaledi,ntot2)
+                    call constMult(dp,scaledi,ntot2)
       if (ifprjp)   call gensolnp (dp,h1,h2,h2inv,pset(1,i),nprv(i))
 
       call add2(up,dp,ntot2)
@@ -1317,7 +1317,7 @@ C
          return
       endif
       alphad = 1./sqrt(alphad)
-      call cmult(pset(1,nprev),alphad,ntot2)
+      call constMult(pset(1,nprev),alphad,ntot2)
 
       return
       end

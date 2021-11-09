@@ -1733,7 +1733,7 @@ c
 
       n = lx1*ly1*lz1*nelfld(ifield)
       call vcospf(tt,bm1,n)
-      call cmult(tt,eps,n)
+      call constMult(tt,eps,n)
       call dssum(tt,lx1,ly1,lz1)
 
       return

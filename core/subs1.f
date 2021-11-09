@@ -1033,12 +1033,12 @@ c     INTLOC =      integration type
          if (intloc.eq.0) then
             call rzero (h2,ntot1)
          else
-            call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
+            call constMult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
          endif
 
 c        if (ifield.eq.1 .and. ifanls) then   ! this should be replaced
 c           const = 2.                        ! with a correct stress
-c           call cmult (h1,const,ntot1)       ! formulation
+c           call constMult (h1,const,ntot1)       ! formulation
 c        endif
 
       ELSE
@@ -1390,7 +1390,7 @@ C
 C        Newtonian fluids
 
          CONST = 2.0
-         CALL CMULT2 (HII,H1,CONST,NTOT1)
+         CALL constMult2 (HII,H1,CONST,NTOT1)
          CALL COL2   (TXX,HII,NTOT1)
          CALL COL2   (TXY,H1 ,NTOT1)
          CALL COL2   (TYY,HII,NTOT1)
@@ -2565,8 +2565,8 @@ c    3 format(i9,2i3,1p2e12.4,' scale ortho')
 
       if (scale.gt.0) then
          scale = 1./sqrt(scale)     
-         call cmult(x(1,1,k),scale,m)
-         call cmult(b(1,1,k),scale,m)
+         call constMult(x(1,1,k),scale,m)
+         call constMult(b(1,1,k),scale,m)
       else
          ierr=2
       endif

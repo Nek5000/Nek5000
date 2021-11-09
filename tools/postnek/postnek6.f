@@ -441,11 +441,11 @@ c
             endif
             lmir(i) = im
          enddo
-         call icopy(lisw(1+(im-1)*nlstp),list,nlstp)
+         call intcopy(lisw(1+(im-1)*nlstp),list,nlstp)
       enddo
-      CALL SORT(ZDEPTH,   IND,NLSTP*nmirror)
-      CALL ISWAP(LISW ,WK,IND,NLSTP*nmirror)
-      CALL ISWAP(lmir ,WK,IND,NLSTP*nmirror)
+      CALL realSort(ZDEPTH,   IND,NLSTP*nmirror)
+      CALL intswap(LISW ,WK,IND,NLSTP*nmirror)
+      CALL intswap(lmir ,WK,IND,NLSTP*nmirror)
 C
       return
       end

@@ -944,7 +944,7 @@ C
          if (ifanls) then
             CALL EPREC2      (RPCG,RCG)
             DTBD = BD(1)/DT
-            CALL cmult       (RPCG,DTBD,ntot2)
+            CALL constMult       (RPCG,DTBD,ntot2)
          else
             CALL EPREC2      (RPCG,RCG)
 c           CALL COL2        (RPCG,H2M2,NTOT2)
@@ -1570,7 +1570,7 @@ C
       if(iflomach) then
         call cfill(h2,CONST,ntot1)
       else
-        call cmult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
+        call constMult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
       endif
 
       CALL OPCOLV3c (TB1,TB2,TB3,VX,VY,VZ,BM1,bd(2))
@@ -2663,9 +2663,9 @@ C
       include 'SIZE'
       REAL A(1),B(1),C(1)
       NTOT1=lx1*ly1*lz1*NELV
-      CALL CMULT(A,CONST,NTOT1)
-      CALL CMULT(B,CONST,NTOT1)
-      IF(ldim.EQ.3) CALL CMULT(C,CONST,NTOT1)
+      CALL constMult(A,CONST,NTOT1)
+      CALL constMult(B,CONST,NTOT1)
+      IF(ldim.EQ.3) CALL constMult(C,CONST,NTOT1)
       return
       END
 c-----------------------------------------------------------------------
@@ -4273,7 +4273,7 @@ C----------------------------------------------------------------------
 c      CALL ADD4  (W1,SXX,SYY,SZZ,NTOT)
       CALL COPY  (W1,QTL,ntot)  
       fac = -1./3. 
-      CALL CMULT (W1,fac,NTOT)
+      CALL constMult (W1,fac,NTOT)
       CALL ADD2  (SXX,W1,NTOT)
       CALL ADD2  (SYY,W1,NTOT)
       CALL ADD2  (SZZ,W1,NTOT)
@@ -4291,7 +4291,7 @@ c      CALL ADD4  (W1,SXX,SYY,SZZ,NTOT)
 
       CALL RONE(W2,NTOT)
       fac = 2.0
-      CALL CMULT  (W2,fac,NTOT)
+      CALL constMult  (W2,fac,NTOT)
       
 c add to RHS (BFX,BFY,BFZ)
       CALL OPDIV (W1,SXX,SXY,SXZ)
@@ -4359,9 +4359,9 @@ C
       ENDIF
 C
       fac = 0.5
-      CALL CMULT (EXY,fac,NTOT1) 
-      CALL CMULT (EXZ,fac,NTOT1)  
-      CALL CMULT (EYZ,fac,NTOT1) 
+      CALL constMult (EXY,fac,NTOT1) 
+      CALL constMult (EXZ,fac,NTOT1)  
+      CALL constMult (EYZ,fac,NTOT1) 
 
       RETURN
       END

@@ -260,7 +260,7 @@ C
       endif
       ALPHAd = 1.0/SQRT(ALPHAd)
       ALPHAN = Alphad
-      CALL CMULT(RHS (1,Kprev),alphan,NTOT2)
+      CALL constMult(RHS (1,Kprev),alphan,NTOT2)
 C
       return
       end
@@ -486,7 +486,7 @@ c
       else
          ierr=0
          alpha = 1.0/sqrt(alpha)
-         call cmult(approx(1,k),alpha,ntot)
+         call constMult(approx(1,k),alpha,ntot)
       endif
 c
       if (ierr.ne.0) then
@@ -503,7 +503,7 @@ c
             return
          endif
          alpha = 1.0/sqrt(alpha)
-         call cmult(approx(1,k),alpha,ntot)
+         call constMult(approx(1,k),alpha,ntot)
          ierr = 0
       endif
 c
@@ -762,8 +762,8 @@ c     b <-- b - bbar
       enddo
       !First one outside loop to avoid zeroing xbar and bbar
       call gop(alpha,work,'+  ',m)
-      call cmult2(xbar,xx(1,1),alpha(1),n)
-      call cmult2(bbar,bb(1,1),alpha(1),n)
+      call constMult2(xbar,xx(1,1),alpha(1),n)
+      call constMult2(bbar,bb(1,1),alpha(1),n)
       call add2s2(b,bb(1,1),-alpha(1),n)
       do k = 2,m
          call add2s2(xbar,xx(1,k),alpha(k),n)
@@ -919,8 +919,8 @@ c     Check for linear independence.
        
          !Normalize dx and db
          scl1 = 1.0/alpha(m) 
-         call cmult(xx(1,m), scl1, n)   
-         call cmult(bb(1,m), scl1, n)   
+         call constMult(xx(1,m), scl1, n)   
+         call constMult(bb(1,m), scl1, n)   
 
          !We want to throw away the oldest information
          !The below propagates newest information to first vector.
@@ -991,8 +991,8 @@ c     Full MGS reorthogonalization
       if (alpha.eq.0) return
 
       scale = 1./sqrt(alpha)
-      call cmult(xx(1,m),scale,n)
-      call cmult(bb(1,m),scale,n)
+      call constMult(xx(1,m),scale,n)
+      call constMult(bb(1,m),scale,n)
       flag(m) = 1
 
       do k=m-1,1,-1  ! Reorthogonalize, starting with latest solution
@@ -1025,8 +1025,8 @@ c     Full MGS reorthogonalization
 
          if (normp.gt.tol*normk) then ! linearly independent vectors
            scale = 1./normp
-           call cmult(xx(1,k),scale,n)
-           call cmult(bb(1,k),scale,n)
+           call constMult(xx(1,k),scale,n)
+           call constMult(bb(1,k),scale,n)
            flag(k) = 1
 c          if (nio.eq.0) write(6,2) istep,k,m,name6,normp,normk
 c    2      format(i9,'proj_ortho: ',2i4,1x,a6,' project ok.'
@@ -1101,8 +1101,8 @@ c-----------------------------------------------------------------------
          normk = sqrt(normk)
          if(normk.gt.tol*normp) then
             scl1 = 1.0/normk
-            call cmult(xx(1,k), scl1, n)
-            call cmult(bb(1,k), scl1, n)
+            call constMult(xx(1,k), scl1, n)
+            call constMult(bb(1,k), scl1, n)
             flag(k) = 1
          else
             flag(k) = 0

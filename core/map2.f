@@ -209,7 +209,7 @@ c fluid elements
             call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
             if (ifread_con) then
               eid8(j) = wk4(ii+1)
-              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+              call intcopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
             endif
 
             do iv=1,nlv
@@ -242,7 +242,7 @@ c fluid elements
       do i = 1,nelv
          lglel(i) = eid8(i)
       enddo
-      call isort(lglel,iwork,nelv)
+      call intsort(lglel,iwork,nelv)
       do i = 1,nelv
          call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
       enddo
@@ -263,7 +263,7 @@ c solid elements
                call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
                if (ifread_con) then
                  eid8(j) = wk4(ii+1)
-                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+                 call intcopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
                endif
 
                do iv=1,nlv
@@ -295,7 +295,7 @@ c solid elements
          do i = 1,nel
             lglel(nelv+i) = eid8(i)
          enddo
-         call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
+         call intsort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
          do i = 1,nel
             call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
          enddo
@@ -781,8 +781,8 @@ c-----------------------------------------------------------------------
                m = eg1 - eg0
                do eg=eg1,eg0+1,-1 ! reshuffle array
                   jj = (m-1)*(mdw-1) + 1
-                  call icopy(itmp20,wk(jj,1),mdw-1)
-                  call icopy(wk(1,m),itmp20 ,mdw-1)
+                  call intcopy(itmp20,wk(jj,1),mdw-1)
+                  call intcopy(wk(1,m),itmp20 ,mdw-1)
                   m = m - 1
                enddo
             else
@@ -849,7 +849,7 @@ c     NOW: crystal route vertex by processor id
       key = 1  ! processor id is in wk(1,:)
       call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
 
-      key = mdw  ! Sort tuple list by eg
+      key = mdw  ! sort tuple list by eg
       nkey = 1
       call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
 
@@ -860,7 +860,7 @@ c     NOW: crystal route vertex by processor id
          iflag=1
       else
          do e=1,nelt
-            call icopy48(vertex(1,e),wk(2,e),nlv)
+            call intcopy48(vertex(1,e),wk(2,e),nlv)
          enddo
       endif
 
@@ -945,7 +945,7 @@ c  where i = np-mod(nelgt,np) ... np
       npp   = np - nmod      ! how many paritions of size nel 
  
       ! sort gllnid  
-      call isort(gllnid,iunsort,nelgt)
+      call intsort(gllnid,iunsort,nelgt)
 
       ! setup partitions of size nel 
       k   = 0

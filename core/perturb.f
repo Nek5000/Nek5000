@@ -484,7 +484,7 @@ C
 C
       ntot1 = lx1*ly1*lz1*nelv
       const = 1./dt
-      call cmult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
+      call constMult2(h2,vtrans(1,1,1,1,ifield),const,ntot1)
       call opcolv3c (tb1,tb2,tb3
      $              ,vxp(1,jp),vyp(1,jp),vzp(1,jp),bm1,bd(2))
 C
@@ -743,7 +743,7 @@ c
       else
          call copy (ta,ua,ntot1)
          coeff=-1.0
-         call cmult(ta,coeff,ntot1)       ! -U.grad dT
+         call constMult(ta,coeff,ntot1)       ! -U.grad dT
                                           ! the second term depends on the buoyancy
       endif
 c
@@ -803,10 +803,10 @@ C
       NTOT1 = lx1*ly1*lz1*NEL
       CONST = 1./DT
       CALL COPY  (H2,VTRANS(1,1,1,1,IFIELD),NTOT1)
-      CALL CMULT (H2,CONST,NTOT1)
+      CALL constMult (H2,CONST,NTOT1)
 C
       CALL COL3  (TB,BM1,TP(1,IFIELD-1,jp),NTOT1)
-      CALL CMULT (TB,BD(2),NTOT1)
+      CALL constMult (TB,BD(2),NTOT1)
 C
       DO 100 ILAG=2,NBD
          IF (IFGEOM) THEN
@@ -890,7 +890,7 @@ c
 
       call rzero   (h1,ntot1)
 c     call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
-      call cmult2  (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
+      call constMult2  (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
       call invers2 (h2inv,h2,ntot1)
 
       call opdiv   (dp,ux,uy,uz)
@@ -945,7 +945,7 @@ C
       elseif (nbd.eq.3) then
          const = dtlag(1)/dtlag(2)
          call sub3 (dpr,prp(1,JP),prlagp(1,1,JP),ntot2)
-         call cmult(dpr,const,ntot2)
+         call constMult(dpr,const,ntot2)
          call add3 (prextr,prp(1,JP),dpr,ntot2)
       elseif (nbd.gt.3) then
          write (6,*) 'Pressure extrapolation cannot be completed'
@@ -989,8 +989,8 @@ c
             write(6,*) 'this is pl2:',pl2
             scale = 1./pl2
             call opcmult(vxp(1,j),vyp(1,j),vzp(1,j),scale)
-            call   cmult(tp(1,1,j),scale,ntott)
-            call   cmult(prp(1,j) ,scale,ntotp)
+            call   constMult(tp(1,1,j),scale,ntott)
+            call   constMult(prp(1,j) ,scale,ntotp)
          endif
 c
 c        Have to do lag terms as well, etc
@@ -1210,10 +1210,10 @@ c     v =  alpha*v
       ltotv=lx1*ly1*lz1*lelv
       ltott=lx1*ly1*lz1*lelt
 
-      call cmult(v1,alpha,ltotv)
-      call cmult(v2,alpha,ltotv)
-      if (if3d)   call cmult(v3,alpha,ltotv)
-      if (ifheat) call cmult(temp,alpha,ltott*ldimt)
+      call constMult(v1,alpha,ltotv)
+      call constMult(v2,alpha,ltotv)
+      if (if3d)   call constMult(v3,alpha,ltotv)
+      if (ifheat) call constMult(temp,alpha,ltott*ldimt)
 
       return
       end
@@ -1228,10 +1228,10 @@ c     v =  alpha*v
 
       ntotv=lx1*ly1*lz1*nelv
 
-      call cmult(v1,alpha,ntotv)
-      call cmult(v2,alpha,ntotv)
+      call constMult(v1,alpha,ntotv)
+      call constMult(v2,alpha,ntotv)
 
-      if (if3d)   call cmult(v3,alpha,ntotv)
+      if (if3d)   call constMult(v3,alpha,ntotv)
 c
       return
       end
@@ -1342,7 +1342,7 @@ c-----------------------------------------------------------------------
 
       call opscale                     !normalize vectors to unit norm
      $      (vxp(1,jpp),vyp(1,jpp),vzp(1,jpp),tp(1,1,jpp),pertinvnorm)
-      call cmult(prp(1,jpp),pertinvnorm,ntotp)
+      call constMult(prp(1,jpp),pertinvnorm,ntotp)
 
       call opscale(exx1p(1,jpp),exy1p(1,jpp),exz1p(1,jpp)
      $                           ,vgradt1p(1,1,jpp),pertinvnorm)
@@ -1352,11 +1352,11 @@ c-----------------------------------------------------------------------
       ltotv = lx1*ly1*lz1*lelv
       ltotp = lx2*ly2*lz2*lelv
 
-      call cmult( tlagp(1,1,1,jpp),pertinvnorm,ltotv*(lorder-1)*ldimt)
-      call cmult(vxlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(vylagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
-      call cmult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
+      call constMult( tlagp(1,1,1,jpp),pertinvnorm,ltotv*(lorder-1)*ldimt)
+      call constMult(vxlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(vylagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(vzlagp(1,1,jpp),pertinvnorm,ltotv*(lorder-1))
+      call constMult(prlagp(1,1,jpp),pertinvnorm,ltotp*(Lorder-2))
 
       if (nio.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
   1   format(i4,1p2e12.4,i4,a5)

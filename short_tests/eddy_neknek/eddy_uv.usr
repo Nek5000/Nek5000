@@ -330,8 +330,8 @@ c-----------------------------------------------------------------------
 
       n = nx1*ny1*nz1*nelt    !  Rescale mesh to [0,2pi]^2
 
-      call cmult(xm1,twopi,n)
-      call cmult(ym1,twopi,n)
+      call constMult(xm1,twopi,n)
+      call constMult(ym1,twopi,n)
 
 c     This routine initializes the mulitdomain coupling          
       

@@ -871,13 +871,13 @@ C
          IF (ldim.EQ.3) CALL COPY (UZ,WZ,NTOT1)
       else
          if (ifrich) then
-            call cmult2(ux,wx,dt,ntot1)
-            call cmult2(uy,wy,dt,ntot1)
-            if (ldim.eq.3) call cmult2(uz,wz,dt,ntot1)
+            call constMult2(ux,wx,dt,ntot1)
+            call constMult2(uy,wy,dt,ntot1)
+            if (ldim.eq.3) call constMult2(uz,wz,dt,ntot1)
          else
-            CALL CMULT2 (UX,WX,ABM(1),NTOT1)
-            CALL CMULT2 (UY,WY,ABM(1),NTOT1)
-            IF (ldim.EQ.3) CALL CMULT2 (UZ,WZ,ABM(1),NTOT1)
+            CALL constMult2 (UX,WX,ABM(1),NTOT1)
+            CALL constMult2 (UY,WY,ABM(1),NTOT1)
+            IF (ldim.EQ.3) CALL constMult2 (UZ,WZ,ABM(1),NTOT1)
             DO 100 ILAG=2,NBD
                CALL ADD2S2 (UX,WXLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)
                CALL ADD2S2 (UY,WYLAG(1,1,1,1,ILAG-1),ABM(ILAG),NTOT1)

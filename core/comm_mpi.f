@@ -266,7 +266,7 @@ c
         call exitt
       endif
 
-      call icopy(x,w,n)
+      call intcopy(x,w,n)
 
       return
       end

@@ -881,7 +881,7 @@ C
   400    CONTINUE
   500 CONTINUE
       AVWGHT=1.0/FLOAT(NCRNR)
-      CALL CMULT(SIDE,AVWGHT,24*NELT)
+      CALL constMult(SIDE,AVWGHT,24*NELT)
 C
 c     call exitt
       RETURN

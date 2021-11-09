@@ -1672,9 +1672,9 @@ c-----------------------------------------------------------------------
         enddo
 
         call invcol1(dval,n2)
-        call cmult(dval,scalek,n2)
+        call constMult(dval,scalek,n2)
         one = -1.
-        call cmult(dval,one,n2)
+        call constMult(dval,one,n2)
 
         call col2(dfdx(1,1,1),bndrl,n2)
         call col2(dfdx(1,1,2),bndrl,n2)
@@ -1762,7 +1762,7 @@ c     example: node 1 is connected to 2,3,5; 2 to 1,4,6 and so on
         jin(2,2) = jm(1,1)
  
         dumc = 1./jac(i)
-        call cmult(jin,dumc,4)
+        call constMult(jin,dumc,4)
 
         call rzero(frn,4)
         call col3(frn,jm,jm,4) !square the entries
@@ -2139,7 +2139,7 @@ c
 c-----------------------------------------------------------------------
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -2156,19 +2156,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -2184,7 +2184,7 @@ c              if ( a(j).lt.a(j+1) ) j=j+1
 c           if (aa.lt.a(j)) then
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -2194,14 +2194,14 @@ c              a(i) = a(j)
          GOTO 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       GOTO 100
       end
 c-----------------------------------------------------------------------
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -2303,7 +2303,7 @@ c
       integer ind(1),key(nkey)
       logical iftuple_ialtb
 c
-c     Sort a(tuple,i) and merge by removing repeated entries
+c     sort a(tuple,i) and merge by removing repeated entries
 c
       call ituple_sort(a,lda,n,key,nkey,ind,aa)
 c
@@ -2482,7 +2482,7 @@ c        HMT's data (.map) is in the good h-cube ordering
       close(unit=10)
 c
 c
-c     Sort data and gridpoints by global vertex number
+c     sort data and gridpoints by global vertex number
 c
       lmax  = 0
       do ie = 1,ncell
@@ -2865,7 +2865,7 @@ c
       call prs('Deleting elements.$')
 c
 c
-c     Sort into descending element order for "delel" routine
+c     sort into descending element order for "delel" routine
 c
       call iusort('d',numdel,del_list,info)
       if (info.ne.0) then
@@ -2915,10 +2915,10 @@ c-----------------------------------------------------------------------
 *  Purpose
 *  =======
 *
-*  Sort the numbers in D in increasing order (if ID = 'I') or
+*  sort the numbers in D in increasing order (if ID = 'I') or
 *  in decreasing order (if ID = 'D' ).
 *
-*  Use Quick Sort, reverting to Insertion sort on arrays of
+*  Use Quick sort, reverting to Insertion sort on arrays of
 *  size <= 20. Dimension of STACK limits N to about 2**32.
 *
 *  Arguments
@@ -2998,7 +2998,7 @@ c-----------------------------------------------------------------------
 *
          IF (DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             DO 30 I = START + 1, ENDD
                DO 20 J = I, START + 1, -1
@@ -3014,7 +3014,7 @@ c-----------------------------------------------------------------------
 *
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             DO 50 I = START + 1, ENDD
                DO 40 J = I, START + 1, -1
@@ -3060,7 +3060,7 @@ c-----------------------------------------------------------------------
 *
          IF (DIR.EQ.0 ) THEN
 *
-*           Sort into decreasing order
+*           sort into decreasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -3096,7 +3096,7 @@ c-----------------------------------------------------------------------
             ENDIF
          ELSE
 *
-*           Sort into increasing order
+*           sort into increasing order
 *
             I = START - 1
             J = ENDD + 1
@@ -3193,7 +3193,7 @@ c
       call prs('Deleting elements.$')
 c
 c
-c     Sort into descending element order for "delel" routine
+c     sort into descending element order for "delel" routine
 c
       call iusort('d',numdel,del_list,info)
       if (info.ne.0) then
@@ -4096,7 +4096,7 @@ c-----------------------------------------------------------------------
       v(1,3)=x1
       v(2,3)=y1
       v(2,4)=y1
-      call cmult(v,2.0,10) ! Make domain bigger for "in_triangle" check
+      call constMult(v,2.0,10) ! Make domain bigger for "in_triangle" check
 
       ks=0
       do k=1,4
@@ -4420,7 +4420,7 @@ c     will not.
 
       big = 10*(xmx-xmn)
       call rone(d,n) 
-      call cmult(d,big,n)
+      call constMult(d,big,n)
 
       nnface = 2*dims
       nnods = 2+(dims-2)*2 !number of nodes per edge/face
@@ -4590,7 +4590,7 @@ c-----------------------------------------------------------------------
       real qglob(nv),maxv
       maxv = 1.e+11
       call rone(qglob,nv)
-      call cmult(qglob,maxv,nv)
+      call constMult(qglob,maxv,nv)
       do e=1,ncell
       do i=1,nnpts
             igl = eln(i,e)
@@ -4608,7 +4608,7 @@ c-----------------------------------------------------------------------
       real qglob(nv),minv
       minv = -1.e+11
       call rone(qglob,nv)
-      call cmult(qglob,minv,nv)
+      call constMult(qglob,minv,nv)
 
       do e=1,ncell
       do i=1,nnpts
@@ -4658,7 +4658,7 @@ c-----------------------------------------------------------------------
       n = nnpts*ncell
       dmax   = glamax(d,n)
       dscale = 1./dmax
-      call cmult(d,dscale,n)
+      call constMult(d,dscale,n)
  
       do i=1,ncell*nnpts
         dd2(i) = (1-EXP(-d(i)/delta))

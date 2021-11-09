@@ -14,9 +14,9 @@ C without prior authorization.
 C
 C------------------------------------------------------------------------------
 c-----------------------------------------------------------------------
-      SUBROUTINE SORT(A,IND,N)
+      SUBROUTINE realSort(A,IND,N)
 C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       DIMENSION A(1),IND(1)
 C
@@ -79,7 +79,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE ISWAP(A,W,IND,N)
+      SUBROUTINE intswap(A,W,IND,N)
 C
 C     Use IND to sort array A
 C
@@ -227,7 +227,7 @@ c-----------------------------------------------------------------------
       RETURN
       END
 c-----------------------------------------------------------------------
-      SUBROUTINE CMULT(A,B,N)
+      SUBROUTINE constMult(A,B,N)
       DIMENSION A(1)
       DO 100 I = 1, N
  100     A(I) = B*A(I)
@@ -556,9 +556,9 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer ind(1)
       integer    a(1)
@@ -612,7 +612,7 @@ C
 c-----------------------------------------------------------------------
       subroutine sortit(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer ind(1)
       real    a(1)
@@ -682,7 +682,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult2(x,y,c,n)
+      subroutine constMult2(x,y,c,n)
       real x(1),y(1),c
 c
       do i=1,n
@@ -749,7 +749,7 @@ c
 c-----------------------------------------------------------------------
       SUBROUTINE IRANK(A,IND,N)
 C
-C     Use Heap Sort (p 233 Num. Rec.)
+C     Use Heap sort (p 233 Num. Rec.)
 C
       INTEGER A(1),IND(1)
       INTEGER Q
@@ -798,7 +798,7 @@ C
 c-----------------------------------------------------------------------
       SUBROUTINE RANK(A,IND,N)
 C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+C     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 C
       DIMENSION A(1),IND(1)
 C
@@ -918,7 +918,7 @@ C
    10 CONTINUE
       RETURN
       END
-      SUBROUTINE ICOPY(A,B,N)
+      SUBROUTINE intcopy(A,B,N)
       INTEGER A(1),B(1)
       DO 10 I=1,N
          A(I)=B(I)
@@ -1030,7 +1030,7 @@ c     Find unique a's
 c
       nn=1
 c
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       a(1,1) = nn
       a(2,1)=ind(1)
 c
@@ -1039,7 +1039,7 @@ c
 c        write(6,1) nn,i,a_ne_b,aa,(a(k,i),k=1,nk)
 c  1     format(2i7,1x,l4,1x,12i6)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn

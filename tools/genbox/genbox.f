@@ -905,8 +905,8 @@ c     output curve stuff and Boundary conditions
          do ie=1,nel
             do iedge = 2,maxedge,2
                if (curve(iedge,ie).ne.0) then
-                  call icopy(buf(1),ie,1)
-                  call icopy(buf(2),iedge,1)
+                  call intcopy(buf(1),ie,1)
+                  call intcopy(buf(2),iedge,1)
                   buf(3) = curve(iedge,ie)
                   buf(4) = zero
                   buf(5) = zero
@@ -1142,52 +1142,52 @@ c
                    call blank(buf(1),30*4)
 
                    if(wdsize.eq.4) then
-                     call icopy(buf(1),ie,1)
+                     call intcopy(buf(1),ie,1)
                      if(cbc3.ne.'E  ') then
-                       call icopy(buf(2),eface(3),1)
+                       call intcopy(buf(2),eface(3),1)
                        call copy48(buf(3),rbc3,5)
                        call chcopy(buf(8),cbc3,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(3),1)
                        call byte_write(buf,8)
                        icount = icount+1
                      endif
                      if(cbc2.ne.'E  ') then 
-                       call icopy(buf(2),eface(2),1)
+                       call intcopy(buf(2),eface(2),1)
                        call copy48(buf(3),rbc2,5)
                        call chcopy(buf(8),cbc2,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(2),1)
                        call byte_write(buf,8)
                        icount = icount+1
                      endif
                      if(cbc4.ne.'E  ') then 
-                       call icopy(buf(2),eface(4),1)
+                       call intcopy(buf(2),eface(4),1)
                        call copy48(buf(3),rbc4,5)
                        call chcopy(buf(8),cbc4,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(4),1)
                        call byte_write(buf,8)
                        icount = icount+1
                      endif
                      if(cbc1.ne.'E  ') then 
-                       call icopy(buf(2),eface(1),1)
+                       call intcopy(buf(2),eface(1),1)
                        call copy48(buf(3),rbc1,5)
                        call chcopy(buf(8),cbc1,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(1),1)
                        call byte_write(buf,8)
                        icount = icount+1
                      endif
                      if(cbc5.ne.'E  ') then 
-                      call icopy(buf(2),eface(5),1)
+                      call intcopy(buf(2),eface(5),1)
                       call copy48(buf(3),rbc5,5)
                       call chcopy(buf(8),cbc5,3)
-                      if(nel.ge.1000000) call icopy(buf(3),ibc(5),1)
+                      if(nel.ge.1000000) call intcopy(buf(3),ibc(5),1)
                       call byte_write(buf,8)
                       icount = icount+1
                      endif
                      if(cbc6.ne.'E  ') then 
-                      call icopy(buf(2),eface(6),1)
+                      call intcopy(buf(2),eface(6),1)
                       call copy48(buf(3),rbc6,5)
                       call chcopy(buf(8),cbc6,3)
-                      if(nel.ge.1000000) call icopy(buf(3),ibc(6),1)
+                      if(nel.ge.1000000) call intcopy(buf(3),ibc(6),1)
                       call byte_write(buf,8)
                       icount = icount+1
                      endif
@@ -1370,37 +1370,37 @@ c
                    enddo
                    call blank(buf(1),30*4)
                    if(wdsize.eq.4) then
-                     call icopy(buf(1),ie,1)
+                     call intcopy(buf(1),ie,1)
  
                      if(cbc3.ne.'E  ') then 
-                       call icopy(buf(2),eface(3),1)
+                       call intcopy(buf(2),eface(3),1)
                        call copy48(buf(3),rbc3,5)
                        call chcopy(buf(8),cbc3,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(3),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(3),1)
                        call byte_write(buf,8)
                      endif
  
                      if(cbc2.ne.'E  ') then 
-                       call icopy(buf(2),eface(2),1)
+                       call intcopy(buf(2),eface(2),1)
                        call copy48(buf(3),rbc2,5)
                        call chcopy(buf(8),cbc2,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(2),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(2),1)
                        call byte_write(buf,8)
                      endif
  
                      if(cbc4.ne.'E  ') then 
-                       call icopy(buf(2),eface(4),1)
+                       call intcopy(buf(2),eface(4),1)
                        call copy48(buf(3),rbc4,5)
                        call chcopy(buf(8),cbc4,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(4),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(4),1)
                        call byte_write(buf,8)
                      endif
  
                      if(cbc1.ne.'E  ') then 
-                       call icopy(buf(2),eface(1),1)
+                       call intcopy(buf(2),eface(1),1)
                        call copy48(buf(3),rbc1,5)
                        call chcopy(buf(8),cbc1,3)
-                       if(nel.ge.1000000) call icopy(buf(3),ibc(1),1)
+                       if(nel.ge.1000000) call intcopy(buf(3),ibc(1),1)
                        call byte_write(buf,8)
                      endif 
                    else
@@ -1837,7 +1837,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine icopy(a,b,n)
+      subroutine intcopy(a,b,n)
       integer a(1), b(1)
       do 100 i = 1, n
  100     a(i) = b(i)
@@ -2003,7 +2003,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult(x,a,n)
+      subroutine constMult(x,a,n)
       real x(n),a
       do i=1,n
          x(i) = a*x(i)
@@ -2047,7 +2047,7 @@ c-----------------------------------------------------------------------
             dx = r*dx
          enddo
          scale = (x1-x0)/x(nelx)
-         call cmult(x,scale,nelx+1)
+         call constMult(x,scale,nelx+1)
          call cadd (x,x0   ,nelx+1)
          x(nelx) = x1
       endif

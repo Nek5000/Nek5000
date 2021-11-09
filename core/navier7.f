@@ -379,7 +379,7 @@ c
 c
 c     Fill permuted array
 c
-      call icopy(nzero,ib,n)
+      call intcopy(nzero,ib,n)
       do i=1,n
          n1 = ia(i)
          n2 = ia(i+1)-1
@@ -399,14 +399,14 @@ c
          enddo
       enddo
 c
-c     Sort each row of b in ascending column order -- 
+c     sort each row of b in ascending column order -- 
 c                             just for subsequent access efficiency
 c
       m2 = mod(n2,2)+2
       do i=1,n
          n1 = ib(i)
          n2 = ib(i+1)-ib(i)
-         call isort(jb  (n1),nzero,n2)
+         call intsort(jb  (n1),nzero,n2)
 c        write(6,*) 'call swap:',n,i,m2,n1,n2
          call swap (bcsr(n1),nzero,n2,inverse)
       enddo
@@ -520,7 +520,7 @@ c=======================================================================
       integer a(1),b(1)
       integer icperm(1)
 c
-      call icopy(b,a,n)
+      call intcopy(b,a,n)
       do i=1,n
          a(i) = b(icperm(i))
       enddo

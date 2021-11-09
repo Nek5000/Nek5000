@@ -266,7 +266,7 @@ c
          ind(face(i)) = ig
       enddo
       nglb = ig
-      call icopy(face,ind,n)
+      call intcopy(face,ind,n)
 c          do ik=1,n
 c             write(15,*) dx(1,ik),dx(2,ik),ik
 c          enddo
@@ -485,12 +485,12 @@ c               call strg_write(ccurve(f,e),1) ! writing 4 bytes, but ok
          do e=1,nel
          do f=1,nface
             if (cbc(f,e,ifld).ne.'E  '.and.cbc(f,e,ifld).ne.'   ') then
-               call icopy      (buf(1),e,1)
-               call icopy      (buf(2),f,1)
+               call intcopy      (buf(1),e,1)
+               call intcopy      (buf(2),f,1)
                call copy       (buf(3),bc(1,f,e,ifld),5)
                call blank      (buf(8),4)
                call chcopy     (buf(8),cbc(f,e,ifld),3)
-               if(nel.ge.1000000) call icopy(buf(3),ibc(f,e,ifld),1)
+               if(nel.ge.1000000) call intcopy(buf(3),ibc(f,e,ifld),1)
                call byte_write (buf,8,ierr)
 c               call bdry_write (buf,8)
             endif

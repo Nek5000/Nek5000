@@ -609,7 +609,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine icopy(x,y,n)
+      subroutine intcopy(x,y,n)
       integer x(1),y(1)
       do i=1,n
          x(i) = y(i)
@@ -617,7 +617,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult2(x,y,c,n)
+      subroutine constMult2(x,y,c,n)
       real x(1),y(1)
       do i=1,n
          x(i) = c*y(i)
@@ -697,7 +697,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult(x,c,n)
+      subroutine constMult(x,c,n)
       real x(1)
       do i=1,n
          x(i) = x(i)*c
@@ -760,9 +760,9 @@ c     Get file name
       return
       end
 c-----------------------------------------------------------------------
-      subroutine isort(a,ind,n)
+      subroutine intsort(a,ind,n)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(1),ind(1)
       integer aa
@@ -888,9 +888,9 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine sort(a,p,n)
+      subroutine realSort(a,p,n)
 c
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 c
 c     returns sorted list a(), and permutation vector p()
 c
@@ -945,7 +945,7 @@ c
       do i=1,n
          j0 = ia(i-1)
          nj = ia(i)-j0
-         call isort(ja(j0),ind,nj)
+         call intsort(ja(j0),ind,nj)
       enddo
 c
       return
@@ -978,7 +978,7 @@ c
 c     Return r = rank of a() in place of a(), where r =< n
 c     so that a() is the number of unique pts sorted such that
 c     it is in the original spot
-c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+c     Use Heap sort (p 233 Num. Rec.), 5/26/93 pff.
 c
 c
       integer a(1),p(1)
@@ -986,7 +986,7 @@ c
 
       write(6,*) 'compressing verticies'
 
-      call isort(a,p,n)
+      call intsort(a,p,n)
 
       rank = 1
       last = a(1)
@@ -1053,7 +1053,7 @@ c      ifco2 = .false. ! force ASCII for debugging
       if (ifco2) then
          do e=1,nelt
             iwrk(1) = e
-            call icopy(iwrk(2),cell(1,e),nv)
+            call intcopy(iwrk(2),cell(1,e),nv)
             call byte_write(iwrk,nv+1,ierr)
          enddo
       else
@@ -1068,7 +1068,7 @@ c      ifco2 = .false. ! force ASCII for debugging
 c-----------------------------------------------------------------------
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       integer a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -1085,19 +1085,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call intcopy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call intcopy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call intcopy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call intcopy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -1111,7 +1111,7 @@ c              a(1) = aa
             endif
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call intcopy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -1121,14 +1121,14 @@ c              a(i) = a(j)
          GOTO 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call intcopy(a(1,i),aa,lda)
          ind(i) = ii
       GOTO 100
       end
 c-----------------------------------------------------------------------
       subroutine tuple_sort(a,lda,n,key,nkey,ind,aa)
 C
-C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+C     Use Heap sort (p 231 Num. Rec., 1st Ed.)
 C
       real a(lda,n),aa(lda)
       integer ind(1),key(nkey)
@@ -1437,7 +1437,7 @@ c-----------------------------------------------------------------------
 
       icalld = icalld+1
 
-      if (ndim.eq.2) call icopy(vface,wface,24)
+      if (ndim.eq.2) call intcopy(vface,wface,24)
 
       nvf = nv/2     ! # vertices/face = 1/2 # vertices/cell
       
@@ -1727,7 +1727,7 @@ c-----------------------------------------------------------------------
          ifseg (i) = .false.
       enddo
 
-c     Sort by directions
+c     sort by directions
 
       lda         = 1+ndim
       nseg        = 1
@@ -1735,7 +1735,7 @@ c     Sort by directions
       ninseg(1)   = n
 
       do ipass=1,ndim   ! Multiple passes eliminates false positives
-      do j=1,ndim       ! Sort within each segment
+      do j=1,ndim       ! sort within each segment
          write(6,*) 'locglob:',j,nseg,n
          i =1
          j1=j+1
@@ -1784,7 +1784,7 @@ c     Unshuffle geometry:
 
 c     Reassign cell to hold global index numbering
 
-      call icopy     (cell,ind,n)
+      call intcopy     (cell,ind,n)
 
 c      call self_chk  (cell,nvtx,nel,0)       ! check for not self-ptg.
 
@@ -1867,7 +1867,7 @@ c     cell   : global vertex numbering
             enddo
          enddo
 
-         call isort(share,w3,n_shared)
+         call intsort(share,w3,n_shared)
 
          ilast = 0
          icount = 0

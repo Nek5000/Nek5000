@@ -93,10 +93,10 @@ c
          avgnmx = znavg
       endif
 c
-c     Sort in long direction
+c     sort in long direction
 c
       if (ilong.eq.1) then
-         call SORT(xcen,ind,nel)
+         call realSort(xcen,ind,nel)
          call swap2(cen,xcen,ind,nel)
          dmax = dxmax
          h2 = (xmax+xmin)/2.0
@@ -104,7 +104,7 @@ c
          h0 = h2 - nh*dmax - dmax
          cmax = xmax
       elseif (ilong.eq.2) then
-         call SORT(ycen,ind,nel)
+         call realSort(ycen,ind,nel)
          call swap2(cen,ycen,ind,nel)
          dmax = dymax
          h2 = (ymax+ymin)/2.0
@@ -112,7 +112,7 @@ c
          h0 = h2 - nh*dmax - dmax
          cmax = xmax
       elseif (ilong.eq.3) then
-         call SORT(zcen,ind,nel)
+         call realSort(zcen,ind,nel)
          call swap2(cen,zcen,ind,nel)
          dmax = dzmax
          h2 = (zmax+zmin)/2.0
@@ -831,9 +831,9 @@ c
 c
 c     Now, use jglob to sort data
 c
-      call icopy (loc ,jglob   ,ntot)
-      call isort (loc ,ind     ,ntot) ! isort actually sorts now
-c     call iswap (loc ,w1  ,ind,ntot)
+      call intcopy (loc ,jglob   ,ntot)
+      call intsort (loc ,ind     ,ntot) ! intsort actually sorts now
+c     call intswap (loc ,w1  ,ind,ntot)
 c
 c     Compress and output coordinate data
 c
@@ -2658,9 +2658,9 @@ c
 c     Now, use jglob to sort data
 c
 c     call out_glob(jglob,mx,my,mz,nel)
-      call icopy (loc ,jglob   ,ntot)
-      call isort (loc ,ind     ,ntot) ! isort actually sorts now
-c     call iswap (loc ,w1  ,ind,ntot)
+      call intcopy (loc ,jglob   ,ntot)
+      call intsort (loc ,ind     ,ntot) ! intsort actually sorts now
+c     call intswap (loc ,w1  ,ind,ntot)
 c
 c     Compress and output coordinate data
 c
@@ -2947,7 +2947,7 @@ c
          do iseg=1,nseg
 c           write(6,*) 'this is iseg',iseg,ninseg(iseg),idim
             call tuple_sort(tprd(1,j1),6,ninseg(iseg),idim,1,ind,w6)
-            call iswap     (ind1(j1),iw,ind,ninseg(iseg))
+            call intswap     (ind1(j1),iw,ind,ninseg(iseg))
             j1 = j1+ninseg(iseg)
          enddo
 c

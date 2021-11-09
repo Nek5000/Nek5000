@@ -248,7 +248,7 @@ C     surface terms
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
      $         cb.eq.'MV '.or.cb.eq.'mv ') then
-              CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
+              CALL constMult(W1(1,IEL),dtbd,NXYZ1)
             endif
             CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
   300    CONTINUE
@@ -342,7 +342,7 @@ C     Compute the residual for the velocity
       if (ifstrs) scale =  2./3.
 
       call col3    (ta4,vdiff,qtl,ntot)
-      call cmult   (ta4,scale,ntot)
+      call constMult   (ta4,scale,ntot)
       call opgrad  (ta1,ta2,ta3,TA4)
 
       call cdtp    (wa1,pr ,rxm1,sxm1,txm1,1)
@@ -587,7 +587,7 @@ c - - Assemble RHS of T-eqn
       if (ifdp0dt) then
          dd = (1.0 - gamma0)/gamma0
          call rone(w1,ntot)
-         call cmult(w1,dd,ntot)
+         call constMult(w1,dd,ntot)
 
          call invcol3(w2,vtrans(1,1,1,1,2),vtrans,ntot)
          call invcol2(w1,w2,ntot)
@@ -624,7 +624,7 @@ c - - Assemble RHS of T-eqn
          dp0thdt= prhs*p0th
 
          dd =-prhs
-         call cmult(w2,dd,ntot)
+         call constMult(w2,dd,ntot)
          call add2 (qtl,w2,ntot)
       endif
 

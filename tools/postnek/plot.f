@@ -703,9 +703,9 @@ C            ZLEFT(IEL,IFACE)=.TRUE.
 250   continue
 C     Sort so that they are output in the right order
       NFCTOT=6*NEL
-      CALL SORT(ZDEPTH,IND,NFCTOT)
-      CALL ISWAP(IZDPTH(1,1),Wk,IND,NFCTOT)
-      CALL ISWAP(IZDPTH(1,2),Wk,IND,NFCTOT)
+      CALL realSort(ZDEPTH,IND,NFCTOT)
+      CALL intswap(IZDPTH(1,1),Wk,IND,NFCTOT)
+      CALL intswap(IZDPTH(1,2),Wk,IND,NFCTOT)
 C
       RETURN
       END
@@ -2068,7 +2068,7 @@ c
             if (i.ne.imax) then
                call cross (uu,nhat(1,i),d)
                call norm3d(uu)
-               call cmult (uu,dn,3)
+               call constMult (uu,dn,3)
 c
                call move3(o1+uu(1),o2+uu(2),o3+uu(3))
                call draw3(xh   ,yh   ,zh   )

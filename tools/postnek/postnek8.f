@@ -71,7 +71,7 @@ c
          if (i.ne.imax) then
             call cross (uu,nhat(1,i),d)
             call norm3d(uu)
-            call cmult (uu,dn,3)
+            call constMult (uu,dn,3)
 c
             v1 = o1+uu(1)
             v2 = o2+uu(2)
@@ -507,10 +507,10 @@ c
             ivtx(ic) = vertex(icface(ic,iface),ie)
          enddo
 c        write(6,*) ie,iface,' ivtx1',ivtx
-c        call isortit(ivtx,wrk,nfc)  ! isort actually sorts
-         call isort  (ivtx,wrk,nfc)  ! isort actually sorts
+c        call isortit(ivtx,wrk,nfc)  ! intsort actually sorts
+         call intsort  (ivtx,wrk,nfc)  ! intsort actually sorts
 c        write(6,*) ie,iface,' IVTX2',ivtx
-         call icopy(tmp_face(1,iface,ie),ivtx,ndim)
+         call intcopy(tmp_face(1,iface,ie),ivtx,ndim)
       enddo
       enddo
 c     write(6,*) 'continue?'
@@ -996,7 +996,7 @@ c        if (phil(j,k).lt.phihat(j,k)) then
       enddo
 c
       call sortit(phib,work(m,1),n)
-      call iswap (jk  ,work(m+n+1,1),work(m,1),n)
+      call intswap (jk  ,work(m+n+1,1),work(m,1),n)
 c
 c     Identify 40 worst offenders
 c
@@ -1763,7 +1763,7 @@ c
       ncell=nel
       do ie=1,ncell
 c        HMT's data (.map) is in the good h-cube ordering, swap
-         call icopy(kcell,cell(1,ie),nvc)
+         call intcopy(kcell,cell(1,ie),nvc)
          do k=1,nvc
             j=ecrnr(k)
             cell(k,ie) = kcell(j)
@@ -2304,10 +2304,10 @@ c
          call cross (v2p,vn,v1)
          call norm3d(v2p)
          s = len2
-         call cmult (v2p,s,3)
+         call constMult (v2p,s,3)
          call sub2  (v2p,v2,3)
          s = len1/(len1+len2)
-         call cmult (v2p,s,3)
+         call constMult (v2p,s,3)
          call add2  (dxyz(1,im),v2p,3)
 c
 c
@@ -2316,10 +2316,10 @@ c
          call cross (v1p,v2,vn)          ! v1' = target, new v1 orth. to v2
          call norm3d(v1p)
          s = len1
-         call cmult (v1p,s,3)
+         call constMult (v1p,s,3)
          call sub2  (v1p,v1,3)
          s = len2/(len1+len2)
-         call cmult (v1p,s,3)
+         call constMult (v1p,s,3)
          call add2  (dxyz(1,ip),v1p,3)
 c
       enddo
@@ -2361,7 +2361,7 @@ c
 c
 c     Scale by eps
 c
-      call cmult(dxyz,eps,24)
+      call constMult(dxyz,eps,24)
 c
 c     Shift to have zero mean, so that element is not (self) translated
 c
@@ -2372,7 +2372,7 @@ c
          cg(j)=cg(j)+dxyz(j,i)
       enddo
       enddo
-      call cmult(cg,.125,3)
+      call constMult(cg,.125,3)
 c
       do i=1,8
       do j=1,3

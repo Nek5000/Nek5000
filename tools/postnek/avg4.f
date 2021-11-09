@@ -56,7 +56,7 @@ c
   101 continue
 c
       scale = 1./nfiles
-      call cmult(xavg,scale,n)
+      call constMult(xavg,scale,n)
       call outl(xavg,5,'fvg',nfiles)
       call stat(xavg,ntot,'avg')
 c
@@ -87,7 +87,7 @@ c
   201 continue
 c
       scale = 1./nfiles
-      call cmult(xdif,scale,n)
+      call constMult(xdif,scale,n)
       call vsqrt(xdif,n)
       call outl(xdif,5,'dff',nfiles)
       call stat(xdif,ntot,'dif')
@@ -145,7 +145,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cmult(x,c,n)
+      subroutine constMult(x,c,n)
       real x(1),c
       do i=1,n
          x(i) = x(i) * c

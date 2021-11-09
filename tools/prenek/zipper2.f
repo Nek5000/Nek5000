@@ -88,7 +88,7 @@ c           call octsplite(ie,liste)  ! Standard oct/quad split
 C     Generate new sub-elements as a result of the oct-split action.
       Nnew = Neln-Nel
       nel  = neln
-      call sort   (enew,ind,nel)     !     Elements are all set. Sort.
+      call realSort   (enew,ind,nel)     !     Elements are all set. sort.
       call swapel (ind,nel,nelm1)
       call curcnt
       call vertadj
@@ -179,7 +179,7 @@ C
 C     Ok, now let's find all corresponding planes
       CALL SETRST2(XPT,VEC3)
 C     Save the list.
-      CALL ICOPY(LIST1,LIST,NLSTP)
+      CALL intcopy(LIST1,LIST,NLSTP)
       NLSTP1=NLSTP
 C
 C     v2 is easy, given v1 (VEC3), and VEC:
@@ -187,7 +187,7 @@ C
       CALL CROSS(VEC2,VEC3,VEC)
 C     Ok, now let's find all corresponding planes for v2
       CALL SETRST2(XPT,VEC2)
-      CALL ICOPY(LIST2,LIST,NLSTP)
+      CALL intcopy(LIST2,LIST,NLSTP)
       NLSTP2=NLSTP
 C
 C     The elements we want lie in the intersection of LIST1 and LIST2
@@ -250,7 +250,7 @@ C           Bump up list count
   120 continue
 C
 C     Compare E-E
-      CALL ICOPY(LIST2,LIST,NLSTP)
+      CALL intcopy(LIST2,LIST,NLSTP)
       NLSTP2=NLSTP
 C
 C     Again, the elements we want lie in the intersection of LIST1 and LIST2
@@ -326,9 +326,9 @@ C     Third, find the ratio to be split
   502 FORMAT(' Generating window for element',2i11,'.$')
       NEL=NELN+1
 C
-C     Elements are all set. Sort.
+C     Elements are all set. sort.
 C
-      CALL SORT(ENEW,IND,NEL)
+      CALL realSort(ENEW,IND,NEL)
       CALL SWAPEL(IND,NEL,NELM1)
 C
 C     Exit
@@ -423,9 +423,9 @@ C
   200 continue
       NEL=NELN
 C
-C     Elements are all set. Sort.
+C     Elements are all set. sort.
 C
-      CALL SORT(ENEW,IND,NEL)
+      CALL realSort(ENEW,IND,NEL)
       CALL SWAPEL(IND,NEL,NELM1)
       CALL CURCNT
 C
@@ -746,7 +746,7 @@ C     Normalize all vectors to the unit sphere.
          call norm3d(xysrf(1,i,1))
   300 continue
 
-      call cmult(xysrf,radius,mxy3) ! Scale by actual radius
+      call constMult(xysrf,radius,mxy3) ! Scale by actual radius
 C
 C     Add back the sphere center offset
 C
@@ -2006,7 +2006,7 @@ c      -2D-
      $                1,2,0,0, 3,4,0,0  /
 C
 C
-C     Sort the faces according to Z-location
+C     sort the faces according to Z-location
 C     for the color fill plotting routines
 c     if (IF3D) CALL SORTZ
 C
@@ -2316,7 +2316,7 @@ C
 C
 C     Scale by actual radius
 C
-      call cmult(xysrf,radius,mxy3)
+      call constMult(xysrf,radius,mxy3)
 C
 C     Add back the sphere center offset
 C
@@ -4018,7 +4018,7 @@ c        write(79,1) i,xcrv(1,i),xcrv(2,i),xcrv(3,i)
       call sub3  (v2,xcrv(1,nxl),osph,3)
       call edg3d (xcrv,v1,v2,1,nxl,1,1,nxl,1)
 
-      call cmult (xcrv,radius,3*nxl)
+      call constMult (xcrv,radius,3*nxl)
 
       do i=1,nxl       !     Add sphere center offset
          xcrv(1,i)=xcrv(1,i)+osph(1)
@@ -4092,7 +4092,7 @@ c-----------------------------------------------------------------------
 
       nfaces = 2*ndim
 
-      call icopy    (list1,p,n)
+      call intcopy    (list1,p,n)
       call iswap_ip (list1,p,n)
 
       do ifld=1,nflds

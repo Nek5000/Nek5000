@@ -406,7 +406,7 @@ c     Test user-defined Navier-Stokes terms: 0.5*(u.grad u + u.grad u)
       call ugv_vgu(w1,w2,w3,vx,vy,vz,vx,vy,vz,1)
 
       half = -.5
-      call opcmult(w1,w2,w3,half)  ! Subtract from RHS --> -0.5
+      call opconstMult(w1,w2,w3,half)  ! Subtract from RHS --> -0.5
 
 c      call opzero (w1,w2,w3)       ! Uncomment this to test null function
 

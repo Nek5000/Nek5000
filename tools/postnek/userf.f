@@ -540,11 +540,11 @@ c
       enddo
 c
       call irank(ccolor,items,nc)
-      call iswap(ccolor,ww,items,nc)
-      call iswap(iev   ,ww,items,nc)
-      call iswap(ixv   ,ww,items,nc)
-      call iswap(iyv   ,ww,items,nc)
-      call iswap(izv   ,ww,items,nc)
+      call intswap(ccolor,ww,items,nc)
+      call intswap(iev   ,ww,items,nc)
+      call intswap(ixv   ,ww,items,nc)
+      call intswap(iyv   ,ww,items,nc)
+      call intswap(izv   ,ww,items,nc)
 c
 c
 c     Pass 1 -- temporary color assignments
@@ -606,11 +606,11 @@ c     Sort by |lmin|
 c
 c     write(6,*) 'num colors:',nccolor,nc,icnext
       call rank  (ww    ,items,nc)
-      call iswap (ccolor,ww,items,nc)
-      call iswap (iev   ,ww,items,nc)
-      call iswap (ixv   ,ww,items,nc)
-      call iswap (iyv   ,ww,items,nc)
-      call iswap (izv   ,ww,items,nc)
+      call intswap (ccolor,ww,items,nc)
+      call intswap (iev   ,ww,items,nc)
+      call intswap (ixv   ,ww,items,nc)
+      call intswap (iyv   ,ww,items,nc)
+      call intswap (izv   ,ww,items,nc)
       call defjcc(jcc,nccolor,ccolor,nc)
 c
 c     March over cores, assigning next color (icnext) to unassigned cores
@@ -630,14 +630,14 @@ c     Reset color flags to positive
       enddo
 c
 c
-c     Finally, Sort by color
+c     Finally, sort by color
 c
       call irank(ccolor,items,nc)
-      call iswap(ccolor,ww,items,nc)
-      call iswap(iev   ,ww,items,nc)
-      call iswap(ixv   ,ww,items,nc)
-      call iswap(iyv   ,ww,items,nc)
-      call iswap(izv   ,ww,items,nc)
+      call intswap(ccolor,ww,items,nc)
+      call intswap(iev   ,ww,items,nc)
+      call intswap(ixv   ,ww,items,nc)
+      call intswap(iyv   ,ww,items,nc)
+      call intswap(izv   ,ww,items,nc)
       call defjcc(jcc,nccolor,ccolor,nc)
 c
 c
@@ -1337,7 +1337,7 @@ c
 c        Scale
 c
          if (sum.ne.0.) sum  = 1./sum
-         call cmult(uvwavg(1,l),sum,9)
+         call constMult(uvwavg(1,l),sum,9)
 c
       enddo
       return
@@ -2338,7 +2338,7 @@ c
          enddo
          if (tnm.gt.0) then
             tnmi = 1./tnm
-            call cmult(s,tnmi,m)
+            call constMult(s,tnmi,m)
          endif
 c        Save base count
          tnb = tnm
@@ -2362,7 +2362,7 @@ c              don't count drop-outs
          enddo
          if (tnm.gt.0) then
             tnmi = 1./tnm
-            call cmult(sum,tnmi,m)
+            call constMult(sum,tnmi,m)
          endif
          tnms = tnmb + tnm
          if (tnms.gt.0) then
@@ -4321,9 +4321,9 @@ c
       call rer(scale)
 c
       ntot = nx*ny*nz*nel
-      if (ans.eq.'x'.or.ans.eq.'X') call cmult(wkv1,scale,ntot)
-      if (ans.eq.'y'.or.ans.eq.'Y') call cmult(wkv2,scale,ntot)
-      if (ans.eq.'z'.or.ans.eq.'Z') call cmult(wkv3,scale,ntot)
+      if (ans.eq.'x'.or.ans.eq.'X') call constMult(wkv1,scale,ntot)
+      if (ans.eq.'y'.or.ans.eq.'Y') call constMult(wkv2,scale,ntot)
+      if (ans.eq.'z'.or.ans.eq.'Z') call constMult(wkv3,scale,ntot)
 c
       call blank(line,70)
       write(line,1) ntot,ans,scale
@@ -4809,8 +4809,8 @@ c
       zl2 = (zp(nxyz-1)-zp(1))/2.
       zli = 1./zl2
 c
-      call cmult(aht,zli,nz*nz)
-      call cmult(bht,zl2,nz)
+      call constMult(aht,zli,nz*nz)
+      call constMult(bht,zl2,nz)
 c
       call rzero(bfh,nz*nz)
       l = 1
@@ -5523,7 +5523,7 @@ c
          s = 2*n+1
          s = 0.5*s
          s = sqrt(s)
-         call cmult(Lj(j),s,nx)  ! normalize Lj
+         call constMult(Lj(j),s,nx)  ! normalize Lj
          j = j+nx
       enddo
 

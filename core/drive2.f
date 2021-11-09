@@ -1267,9 +1267,9 @@ C
          endif
 C
          CALL DRCOPY(rct,dct,nrout)
-         CALL SORT(rct,ind,nrout)
+         CALL realSort(rct,ind,nrout)
          CALL CHSWAPR(rname,6,ind,nrout,sname)
-         call iswap(ncall,ind,nrout,idum)
+         call intswap(ncall,ind,nrout,idum)
 C
          if (nio.eq.0) then
             do 200 i=1,nrout
@@ -1611,7 +1611,7 @@ c
 c
       call rzero   (h1,ntot1)
       call copy    (h2,vtrans(1,1,1,1,ifield),ntot1)
-      call cmult   (h2,dtinv,ntot1)
+      call constMult   (h2,dtinv,ntot1)
       call invers2 (h2inv,h2,ntot1)
       call opdiv   (respr,vxc,vyc,vzc)
       call chsign  (respr,ntot2)
@@ -1628,7 +1628,7 @@ c
       call opbinv  (dv1,dv2,dv3,rw1,rw2,rw3,h2inv)
       call opadd2  (vxc,vyc,vzc,dv1,dv2,dv3)
 c
-      call cmult2  (prc,respr,bd(1),ntot2)
+      call constMult2  (prc,respr,bd(1),ntot2)
 c
       return
       end

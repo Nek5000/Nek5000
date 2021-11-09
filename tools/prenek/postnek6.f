@@ -388,8 +388,8 @@ C        Get an XYZ point close to the center of the requested sub-plane.
          IEOFF=NXYZ*(IE-1)+NXY*(IZ-1)+NX*(IY-1)+IX
          ZDEPTH(I,1)=ZISO(XP(IEOFF),YP(IEOFF),ZP(IEOFF))
 100   CONTINUE
-      CALL SORT(ZDEPTH,   IND,NLSTP)
-      CALL ISWAP(LIST ,WK,IND,NLSTP)
+      CALL realSort(ZDEPTH,   IND,NLSTP)
+      CALL intswap(LIST ,WK,IND,NLSTP)
 C
       RETURN
       END

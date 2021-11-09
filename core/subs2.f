@@ -310,9 +310,9 @@ C
       IF (XX .LT. 0.0) GO TO 9000
 C
       XNORM=1./SQRT( XX )
-      CALL CMULT (E1,XNORM,NTOT1)
-      CALL CMULT (E2,XNORM,NTOT1)
-      IF (ldim.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
+      CALL constMult (E1,XNORM,NTOT1)
+      CALL constMult (E2,XNORM,NTOT1)
+      IF (ldim.EQ.3) CALL constMult (E3,XNORM,NTOT1)
 C
  1000 CONTINUE
 C
@@ -337,7 +337,7 @@ C
 C
       END
 C-----------------------------------------------------------------------
-      SUBROUTINE CMULT2 (A,B,CONST,N)
+      SUBROUTINE constMult2 (A,B,CONST,N)
       DIMENSION A(1),B(1)
       DO 100 I=1,N
          A(I)=B(I)*CONST
@@ -470,9 +470,9 @@ C
       XX = GLSC3 (E1,AE1,VMULT,NTOT1) + GLSC3 (E2,AE2,VMULT,NTOT1)
       IF (ldim.EQ.3) XX = XX + GLSC3 (E3,AE3,VMULT,NTOT1)      
       XNORM  = 1./SQRT(XX)
-      CALL CMULT (E1,XNORM,NTOT1)
-      CALL CMULT (E2,XNORM,NTOT1)
-      IF (ldim.EQ.3) CALL CMULT (E3,XNORM,NTOT1)
+      CALL constMult (E1,XNORM,NTOT1)
+      CALL constMult (E2,XNORM,NTOT1)
+      IF (ldim.EQ.3) CALL constMult (E3,XNORM,NTOT1)
 
 c     call exitti   ('quit in stx1sf$,',nel)
 

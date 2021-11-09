@@ -172,20 +172,20 @@ c
 c
       do ipass = 1,ndim
       do j=1,ndim
-c       Sort within each segment
+c       sort within each segment
          write(6,*) 'locglob:',j,nseg,ntot
          i=1
          do iseg=1,nseg
 c
             if  (j.eq.1) then
-               call sort (wx(i),ind,ninseg(iseg))    ! Sort by x
+               call realSort (wx(i),ind,ninseg(iseg))    ! sort by x
             elseif  (j.eq.2) then
-               call sort (wy(i),ind,ninseg(iseg))    !  "   "  y
+               call realSort (wy(i),ind,ninseg(iseg))    !  "   "  y
             else
-               call sort (wz(i),ind,ninseg(iseg))    !  "   "  z
+               call realSort (wz(i),ind,ninseg(iseg))    !  "   "  z
             endif
 c
-            call iswap (loc (i),locglob,ind,ninseg(iseg)) ! Swap corresponding
+            call intswap (loc (i),locglob,ind,ninseg(iseg)) ! Swap corresponding
             call swap  (tol (i),locglob,ind,ninseg(iseg)) !      data
             call swap  (wx  (i),locglob,ind,ninseg(iseg))
             call swap  (wy  (i),locglob,ind,ninseg(iseg)) ! locglob() is a
@@ -619,7 +619,7 @@ c     Assign edge labels by bounding vertices.
          enddo
       enddo
 c
-c     Sort edges by bounding vertices.
+c     sort edges by bounding vertices.
       do i=0,12*nel
          if (edge(0,i,0,1,1).gt.edge(1,i,0,1,1)) then
             kswap = edge(0,i,0,1,1)
@@ -628,7 +628,7 @@ c     Sort edges by bounding vertices.
          endif
       enddo
 c     old ...
-c     Sort edges by bounding vertices.
+c     sort edges by bounding vertices.
 c
 c      do i=1,12*nel
 c         if (edge(0,i,1,1,1).gt.edge(1,i,1,1,1)) then
@@ -753,8 +753,8 @@ c
                i                  = icface(icrn,ifac)-1
                facet(icrn)        = vertex(i,0,0,ie)
             enddo
-            call isort(facet,gvf,ncrnr)
-            call icopy(face(1,ifac,ie),facet,ncrnr-1)
+            call intsort(facet,gvf,ncrnr)
+            call intcopy(face(1,ifac,ie),facet,ncrnr-1)
          enddo
       enddo
 c
@@ -969,7 +969,7 @@ c
 c
 c     Find unique a's
 c
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       nn=1
       mm=0
 c
@@ -983,7 +983,7 @@ c
             ms = aa(3)                 ! structure type
             if (aa(2).eq.0) ms = aa(2) ! structure type
             mm = mm+key2(ms)           ! n dofs
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn
@@ -1052,7 +1052,7 @@ c     Find unique a's
 c
       nn=1
 c
-      call icopy(aa,a,m)
+      call intcopy(aa,a,m)
       a(1,1) = nn
       a(2,1)=ind(1)
 c
@@ -1061,7 +1061,7 @@ c
 c        write(6,1) nn,i,a_ne_b,aa,(a(k,i),k=1,nk)
 c  1     format(2i7,1x,l4,1x,12i6)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call intcopy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn

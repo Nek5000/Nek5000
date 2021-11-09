@@ -1109,13 +1109,13 @@ C
 c     Establish local to global node numbering for GLL points
 c
       call locglob
-      call icopy(loc,iglob,ntot)
+      call intcopy(loc,iglob,ntot)
       call copy (wkv1,xp,ntot)
       call copy (wkv2,yp,ntot)
       call copy (wkv3,zp,ntot)
 c
       call irank(loc,ind,ntot)
-      call iswap(loc,work,ind,ntot)
+      call intswap(loc,work,ind,ntot)
       call swap (wkv1,work,ind,ntot)
       call swap (wkv2,work,ind,ntot)
       call swap (wkv3,work,ind,ntot)

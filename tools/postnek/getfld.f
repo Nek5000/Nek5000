@@ -853,8 +853,8 @@ C
          DO 10 I=0,63
             ALPSRT(4,I)=ALPH64(I)
    10    CONTINUE
-         CALL ISORT(INTALP,INDEX,64)      ! isort is now a sort, not a rank
-c        CALL ISWAP(INTALP,Iwk,INDEX,64)  ! pff 12/2/04
+         CALL intsort(INTALP,INDEX,64)      ! intsort is now a sort, not a rank
+c        CALL intswap(INTALP,Iwk,INDEX,64)  ! pff 12/2/04
          DO 20 I=0,63
    20    INDEX(I)=INDEX(I)-1
          LOG64=7
