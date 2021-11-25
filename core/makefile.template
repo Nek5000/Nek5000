@@ -75,10 +75,10 @@ else
    filters_cmt.o diagnostics.o artvisc.o
 endif
 
-DUMMY:= $(shell cp $S/PARALLEL.default $S/PARALLEL)
+DUMMY:= $(shell cp $S/PARALLEL.default $(CASEDIR)/PARALLEL)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
- 	DUMMY:= $(shell cp $S/PARALLEL.dprocmap $S/PARALLEL)
+ 	DUMMY:= $(shell cp $S/PARALLEL.dprocmap $(CASEDIR)/PARALLEL)
 endif
 
 ifneq ($(VISIT),0)
@@ -88,9 +88,9 @@ ifneq ($(VISIT),0)
 endif
 
 ifeq ($(MPI),0)
-	DUMMY:= $(shell cp $S/mpi_dummy.h $S/mpif.h) 
+	DUMMY:= $(shell cp $S/mpi_dummy.h $(CASEDIR)/mpif.h) 
 else
-	DUMMY:= $(shell rm -rf $S/mpif.h) 
+	DUMMY:= $(shell rm -rf $(CASEDIR)/mpif.h) 
 endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
