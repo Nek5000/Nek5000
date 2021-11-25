@@ -64,10 +64,10 @@ ifeq ($(MPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
-DUMMY:= $(shell cp $S/core/PARALLEL.default $S/core/PARALLEL 2>/dev/null)
+DUMMY:= $(shell cp $S/core/PARALLEL.default $(CASEDIR)/PARALLEL 2>/dev/null)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
- 	DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $S/core/PARALLEL 2>/dev/null)
+	DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $(CASEDIR)/PARALLEL 2>/dev/null)
 endif
 
 ifneq ($(VISIT),0)
@@ -77,9 +77,9 @@ ifneq ($(VISIT),0)
 endif
 
 ifeq ($(MPI),0)
-	DUMMY:= $(shell cp $S/core/mpi_dummy.h $S/core/mpif.h) 
+	DUMMY:= $(shell cp $S/core/mpi_dummy.h $(CASEDIR)/mpif.h)
 else
-	DUMMY:= $(shell rm -rf $S/core/mpif.h) 
+	DUMMY:= $(shell rm -rf $(CASEDIR)/mpif.h)
 endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
