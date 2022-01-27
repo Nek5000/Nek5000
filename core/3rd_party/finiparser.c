@@ -108,8 +108,8 @@ void finiparser_getPair(char *key,char *val,int *id,int *ifnd,int key_len, int v
     if(real_key_len > key_len) return;
     if(real_val_len > val_len) return;
 
-    strncpy(key,dic->key[*id-1],real_key_len);
-    strncpy(val,dic->val[*id-1],real_val_len);
+    memmove(key, dic->key[*id-1], real_key_len*sizeof(char));
+    memmove(val, dic->val[*id-1], real_val_len*sizeof(char));
 
     *ifnd = 1;
     return;
@@ -148,7 +148,7 @@ void finiparser_getString(char *out,char *key,int *ifnd,int out_len,int key_len)
     if (str != NULL) {
        real_out_len = strlen(str);
        if(real_out_len <= out_len) {
-         strncpy(out,str,real_out_len);
+         memmove(out,str,real_out_len*sizeof(char));
          *ifnd = 1;
        } 
     }
@@ -195,7 +195,7 @@ void finiparser_getToken(char *out,int *id,int out_len)
     for (i=0; i<out_len; i++) out[i] = ' ';
     if(*id > ntokenmax) return;
     real_out_len = strlen(token[*id-1]);
-    if(real_out_len <= out_len) strncpy(out,token[*id-1],real_out_len);
+    if(real_out_len <= out_len) memmove(out,token[*id-1],real_out_len*sizeof(char));
     return;
 }
 
@@ -215,7 +215,7 @@ void finiparser_findTokens(char *key, char *delim, int *icounter,int key_len,int
     if (str == NULL) return;
 
     newstr = (char *) malloc((strlen(str)+1)*sizeof(char));
-    strncpy(newstr,str,strlen(str)+1);
+    memmove(newstr,str,(strlen(str)+1)*sizeof(char));
 
     i = 0;    
     token[i] = strtok(newstr,d);

@@ -406,12 +406,16 @@ if [ ! -f ${CASENAME}'.usr' ]; then
    return 11
 fi
 
+: ${INCLUDES:=""}
+OPT_INCDIR="./ ${INCLUDES}"
+
 printf "generating makefile ... "
 rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
 -e "s:^LD[ ]*=.*:LD=$LD:" \
+-e "s:^OPT_INCDIR[ ]*=.*:OPT_INCDIR=$OPT_INCDIR:" \
 -e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
 -e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
 -e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \

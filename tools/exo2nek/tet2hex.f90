@@ -227,7 +227,7 @@
        !call rzero_int(wedgess,5)
        if (num_side_sets.ne.0) then
         do ifc_exo=1,5
-          wedgess(ifc_exo) = exoss(ifc_exo,iel_exo)
+          wedgess(ifc_exo) = exoss(ifc_exo,iel_exo_g)
         enddo
        endif
 
