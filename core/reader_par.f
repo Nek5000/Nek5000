@@ -918,6 +918,7 @@ C
       call bcast(ifto  , lsize)
       call bcast(ifpsco, ldimt1*lsize)
 
+      call bcast(irstt, isize)
       call bcast(initc, 15*132*csize) 
 
       call bcast(timeioe,sizeof(timeioe))
