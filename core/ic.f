@@ -493,7 +493,7 @@ c use new reader (only binary support)
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
             if(ifgfldr) then
-              call gfldr(initc(ifile))
+              call gfldr(fname)
             else
               call mfi(fname,ifile)
             endif
@@ -1046,7 +1046,7 @@ C        Parse field specifications.
          IGO=INDX_CUT(RSOPT,'I',1)
          IF (IGO.NE.0) THEN
             ifdeft=.false.
-            IFGFLD=.TRUE.
+            ifgfldr=.TRUE.
          ENDIF
 
          IXO=INDX_CUT(RSOPT,'X',1)
