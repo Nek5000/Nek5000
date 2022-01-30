@@ -492,7 +492,11 @@ c use new reader (only binary support)
       if (p67.eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
-            call mfi(fname,ifile)
+            if(ifgfldr) then
+              call gfldr(initc(ifile))
+            else
+              call mfi(fname,ifile)
+            endif
          enddo
          call bcast(time,wdsize)! Sync time across processors
          return
@@ -1002,6 +1006,7 @@ C
   100 continue
       ifgtim=.true.
       ndumps=0
+      ifgfldr=.false.
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
@@ -1037,6 +1042,12 @@ C           remove the user specified time from the RS options line.
          ENDIF
 
 C        Parse field specifications.
+
+         IGO=INDX_CUT(RSOPT,'I',1)
+         IF (IGO.NE.0) THEN
+            ifdeft=.false.
+            IFGFLD=.TRUE.
+         ENDIF
 
          IXO=INDX_CUT(RSOPT,'X',1)
          IF (IXO.NE.0) THEN
