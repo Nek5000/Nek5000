@@ -22,6 +22,7 @@ c
       character*1   hdr(iHeaderSize)
 
       integer*8 dtmp8
+      integer*8 i8glsum,nfail,nfail_sum
 
       logical if_byte_swap_test
       real*4 bytetest
@@ -110,6 +111,36 @@ c
      &                          xm1s,ym1s,zm1s,nxs,nys,nzs,
      &                          nels,nxf,nyf,nzf,bb_t,
      &                          nhash,nhash,nmax,tol)
+
+
+      ! locate points (iel,iproc,r,s,t)
+      nfail = 0
+      toldist = 5e-6
+      if(wdsizr.eq.8) toldist = 5e-14
+
+      ntot  = lx1*ly1*lz1*nelt
+      call fgslib_findpts(inth_gfldr,
+     &                    grcode,1,
+     &                    gproc,1,
+     &                    gelid,1,
+     &                    grst,ldim,
+     &                    gdist,1,
+     &                    xm1,1,
+     &                    ym1,1,
+     &                    zm1,1,ntot)
+
+      do i=1,ntot
+         if(grcode(i).eq.1 .and. sqrt(gdist(i)).gt.toldist)
+     &     nfail = nfail + 1
+         if(grcode(i).eq.2) nfail = nfail + 1
+      enddo
+
+      nfail_sum = i8glsum(nfail,1)
+      if(nfail_sum.gt.0) then
+        if(nio.eq.0) write(6,*)
+     &    ' WARNING: Unable to find all mesh points in source fld ',
+     &    nfail_sum
+      endif
 
       ! read source fields and interpolate
       if(ifgetur) then
@@ -266,39 +297,6 @@ c-----------------------------------------------------------------------
 
       real    fieldout(nout)
       real    fieldin (*)
-      logical iffpts
-
-      integer*8 i8glsum,nfail,nfail_sum
-
-      if(iffpts) then ! locate points (iel,iproc,r,s,t)
-        nfail = 0
-        toldist = 5e-6
-        if(wdsizr.eq.8) toldist = 5e-14
-
-        ntot  = lx1*ly1*lz1*nelt
-        call fgslib_findpts(inth_gfldr,
-     &                      grcode,1,
-     &                      gproc,1,
-     &                      gelid,1,
-     &                      grst,ldim,
-     &                      gdist,1,
-     &                      xm1,1,
-     &                      ym1,1,
-     &                      zm1,1,ntot)
-
-        do i=1,ntot
-           if(grcode(i).eq.1 .and. sqrt(gdist(i)).gt.toldist)
-     &       nfail = nfail + 1
-           if(grcode(i).eq.2) nfail = nfail + 1
-        enddo
-
-        nfail_sum = i8glsum(nfail,1)
-        if(nfail_sum.gt.0) then
-          if(nio.eq.0) write(6,*)
-     &      ' WARNING: Unable to find all mesh points in source fld ',
-     &      nfail_sum
-        endif
-      endif
 
       ! evaluate inut field at given points
       npt = nout
