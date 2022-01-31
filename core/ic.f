@@ -1043,7 +1043,7 @@ C           remove the user specified time from the RS options line.
 
 C        Parse field specifications.
 
-         IGO=INDX_CUT(RSOPT,'I',1)
+         IGO=INDX_CUT(RSOPT,'INT',3)
          IF (IGO.NE.0) THEN
             ifdeft=.false.
             ifgfldr=.TRUE.
