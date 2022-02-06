@@ -497,6 +497,7 @@ c use new reader (only binary support)
             else
               call mfi(fname,ifile)
             endif
+            ifgfldr=.false. !avoid interfering with future gfldr calls
          enddo
          call bcast(time,wdsize)! Sync time across processors
          return
@@ -1045,7 +1046,6 @@ C        Parse field specifications.
 
          IGO=INDX_CUT(RSOPT,'INT',3)
          IF (IGO.NE.0) THEN
-            ifdeft=.false.
             ifgfldr=.TRUE.
          ENDIF
 
@@ -1091,8 +1091,10 @@ C        Get number of dumps from remainder of user supplied line.
 
 C     If no fields were explicitly specified, assume getting all fields. 
       if (ifdeft) then
-         IFGETX=.TRUE.
-         IF (IF3D) IFGETZ=.TRUE.
+         if(.not.ifgfldr) then
+           IFGETX=.TRUE.
+           IF (IF3D) IFGETZ=.TRUE.
+         endif
          IFANYC=.FALSE.
          DO 400 I=1,NFIELD
             IF (IFADVC(I)) IFANYC=.TRUE.
@@ -1107,6 +1109,9 @@ C     If no fields were explicitly specified, assume getting all fields.
             ifgtps(i)=.TRUE.
   410    continue
       endif
+
+      if(ifgfldr.and.ifgetx) 
+     & call exitti('"X" and "INT" restart options incompatible!$',0)
 
       return
       END

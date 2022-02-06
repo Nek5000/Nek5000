@@ -113,33 +113,41 @@ c
 
       ! read source fields and interpolate
       if(ifgetur) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
-        ntot = nx1*ny1*nz1*nelv 
-        call gfldr_getfld(vx,vy,vz,ntot,ldim,ifldpos+1)
+        if(.not.ifgfldr.or.ifgetu) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
+          ntot = nx1*ny1*nz1*nelv 
+          call gfldr_getfld(vx,vy,vz,ntot,ldim,ifldpos+1)
+        endif
         ifldpos = ifldpos + ldim
       endif
       if(ifgetpr) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
-        ntot = nx1*ny1*nz1*nelv 
-        call gfldr_getfld(pm1,dum,dum,ntot,1,ifldpos+1)
+        if(.not.ifgfldr.or.ifgetp) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
+          ntot = nx1*ny1*nz1*nelv 
+          call gfldr_getfld(pm1,dum,dum,ntot,1,ifldpos+1)
+          if (ifaxis) call axis_interp_ic(pm1)
+          call map_pm1_to_pr(pm1,1)
+        endif
         ifldpos = ifldpos + 1
-        if (ifaxis) call axis_interp_ic(pm1)
-        call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
-        ntot = nx1*ny1*nz1*nelfld(2) 
-        call gfldr_getfld(t(1,1,1,1,1),dum,dum,ntot,1,ifldpos+1)
+        if(.not.ifgfldr.or.ifgett) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
+          ntot = nx1*ny1*nz1*nelfld(2) 
+          call gfldr_getfld(t(1,1,1,1,1),dum,dum,ntot,1,ifldpos+1)
+        endif
         ifldpos = ifldpos + 1
       endif
       do i = 1,ldimt-1
-         if(ifgtpsr(i)) then
-           if(nid.eq.0 .and. loglevel.gt.2) 
-     $       write(6,*) 'reading scalar',i
-           ntot = nx1*ny1*nz1*nelfld(i+2) 
-           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,ntot,1,ifldpos+1) 
-           ifldpos = ifldpos + 1
-         endif
+        if(ifgtpsr(i)) then
+          if(.not.ifgfldr.or.ifgtps(i)) then !skip if this is a restart call and the scalar isn't requested
+            if(nid.eq.0 .and. loglevel.gt.2) 
+     $        write(6,*) 'reading scalar',i
+            ntot = nx1*ny1*nz1*nelfld(i+2) 
+            call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,ntot,1,ifldpos+1) 
+          endif
+          ifldpos = ifldpos + 1
+        endif
       enddo
 
       call byte_close_mpi(fldh_gfldr,ierr)
