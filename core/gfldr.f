@@ -321,4 +321,11 @@ c-----------------------------------------------------------------------
       return
       end
 
+#else
+
+      subroutine gfldr(sourcefld)
+
+      character sourcefld*(*)
+
+      call exitti("MPIIO needed for gfldr!$",0)
 #endif
