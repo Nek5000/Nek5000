@@ -155,10 +155,7 @@ C
       enddo
 
       do i=1,ldimt1
-        ifBCmap(i)=.false.
-        do j = 1,15
-          BCmap(j,i)='   '
-        enddo
+        ifbmap(i)=.false.
       enddo
 
       ifflow    = .false.
@@ -846,24 +843,29 @@ c set connectivity tolerance
 
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
-      if(ifnd.ge.1) ifBCmap(1)=.true.
-      do i = 1,min(ifnd,15)
+      if(ifnd.ge.1) ifbmap(1)=.true.
+      if(ifnd.gt.lbid) then
+        write(6,'(a)')"Too many BCs specified for velocity in par"
+        ierr = 1
+        ifnd = 0
+      endif
+      do i = 1,min(ifnd,lbid)
          call finiparser_getToken(c_out,i)
          call capit(c_out,132)
          if(index(c_out,'AXIS').eq.1) then
-            BCmap(i,1)='A  '
+            cbc_bmap(i,1)='A  '
          elseif(index(c_out,'DIRICHLET').eq.1) then
-            BCmap(i,1)='v  '
+            cbc_bmap(i,1)='v  '
          elseif(index(c_out,'INLET').eq.1) then
-            BCmap(i,1)='v  '
+            cbc_bmap(i,1)='v  '
          elseif(index(c_out,'OUTLET').eq.1) then
-            BCmap(i,1)='O  '
+            cbc_bmap(i,1)='O  '
          elseif(index(c_out,'PERIODIC').eq.1) then
-            BCmap(i,1)='P  '
+            cbc_bmap(i,1)='P  '
          elseif(index(c_out,'SYMMETRY').eq.1) then
-            BCmap(i,1)='SYM'
+            cbc_bmap(i,1)='SYM'
          elseif(index(c_out,'WALL').eq.1) then
-            BCmap(i,1)='W  '
+            cbc_bmap(i,1)='W  '
          else
             write(6,'(a,a)') "Invalid velocity boundary type in par: ",
      &                                                       trim(c_out)
@@ -879,34 +881,39 @@ c read BC map for temperature/scalars
          if(i.eq.1) write(txt,"('temperature')")
          write(txt2,"(a,a)")trim(txt),":boundarytypemap"
          call finiparser_findTokens(txt2,',',ifnd)
-         if(ifnd.ge.1) ifBCmap(ifld)=.true.
-         do j = 1,min(ifnd,15)
+         if(ifnd.ge.1) ifbmap(ifld)=.true.
+         if(ifnd.gt.lbid) then
+           write(6,'(a,a,a)')"Too many BCs specified for ",txt," in par"
+           ierr = 1
+           ifnd = 0
+         endif
+         do j = 1,min(ifnd,lbid)
             call finiparser_getToken(c_out,j)
             call capit(c_out,132)
             if(index(c_out,'AXIS').eq.1) then
-               BCmap(j,ifld)='A  '
+               cbc_bmap(j,ifld)='A  '
             elseif(index(c_out,'DIRICHLET').eq.1) then
-               BCmap(j,ifld)='t  '
+               cbc_bmap(j,ifld)='t  '
             elseif(index(c_out,'FLUX').eq.1) then
-               BCmap(j,ifld)='f  '
+               cbc_bmap(j,ifld)='f  '
             elseif(index(c_out,'INLET').eq.1) then
-               BCmap(j,ifld)='t  '
+               cbc_bmap(j,ifld)='t  '
             elseif(index(c_out,'INSULATED').eq.1) then
-               BCmap(j,ifld)='I  '
+               cbc_bmap(j,ifld)='I  '
             elseif(index(c_out,'NEUMANN').eq.1) then
-               BCmap(j,ifld)='f  '
+               cbc_bmap(j,ifld)='f  '
             elseif(index(c_out,'OUTLET').eq.1) then
-               BCmap(j,ifld)='I  '
+               cbc_bmap(j,ifld)='I  '
             elseif(index(c_out,'PERIODIC').eq.1) then
-               BCmap(j,ifld)='P  '
+               cbc_bmap(j,ifld)='P  '
             elseif(index(c_out,'ROBIN').eq.1) then
-               BCmap(j,ifld)='c  '
+               cbc_bmap(j,ifld)='c  '
             elseif(index(c_out,'SYMMETRY').eq.1) then
-               BCmap(j,ifld)='I  '
+               cbc_bmap(j,ifld)='I  '
             else
                write(6,'(a,a,a)')"Invalid ",txt,
      &                             " boundary type in par: ",trim(c_out)
-            ierr=1
+               ierr=1
             endif
          enddo
       enddo
@@ -988,8 +995,8 @@ C
 
       call bcast(initc, 15*132*csize) 
 
-      call bcast(ifBCmap    ,ldimt1*lsize)
-      call bcast(BCmap, 15*3*ldimt1*csize)
+      call bcast(ifbmap,         ldimt1*lsize)
+      call bcast(cbc_bmap,3*lbid*ldimt1*csize)
 
       call bcast(timeioe,sizeof(timeioe))
 

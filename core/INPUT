@@ -50,7 +50,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
-     $               ,ifmpiio,ifrich,ifvvisp,ifBCmap(ldimt1)
+     $               ,ifmpiio,ifrich,ifvvisp,ifbmap(ldimt1)
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
@@ -66,7 +66,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
-     $               ,ifmpiio,ifrich,ifvvisp,ifBCmap
+     $               ,ifmpiio,ifrich,ifvvisp,ifbmap
 
       logical         ifnav
       equivalence    (ifnav, ifadvc(1))
@@ -77,8 +77,7 @@ c
       character*14    rstv,rstt
       character*40    textsw(100,2)
       character*132   initc(15)
-      character*3     BCmap(15,ldimt1)
-      common /input4/ hcode,ocode,rstv,rstt,drivc,initc,textsw,BCmap
+      common /input4/ hcode,ocode,rstv,rstt,drivc,initc,textsw
 
       character*40    turbmod
       equivalence    (turbmod,textsw(1,1))
