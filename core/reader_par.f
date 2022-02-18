@@ -154,6 +154,13 @@ C
          ifprojfld(1+i) = .false.
       enddo
 
+      do i=1,ldimt1
+        ifBCmap(i)=.false.
+        do j = 1,15
+          BCmap(j,i)='   '
+        enddo
+      enddo
+
       ifflow    = .false.
       ifheat    = .false.  
       iftran    = .true.   
@@ -837,6 +844,74 @@ c set connectivity tolerance
       call finiparser_getDbl(d_out,'mesh:connectivityTol',ifnd)
       if(ifnd .eq. 1) connectivityTol = d_out
 
+c read BC map for velocity
+      call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
+      if(ifnd.ge.1) ifBCmap(1)=.true.
+      do i = 1,min(ifnd,15)
+         call finiparser_getToken(c_out,i)
+         call capit(c_out,132)
+         if(index(c_out,'AXIS').eq.1) then
+            BCmap(i,1)='A  '
+         elseif(index(c_out,'DIRICHLET').eq.1) then
+            BCmap(i,1)='v  '
+         elseif(index(c_out,'INLET').eq.1) then
+            BCmap(i,1)='v  '
+         elseif(index(c_out,'OUTLET').eq.1) then
+            BCmap(i,1)='O  '
+         elseif(index(c_out,'PERIODIC').eq.1) then
+            BCmap(i,1)='P  '
+         elseif(index(c_out,'SYMMETRY').eq.1) then
+            BCmap(i,1)='SYM'
+         elseif(index(c_out,'WALL').eq.1) then
+            BCmap(i,1)='W  '
+         else
+            write(6,'(a,a)') "Invalid velocity boundary type in par: ",
+     &                                                       trim(c_out)
+            ierr=1
+         endif
+      enddo
+
+c read BC map for temperature/scalars
+      do i = 1,ldimt
+         ifld = i+1
+         call blank(txt,132)
+         write(txt,"('scalar',i2.2)") i-1
+         if(i.eq.1) write(txt,"('temperature')")
+         write(txt2,"(a,a)")trim(txt),":boundarytypemap"
+         call finiparser_findTokens(txt2,',',ifnd)
+         if(ifnd.ge.1) ifBCmap(ifld)=.true.
+         do j = 1,min(ifnd,15)
+            call finiparser_getToken(c_out,j)
+            call capit(c_out,132)
+            if(index(c_out,'AXIS').eq.1) then
+               BCmap(j,ifld)='A  '
+            elseif(index(c_out,'DIRICHLET').eq.1) then
+               BCmap(j,ifld)='t  '
+            elseif(index(c_out,'FLUX').eq.1) then
+               BCmap(j,ifld)='f  '
+            elseif(index(c_out,'INLET').eq.1) then
+               BCmap(j,ifld)='t  '
+            elseif(index(c_out,'INSULATED').eq.1) then
+               BCmap(j,ifld)='I  '
+            elseif(index(c_out,'NEUMANN').eq.1) then
+               BCmap(j,ifld)='f  '
+            elseif(index(c_out,'OUTLET').eq.1) then
+               BCmap(j,ifld)='I  '
+            elseif(index(c_out,'PERIODIC').eq.1) then
+               BCmap(j,ifld)='P  '
+            elseif(index(c_out,'ROBIN').eq.1) then
+               BCmap(j,ifld)='c  '
+            elseif(index(c_out,'SYMMETRY').eq.1) then
+               BCmap(j,ifld)='I  '
+            else
+               write(6,'(a,a,a)')"Invalid ",txt,
+     &                             " boundary type in par: ",trim(c_out)
+            ierr=1
+            endif
+         enddo
+      enddo
+
+c set properties
 100   if(ierr.eq.0) call finiparser_dump()
       return
 
@@ -912,6 +987,9 @@ C
       call bcast(ifpsco, ldimt1*lsize)
 
       call bcast(initc, 15*132*csize) 
+
+      call bcast(ifBCmap    ,ldimt1*lsize)
+      call bcast(BCmap, 15*3*ldimt1*csize)
 
       call bcast(timeioe,sizeof(timeioe))
 
