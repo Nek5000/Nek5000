@@ -320,12 +320,14 @@ c-----------------------------------------------------------------------
 
       return
       end
-
+c-----------------------------------------------------------------------
 #else
-
       subroutine gfldr(sourcefld)
 
       character sourcefld*(*)
 
       call exitti("MPIIO needed for gfldr!$",0)
+
+      return
+      end
 #endif
