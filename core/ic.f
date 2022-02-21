@@ -492,7 +492,12 @@ c use new reader (only binary support)
       if (p67.eq.6.0) then
          do ifile=1,nfiles
             call sioflag(ndumps,fname,initc(ifile))
-            call mfi(fname,ifile)
+            if(ifgfldr) then
+              call gfldr(fname)
+            else
+              call mfi(fname,ifile)
+            endif
+            ifgfldr=.false. !avoid interfering with future gfldr calls
          enddo
          call bcast(time,wdsize)! Sync time across processors
          return
@@ -1002,6 +1007,7 @@ C
   100 continue
       ifgtim=.true.
       ndumps=0
+      ifgfldr=.false.
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
@@ -1037,6 +1043,11 @@ C           remove the user specified time from the RS options line.
          ENDIF
 
 C        Parse field specifications.
+
+         IGO=INDX_CUT(RSOPT,'INT',3)
+         IF (IGO.NE.0) THEN
+            ifgfldr=.TRUE.
+         ENDIF
 
          IXO=INDX_CUT(RSOPT,'X',1)
          IF (IXO.NE.0) THEN
@@ -1080,8 +1091,10 @@ C        Get number of dumps from remainder of user supplied line.
 
 C     If no fields were explicitly specified, assume getting all fields. 
       if (ifdeft) then
-         IFGETX=.TRUE.
-         IF (IF3D) IFGETZ=.TRUE.
+         if(.not.ifgfldr) then
+           IFGETX=.TRUE.
+           IF (IF3D) IFGETZ=.TRUE.
+         endif
          IFANYC=.FALSE.
          DO 400 I=1,NFIELD
             IF (IFADVC(I)) IFANYC=.TRUE.
@@ -1096,6 +1109,9 @@ C     If no fields were explicitly specified, assume getting all fields.
             ifgtps(i)=.TRUE.
   410    continue
       endif
+
+      if(ifgfldr.and.ifgetx) 
+     & call exitti('"X" and "INT" restart options incompatible!$',0)
 
       return
       END
