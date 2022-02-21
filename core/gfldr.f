@@ -22,6 +22,7 @@ c
       character*1   hdr(iHeaderSize)
 
       integer*8 dtmp8
+      integer*8 i8glsum,nfail,nfail_sum
 
       logical if_byte_swap_test
       real*4 bytetest
@@ -111,35 +112,73 @@ c
      &                          nels,nxf,nyf,nzf,bb_t,
      &                          nhash,nhash,nmax,tol)
 
+
+      ! locate points (iel,iproc,r,s,t)
+      nfail = 0
+      toldist = 5e-6
+      if(wdsizr.eq.8) toldist = 5e-14
+
+      ntot  = lx1*ly1*lz1*nelt
+      call fgslib_findpts(inth_gfldr,
+     &                    grcode,1,
+     &                    gproc,1,
+     &                    gelid,1,
+     &                    grst,ldim,
+     &                    gdist,1,
+     &                    xm1,1,
+     &                    ym1,1,
+     &                    zm1,1,ntot)
+
+      do i=1,ntot
+         if(grcode(i).eq.1 .and. sqrt(gdist(i)).gt.toldist)
+     &     nfail = nfail + 1
+         if(grcode(i).eq.2) nfail = nfail + 1
+      enddo
+
+      nfail_sum = i8glsum(nfail,1)
+      if(nfail_sum.gt.0) then
+        if(nio.eq.0) write(6,*)
+     &    ' WARNING: Unable to find all mesh points in source fld ',
+     &    nfail_sum
+      endif
+
       ! read source fields and interpolate
       if(ifgetur) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
-        ntot = nx1*ny1*nz1*nelv 
-        call gfldr_getfld(vx,vy,vz,ntot,ldim,ifldpos+1)
+        if(.not.ifgfldr.or.ifgetu) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading vel'
+          ntot = nx1*ny1*nz1*nelv 
+          call gfldr_getfld(vx,vy,vz,ntot,ldim,ifldpos+1)
+        endif
         ifldpos = ifldpos + ldim
       endif
       if(ifgetpr) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
-        ntot = nx1*ny1*nz1*nelv 
-        call gfldr_getfld(pm1,dum,dum,ntot,1,ifldpos+1)
+        if(.not.ifgfldr.or.ifgetp) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading pr'
+          ntot = nx1*ny1*nz1*nelv 
+          call gfldr_getfld(pm1,dum,dum,ntot,1,ifldpos+1)
+          if (ifaxis) call axis_interp_ic(pm1)
+          call map_pm1_to_pr(pm1,1)
+        endif
         ifldpos = ifldpos + 1
-        if (ifaxis) call axis_interp_ic(pm1)
-        call map_pm1_to_pr(pm1,1)
       endif
       if(ifgettr .and. ifheat) then
-        if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
-        ntot = nx1*ny1*nz1*nelfld(2) 
-        call gfldr_getfld(t(1,1,1,1,1),dum,dum,ntot,1,ifldpos+1)
+        if(.not.ifgfldr.or.ifgett) then !skip if this is a restart call and the scalar isn't requested
+          if(nid.eq.0 .and. loglevel.gt.2) write(6,*) 'reading temp'
+          ntot = nx1*ny1*nz1*nelfld(2) 
+          call gfldr_getfld(t(1,1,1,1,1),dum,dum,ntot,1,ifldpos+1)
+        endif
         ifldpos = ifldpos + 1
       endif
       do i = 1,ldimt-1
-         if(ifgtpsr(i)) then
-           if(nid.eq.0 .and. loglevel.gt.2) 
-     $       write(6,*) 'reading scalar',i
-           ntot = nx1*ny1*nz1*nelfld(i+2) 
-           call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,ntot,1,ifldpos+1) 
-           ifldpos = ifldpos + 1
-         endif
+        if(ifgtpsr(i)) then
+          if(.not.ifgfldr.or.ifgtps(i)) then !skip if this is a restart call and the scalar isn't requested
+            if(nid.eq.0 .and. loglevel.gt.2) 
+     $        write(6,*) 'reading scalar',i
+            ntot = nx1*ny1*nz1*nelfld(i+2) 
+            call gfldr_getfld(t(1,1,1,1,i+1),dum,dum,ntot,1,ifldpos+1) 
+          endif
+          ifldpos = ifldpos + 1
+        endif
       enddo
 
       call byte_close_mpi(fldh_gfldr,ierr)
@@ -266,39 +305,6 @@ c-----------------------------------------------------------------------
 
       real    fieldout(nout)
       real    fieldin (*)
-      logical iffpts
-
-      integer*8 i8glsum,nfail,nfail_sum
-
-      if(iffpts) then ! locate points (iel,iproc,r,s,t)
-        nfail = 0
-        toldist = 5e-6
-        if(wdsizr.eq.8) toldist = 5e-14
-
-        ntot  = lx1*ly1*lz1*nelt
-        call fgslib_findpts(inth_gfldr,
-     &                      grcode,1,
-     &                      gproc,1,
-     &                      gelid,1,
-     &                      grst,ldim,
-     &                      gdist,1,
-     &                      xm1,1,
-     &                      ym1,1,
-     &                      zm1,1,ntot)
-
-        do i=1,ntot
-           if(grcode(i).eq.1 .and. sqrt(gdist(i)).gt.toldist)
-     &       nfail = nfail + 1
-           if(grcode(i).eq.2) nfail = nfail + 1
-        enddo
-
-        nfail_sum = i8glsum(nfail,1)
-        if(nfail_sum.gt.0) then
-          if(nio.eq.0) write(6,*)
-     &      ' WARNING: Unable to find all mesh points in source fld ',
-     &      nfail_sum
-        endif
-      endif
 
       ! evaluate inut field at given points
       npt = nout
@@ -312,5 +318,14 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+#else
+      subroutine gfldr(sourcefld)
 
+      character sourcefld*(*)
+
+      call exitti("MPIIO needed for gfldr!$",0)
+
+      return
+      end
 #endif
