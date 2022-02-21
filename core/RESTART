@@ -31,10 +31,10 @@ c
 
       logical ifgetx ,ifgetu ,ifgetp ,ifgett ,ifgtps (ldimt1),ifgtim
      $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr(ldimt1),ifgtimr
-     $       ,if_byte_sw,ifgetz,ifgetw,ifdiro
+     $       ,if_byte_sw,ifgetz,ifgetw,ifdiro,ifgfldr
       common /cmfi_l/ ifgetx,ifgetu,ifgetp,ifgett,ifgtps,ifgtim
      $       ,ifgetxr,ifgetur,ifgetpr,ifgettr,ifgtpsr,ifgtimr
-     $       ,if_byte_sw,ifgetz,ifgetw,ifdiro
+     $       ,if_byte_sw,ifgetz,ifgetw,ifdiro,ifgfldr
 
       integer         fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00
       common /cmfi_p/ fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00 
