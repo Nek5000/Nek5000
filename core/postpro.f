@@ -564,7 +564,7 @@ c
 c-----------------------------------------------------------------------
       subroutine map2reg_2di_e(uf,n,uc,m) ! Fine, uniform pt
 
-      real uf(n,n),uc(m,m)
+      real uf(n,n),uc(m,m),j,jt
 
       parameter (l=50)
       common /cmap2d/ j(l*l),jt(l*l),w(l*l),z(l)
@@ -582,7 +582,8 @@ c-----------------------------------------------------------------------
           call zuni  (w,n)
 
           call gen_int_gz(j,jt,w,n,z,m)
-
+          mo = m
+          no = n
       endif
 
       call mxm(j,n,uc,m,w ,m)
@@ -593,7 +594,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine map2reg_3di_e(uf,n,uc,m) ! Fine, uniform pt
 
-      real uf(n,n,n),uc(m,m,m)
+      real uf(n,n,n),uc(m,m,m),j,jt
 
       parameter (l=16)
       common /cmap3d/ j(l*l),jt(l*l),v(l*l*l),w(l*l*l),z(l)
@@ -611,7 +612,8 @@ c-----------------------------------------------------------------------
           call zuni  (w,n)
 
           call gen_int_gz(j,jt,w,n,z,m)
-
+          mo = m
+          no = n
       endif
 
       mm = m*m
