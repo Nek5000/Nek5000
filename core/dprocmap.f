@@ -30,7 +30,8 @@ c-----------------------------------------------------------------------
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
 #endif
-
+ 
+      call dProcMapClearCache()
       dProcmapCache = .true.
 
       return

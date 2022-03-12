@@ -300,6 +300,7 @@ c solid elements
       endif
 
 #ifdef DPROCMAP
+      call dProcMapClearCache()
       do i = 1,nelt
          ieg = lglel(i)
          if (ieg.lt.1 .or. ieg.gt.nelgt) 
@@ -308,7 +309,6 @@ c solid elements
          ibuf(2) = nid
          call dProcmapPut(ibuf,2,0,ieg)
       enddo
-      call dProcMapClearCache()
 #else
       call izero(gllnid,nelgt)
       do i = 1,nelt
