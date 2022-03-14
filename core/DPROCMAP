@@ -6,3 +6,8 @@
 
       integer dProcmapWin 
       common /cbpmwd/ dProcmapWin(2*lelt)
+
+      parameter (lcr = lelt)                      ! remote elements
+      parameter (lc = lelt+lcr+8-mod(lelt+lcr,8)) ! multiple of 8
+      integer   cache
+      common /cbpmca/ cache(lc,3)
