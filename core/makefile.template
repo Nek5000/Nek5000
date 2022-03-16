@@ -64,7 +64,7 @@ ifeq ($(MPI),0)
   COMM_MPI := ${COMM_MPI} mpi_dummy.o
 endif
 
-DUMMY:= $(shell mkdir $(OBJDIR) 2>/dev/null)
+$(info $(shell mkdir -p $(OBJDIR)))
 DUMMY:= $(shell cp $S/core/PARALLEL.default $(OBJDIR)/PARALLEL 2>/dev/null)
 ifeq ($(DPROCMAP),1)
 	CORE := ${CORE} dprocmap.o
@@ -85,10 +85,11 @@ endif
 
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
-OPT_INCDIR += $S/core/experimental
-OPT_INCDIR += $(OBJDIR) 
-
-INCLUDES:= $(foreach dir,$(OPT_INCDIR),-I$(dir))
+INCLUDES_DIR += $(OPT_INCDIR)
+INCLUDES_DIR += $(S)/core/experimental
+INCLUDES_DIR += $(OBJDIR)
+INCLUDES:= $(foreach dir,$(INCLUDES_DIR),-I$(dir))
+#$(info $(shell echo "INCLUDES: $(INCLUDES)"))
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 USRF = $(OBJDIR)/${CASENAME}.o
@@ -104,8 +105,6 @@ FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S/core $(INCLUDES)
 cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
-
-$(info $(shell mkdir -p $(OBJDIR)))
 
 ################################################################################
 all : nek5000
