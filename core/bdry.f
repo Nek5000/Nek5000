@@ -2218,7 +2218,7 @@ c-----------------------------------------------------------------------
           enddo
           enddo
         else
-          do iel = 1,nelt
+          do iel = 1,nelv
           do ifc = 1,2*ndim
             iBC = BoundaryID(ifc,iel)-ioffset
             if(iBC.ge.1.and.iBC.le.lbid)

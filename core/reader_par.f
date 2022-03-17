@@ -862,6 +862,8 @@ c read BC map for velocity
             cbc_bmap(i,1)='O  '
          elseif(index(c_out,'PERIODIC').eq.1) then
             cbc_bmap(i,1)='P  '
+         elseif(index(c_out,'PRESSURE').eq.1) then
+            cbc_bmap(i,1)='o  '
          elseif(index(c_out,'SYMMETRY').eq.1) then
             cbc_bmap(i,1)='SYM'
          elseif(index(c_out,'WALL').eq.1) then
