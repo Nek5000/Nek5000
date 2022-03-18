@@ -300,6 +300,7 @@ c solid elements
       endif
 
 #ifdef DPROCMAP
+      call dProcMapClearCache()
       do i = 1,nelt
          ieg = lglel(i)
          if (ieg.lt.1 .or. ieg.gt.nelgt) 
@@ -555,7 +556,6 @@ C
       ! setup gllnid + gllel
 #if defined(DPROCMAP)
       call dProcmapInit()  
-      dProcmapCache = .false.
 #endif
       nelB = igl_running_sum(nelt) - nelt
       do i = 1,nelt
@@ -589,10 +589,6 @@ C
 
       ! get element-proc mapping      
       call get_map() 
-
-      itmp = gllnid(0) ! reset last element cache
-      itmp = gllel(0)  ! reset last element cache
-      dProcmapCache = .true.
 
 #if !defined(DPROCMAP)
       IEL=0
