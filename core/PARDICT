@@ -112,6 +112,6 @@ c
      &  pardictkey(105) / 'VELOCITY:BOUNDARYTYPEMAP' /
      &  pardictkey(106) / 'TEMPERATURE:BOUNDARYTYPEMAP' /
      &  pardictkey(107) / 'SCALAR%%:BOUNDARYTYPEMAP' /
-     &  pardictkey(108) / 'VELOCITY:BOUNDARYVALUE' /
-     &  pardictkey(109) / 'TEMPERATURE:BOUNDARYVALUE' /
-     &  pardictkey(110) / 'SCALAR%%:BOUNDARYVALUE' /
+     &  pardictkey(108) / 'VELOCITY:BOUNDARYVALUES' /
+     &  pardictkey(109) / 'TEMPERATURE:BOUNDARYVALUES' /
+     &  pardictkey(110) / 'SCALAR%%:BOUNDARYVALUES' /

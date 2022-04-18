@@ -111,7 +111,9 @@ c
       character*1     ccurve(12,lelt),cdof(6,lelt)
       character*3     cbc(6,lelt,0:ldimt1)
       character*3     cbc_bmap(lbid,ldimt1)
-      common /input8/ cbc,ccurve,cdof,cbc_bmap
+      real            cbc_vmap(lbid,ldimt1)
+      integer         nbctype(ldimt1)
+      common /input8/ cbc,ccurve,cdof,cbc_bmap,cbc_vmap,nbctype
 
       integer ieact(lelt),neact
       common /input9/ ieact,neact
