@@ -914,7 +914,8 @@ c read BC map for temperature/scalars
           ierr = 1
           ifnd = 0
         endif
-        do j = 1,min(ifnd,lbid)
+        nbctype(ifld)=ifnd
+        do j = 1,nbctype(ifld)
           call finiparser_getToken(c_out,j)
           call capit(c_out,132)
           if(index(c_out,'AXIS').eq.1) then
@@ -963,8 +964,8 @@ c read BC values for temperature/scalars
             ifnd = 0
           endif
           if(ifnd.ne.nbctype(ifld)) then
-            write(6,'(a,a,a)') "Number of ",txt,
-     &    "boundary values does not match the number of BC types in par"
+            write(6,'(a,a,a)') "Number of ",trim(txt),
+     &   " boundary values does not match the number of BC types in par"
             ierr = 1
             ifnd = 0
           endif
@@ -1055,6 +1056,8 @@ C
 
       call bcast(ifbmap,         ldimt1*lsize)
       call bcast(cbc_bmap,3*lbid*ldimt1*csize)
+      call bcast(nbctype,        ldimt1*isize)
+      call bcast(cbc_vmap,  lbid*ldimt1*wdsize)
 
       call bcast(timeioe,sizeof(timeioe))
 
