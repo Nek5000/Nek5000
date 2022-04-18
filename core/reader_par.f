@@ -849,6 +849,7 @@ c read BC map for velocity
         ierr = 1
         ifnd = 0
       endif
+      nbctype(1)=ifnd
       do i = 1,min(ifnd,lbid)
          call finiparser_getToken(c_out,i)
          call capit(c_out,132)
@@ -858,6 +859,8 @@ c read BC map for velocity
             cbc_bmap(i,1)='v  '
          elseif(index(c_out,'INLET').eq.1) then
             cbc_bmap(i,1)='v  '
+         elseif(index(c_out,'INTERPOLATED').eq.1) then
+            cbc_bmap(i,1)='int'
          elseif(index(c_out,'OUTLET').eq.1) then
             cbc_bmap(i,1)='O  '
          elseif(index(c_out,'PERIODIC').eq.1) then
@@ -874,6 +877,20 @@ c read BC map for velocity
             ierr=1
          endif
       enddo
+
+c read BC values for velocity
+      call finiparser_findTokens('velocity:boundaryvalues', ',' , ifnd)
+      if(ifnd.ge.1) ifbmap(1)=.true.
+      if(ifnd.gt.lbid) then
+        write(6,'(a)')"Too many BCs specified for velocity in par"
+        ierr = 1
+        ifnd = 0
+      endif
+      do i = 1,min(ifnd,lbid)
+         call finiparser_getToken(c_out,i)
+         call capit(c_out,132)
+         if(index(c_out,'AXIS').eq.1) then
+            cbc_bmap(i,1)='A  '
 
 c read BC map for temperature/scalars
       do i = 1,ldimt
@@ -902,6 +919,8 @@ c read BC map for temperature/scalars
                cbc_bmap(j,ifld)='t  '
             elseif(index(c_out,'INSULATED').eq.1) then
                cbc_bmap(j,ifld)='I  '
+            elseif(index(c_out,'INTERPOLATED').eq.1) then
+               cbc_bmap(j,ifld)='int'
             elseif(index(c_out,'NEUMANN').eq.1) then
                cbc_bmap(j,ifld)='f  '
             elseif(index(c_out,'OUTLET').eq.1) then
