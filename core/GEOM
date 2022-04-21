@@ -90,5 +90,5 @@ c
      $       ,ifmseg,ifmscr,ifnskp
      $       ,ifbcor
 
-      integer boundaryID(6,lelv), boundaryIDt(6,lelt)
-      common /cbbid/ boundaryID, boundaryIDt 
+      integer boundaryID(6,lelv), boundaryIDt(6,lelt),bidoffset
+      common /cbbid/ boundaryID, boundaryIDt,bidoffset

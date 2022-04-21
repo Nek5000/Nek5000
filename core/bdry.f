@@ -1056,6 +1056,7 @@ C
          DO 120 IY=KY1,KY2
          DO 120 IX=KX1,KX2
             if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
+            if(bvmap(ifield)) un=cbc_vmap(bid,ifield)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = UN
             V2(IX,IY,IZ) = U1

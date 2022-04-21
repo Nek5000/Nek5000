@@ -156,6 +156,7 @@ C
 
       do i=1,ldimt1
         ifbmap(i)=.false.
+        ifbvmap(i)=.false.
         nbctype(i)=0
       enddo
 
@@ -895,6 +896,7 @@ c read BC values for velocity
           ifnd = 0
         endif
       endif
+      ifbvmap(1)=.true.
       do i = 1,min(ifnd,nbctype(1))
         call finiparser_getToken(c_out,i)
         read (c_out,*) cbc_vmap(i,1)
@@ -970,6 +972,7 @@ c read BC values for temperature/scalars
             ifnd = 0
           endif
         endif
+        ifbvmap(ifld)=.true.
         do j = 1,min(ifnd,nbctype(ifld))
           call finiparser_getToken(c_out,i)
           read (c_out,*) cbc_vmap(i,ifld)
