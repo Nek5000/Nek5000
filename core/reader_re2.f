@@ -306,7 +306,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + nrg*4*lrs4
 
       if (.not.ifread) return
-      if(nio.eq.0) write(6,'(A,I10,AI3)') 
+      if(nio.eq.0) write(6,'(A,I10,A,I3)') 
      $             ' reading boundary faces ', nrg, 
      $             ' for ifield ', ifield
 
