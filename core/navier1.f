@@ -4377,6 +4377,7 @@ c
       real out(1),a(1),diff(1)
       real wrk(lx1,ly1,lz1,lelt)
       real h2(lx1,ly1,lz1,lelt)
+      common /cbwlap/ wrk, h2
 
       ntot = lx1*ly1*lz1*nelfld(ifld)
       if (.not.iftmsh(ifld)) imesh = 1
