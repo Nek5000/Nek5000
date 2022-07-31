@@ -15,9 +15,10 @@ if [ -f ./lib/libgs.a ]; then
 fi
 
 if [ ! -d ./gslib ]; then
-  wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
-  mkdir gslib 
-  tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
+  # wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  # mkdir gslib 
+  # tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
+  git clone https://github.com/Nek5000/gslib.git
 fi
 
 cd gslib

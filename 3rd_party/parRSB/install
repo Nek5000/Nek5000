@@ -13,9 +13,10 @@ if [ -f ./lib/libparRSB.a ]; then
 fi
 
 if [ ! -d ./parRSB ]; then
-  wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
-  mkdir parRSB
-  tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
+  # wget --no-check-certificate -O v$VER.tar.gz https://github.com/Nek5000/parRSB/archive/v$VER.tar.gz
+  # mkdir parRSB
+  # tar -zxvf v$VER.tar.gz -C ./parRSB --strip-components=1
+  git clone https://github.com/Nek5000/parRSB.git -b next
 fi
 
 cd parRSB
