@@ -186,10 +186,10 @@ c-----------------------------------------------------------------------
       if (ierr.ne.0) then
         ifread_con = .false.
         tol = connectivityTol
-        call find_con(wk,nwk,tol,ierr)
+        call find_con(wk,nwk,tol,1,ierr)
         if(ierr.ne.0) then
           tol = tol / 10.0;
-          call find_con(wk,nwk,tol,ierr)
+          call find_con(wk,nwk,tol,1,ierr)
         endif
         call err_chk(ierr,' find_con failed!$')
       endif
@@ -446,13 +446,13 @@ c    1       format(a5,2i12,i2)
       end
 c-----------------------------------------------------------------------
 #if defined(PARRSB)      
-      subroutine find_con(wk,nwk,tol,ierr)
+      subroutine find_con(wk,nwk,tol,verbose,ierr)
 
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
 
-      integer nwk,ierr
+      integer nwk,ierr,verbose
       integer*8 wk(nwk)
       real tol
 
@@ -504,7 +504,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call fparrsb_conn_mesh(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
-     $  0,ierr)
+     $  verbose,ierr)
 
       k=1
       l=1
