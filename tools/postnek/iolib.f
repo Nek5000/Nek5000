@@ -53,7 +53,7 @@ C     GETS         Reads  String of 80 chars        CALL GETS(S)
 C     PUTS         Prints String of  N chars        CALL PUTS(S,N)
       SUBROUTINE PRS(S)
       CHARACTER S(*)
-      CHARACTER*1 S1(132)
+      CHARACTER*1 S1(1024)
 C
       DO 1 I=1,133
          IF(S(I).EQ.'$')THEN
@@ -66,7 +66,7 @@ c
       write(6,*) 'I/O Error: No String Terminator sent to PRS'
       write(66,*) 'I/O Error: No String Terminator sent to PRS'
 c
-      nchars = 132
+      nchars = 1024
       CALL CHCOPY (S1,S,NCHARS)
       WRITE(66,3) (S1(J),J=1,NCHARS)
 c
@@ -75,12 +75,12 @@ c
       CALL CHCOPY(S1,S,NCHARS)
       WRITE(6,3) (S1(J),J=1,NCHARS)
 c
- 3    FORMAT(132A1)
+ 3    FORMAT(1024A1)
       RETURN
       END
 C
       SUBROUTINE PRI(I)
-      CHARACTER S*132
+      CHARACTER S*1024
 C
       S=' '
       WRITE(S,'(I8)',ERR=1)I
@@ -90,7 +90,7 @@ C
       END
 C
       SUBROUTINE PRR(R)
-      CHARACTER S*132
+      CHARACTER S*1024
 C
       S=' '
       WRITE(S,'(G14.6)',ERR=1)R
@@ -100,7 +100,7 @@ C
       END
 C
       SUBROUTINE PRII(I1,I2)
-      CHARACTER S*132
+      CHARACTER S*1024
       S=' '
       WRITE(S,'(2I8)',ERR=1)I1,I2
       S(17:17)='$'
@@ -109,7 +109,7 @@ C
       END
 C
       SUBROUTINE PRIII(I1,I2,I3)
-      CHARACTER S*132
+      CHARACTER S*1024
       S=' '
       WRITE(S,'(3I8)',ERR=1)I1,I2,I3
       S(25:25)='$'
@@ -118,7 +118,7 @@ C
       END
 C
       SUBROUTINE PRRRR(R1,R2,R3)
-      CHARACTER S*132
+      CHARACTER S*1024
 C
       S=' '
       WRITE(S,'(3G18.9)',ERR=1)R1,R2,R3
@@ -128,7 +128,7 @@ C
       END
 C
       SUBROUTINE PRRR(R1,R2)
-      CHARACTER S*132
+      CHARACTER S*1024
 C
       S=' '
       WRITE(S,'(2G14.6)',ERR=1)R1,R2
@@ -138,7 +138,7 @@ C
       END
 C
       SUBROUTINE PRSI(S,I)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 J=1,70
          IF(S(J).EQ.'$')THEN
@@ -161,7 +161,7 @@ C
       END
 C
       SUBROUTINE PRIS(I,S)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       WRITE(SS(1:8),'(I8)',ERR=13)I
       DO 1 J=1,70
@@ -184,7 +184,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSRRR(S,r1,r2,r3)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -206,7 +206,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSRR(S,r1,r2)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -228,7 +228,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSR(S,R)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -250,7 +250,7 @@ C
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSII(S,I,J)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -272,7 +272,7 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine prsiii(s,i1,i2,i3)
-      character s(*),ss*132
+      character s(*),ss*1024
 c
       nc = 10
       write(6,*) (s(k),k=1,40)
@@ -298,7 +298,7 @@ c     RETURN
       END
 C-----------------------------------------------------------------------
       subroutine prsiv(s,i1,i2,i3,i4)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       write(6,*) (s(k),k=1,40)
       write(6,*) i1,i2,i3,i4
@@ -323,7 +323,7 @@ c     RETURN
       END
 C-----------------------------------------------------------------------
       SUBROUTINE PRSIR(S,I,R)
-      CHARACTER S(*),SS*132
+      CHARACTER S(*),SS*1024
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -345,7 +345,7 @@ C
       END
 C
       SUBROUTINE PRSIS(S1,I,S2)
-      CHARACTER S1(*),S2(*),SS*132
+      CHARACTER S1(*),S2(*),SS*1024
 C
       SS = ' '
       DO 1 J=1,70
@@ -385,7 +385,7 @@ C
       END
 C
       SUBROUTINE PRSRS(S1,R,S2)
-      CHARACTER S1(*),S2(*),SS*132
+      CHARACTER S1(*),S2(*),SS*1024
 C
       SS = ' '
       DO 1 I=1,60
@@ -624,7 +624,7 @@ c     - mhd support
 #     include "basics.inc"
       include 'basicsp.inc'
 
-      character*132 c_out,txt
+      character*1024 c_out,txt
 
       call finiparser_load(parfle,ierr)
       if(ierr .ne. 0) return
@@ -647,7 +647,7 @@ c     - mhd support
       if (param(8) .lt.0.0) param(8)  = -1.0/param(8)
 
       call finiparser_getString(c_out,'general:stopAt',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'ENDTIME') .gt. 0) then
          call finiparser_getDbl(d_out,'general:endTime',ifnd)
          if(ifnd .eq. 1) param(10) = d_out
@@ -677,7 +677,7 @@ c     - mhd support
 c set parameters
       d_out = param(15)
       call finiparser_getString(c_out,'general:writeControl',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'RUNTIME') .gt. 0) then
          param(14) = d_out
       else
@@ -699,7 +699,7 @@ c set parameters
 
 c set logical flags
       call finiparser_getString(c_out,'general:timeStepper',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
 
       if (index(c_out,'CHAR') .gt. 0) then
          ifchar = .true.
@@ -753,11 +753,11 @@ c-----------------------------------------------------------------------
 
       include 'PARDICT'
 
-      character*132  key
+      character*1024  key
       character*1024 val
 
-      character*132 txt
-      character*1   tx1(132)
+      character*1024 txt
+      character*1   tx1(1024)
       equivalence   (tx1,txt)
 
       ierr = 0
@@ -765,7 +765,7 @@ c-----------------------------------------------------------------------
       call finiparser_getDictEntries(n)
       do i = 1,n
          call finiparser_getPair(key,val,i,ifnd)
-         call capit(key,132)
+         call capit(key,1024)
 
          is = index(key,'_') ! ignore user keys
          if (is.eq.1) goto 10
@@ -775,7 +775,7 @@ c-----------------------------------------------------------------------
 
             is = index(key,'SCALAR')
             if(is .eq. 1) then
-              call chcopy(txt,key,132)
+              call chcopy(txt,key,1024)
               call chcopy(tx1(is+6),'%%',2)
               if(index(pardictkey(j),txt).eq.1) goto 10
             endif

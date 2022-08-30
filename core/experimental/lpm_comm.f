@@ -523,7 +523,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 #     include "LPM"
 
-      character*132 deathmessage
+      character*1024 deathmessage
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
       integer iadd(3),gpsave(27)
       real map(LPM_LRP_PRO)

@@ -61,12 +61,12 @@ c-----------------------------------------------------------------------
       data    icalld /0/
       
       character s(*)
-      character*1 s1(132),s2(132)
-      character*132 s131,s132
+      character*1 s1(1024),s2(1024)
+      character*1024 s131,s1024
       equivalence (s131,s1)
-      equivalence (s132,s2)
+      equivalence (s1024,s2)
       save s2
-      data s2 /132*' '/
+      data s2 /1024*' '/
       integer scount
       save    scount
       data    scount /0/
@@ -88,7 +88,7 @@ c-----------------------------------------------------------------------
       ri=-i
       nchars=sqrt(ri)
 
-      nchars = 132
+      nchars = 1024
       call chcopy (s1,s,nchars)
       write(87,3) (s1(j),j=1,nchars)
 
@@ -97,7 +97,7 @@ c-----------------------------------------------------------------------
       if (ifgraf) call putsold  (s   ,nchars)
       call chcopy (s1,s,nchars)
 
-      if (s131.eq.s132) then  ! Check for infinite loop
+      if (s131.eq.s1024) then  ! Check for infinite loop
          scount = scount+1
          if (scount.gt.10) then
             write(6,*) 'ABORT: too many repeat calls to prs.'
@@ -106,17 +106,17 @@ c-----------------------------------------------------------------------
       else
          scount = 0
       endif
-      call chcopy (s2,s1,132)
+      call chcopy (s2,s1,1024)
 
       write(6 ,3) (s1(j),j=1,nchars)
       write(87,3) (s1(j),j=1,nchars)
 
- 3    format(132a1)
+ 3    format(1024a1)
       return
       end
 c-----------------------------------------------------------------------
       subroutine pri(i)
-      character S*132
+      character S*1024
 C
       S=' '
       WRITE(S,'(I13)',ERR=1)I
@@ -127,7 +127,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prr(r)
-      character S*132
+      character S*1024
 C
       S=' '
       WRITE(S,'(G14.6)',ERR=1)R
@@ -139,7 +139,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prii(i1,i2)
-      character S*132
+      character S*1024
 C
       S=' '
       WRITE(S,'(2I13)',ERR=1)I1,I2
@@ -150,7 +150,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prrrr(r1,r2,r3)
-      character S*132
+      character S*1024
 C
       S=' '
       WRITE(S,'(3G13.9)',ERR=1)R1,R2,R3
@@ -161,7 +161,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prrr(r1,r2)
-      character S*132
+      character S*1024
 C
       S=' '
       WRITE(S,'(2G14.6)',ERR=1)R1,R2
@@ -172,7 +172,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prsi(s,i)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 J=1,70
          IF(S(J).EQ.'$')THEN
@@ -182,7 +182,7 @@ C
          SS(J:J)=S(J)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSI',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
 C
@@ -265,7 +265,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine prsrrr(s,R1,R2,R3)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -275,7 +275,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSRR',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+42),'(1p3e14.6)',ERR=13)r1,r2,r3
@@ -287,7 +287,7 @@ C
       end
 C-----------------------------------------------------------------------
       subroutine prsrr(s,R1,R2)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -297,7 +297,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSRR',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+28),'(1p2e14.6)',ERR=13)r1,r2
@@ -309,7 +309,7 @@ C
       end
 C-----------------------------------------------------------------------
       subroutine prsr(s,r)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 I=1,60
          IF(S(I).EQ.'$')THEN
@@ -319,7 +319,7 @@ C
          SS(I:I)=S(I)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSR',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+14),'(G14.6)',ERR=13)R
@@ -331,7 +331,7 @@ C
       end
 C-----------------------------------------------------------------------
       subroutine prsii(s,i,j)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -341,7 +341,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSii',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+20),'(2I10)',ERR=13)I,J
@@ -354,7 +354,7 @@ C
 C
 c-----------------------------------------------------------------------
       subroutine prsir(s,i,r)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -364,7 +364,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       call putsold('I/O Error: No String Terminator sent to PRSir',44)
-      call putsold(s,132)
+      call putsold(s,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+20),'(I6,G14.6)',ERR=13)I,R
@@ -376,7 +376,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine prsis(s1,i,s2)
-      character S1(*),S2(*),SS*132
+      character S1(*),S2(*),SS*1024
 C
       SS = ' '
       DO 1 J=1,70
@@ -395,7 +395,7 @@ C
 C
       ISTART = NC+10
       IS2=0
-      DO 11 J=ISTART,132
+      DO 11 J=ISTART,1024
          IS2=IS2+1
          IF(S2(IS2).EQ.'$')THEN
             NC=J-1
@@ -416,7 +416,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine prsisi(s1,i1,s2,i2)
-      character S1(*),S2(*),SS*132
+      character S1(*),S2(*),SS*1024
 C
       SS = ' '
       DO 1 J=1,70
@@ -435,7 +435,7 @@ C
 C
       ISTART = NC+10
       IS2=0
-      DO 11 J=ISTART,132
+      DO 11 J=ISTART,1024
          IS2=IS2+1
          IF(S2(IS2).EQ.'$')THEN
             NC=J-1
@@ -459,7 +459,7 @@ C
       end
 c-----------------------------------------------------------------------
       subroutine prsrs(s1,r,s2)
-      character S1(*),S2(*),SS*132
+      character S1(*),S2(*),SS*1024
 C
       SS = ' '
       DO 1 I=1,60
@@ -480,7 +480,7 @@ C     Pad a few blanks
 C
       ISTART = NC + 16
       IS2 = 0
-      DO 11 I=ISTART,132
+      DO 11 I=ISTART,1024
          IS2 = IS2 + 1
          IF(S2(IS2).EQ.'$')THEN
             NC=I-1
@@ -507,7 +507,7 @@ C
 c-----------------------------------------------------------------------
       subroutine res(s1,n)
       include 'devices.inc'
-      character S1(*),S(132)
+      character S1(*),S(1024)
 
 C     All text input comes thru here
 C
@@ -515,8 +515,8 @@ C
       IF (.NOT.IFDEMO) THEN
          call GETSOLD(S)
       ELSE
-         READ(55,132) S
-  132    FORMAT(132A1)
+         READ(55,1024) S
+  1024    FORMAT(1024A1)
       ENDIF
 C
 c     call GETSOLD(S)
@@ -529,13 +529,13 @@ C
 c-----------------------------------------------------------------------
       subroutine reiii(I,J,K)
 C     Read Integer
-      character*132 S
+      character*1024 S
       integer count
       count=0
 C
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13) i,j,k
       write (6,*) i,j,k
@@ -552,13 +552,13 @@ C
 
 c-----------------------------------------------------------------------
       subroutine reii(i,J) !     Read Integer
-      character*132 S
+      character*1024 S
       integer count
       count=0
 
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)I,j
       write (6,*) i,j
@@ -576,13 +576,13 @@ c-----------------------------------------------------------------------
 c
 c-----------------------------------------------------------------------
       subroutine rei(i) ! read Integer
-      character*132 s
+      character*1024 s
       integer count
       count=0
 
- 1    call res(s,132)
+ 1    call res(s,1024)
       rewind(13)
-      write (13,'(a132)')s
+      write (13,'(a1024)')s
       rewind(13)
       read  (13,*,err=13,end=13)i
       write (6,*) i
@@ -602,13 +602,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine rer(r1)
 C     Read Real
-      character*132 S
+      character*1024 S
       integer count
       count=0
 C
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1
       write (6,*) r1
@@ -627,13 +627,13 @@ C
 c-----------------------------------------------------------------------
       subroutine rerr(r1,r2)
 C     Read Real
-      character*132 S
+      character*1024 S
       integer count
       count=0
 C
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2
       write (6,*) r1,r2
@@ -652,13 +652,13 @@ C
 c-----------------------------------------------------------------------
       subroutine rerrr(r1,r2,r3)
 C     Read Real
-      character*132 S
+      character*1024 S
       integer count
       count=0
 C
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2,R3
       write (6,*) r1,r2,r3
@@ -677,13 +677,13 @@ C
 c-----------------------------------------------------------------------
       subroutine rerrrr(r1,r2,r3,r4)
 C     Read Real
-      character*132 S
+      character*1024 S
       integer count
       count=0
 C
- 1    call RES(S,132)
+ 1    call RES(S,1024)
       REWIND(13)
-      WRITE (13,'(A132)')S
+      WRITE (13,'(A1024)')S
       REWIND(13)
       READ  (13,*,ERR=13,END=13)R1,R2,R3,R4
       write (6,*) r1,r2,r3,r4
@@ -704,24 +704,24 @@ C     putsold is the one device-dependent output routine.
 C     It Goes in Tekplot.f (Or Xinterface.f)  This is the Tek version
 C     It displays a string on the output display device
       character S(*)
-      WRITE(6,'(1X,132A1)',ERR=1)(S(I),I=1,NCHARS)
+      WRITE(6,'(1X,1024A1)',ERR=1)(S(I),I=1,NCHARS)
  1    return
       end
 c-----------------------------------------------------------------------
       subroutine getsold(s)
 C     GETSOLD is the one device-dependent input routine.
 C     It Goes in Tekplot.f (Or Xinterface.f)  This is the Tek version
-C     It returns an 132 character string entered from the input device
+C     It returns an 1024 character string entered from the input device
 C
-      character S*132
+      character S*1024
 C
       S=' '
-      READ(5,'(A132)',ERR=1,END=1)S
+      READ(5,'(A1024)',ERR=1,END=1)S
  1    return
       end
 C-----------------------------------------------------------------------
       subroutine prsiii(s,i1,I2,I3)
-      character S(*),SS*132
+      character S(*),SS*1024
 C
       DO 1 k=1,60
          IF(S(k).EQ.'$')THEN
@@ -731,7 +731,7 @@ C
          SS(k:k)=S(k)
  1    CONTINUE
       call puts('I/O Error: No String Terminator sent to PRSiii',44)
-      call puts(S,132)
+      call puts(S,1024)
       return
  2    CONTINUE
       WRITE(SS(NC+1:NC+30),'(3I10)',ERR=13)i1,i2,i3
@@ -743,7 +743,7 @@ C
       end
 C-----------------------------------------------------------------------
       subroutine priii(i1,i2,i3)
-      character S*132
+      character S*1024
       S=' '
       WRITE(S,'(3I13)',ERR=1)I1,I2,I3
       S(25:25)='$'

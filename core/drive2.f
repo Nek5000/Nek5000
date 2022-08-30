@@ -293,8 +293,8 @@ C     Echo the nonzero parameters from the readfile to the logfile
 C
       include 'SIZE'
       include 'INPUT'
-      CHARACTER*132 STRING
-      CHARACTER*1  STRING1(132)
+      CHARACTER*1024 STRING
+      CHARACTER*1  STRING1(1024)
       EQUIVALENCE (STRING,STRING1)
 C
       IF (nid.ne.0) RETURN
@@ -324,21 +324,21 @@ c     error check
          CALL exitt
       ENDIF
 C
-      CALL BLANK(STRING,132)
-c      CALL CHCOPY(STRING,REAFLE,132)
-      Ls=LTRUNC(STRING,132)
+      CALL BLANK(STRING,1024)
+c      CALL CHCOPY(STRING,REAFLE,1024)
+      Ls=LTRUNC(STRING,1024)
       READ(9,*,ERR=400) NPARAM
       WRITE(6,82) NPARAM,(STRING1(j),j=1,Ls)
 C
       DO 20 I=1,NPARAM
-         CALL BLANK(STRING,132)
+         CALL BLANK(STRING,1024)
          READ(9,80,ERR=400) STRING
-         Ls=LTRUNC(STRING,132)
+         Ls=LTRUNC(STRING,1024)
          IF (PARAM(i).ne.0.0) WRITE(6,81) I,(STRING1(j),j=1,Ls)
    20 CONTINUE
-   80 FORMAT(A132) 
-   81 FORMAT(I4,3X,132A1)
-   82 FORMAT(I4,3X,'Parameters from file:',132A1)
+   80 FORMAT(A1024) 
+   81 FORMAT(I4,3X,1024A1)
+   82 FORMAT(I4,3X,'Parameters from file:',1024A1)
       CLOSE (UNIT=9)
       write(6,*) ' '
 
@@ -417,8 +417,8 @@ C
       include 'INPUT'
       include 'PARALLEL'
 C
-      CHARACTER*132 NAME
-      CHARACTER*1   SESS1(132),PATH1(132),NAM1(132)
+      CHARACTER*1024 NAME
+      CHARACTER*1   SESS1(1024),PATH1(1024),NAM1(1024)
       EQUIVALENCE  (SESSION,SESS1)
       EQUIVALENCE  (PATH,PATH1)
       EQUIVALENCE  (NAME,NAM1)
@@ -438,44 +438,44 @@ C
 C
 C     Find out the session name:
 C
-c      CALL BLANK(SESSION,132)
-c      CALL BLANK(PATH   ,132)
+c      CALL BLANK(SESSION,1024)
+c      CALL BLANK(PATH   ,1024)
 
 c      ierr = 0
 c      IF(NID.EQ.0) THEN
 c        OPEN (UNIT=8,FILE='SESSION.NAME',STATUS='OLD',ERR=24)
 c        READ(8,10) SESSION
 c        READ(8,10) PATH
-c  10      FORMAT(A132)
+c  10      FORMAT(A1024)
 c        CLOSE(UNIT=8)
 c        GOTO 23
 c  24    ierr = 1
 c  23  ENDIF
 c      call err_chk(ierr,' Cannot open SESSION.NAME!$')
 
-      len = ltrunc(path,132)
+      len = ltrunc(path,1024)
       if(indx1(path1(len),'/',1).lt.1) then
          call chcopy(path1(len+1),'/',1)
       endif
 
-c      call bcast(SESSION,132*CSIZE)
-c      call bcast(PATH,132*CSIZE)
+c      call bcast(SESSION,1024*CSIZE)
+c      call bcast(PATH,1024*CSIZE)
 
-      CALL BLANK(PARFLE,132)
-      CALL BLANK(REAFLE,132)
-      CALL BLANK(RE2FLE,132)
-      CALL BLANK(FLDFLE,132)
-      CALL BLANK(HISFLE,132)
-      CALL BLANK(SCHFLE,132)
-      CALL BLANK(DMPFLE,132)
-      CALL BLANK(OREFLE,132)
-      CALL BLANK(NREFLE,132)
-      CALL BLANK(NAME  ,132)
+      CALL BLANK(PARFLE,1024)
+      CALL BLANK(REAFLE,1024)
+      CALL BLANK(RE2FLE,1024)
+      CALL BLANK(FLDFLE,1024)
+      CALL BLANK(HISFLE,1024)
+      CALL BLANK(SCHFLE,1024)
+      CALL BLANK(DMPFLE,1024)
+      CALL BLANK(OREFLE,1024)
+      CALL BLANK(NREFLE,1024)
+      CALL BLANK(NAME  ,1024)
 C
 C     Construct file names containing full path to host:
 C
-      LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LS=LTRUNC(SESSION,1024)
+      LPP=LTRUNC(PATH,1024)
       LSP=LS+LPP
 c
       call chcopy(nam1(    1),path1,lpp)
@@ -933,7 +933,7 @@ c-----------------------------------------------------------------------
 
       real comm_timers(8)
       integer comm_counters(8)
-      character*132 s132
+      character*1024 s1024
 
       tstop=dnekclock()
       tttstp=ttime         ! sum over all timesteps
@@ -1173,10 +1173,10 @@ c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
      $               ' tgop',ifsync
     1     format(/,'#',2x,'nid',6(7x,a5),4x,'qqq',1x,l4)
 
-        call blank(s132,132)
-        write(s132,132) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
-  132   format(i12,1p6e12.4,' qqq')
-        call pprint_all(s132,132,6)
+        call blank(s1024,1024)
+        write(s1024,1024) nid,tusbc,tdadd,tcrsl,tvdss,tdsum,tgop
+1024    format(i12,1p6e12.4,' qqq')
+        call pprint_all(s1024,1024,6)
       endif
 #endif
 
@@ -1185,12 +1185,12 @@ c         write(6,*) 'bso2 time',nbso2,tbso2,pbso2
 c-----------------------------------------------------------------------
       subroutine pprint_all(s,n_in,io)
       character*1 s(n_in)
-      character*1 w(132)
+      character*1 w(1024)
 
       include 'SIZE'
       include 'PARALLEL'
 
-      n = min(132,n_in)
+      n = min(1024,n_in)
 
       mtag = 999
       m    = 1
@@ -1199,19 +1199,19 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then
          l = ltrunc(s,n)
          write(io,1) (s(k),k=1,l)
-   1     format(132a1)
+   1     format(1024a1)
 
          do i=1,np-1
             call csend(mtag,s,1,i,0)    ! send handshake
-            m = 132
+            m = 1024
             call blank(w,m)
             call crecv(i,w,m)
-            if (m.le.132) then
+            if (m.le.1024) then
                l = ltrunc(w,m)
                write(io,1) (w(k),k=1,l)
             else
                write(io,*) 'pprint long message: ',i,m
-               l = ltrunc(w,132)
+               l = ltrunc(w,1024)
                write(io,1) (w(k),k=1,l)
             endif
          enddo

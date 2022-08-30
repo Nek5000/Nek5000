@@ -1264,7 +1264,7 @@ c-----------------------------------------------------------------------
       logical       if_restart,if_ortho_lyap
       common/restar/if_restart,if_ortho_lyap
 
-      character*132 lyprestart
+      character*1024 lyprestart
       common/restflename/lyprestart  !file for restart data
 
       twt = param(126) !time to wait to start computing exponents

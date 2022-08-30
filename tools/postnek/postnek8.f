@@ -260,7 +260,7 @@ c
 c
       len = ltrunc(input,leni)
       write(io,1) (input(i),i=1,len)
-    1 format(132a1)
+    1 format(1024a1)
       return
       end
 c-----------------------------------------------------------------------

@@ -1019,7 +1019,7 @@ c-----------------------------------------------------------------------
       integer d2,e,p0
       common /arrayi2/ iwrk((1+8)*lelm)
 
-      character*132 hdr
+      character*1024 hdr
       character*5   version
       real*4 test
       data   test  / 6.54321 /
@@ -1039,10 +1039,10 @@ c      ifco2 = .false. ! force ASCII for debugging
          write(6,'(A,A)') 'writing ', fname
          if (ifco2) then
             call byte_open(fname,ierr)
-            call blank(hdr,132)
+            call blank(hdr,1024)
             write(hdr,1) version,nelt,nelv,nv
     1       format(a5,3i12)
-            call byte_write(hdr,132/4,ierr)
+            call byte_write(hdr,1024/4,ierr)
             call byte_write(test,1,ierr) ! write the endian discriminator
          else
             open (unit=29,file=fname)
@@ -2294,12 +2294,12 @@ c     open file & chk for byteswap & 8byte reals
 
       logical ifbswap,if_byte_swap_test
 
-      CHARACTER*132 NAME
-      CHARACTER*1  NAM1(132)
+      CHARACTER*1024 NAME
+      CHARACTER*1  NAM1(1024)
       EQUIVALENCE  (NAME,NAM1)
 
       integer fnami (33)
-      character*132 fname,re2fle
+      character*1024 fname,re2fle
       equivalence (fname,fnami)
 
       character*80 hdr

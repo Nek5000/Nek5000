@@ -149,7 +149,7 @@ c
       common /finfo/  ifnorea, ifpar
       logical         ifnorea, ifpar
 
-      character*132 parfle
+      character*1024 parfle
       common /parstr/ parfle
 c
 c     End of basicsp.inc**********

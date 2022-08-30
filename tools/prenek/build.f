@@ -3567,11 +3567,11 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine get_flow_heat(ifflow,ifheat,nlogic,io)
       logical ifflow,ifheat
-      character*132 string
+      character*1024 string
       do i=1,nlogic
-         read(io,132) string
-  132    format(a132)
-         call capit(string,132)
+         read(io,1024) string
+  1024    format(a1024)
+         call capit(string,1024)
          if (indx1(string,'IFFLOW' ,6).gt.0) then
               read(string,*) IFFLOW
          elseif (indx1(string,'IFHEAT' ,6).gt.0) then 

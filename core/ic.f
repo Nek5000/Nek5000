@@ -294,9 +294,9 @@ c
      $       , ifrest(0:ldimt1,0:lpert)
      $       , ifprsl(  ldimt1,0:lpert)
 c
-      character*132 line,fname,cdum
+      character*1024 line,fname,cdum
       character*2  s2
-      character*1  line1(132)
+      character*1  line1(1024)
       equivalence (line1,line)
 C
 C     Default is user specified fortran function (=0 if not specified)
@@ -320,14 +320,14 @@ c     Check for Presolve options
 
       DO 1000 ILINE=1,15 
          LINE=INITC(ILINE)
-         CALL CAPIT(LINE,132)
+         CALL CAPIT(LINE,1024)
          IF (INDX1(LINE,'PRESOLV',7).NE.0) THEN
 C           found a presolve request
-            CALL BLANK(INITC(ILINE),132)
+            CALL BLANK(INITC(ILINE),1024)
             CALL LJUST(LINE)
             CALL CSPLIT(CDUM,LINE,' ',1)
 C
-            IF (LTRUNC(LINE,132).EQ.0) THEN
+            IF (LTRUNC(LINE,1024).EQ.0) THEN
                IF (NIO.EQ.0) WRITE(6,700)
   700          FORMAT(/,2X,'Presolve options: ALL')
 C              default - all fields are presolved.
@@ -338,9 +338,9 @@ C              default - all fields are presolved.
             ELSE
 C           check line for arguments
 C
-               LL=LTRUNC(LINE,132)
+               LL=LTRUNC(LINE,1024)
                IF (NIO.EQ.0) WRITE(6,810) (LINE1(L),L=1,LL)
-  810          FORMAT(/,2X,'Presolve options: ',132A1)
+  810          FORMAT(/,2X,'Presolve options: ',1024A1)
 C
                IF (INDX_CUT(LINE,'U',1).NE.0) THEN
                   ifprsl(1,jp) = .true.
@@ -371,15 +371,15 @@ C
       DO 2000 ILINE=1,15
          if (ifpert) jp=iline-1
          LINE=INITC(ILINE)
-         IF (LTRUNC(LINE,132).NE.0) THEN
+         IF (LTRUNC(LINE,1024).NE.0) THEN
 C           found a filename
             NFILES=NFILES+1
             INITC(NFILES)=LINE
 C
 C            IF (NIO.EQ.0.AND.NFILES.EQ.1) WRITE(6,1010) LINE
             IF (NIO.EQ.0.) WRITE(6,1010) LINE
- 1010       FORMAT(1X,'Checking restart options: ',A132)
-c            IF (NID.EQ.0) WRITE(6,'(A132)') LINE
+ 1010       FORMAT(1X,'Checking restart options: ',A1024)
+c            IF (NID.EQ.0) WRITE(6,'(A1024)') LINE
 C
 C           Parse restart options
  
@@ -460,17 +460,17 @@ c     cdump comes in via PARALLEL (->TOTAL)
       equivalence (excoder,excoder1)
 
 
-      character*132 fname
-      character*1  fname1(132)
+      character*1024 fname
+      character*1  fname1(1024)
       equivalence (fname1,fname)
 
       integer       hnami (30)
-      character*132 hname
-      character*1   hname1(132)
+      character*1024 hname
+      character*1   hname1(1024)
       equivalence  (hname,hname1)
       equivalence  (hname,hnami )
 
-      CHARACTER*132 header
+      CHARACTER*1024 header
 
 C     Local logical flags to determine whether to copy data or not.
       logical ifok,iffmat
@@ -559,7 +559,7 @@ C
                      ierr=0
                    endif
                  else                          ! new head format
-                   read(91,'(A132)',err=10,end=10) header
+                   read(91,'(A1024)',err=10,end=10) header
                    read(header,*)
      &                  neltr,nxr,nyr,nzr,rstime,istepr,excoder
                    ierr=0
@@ -721,11 +721,11 @@ C
                   CALL EXITT
                ENDIF
 
-               lname=ltrunc(fname,132)
+               lname=ltrunc(fname,1024)
                if (nio.eq.0) write(6,61) (fname1(i),i=1,lname)
                if (nio.eq.0) write(6,62) 
      $             iposu,iposv,iposw,iposp,ipost,nps,nouts
-   61          FORMAT(/,2X,'Restarting from file ',132A1)
+   61          FORMAT(/,2X,'Restarting from file ',1024A1)
    62          FORMAT(2X,'Columns for restart data U,V,W,P,T,S,N: ',7I4)
 
 C              Make sure the requested data is present in this file....
@@ -912,7 +912,7 @@ C
             write(6,1701) ieg,ixyz
             write(6,1702) 
      $            ((tdump(jxyz,ii),ii=1,nouts),jxyz=ixyz-1,ixyz)
- 1700       FORMAT(5X,'WARNING:  No data read in for file ',A132)
+ 1700       FORMAT(5X,'WARNING:  No data read in for file ',A1024)
  1701       FORMAT(5X,'Failed on  element',I4,',  point',I5,'.')
  1702       FORMAT(5X,'Last read dump:',/,5G15.7)
             write(6,*) nid,'call exitt 1702a',idump
@@ -940,7 +940,7 @@ C        Can't open file...
  5001    FORMAT(2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   *******   ERROR   *******    '
      $       ,/,2X,'   Could not open restart file:'
-     $       ,/,A132
+     $       ,/,A1024
      $      ,//,2X,'Quitting in routine RESTART.')
          CLOSE(UNIT=91)
          call exitt
@@ -965,14 +965,14 @@ C
       INCLUDE 'RESTART'
       INCLUDE 'TSTEP'
 
-      character*132 rsopts,fname
+      character*1024 rsopts,fname
       character*2  s2
       logical ifgtrl
 
 C     Scratch variables..
       logical ifdeft,ifanyc
-      CHARACTER*132 RSOPT     ,LINE
-      CHARACTER*1  RSOPT1(132),LINE1(132)
+      CHARACTER*1024 RSOPT     ,LINE
+      CHARACTER*1  RSOPT1(1024),LINE1(1024)
       EQUIVALENCE (RSOPT1,RSOPT)
       EQUIVALENCE (LINE1,LINE)
 C
@@ -986,7 +986,7 @@ C
       call csplit(fname,rsopt,' ',1)
 C     check fname for user supplied extension.
       if (indx1(fname,'.',1).eq.0) then
-         len=ltrunc(fname,132)
+         len=ltrunc(fname,1024)
          len1=len+1
          len4=len+4
          fname(len1:len4)='.fld'
@@ -1015,9 +1015,9 @@ C
 C
 C     Parse file for i/o options and/or dump number
 C
-      CALL CAPIT(RSOPT,132)
+      CALL CAPIT(RSOPT,1024)
 
-      IF (LTRUNC(RSOPT,132).NE.0) THEN
+      IF (LTRUNC(RSOPT,1024).NE.0) THEN
 C
 C        Check for explicit specification of restart TIME.
 C
@@ -1026,19 +1026,19 @@ C
          IF (ITO.NE.0) THEN
 C           user has specified the time explicitly.
             IT1=INDX_CUT(RSOPT,'=',1)
-            IT8=132-IT1
-            CALL BLANK(LINE,132)
+            IT8=1024-IT1
+            CALL BLANK(LINE,1024)
             CALL CHCOPY(LINE,RSOPT1(IT1),IT8)
             IF (IFGTRL(TTIME,LINE)) THEN
                IFGTIM=.FALSE.
                TIME=TTIME
             ENDIF
 C           remove the user specified time from the RS options line.
-            ITA=132-ITO+1
+            ITA=1024-ITO+1
             CALL BLANK(RSOPT1(ITO),ITA)
             CALL LJUST(LINE)
             IT1=INDX1(LINE,' ',1)
-            ITB=132-IT1+1
+            ITB=1024-IT1+1
             CALL CHCOPY(RSOPT1(ITO),LINE1(IT1),ITB)
          ENDIF
 
@@ -1347,7 +1347,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       integer function indx2(s1,l1,s2,l2)
-      character*132 s1,s2
+      character*1024 s1,s2
 
       n1=l1-l2+1
       indx2=0
@@ -1365,9 +1365,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       INTEGER FUNCTION INDX1(S1,S2,L2)
-      CHARACTER*132 S1,S2
+      CHARACTER*1024 S1,S2
 C
-      N1=132-L2+1
+      N1=1024-L2+1
       INDX1=0
       IF (N1.LT.1) return
 C
@@ -1387,20 +1387,20 @@ C
 C     INDX_CUT is returned with the location of S2 in S1 (0 if not found)
 C     S1     is returned with 1st occurance of S2 removed.
 C
-      CHARACTER*1 S1(132),S2(132)
+      CHARACTER*1 S1(1024),S2(1024)
 C
       I1=INDX1(S1,S2,L2)
 C
       IF (I1.NE.0) THEN
 C
-         N1=132-L2
+         N1=1024-L2
          DO 100 I=I1,N1
             I2=I+L2
 C           remove the 1st occurance of S2 from S1.
             S1(I)=S1(I2)
   100    CONTINUE
          N2=N1+1
-         DO 200 I=N2,132
+         DO 200 I=N2,1024
             S1(I)=' '
   200    CONTINUE
       ENDIF
@@ -1410,14 +1410,14 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine csplit(s0,s1,s2,l0)
-      CHARACTER*132 S0,S1,S2
+      CHARACTER*1024 S0,S1,S2
 C     split string S1 into two parts, delimited by S2.
 C
       I2=INDX_CUT(S1,S2,L0)
       IF (I2.EQ.0) return
 C
       I1=I2-1
-      CALL BLANK(S0,132)
+      CALL BLANK(S0,1024)
       S0(1:I1)=S1(1:I1)
       CALL LSHFT(S1,I2)
 C
@@ -1428,13 +1428,13 @@ c-----------------------------------------------------------------------
 C     shift string from IPT to the left
 C     INPUT : "abcde......    test    "
 C     OUTPUT: "e......    test        "     if ipt.eq.5
-      CHARACTER*1 STRING(132)
+      CHARACTER*1 STRING(1024)
 C
       DO 20 J=1,133-IPT
          IJ=IPT+J-1
          STRING(J)=STRING(IJ)
    20 CONTINUE
-      DO 30 J=134-IPT,132
+      DO 30 J=134-IPT,1024
          STRING(J)=' '
    30 CONTINUE
       return
@@ -1442,18 +1442,18 @@ C
 c-----------------------------------------------------------------------
       subroutine ljust(string)
 C     left justify string
-      CHARACTER*1 STRING(132)
+      CHARACTER*1 STRING(1024)
 C
       IF (STRING(1).NE.' ') return
 C
-      DO 100 I=2,132
+      DO 100 I=2,1024
 C
          IF (STRING(I).NE.' ') THEN
             DO 20 J=1,133-I
                IJ=I+J-1
                STRING(J)=STRING(IJ)
    20       CONTINUE
-            DO 30 J=134-I,132
+            DO 30 J=134-I,1024
                STRING(J)=' '
    30       CONTINUE
             return
@@ -1677,8 +1677,8 @@ C
 C     This complicated function is necessary thanks to the Ardent,
 C     which won't allow free formatted reads (*) from internal strings!
 C
-      CHARACTER*132 LINE
-      CHARACTER*132 WORK
+      CHARACTER*1024 LINE
+      CHARACTER*1024 WORK
       CHARACTER*8  FMAT
 C
 C     Note that the format Fn.0 is appropriate for fields of type:
@@ -1714,8 +1714,8 @@ C
 C     This complicated function is necessary thanks to the Ardent,
 C     which won't allow free formatted reads (*) from internal strings!
 C
-      CHARACTER*132 LINE
-      CHARACTER*132 WORK
+      CHARACTER*1024 LINE
+      CHARACTER*1024 WORK
       CHARACTER*8  FMAT
 C
       IFGTIL=.FALSE.
@@ -2210,14 +2210,14 @@ c-----------------------------------------------------------------------
       subroutine mfi_parse_hdr(hdr,ierr)
       include 'SIZE'
 
-      character*132 hdr
+      character*1024 hdr
 
-      if (indx2(hdr,132,'#std',4).eq.1) then
+      if (indx2(hdr,1024,'#std',4).eq.1) then
           call parse_std_hdr(hdr)
       else
          if (nio.eq.0) write(6,80) hdr
          if (nio.eq.0) write(6,80) 'NONSTD HDR, parse_hdr, abort.'
-  80     format(a132)
+  80     format(a1024)
          ierr = 1
       endif
 
@@ -2232,7 +2232,7 @@ c-----------------------------------------------------------------------
       include 'RESTART'
       include 'TSTEP'
 
-      character*132 hdr
+      character*1024 hdr
       character*4 dummy
       logical if_press_mesh
 
@@ -2328,7 +2328,7 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'RESTART'
 
-      character*132 hdr
+      character*1024 hdr
       character*1 rlcode(20)
 
 c                4  7  10  13   23    33    53    62     68     74
@@ -2380,11 +2380,11 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
-      character*132  hdr
-      character*132  fname_in
+      character*1024  hdr
+      character*1024  fname_in
 
-      character*132  fname
-      character*1    fnam1(132)
+      character*1024  fname
+      character*1    fnam1(1024)
       equivalence   (fnam1,fname)
 
       character*1    frontc
@@ -2399,15 +2399,15 @@ c
       tiostart=dnekclock()
 
       ! add full path if required
-      call blank(fname,132)
+      call blank(fname,1024)
       call chcopy(frontc, fname_in, 1)
       if (frontc .ne. '/') then
-        lenp = ltrunc(path,132)
-        lenf = ltrunc(fname_in,132)
+        lenp = ltrunc(path,1024)
+        lenf = ltrunc(fname_in,1024)
         call chcopy(fnam1(1),path,lenp)
         call chcopy(fnam1(lenp+1),fname_in,lenf)
       else
-        lenf = ltrunc(fname_in,132)
+        lenf = ltrunc(fname_in,1024)
         call chcopy(fnam1(1),fname_in,lenf)     
       endif
 
@@ -2526,7 +2526,7 @@ c-----------------------------------------------------------------------
       include 'RESTART'
 
 
-      character*1 fname(132)
+      character*1 fname(1024)
       integer fid
 
       character*8  eight,fmt,s8
@@ -2551,7 +2551,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine mfi_prepare(hname)  ! determine which nodes are readers
-      character*132 hname
+      character*1024 hname
 
       include 'SIZE'
       include 'PARALLEL'
@@ -2559,7 +2559,7 @@ c-----------------------------------------------------------------------
       include 'INPUT'
 
       integer stride
-      character*132 hdr, hname_
+      character*1024 hdr, hname_
       logical if_byte_swap_test
       real*4 bytetest
 
@@ -2569,7 +2569,7 @@ c-----------------------------------------------------------------------
       ! rank0 (i/o master) will do a pre-read to get some infos 
       ! we need to have in advance
       if (nid.eq.0) then
-         call chcopy(hname_,hname,132)
+         call chcopy(hname_,hname,1024)
          call addfid(hname_,0)
          call byte_open(hname_,ierr)
 

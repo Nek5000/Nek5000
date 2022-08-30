@@ -114,8 +114,8 @@ c
       common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
       integer*8 ngv
-      character*132 amgfile_c
-      character*1   fname1(132)
+      character*1024 amgfile_c
+      character*1   fname1(1024)
       equivalence  (fname1,amgfile_c)
       integer nnamg
 
@@ -208,7 +208,7 @@ c      endif
       nz=ncr*ncr*nelv
       isolver = param(40)
 
-      call blank(fname1,132)
+      call blank(fname1,1024)
       lamgn = ltrunc(amgfile,len(amgfile))
       call chcopy(fname1,amgfile,lamgn)
       call chcopy(fname1(lamgn+1),char(0),1)

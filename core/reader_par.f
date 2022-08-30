@@ -196,7 +196,7 @@ C
       call izero(matype,16*ldimt1)
       call rzero(cpgrp ,48*ldimt1)
 
-      call blank (initc,15*132)
+      call blank (initc,15*1024)
 
       return
       end
@@ -219,7 +219,7 @@ c     - mhd support
       INCLUDE 'CTIMER'
       INCLUDE 'TSTEP'
 
-      character*132 c_out,txt, txt2
+      character*1024 c_out,txt, txt2
 
       call finiparser_load(parfle,ierr)
       if(ierr .ne. 0) return
@@ -236,7 +236,7 @@ c set parameters
 
       call finiparser_getString(c_out,'general:stopAt',ifnd)
       if (ifnd .eq. 1) then
-         call capit(c_out,132)
+         call capit(c_out,1024)
          if (index(c_out,'ENDTIME') .eq. 1) then
             call finiparser_getDbl(d_out,'general:endTime',ifnd)
             if (ifnd .eq. 1) then
@@ -292,7 +292,7 @@ c set parameters
       if (ifnd .eq. 1) param(15) = d_out
       call finiparser_getString(c_out,'general:writeControl',ifnd)
       if (ifnd .eq. 1) then
-         call capit(c_out,132)
+         call capit(c_out,1024)
          if (index(c_out,'RUNTIME') .eq. 1) then
             param(14) = d_out
             param(15) = 0
@@ -361,7 +361,7 @@ c set parameters
       endif
 
       call finiparser_getString(c_out,trim(txt)//':solver',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if(ifnd .eq. 1) then 
         if (index(c_out,'CVODE') .eq. 1) then
           idpss(i) = 1
@@ -408,7 +408,7 @@ c set parameters
       if(ifnd .eq. 1) param(166) = d_out 
 
       call finiparser_getString(c_out,'cvode:preconditioner',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if(ifnd .eq. 1) then 
         if (index(c_out,'USER') .eq. 1) then
            param(167) = 1
@@ -443,7 +443,7 @@ c set parameters
 
       call finiparser_getString(c_out,'pressure:solver',ifnd)
       if (ifnd .eq. 1) then 
-         call capit(c_out,132)
+         call capit(c_out,1024)
          if (index(c_out,'GMRES') .eq. 1) then
             param(42) = 0
          else if (index(c_out,'CGFLEX') .eq. 1) then
@@ -457,7 +457,7 @@ c set parameters
 
       call finiparser_getString(c_out,'pressure:preconditioner',ifnd)
       if (ifnd .eq. 1) then 
-         call capit(c_out,132)
+         call capit(c_out,1024)
          if (index(c_out,'SEMG_XXT') .eq. 1) then
             param(40) = 0
         else if (index(c_out,'SEMG_AMG_HYPRE') .eq. 1) then
@@ -498,7 +498,7 @@ c     filtering parameters
       call finiparser_getString(c_out,'general:filtering',ifnd)
       if (ifnd .eq. 1) then
 c        stabilization type: none, explicit or hpfrt    
-         call capit(c_out,132)
+         call capit(c_out,1024)
          if (index(c_out,'NONE') .eq. 1) then
             filterType = 0
             goto 101
@@ -542,12 +542,12 @@ c        stabilization type: none, explicit or hpfrt
       endif
 
       call finiparser_getString(c_out,'cvode:mode',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'NORMAL') .eq. 1) param(160) = 1
       if (index(c_out,'NORMAL_TSTOP' ) .eq. 1) param(160) = 3
  
       do i = 1,20
-         call blank(txt,132)
+         call blank(txt,1024)
          write(txt,"('general:userParam',i2.2)") i
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) uparam(i) = d_out
@@ -556,7 +556,7 @@ c        stabilization type: none, explicit or hpfrt
 c set logical flags
       call finiparser_getString(c_out,'general:timeStepper',ifnd)
       if (ifnd .eq. 1) then
-        call capit(c_out,132)
+        call capit(c_out,1024)
 
         if (index(c_out,'BDF1') .eq. 1) then
            param(27) = 1 
@@ -573,7 +573,7 @@ c set logical flags
 
       call finiparser_getString(c_out,'general:extrapolation',ifnd)
       if (ifnd .eq. 1) then
-        call capit(c_out,132)
+        call capit(c_out,1024)
         if (index(c_out,'OIFS') .eq. 1) then
            ifchar = .true.
 
@@ -603,7 +603,7 @@ c set logical flags
 
       call finiparser_getString(c_out,'mesh:motion',ifnd)
       if (ifnd .eq. 1) then
-       call capit(c_out,132)
+       call capit(c_out,1024)
        if (index(c_out,'ELASTICITY') .eq. 1) then
           ifmvbd = .true.
           call finiparser_getDbl(d_out,'mesh:viscosity',ifnd)
@@ -646,7 +646,7 @@ c set logical flags
       endif
 
       call finiparser_getString(c_out,'problemType:equation',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'STEADYSTOKES').eq.1) then
          iftran = .false.
          ifadvc(1) = .false.
@@ -817,12 +817,12 @@ c set restart options
       call finiparser_findTokens('general:startFrom', ',' , ifnd)
       do i = 1,min(ifnd,15)
          call finiparser_getToken(initc(i),i)
-         if(index(initc(i),'0') .eq. 1) call blank(initc(i),132)
+         if(index(initc(i),'0') .eq. 1) call blank(initc(i),1024)
       enddo
 
 c set partitioner options
       call finiparser_getString(c_out,'mesh:partitioner',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if(index(c_out,'RSB').eq.1) then
          meshPartitioner=1
       else if (index(c_out,'RCBRSB').eq.1) then
@@ -911,7 +911,7 @@ C
       call bcast(ifto  , lsize)
       call bcast(ifpsco, ldimt1*lsize)
 
-      call bcast(initc, 15*132*csize) 
+      call bcast(initc, 15*1024*csize) 
 
       call bcast(timeioe,sizeof(timeioe))
 
@@ -1180,11 +1180,11 @@ c-----------------------------------------------------------------------
       INCLUDE 'PARDICT'
 
       
-      character*132  key
+      character*1024  key
       character*1024 val
 
-      character*132 txt
-      character*1   tx1(132)
+      character*1024 txt
+      character*1   tx1(1024)
       equivalence   (tx1,txt)
 
       ierr = 0
@@ -1192,7 +1192,7 @@ c-----------------------------------------------------------------------
       call finiparser_getDictEntries(n)
       do i = 1,n
          call finiparser_getPair(key,val,i,ifnd)
-         call capit(key,132)
+         call capit(key,1024)
 
          is = index(key,'_') ! ignore user keys
          if (is.eq.1) goto 10
@@ -1202,7 +1202,7 @@ c-----------------------------------------------------------------------
 
             is = index(key,'SCALAR')
             if(is .eq. 1) then
-              call chcopy(txt,key,132)
+              call chcopy(txt,key,1024)
               call chcopy(tx1(is+6),'%%',2) 
               if(index(pardictkey(j),txt).eq.1) goto 10
             endif

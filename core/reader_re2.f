@@ -786,10 +786,10 @@ c-----------------------------------------------------------------------
       logical if_byte_swap_test
 
       integer fnami (33)
-      character*132 fname
+      character*1024 fname
       equivalence (fname,fnami)
 
-      character*132 hdr
+      character*1024 hdr
       character*5 version
       real*4      test
 
@@ -800,7 +800,7 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then
          if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
          call izero(fnami,33)
-         m = indx2(re2fle,132,' ',1)-1
+         m = indx2(re2fle,1024,' ',1)-1
          call chcopy(fname,re2fle,m)
 
          inquire(file=fname, exist=iffound)

@@ -11,7 +11,7 @@ C
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 
-      character*132 string(100)
+      character*1024 string(100)
 
       VNEKTON = 3 ! dummy not really used anymore
 
@@ -161,11 +161,11 @@ c     IFSPLIT   = .false.
           call exitt
       ENDIF
 
-      if(nid.eq.0) READ(9,'(A132)',ERR=500) (string(i),i=1,NLOGIC)
-      call bcast(string,100*132*CSIZE)
+      if(nid.eq.0) READ(9,'(A1024)',ERR=500) (string(i),i=1,NLOGIC)
+      call bcast(string,100*1024*CSIZE)
 
       do i = 1,NLOGIC
-         call capit(string(i),132)
+         call capit(string(i),1024)
          if (indx1(string(i),'IFTMSH' ,6).gt.0) then 
              read(string(i),*,ERR=490) (IFTMSH(II),II=0,NPSCL2)
          elseif (indx1(string(i),'IFNAV'  ,5).gt.0 .and.
@@ -712,7 +712,7 @@ C
       INCLUDE 'SCRCT'
       CHARACTER CBC1*1,CBC3*3,CHTEMP*1,CHTMP3*3
       EQUIVALENCE (CHTEMP,CHTMP3)
-      character*132 string
+      character*1024 string
 C
 C     Set up TEMPORARY value for NFIELD - NFLDT
 C
@@ -744,7 +744,7 @@ C
         if (.not.iftmsh(ifield)) nel = nelgv
 C       Fluid and/or thermal
         read(9,81) string        !  ***** FLUID   BOUNDARY CONDITIONS *****
-        call capit(string,132)
+        call capit(string,1024)
 
 c       write(6,*) 'reading BC:',ifield,ibcs,nbcs
 c       write(6,81) string
@@ -809,7 +809,7 @@ c              ENDIF
             ENDIF
    80    CONTINUE
         endif
-   81   format(a132)
+   81   format(a1024)
   100 CONTINUE
 C
 C     END OF BC READ
@@ -888,16 +888,16 @@ C
       include 'INPUT'
       include 'PARALLEL'
 
-      character*132 line
+      character*1024 line
       logical      ifgtil
 
       ierr = 0
 
       if (nid.eq.0) then   !  Read names of restart files
 
-        call blank(initc,15*132)
+        call blank(initc,15*1024)
         read (9,80,err=200,end=200) line
-        call capit(line,132)
+        call capit(line,1024)
         if (indx1(line,'RESTART',7).ne.0) then
            if (.not.ifgtil(nskip,line)) goto 200
 C          read(line,*,err=200,end=200) nskip
@@ -906,7 +906,7 @@ C          read(line,*,err=200,end=200) nskip
    50      continue
            read(9,80,err=200,end=200) line
         endif
-   80   format(a132)
+   80   format(a1024)
 
         if (.not.ifgtil(nskip,line)) goto 200
 
@@ -925,7 +925,7 @@ C       Read drive force data
 
       ierr = iglmax(ierr,1)
       if (ierr.eq.0) then
-         call bcast(initc,15*132*csize)
+         call bcast(initc,15*1024*csize)
          return
       else
          goto 210
@@ -956,7 +956,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
 
-      CHARACTER*132 LINE
+      CHARACTER*1024 LINE
 C
       CALL IZERO(MATYPE,16*LDIMT1)
       CALL RZERO(CPGRP ,48*LDIMT1)
@@ -974,7 +974,7 @@ C
            DO 100 IPROP=1,3
               IF(ITYPE.EQ.1) READ(9,* ) CPGRP(IGRP,IFLD,IPROP)
               IF(ITYPE.EQ.2) READ(9,80) LINE
-   80   FORMAT(A132)
+   80   FORMAT(A1024)
   100   CONTINUE
       ENDIF
 

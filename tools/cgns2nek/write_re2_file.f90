@@ -11,7 +11,7 @@ SUBROUTINE write_re2_file ()
   !
   IMPLICIT NONE
   !
-  CHARACTER (len=132) :: re2file
+  CHARACTER (len=1024) :: re2file
   CHARACTER (len=80) ::  hdr
   CHARACTER(1) :: dir,var1
   !

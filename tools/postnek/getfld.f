@@ -34,8 +34,8 @@ C     note, this usage of CTMP1 will be less than elsewhere if nelt ~> 9.
       logical if_call_setw
       logical if_call_coef
  
-      character*132 hname
-      character*1   hname1(132)
+      character*1024 hname
+      character*1   hname1(1024)
       equivalence (hname1,hname)
  
       real*4 bytetest
@@ -133,7 +133,7 @@ c     if (newdump.eq.odump) return
       else
          call chcopy(fname1(len+1),'.fld',4)
 
-         call blank(hname,132)
+         call blank(hname,1024)
          call chcopy(hname,session_name,len)
          call chcopy(hname1(len+1),'.fhd',4)
 c
@@ -230,7 +230,7 @@ c
       do 1000 jdump=1,ndumps_read
  
          if (nid.eq.0.or.jdump.eq.1) then
-           call blank(hname,132)
+           call blank(hname,1024)
            if (iffmat) then
             read(24,80,err=1500,end=1500) hname
            elseif(iffform) then
@@ -239,7 +239,7 @@ c
             call byte_read(hname,20)
            endif
 c          write(6,*) ' got hname',nelgt,neltr,nel,nelhdr
-c          write(6,('a132')) hname
+c          write(6,('a1024')) hname
  
            nxr=nx
            nyr=ny

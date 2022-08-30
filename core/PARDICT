@@ -6,7 +6,7 @@ c
 
       parameter(PARDICT_NKEYS = 104)
 
-      character*132 pardictkey(PARDICT_NKEYS)
+      character*1024 pardictkey(PARDICT_NKEYS)
       data
      &  pardictkey(1)  / 'GENERAL' /
      &  pardictkey(2)  / 'GENERAL:STOPAT' /

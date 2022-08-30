@@ -1270,8 +1270,8 @@ c-----------------------------------------------------------------------
 
       real*4         test_pattern
 
-      character*1 fhdfle1(132)
-      character*132 fhdfle
+      character*1 fhdfle1(1024)
+      character*1024 fhdfle
       equivalence (fhdfle,fhdfle1)
 
       jstep = istep

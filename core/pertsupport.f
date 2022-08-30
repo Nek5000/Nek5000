@@ -162,7 +162,7 @@ c-----------------------------------------------------------------------
       logical       if_restart,if_ortho_lyap
       common/restar/if_restart,if_ortho_lyap
 
-      character*132 lyprestart
+      character*1024 lyprestart
       common/restflename/lyprestart  !file for restart data
 
       twt = param(126) !time to wait to start computing exponents
@@ -285,7 +285,7 @@ c----------------------------------------------------------------------
       character*4 lyp4
       character*5 sch5
       character*7 lypres,lypold
-      CHARACTER*1 SESS1(132),PATH1(132),NAM1(132)
+      CHARACTER*1 SESS1(1024),PATH1(1024),NAM1(1024)
       EQUIVALENCE (SESSION,SESS1)
       EQUIVALENCE (PATH,PATH1)
       EQUIVALENCE (NAME,NAM1)
@@ -295,7 +295,7 @@ c----------------------------------------------------------------------
       data sch5 /'.schp'/
       data lypold /'.lypold'/
       data lypres /'.lypsum'/
-      character*132 lypfile,lypfileold,lyprestart,lypsch
+      character*1024 lypfile,lypfileold,lyprestart,lypsch
       common/restflename/lyprestart      !file where restart data is written
       logical if_restart
       common/restar/if_restart
@@ -354,13 +354,13 @@ c
 
 c     opening the lyp file in unit=79
 
-      call blank(lypfile,132)
-      call blank(lypfileold,132)
-      call blank(lyprestart,132)
-      call blank(lypsch,132)
+      call blank(lypfile,1024)
+      call blank(lypfileold,1024)
+      call blank(lyprestart,1024)
+      call blank(lypsch,1024)
 
-      ls  = ltrunc(session,132)
-      lpp = ltrunc(path,132)
+      ls  = ltrunc(session,1024)
+      lpp = ltrunc(path,1024)
 
       call chcopy(nam1(    1),path1,lpp)
       call chcopy(nam1(lpp+1),sess1,ls )

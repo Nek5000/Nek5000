@@ -259,7 +259,7 @@ c
 c
       n33 = min(n,26)
       do i=1,n
-         call blank(s,132)
+         call blank(s,1024)
          n1 = ia(i)
          n2 = ia(i+1)-1
          do jj=n1,n2

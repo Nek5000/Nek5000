@@ -54,14 +54,14 @@ c     Check for io request in file 'ioinfo'
       save    maxstep
       data    maxstep /999999999/
 
-      character*132 fname
-      character*1   fname1(132)
+      character*1024 fname
+      character*1   fname1(1024)
       equivalence  (fname,fname1)
 
       ioinfodmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
          call blank(fname1,size(fname1))
-         len = ltrunc(path,132)
+         len = ltrunc(path,1024)
          call chcopy(fname1,path,len)
          call chcopy(fname1(len+1),'ioinfo',6)
          open(unit=87,file=fname,status='old',err=88)
@@ -272,8 +272,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       character prefix*(*)
 
-      character*1    fhdfle1(132)
-      character*132   fhdfle
+      character*1    fhdfle1(1024)
+      character*1024   fhdfle
       equivalence   (fhdfle,fhdfle1)
 
       character*1 excode(30)
@@ -319,7 +319,7 @@ c       Open new file for each dump on /cfs
         else
            call byte_open (fldfle,ierr)
 c          write header as character string
-           call blank(fhdfle,132)
+           call blank(fhdfle,1024)
         endif
       endif
       call bcast(ifxyo,lsize)
@@ -453,8 +453,8 @@ C----------------------------------------------------------------------
       include 'TSTEP'
       include 'PARALLEL'
 C
-      CHARACTER*132 NAME
-      CHARACTER*1   SESS1(132),PATH1(132),NAM1(132)
+      CHARACTER*1024 NAME
+      CHARACTER*1   SESS1(1024),PATH1(1024),NAM1(1024)
       EQUIVALENCE  (SESSION,SESS1)
       EQUIVALENCE  (PATH,PATH1)
       EQUIVALENCE  (NAME,NAM1)
@@ -471,11 +471,11 @@ C
 c
       character*1    prefix(3)
 C
-      call blank(name  ,132)
-      call blank(fldfle,132)
+      call blank(name  ,1024)
+      call blank(fldfle,1024)
 C
-      LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LS=LTRUNC(SESSION,1024)
+      LPP=LTRUNC(PATH,1024)
       LSP=LS+LPP
       l = 0
 
@@ -636,8 +636,8 @@ c-----------------------------------------------------------------------
 
       real*4         test_pattern
 
-      character*1 fhdfle1(132)
-      character*132 fhdfle
+      character*1 fhdfle1(1024)
+      character*1024 fhdfle
       equivalence (fhdfle,fhdfle1)
 
       write(excode,'(A30)') excodein
@@ -647,7 +647,7 @@ c-----------------------------------------------------------------------
          if (ikstep.gt.9999) ikstep = ikstep/10
       enddo
 
-      call blank(fhdfle,132)
+      call blank(fhdfle,1024)
 
 c       write(6,111)               !       print on screen
 c     $     nelgt,lx1,ly1,lz1,time,istep,excode
@@ -1034,7 +1034,7 @@ c     call exitti('this is wdsizo A:$',wdsizo)
       end
 c-----------------------------------------------------------------------
       subroutine io_init ! determine which nodes will output
-      character*132 hname
+      character*1024 hname
 
       include 'SIZE'
       include 'INPUT'
@@ -1092,8 +1092,8 @@ c-----------------------------------------------------------------------
       character*3 prefx3
       data        prefx3 / "   " /
 
-      character*132  fname
-      character*1    fnam1(132)
+      character*1024  fname
+      character*1    fnam1(1024)
       equivalence   (fnam1,fname)
 
       character*6  six,str
@@ -1109,7 +1109,7 @@ c-----------------------------------------------------------------------
       save    nopen
       data    nopen  / 2000*0 /
 
-      call blank(fname,132)      !  zero out for byte_open()
+      call blank(fname,1024)      !  zero out for byte_open()
 
       iprefix = i_find_prefix(prefix,1000)
       if (ifreguo) then
@@ -1133,7 +1133,7 @@ c-----------------------------------------------------------------------
       endif
       ndigit = log10(rfileo) + 1
 
-      lenp = ltrunc(path,132)
+      lenp = ltrunc(path,1024)
       call chcopy(fnam1(1),path,lenp)    
       k = 1 + lenp 
  
@@ -1153,7 +1153,7 @@ c-----------------------------------------------------------------------
          endif 
       endif
 
-      ll=ltrunc(session,132)                           !  Add SESSION
+      ll=ltrunc(session,1024)                           !  Add SESSION
       call chcopy(fnam1(k),session,ll)
       k = k+ll
      
@@ -1880,7 +1880,7 @@ c-----------------------------------------------------------------------
       real*4 test_pattern
       common /ctmp0/ lglist(0:lelt)
 
-      character*132 hdr
+      character*1024 hdr
       integer*8 ioff
       logical if_press_mesh
 
@@ -1910,7 +1910,7 @@ c-----------------------------------------------------------------------
       ierr = 0
       if(nid.eq.pid0) then
 
-      call blank(hdr,132)              ! write header
+      call blank(hdr,1024)              ! write header
       call blank(rdcode1,10)
       i = 1
       IF (IFXYO) THEN

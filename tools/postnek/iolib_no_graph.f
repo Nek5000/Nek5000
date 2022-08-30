@@ -619,7 +619,7 @@ c     - mhd support
 #     include "basics.inc"
       include 'basicsp.inc'
 
-      character*132 c_out,txt
+      character*1024 c_out,txt
 
       call finiparser_load(ierr)
       if(ierr .ne. 0) return
@@ -645,7 +645,7 @@ c     par read for postnek
       if (param(8) .lt.0.0) param(8)  = -1.0/param(8)
 
       call finiparser_getString(c_out,'general:stopAt',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'ENDTIME') .gt. 0) then
          call finiparser_getDbl(d_out,'general:endTime',ifnd)
          if(ifnd .eq. 1) param(10) = d_out
@@ -687,7 +687,7 @@ c***********************************************************************
 c set parameters
       d_out = param(15)
       call finiparser_getString(c_out,'general:writeControl',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
       if (index(c_out,'RUNTIME') .gt. 0) then
          param(14) = d_out
       else
@@ -710,7 +710,7 @@ c       idpss(1) = 0 ! Helmholtz is default
 
 c set logical flags
       call finiparser_getString(c_out,'general:timeStepper',ifnd)
-      call capit(c_out,132)
+      call capit(c_out,1024)
 
       if (index(c_out,'CHAR') .gt. 0) then
          ifchar = .true.
@@ -765,11 +765,11 @@ c-----------------------------------------------------------------------
       INCLUDE 'PARDICT'
 
 
-      character*132  key
+      character*1024  key
       character*1024 val
 
-      character*132 txt
-      character*1   tx1(132)
+      character*1024 txt
+      character*1   tx1(1024)
       equivalence   (tx1,txt)
 
       ierr = 0
@@ -777,7 +777,7 @@ c-----------------------------------------------------------------------
       call finiparser_getDictEntries(n)
       do i = 1,n
          call finiparser_getPair(key,val,i,ifnd)
-         call capit(key,132)
+         call capit(key,1024)
 
          is = index(key,'_') ! ignore user keys
          if (is.eq.1) goto 10
@@ -787,7 +787,7 @@ c-----------------------------------------------------------------------
 
             is = index(key,'SCALAR')
             if(is .eq. 1) then
-              call chcopy(txt,key,132)
+              call chcopy(txt,key,1024)
               call chcopy(tx1(is+6),'%%',2)
               if(index(pardictkey(j),txt).eq.1) goto 10
             endif

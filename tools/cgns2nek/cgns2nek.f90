@@ -7,7 +7,7 @@ PROGRAM cgnstonek
 
   INTEGER(iprec) :: ier
 
-  CHARACTER(132) :: error_message
+  CHARACTER(1024) :: error_message
 
   !
   CALL getarg(1,cgns_file)
@@ -54,7 +54,7 @@ SUBROUTINE cgnstonek_exit (TEXT)
   IMPLICIT NONE
   !
   CHARACTER (*)  TEXT
-  CHARACTER (132) :: file
+  CHARACTER (1024) :: file
   !
   !
   WRITE (6,*)

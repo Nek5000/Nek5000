@@ -540,10 +540,10 @@ struct crs_data *crs_setup(
 
   dump    = 0;
   if(data->comm.id==0) {
-    char str1[132];
-    char str2[132];
-    char str3[132];
-    char str4[132];
+    char str1[1024];
+    char str2[1024];
+    char str3[1024];
+    char str4[1024];
     sprintf(str1,"%s.amg.dat",datafname);
     sprintf(str2,"%s.amg_W.dat",datafname);
     sprintf(str3,"%s.amg_AfP.dat",datafname);
@@ -781,10 +781,10 @@ static void read_data(
   find_id_setup(&fid, uid,uid_n, cr);
   code=0;
   if(pid==0) {
-     char str1[132];
-     char str2[132];
-     char str3[132];
-     char str4[132];
+     char str1[1024];
+     char str2[1024];
+     char str3[1024];
+     char str4[1024];
      sprintf(str1,"%s.amg.dat",datafname);
      sprintf(str2,"%s.amg_W.dat",datafname);
      sprintf(str3,"%s.amg_AfP.dat",datafname);
@@ -935,10 +935,10 @@ static void read_data_mpiio(struct crs_data *const data,
 
   struct sfile fs = {0,0};
   struct sfile fsm[3] = {{0,0},{0,0},{0,0}};
-  char str1[132];
-  char str2[132];
-  char str3[132];
-  char str4[132];
+  char str1[1024];
+  char str2[1024];
+  char str3[1024];
+  char str4[1024];
   sprintf(str1,"%s.amg.dat",datafname);
   sprintf(str2,"%s.amg_W.dat",datafname);
   sprintf(str3,"%s.amg_AfP.dat",datafname);
@@ -1248,9 +1248,9 @@ static void dump_matrix(
 
   code = 0;
   if(pid==0) {
-    char str1[132];
-    char str2[132];
-    char str3[132];
+    char str1[1024];
+    char str2[1024];
+    char str3[1024];
     sprintf(str1,"%s.amgdmp_i.dat",datafname);
     sprintf(str2,"%s.amgdmp_j.dat",datafname);
     sprintf(str3,"%s.amgdmp_p.dat",datafname);

@@ -1654,7 +1654,7 @@ c-----------------------------------------------------------------------
       integer d2,e,p0
       common /arrayi2/ iwrk((1+8)*lelm)
 
-      character*132 hdr
+      character*1024 hdr
       character*5   version
       real*4 test
       data   test  / 6.54321 /
@@ -1681,10 +1681,10 @@ c      ifma2 = .false. ! force .map
          write(6,'(A,A)') 'writing ', fname
          if (ifma2) then
             call byte_open(fname,ierr)
-            call blank(hdr,132)
+            call blank(hdr,1024)
             write(hdr,1) version,nel,nactive,depth,d2,npts,nrnk,noutflow
     1       format(a5,7i12)
-            call byte_write(hdr,132/4,ierr)
+            call byte_write(hdr,1024/4,ierr)
             call byte_write(test,1,ierr) ! write the endian discriminator
          else
             open (unit=29,file=fname)
@@ -3251,12 +3251,12 @@ c     open file & chk for byteswap & 8byte reals
 
       logical ifbswap,if_byte_swap_test
 
-      CHARACTER*132 NAME
-      CHARACTER*1  NAM1(132)
+      CHARACTER*1024 NAME
+      CHARACTER*1  NAM1(1024)
       EQUIVALENCE  (NAME,NAM1)
 
       integer fnami (33)
-      character*132 fname,re2fle
+      character*1024 fname,re2fle
       equivalence (fname,fnami)
 
       character*80 hdr
@@ -3365,17 +3365,17 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
 
-      INTEGER FUNCTION INDX132(S1,S2,L2)
-      CHARACTER*132 S1,S2
+      INTEGER FUNCTION INDX1024(S1,S2,L2)
+      CHARACTER*1024 S1,S2
 C
       N1=80-L2+1
-      INDX132=0
+      INDX1024=0
       IF (N1.LT.1) return
 C
       DO 100 I=1,N1
          I2=I+L2-1
          IF (S1(I:I2).EQ.S2(1:L2)) THEN
-            INDX132=I
+            INDX1024=I
             return
          ENDIF
   100 CONTINUE

@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
  
       integer nid_global_root(0:nsessmax-1)
-      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
+      character*1024 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
 
       logical ifhigh
       logical mpi_is_initialized
@@ -48,10 +48,10 @@ c-----------------------------------------------------------------------
       if (nid .eq. 0) then
          l = ltrunc(session_in,len(session_in))
          if (l .gt. 0) then
-            call blank(session_mult(0),132)
+            call blank(session_mult(0),1024)
             call chcopy(session_mult(0), session_in, l)
             l = ltrunc(path_in,len(path_in))
-            call blank(path_mult(0)   ,132)
+            call blank(path_mult(0)   ,1024)
             call chcopy(path_mult(0), path_in, l)
          else
            !write(6,*) 'Reading session file ...'
@@ -63,13 +63,13 @@ c-----------------------------------------------------------------------
            if (nlin.gt.2) read(8,*,err=24) nsessions
            if (nsessions.gt.1) read(8,*,err=24) ifneknekc
            do n=0,nsessions-1
-              call blank(session_mult(n),132)
-              call blank(path_mult(n)   ,132)
+              call blank(session_mult(n),1024)
+              call blank(path_mult(n)   ,1024)
               read(8,11,err=24) session_mult(n)
               read(8,11,err=24) path_mult(n)
               if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
            enddo
- 11        format(a132)
+ 11        format(a1024)
            close(8)
          endif
          if (nsessions.gt.1) 
@@ -88,8 +88,8 @@ c-----------------------------------------------------------------------
       call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
          call bcast(npsess(n),ISIZE)
-         call bcast(session_mult(n),132*CSIZE)
-         call bcast(path_mult(n),132*CSIZE)
+         call bcast(session_mult(n),1024*CSIZE)
+         call bcast(path_mult(n),1024*CSIZE)
       enddo
 
       ! single session run
@@ -509,22 +509,22 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine exittr(stringi,rdata,idata)
-      character*1 stringi(132)
-      character*1 stringo(132)
+      character*1 stringi(1024)
+      character*1 stringo(1024)
       character*25 s25
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
 
-      call blank(stringo,132)
-      call chcopy(stringo,stringi,132)
+      call blank(stringo,1024)
+      call chcopy(stringo,stringi,1024)
       len = indx1(stringo,'$',1)
       write(s25,25) rdata,idata
    25 format(1x,1p1e14.6,i10)
       call chcopy(stringo(len),s25,25)
 
       if (nid.eq.0) write(6,1) (stringo(k),k=1,len+24)
-    1 format('EXIT: ',132a1)
+    1 format('EXIT: ',1024a1)
 
       call exitt
 
@@ -532,22 +532,22 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine exitti(stringi,idata)
-      character*1 stringi(132)
-      character*1 stringo(132)
+      character*1 stringi(1024)
+      character*1 stringo(1024)
       character*11 s11
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
 
-      call blank(stringo,132)
-      call chcopy(stringo,stringi,132)
+      call blank(stringo,1024)
+      call chcopy(stringo,stringi,1024)
       len = indx1(stringo,'$',1)
       write(s11,11) idata
    11 format(1x,i10)
       call chcopy(stringo(len),s11,11)
 
       if (nid.eq.0) write(6,1) (stringo(k),k=1,len+10)
-    1 format('EXIT: ',132a1)
+    1 format('EXIT: ',1024a1)
 
       call exitt
 
@@ -555,8 +555,8 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine err_chk(ierr,string)
-      character*1 string(132)
-      character*1 ostring(132)
+      character*1 string(1024)
+      character*1 ostring(1024)
       character*10 s10
       include 'SIZE'
 c     include 'TOTAL'
@@ -566,7 +566,7 @@ c     include 'CTIMER'
       if(ierr.eq.0) return 
 
       len = indx1(string,'$',1)
-      call blank(ostring,132)
+      call blank(ostring,1024)
       write(s10,11) ierr
    11 format(1x,' ierr=',i3)
 
@@ -574,7 +574,7 @@ c     include 'CTIMER'
       call chcopy(ostring(len),s10,10)
 
       if (nid.eq.0) write(6,1) (ostring(k),k=1,len+10)
-    1 format('ERROR: ',132a1)
+    1 format('ERROR: ',1024a1)
 
       call exitt
 

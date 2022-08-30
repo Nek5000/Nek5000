@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
     int coars_strat, interp_strat, ret;
     setbuf(stdout, NULL);
 
-    char sname[132];
-    char session[132];
+    char sname[1024];
+    char session[1024];
     printf("Enter name prefix of input file(s):\n");
     fgets(sname, sizeof sname, stdin);
     ret = sscanf(sname,"%s",&session);
@@ -586,7 +586,7 @@ static void amg_export(const struct amg_setup_data *data,char *session)
     }
 
     /* Save matrices */
-    char str1[132],str2[132],str3[132],str4[132];
+    char str1[1024],str2[1024],str3[1024],str4[1024];
       sprintf(str1,"%s.amg_W.dat",session);
       sprintf(str2,"%s.amg_AfP.dat",session);
       sprintf(str3,"%s.amg_Aff.dat",session);

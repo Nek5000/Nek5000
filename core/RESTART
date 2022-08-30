@@ -16,7 +16,7 @@ c
      $              , er,nelB,nelBr
 
       integer iHeaderSize
-      parameter(iHeaderSize=132)
+      parameter(iHeaderSize=1024)
 
       real timer
       common /cmfi_r/ timer

@@ -2064,12 +2064,12 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine exitrr(stringi,r1,r2)
-      character*1 stringi(132)
-      character*1 stringo(132)
+      character*1 stringi(1024)
+      character*1 stringo(1024)
       character*26 s26
 
-      call blank  (stringo,132)
-      call chcopy (stringo,stringi,132)
+      call blank  (stringo,1024)
+      call chcopy (stringo,stringi,1024)
       len = indx1 (stringo,'$',1)
       write(s26,26) r1,r2
    26 format(1p2e13.4)
@@ -2077,7 +2077,7 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.0) write(6,1) (stringo(k),k=1,len+25)
       if (nid.eq.0) write(6,*)
-    1 format(/,'EXIT: ',132a1)
+    1 format(/,'EXIT: ',1024a1)
 
       call exitt
 

@@ -485,7 +485,7 @@ c
 c
       n22 = min(n,22)
       do i=1,n
-         call blank(s,132)
+         call blank(s,1024)
          ii = lda*i
          do k=0,m
             j = i+k
@@ -542,7 +542,7 @@ c
       n22 = min(n,22)
       n29 = min(n,29)
       do i=1,n29
-         call blank(s,132)
+         call blank(s,1024)
          n1 = ia(i)
          n2 = ia(i+1)-1
          do jj=n1,n2

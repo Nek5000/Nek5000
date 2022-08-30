@@ -10,7 +10,7 @@ C
       INCLUDE 'CTIMER'
  
       logical ifbswap,ifre2,parfound
-      character*132 string
+      character*1024 string
       integer idum(3*numsts+3)
 
       ierr = 0
@@ -982,21 +982,21 @@ c           write(6,*)'help:',lelt,lelv,lelgv
 c-----------------------------------------------------------------------
       subroutine cscan(sout,key,nk)
 
-      character*132 sout,key
-      character*132 string
-      character*1  string1(132)
+      character*1024 sout,key
+      character*1024 string
+      character*1  string1(1024)
       equivalence (string1,string)
 c
       do i=1,100000000
-         call blank(string,132)
+         call blank(string,1024)
          read (nk,80,end=100,err=100) string
-         call chcopy(sout,string,132)
+         call chcopy(sout,string,1024)
 c        write (6,*) string
          if (indx1(string,key,nk).ne.0) return
       enddo
   100 continue
 c
-   80 format(a132)
+   80 format(a1024)
       return
 
       end

@@ -100,7 +100,7 @@ C
       EQUIVALENCE(GRID  ,PARAM(18))
       EQUIVALENCE(IFNAV ,IFADVC(1))
       EQUIVALENCE(TURBMOD,TEXTSW(1,1))
-132   FORMAT(' ',2G14.6,A32)
+1024   FORMAT(' ',2G14.6,A32)
 C
 C     Stuff that used to be in basicsp.inc
       COMMON /SPOST/ TDUMP(30)

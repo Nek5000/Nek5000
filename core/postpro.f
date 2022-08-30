@@ -7,9 +7,9 @@
       character string*(*)
 
       l = ltrunc(string,len(string))
-      if(l.gt.132) call exitti('invalid string length$',l)
+      if(l.gt.1024) call exitti('invalid string length$',l)
 
-      call blank  (initc(1),132)
+      call blank  (initc(1),1024)
       call chcopy (initc(1),string,l)
       call setics
 
@@ -1853,7 +1853,7 @@ c-----------------------------------------------------------------------
       INCLUDE 'CTIMER'
 
       logical ifbswap,ifre2,parfound
-      character*132 string
+      character*1024 string
       character*72 string2
       integer idum(3*numsts+3)
       integer paramval
@@ -1933,7 +1933,7 @@ c-----------------------------------------------------------------------
       INCLUDE 'CTIMER'
 
       logical ifbswap,ifre2,parfound
-      character*132 string
+      character*1024 string
       character*72 string2
       integer idum(3*numsts+3)
       integer paramval,i,j

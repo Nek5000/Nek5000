@@ -68,8 +68,8 @@ c------------------------------------------------------------------------------
 
 #     include "SIZE"
 
-      character*132 string
-      character*1  string1(132)
+      character*1024 string
+      character*1  string1(1024)
       equivalence (string,string1)
  
       logical     if3d,  ifevenx,ifeveny,ifevenz
@@ -126,14 +126,14 @@ c------------------------------------------------------------------------------
 
 
 c     Get the input file, which specifies the base .rea file
-      call blank(string,132)
+      call blank(string,1024)
       write(6,*) 'input file name:'
-      read (5,132) string
-  132 format(a132)
+      read (5,1024) string
+  1024 format(a1024)
       open (unit=7,file=string,status='old')
 
 c     Read in name of previously generated NEKTON data set.
-      call gets(string,132,iend,7)
+      call gets(string,1024,iend,7)
 c     if string is int, should be ndim and .re2 case(no.rea needed)
       call check_string(string,isnum,ndim)   !check if file name or ndim
 c-----------------------------------------------------------------------
@@ -1454,9 +1454,9 @@ c
  
 c       Scan through .rea file until end of bcs
         call nekscan(string,'RESTART',7,8)
-        lout = ltrunc(string1,132)
+        lout = ltrunc(string1,1024)
         write (9,81) (string1(j),j=1,lout)
-   81   format(132a1)
+   81   format(1024a1)
 
 c       Scan through and output .rea file until end of file
         call scanout(string,'xxxx',4,8,9)
@@ -1477,22 +1477,22 @@ c-----------------------------------------------------------------------
 c     scan through infile until input is found and output
 c     all lines save that containing input to "outfile"
 c
-      character*132 string
+      character*1024 string
       character*1 input(1)
       integer infile,outfile,len
  
-      character*1 string1(132)
+      character*1 string1(1024)
  
       do line=1,10000000
-         call blank(string,132)
-         read (infile ,132,end=100,err=100) string
-         call ccopy(string1,string,132)
-         lout = ltrunc(string1,132)
+         call blank(string,1024)
+         read (infile ,1024,end=100,err=100) string
+         call ccopy(string1,string,1024)
+         lout = ltrunc(string1,1024)
          write (outfile,81) (string1(j),j=1,lout)
          if (indx1(string,input,len).ne.0) return
       enddo
-  132 format(a132)
-   81 format(132a1)
+  1024 format(a1024)
+   81 format(1024a1)
  
   100 continue
       return
@@ -1502,16 +1502,16 @@ c-----------------------------------------------------------------------
 c
 c     scan through infile until input is found 
 c
-      character*132 string
+      character*1024 string
       character*1 input(1)
       integer infile,outfile
  
       do line=1,10000000
-         call blank(string,132)
-         read (infile ,132,end=100,err=100) string
+         call blank(string,1024)
+         read (infile ,1024,end=100,err=100) string
          if (indx1(string,input,len).ne.0) return
       enddo
-  132 format(a132)
+  1024 format(a1024)
  
   100 continue
       return
@@ -1543,9 +1543,9 @@ c-----------------------------------------------------------------------
       RETURN
       END
       INTEGER FUNCTION INDX1(S1,S2,L2)
-      CHARACTER*132 S1,S2
+      CHARACTER*1024 S1,S2
  
-      N1=132-L2+1
+      N1=1024-L2+1
       INDX1=0
       IF (N1.LT.1) RETURN
  
@@ -1601,8 +1601,8 @@ c-----------------------------------------------------------------------
 c
 c     scan through infile until "no comment" is found
 c
-      character*132 string
-      character*1  string1(132)
+      character*1024 string
+      character*1  string1(1024)
       equivalence (string1,string)
  
       character*1 comment
@@ -1611,14 +1611,14 @@ c
  
       iend = 0
       do line=1,10000000
-         call blank(string,132)
-         read (infile ,132,end=100,err=100) string
+         call blank(string,1024)
+         read (infile ,1024,end=100,err=100) string
  
          if   (indx1(string,comment,1).ne.1) then
 c             write(*,*) line
-c             write(6,132) string
+c             write(6,1024) string
               open(unit=99,file='box.tmp')
-              len = ltrunc(string,132)
+              len = ltrunc(string,1024)
               write(99,81) (string1(k),k=1,len)
               write(6,81) (string1(k),k=1,len)
               close(unit=99)
@@ -1629,8 +1629,8 @@ c             write(6,132) string
          endif
  
       enddo
-  132 format(a132)
-   81 format(132a1)
+  1024 format(a1024)
+   81 format(1024a1)
  
   100 continue
       iend = 1
@@ -1753,15 +1753,15 @@ c      return
 c-----------------------------------------------------------------------
       subroutine getcv0(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(132)
+      character*1 adum(1024)
 c
 c     Get character strings, with no seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,132)
-    1 format(132a1)
+      read(99,1,end=2) (adum(k),k=1,1024)
+    1 format(1024a1)
     2 continue
  
       i = 0
@@ -1773,7 +1773,7 @@ c
       enddo
       do j=1,n
          write(6,3) m,n,(c(i,j),i=1,m)
-    3    format(2i4,'getcv0:',132a1)
+    3    format(2i4,'getcv0:',1024a1)
       enddo
  
       close(unit=99)
@@ -1782,15 +1782,15 @@ c
 c-----------------------------------------------------------------------
       subroutine getcv(c,m,n,iend,io)
       character*1 c(m,n)
-      character*1 adum(132)
+      character*1 adum(1024)
 c
 c     Get character strings, with single seperator, from first uncommented line
 c
       call scannocom(iend,io)
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
-      read(99,1,end=2) (adum(k),k=1,132)
-    1 format(132a1)
+      read(99,1,end=2) (adum(k),k=1,1024)
+    1 format(1024a1)
     2 continue
  
       i = 0
@@ -1822,7 +1822,7 @@ c
       if (iend.ne.0) return
       open(unit=99,file='box.tmp')
       read(99,1) (c(k),k=1,n)
-    1 format(132a1)
+    1 format(1024a1)
       close(unit=99)
       return
       end
@@ -2072,8 +2072,8 @@ c-----------------------------------------------------------------------
 
 #     include "SIZE"
 
-      character*132 string
-      character*1  string1(132)
+      character*1024 string
+      character*1  string1(1024)
 
       integer nlx(mbox),nly(mbox),nlz(mbox)
 c     this line is consistent with the rest part of the code
@@ -2117,9 +2117,9 @@ c      real curve(8,maxel)
 c     call out_tens_bcs  (cbc,nlx,nly,nlz,nbox,nfld,if3d) ! > 1 box, later
  
       call nekscan(string,'RESTART',7,8)
-      lout = ltrunc(string1,132)
+      lout = ltrunc(string1,1024)
       write (9,81) (string1(j),j=1,lout)
-   81 format(132a1)
+   81 format(1024a1)
 
       call scanout(string,'xxxx',4,8,9)
 c      if(.not.iffo)  call byte_close()
@@ -2887,18 +2887,18 @@ c-----------------------------------------------------------------------
       integer inf,outf
 
       integer line,lout
-      character*132 temps
-      character*1   temps1(132)
+      character*1024 temps
+      character*1   temps1(1024)
       logical chk_heat,chk_flow
 
       chk_flow = .false.
       chk_heat = .false.
 
       do line=1,nlogic
-         call blank(temps,132)
-         read (inf,132,end=100,err=100) temps
-         call ccopy(temps1,temps,132)             
-         lout = ltrunc(temps1,132)                !len of temps1/temps
+         call blank(temps,1024)
+         read (inf,1024,end=100,err=100) temps
+         call ccopy(temps1,temps,1024)             
+         lout = ltrunc(temps1,1024)                !len of temps1/temps
          
          if (indx1(temps,'IFFLOW',6).ne.0) then  
             chk_flow = .true.
@@ -2932,16 +2932,16 @@ c-----------------------------------------------------------------------
       endif
 
  10   do line = 1,10
-         call blank(temps,132)
-         read (inf,132,end=100,err=100) temps
-         call ccopy(temps1,temps,132)             
-         lout = ltrunc(temps1,132)                !len of temps1/temps
+         call blank(temps,1024)
+         read (inf,1024,end=100,err=100) temps
+         call ccopy(temps1,temps,1024)             
+         lout = ltrunc(temps1,1024)                !len of temps1/temps
          write (outf,81) (temps1(j),j=1,lout)          
          if (indx1(temps,'MESH DATA',9).ne.0) return
       enddo
 
-  132 format(a132)
-   81 format(132a1)
+  1024 format(a1024)
+   81 format(1024a1)
 
   100 continue
       write (6,*) 'In subroutine set_logical'
@@ -2952,8 +2952,8 @@ c-----------------------------------------------------------------------
      $                                              ,infil,outfil)
 
       integer infil,outfil
-      character*132 str
-      character*1   str1(132)
+      character*1024 str
+      character*1   str1(1024)
       logical ifflw, ifht, ifmhd
 
       nps = nfd - 1
@@ -2961,17 +2961,17 @@ c-----------------------------------------------------------------------
       if (ifmhd)          nps = nps-1
       if (nps.lt.0) nps = 0
       do i = 1,nparam
-         call blank(str,132)
-         read(infil,'(a132)') str
-         call ccopy(str1,str,132)
+         call blank(str,1024)
+         read(infil,'(a1024)') str
+         call ccopy(str1,str,1024)
 
          if(i.eq.23) then 
            write(outfil,90) nps
    90      format(' ',i2,'              p23 NPSCAL')
          else 
-           lout = ltrunc(str1,132)
+           lout = ltrunc(str1,1024)
            write (outfil,81) (str1(j),j=1,lout)
-   81      format(132a1)
+   81      format(1024a1)
          endif
       enddo
 
@@ -2980,7 +2980,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine check_string(string,isint,inum)
       ! If string is an integer, should be ndim and .re2 case
-      character*132 string
+      character*1024 string
       logical isint
       integer inum
       

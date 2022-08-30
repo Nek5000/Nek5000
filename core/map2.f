@@ -343,11 +343,11 @@ c-----------------------------------------------------------------------
       logical ifbswap,if_byte_swap_test
       logical ifco2, ifcon
 
-      character*132 confle
-      character*1   confle1(132)
+      character*1024 confle
+      character*1   confle1(1024)
       equivalence  (confle,confle1)
 
-      character*132 hdr
+      character*1024 hdr
       character*5   version
       real*4        test
 
@@ -364,8 +364,8 @@ c-----------------------------------------------------------------------
 #endif
 
       if (nid.eq.0) then
-         lfname = ltrunc(reafle,132) - 4
-         call blank (confle,132)
+         lfname = ltrunc(reafle,1024) - 4
+         call blank (confle,1024)
          call chcopy(confle,reafle,lfname)
          call chcopy(confle1(lfname+1),'.con',4)
          inquire(file=confle, exist=ifcon)
@@ -693,11 +693,11 @@ c-----------------------------------------------------------------------
 
       logical ifbswap,if_byte_swap_test
 
-      character*132 mapfle
-      character*1   mapfle1(132)
+      character*1024 mapfle
+      character*1   mapfle1(1024)
       equivalence  (mapfle,mapfle1)
 
-      character*132 hdr
+      character*1024 hdr
       character*5   version
       real*4        test
 
@@ -709,8 +709,8 @@ c-----------------------------------------------------------------------
       ifma2 = .false.
 
       if (nid.eq.0) then
-         lfname = ltrunc(reafle,132) - 4
-         call blank (mapfle,132)
+         lfname = ltrunc(reafle,1024) - 4
+         call blank (mapfle,1024)
          call chcopy(mapfle,reafle,lfname)
          call chcopy(mapfle1(lfname+1),'.map',4)
          inquire(file=mapfle, exist=ifmap)
@@ -732,8 +732,8 @@ c-----------------------------------------------------------------------
             call byte_open(mapfle,ierr)
             if(ierr.ne.0) goto 100
 
-            call blank(hdr,132)
-            call byte_read(hdr,132/4,ierr)
+            call blank(hdr,1024)
+            call byte_read(hdr,1024/4,ierr)
             if(ierr.ne.0) goto 100
 
             read (hdr,1) version,neli,nnzi

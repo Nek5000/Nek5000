@@ -76,16 +76,16 @@ c
       character*10    drivc(5)
       character*14    rstv,rstt
       character*40    textsw(100,2)
-      character*132   initc(15)
+      character*1024   initc(15)
       common /input4/ hcode,ocode,rstv,rstt,drivc,initc,textsw
 
       character*40    turbmod
       equivalence    (turbmod,textsw(1,1))
 
-      character*132   reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
+      character*1024   reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
       common /cfiles/ reafle,fldfle,dmpfle,hisfle,schfle,orefle,nrefle
 
-      character*132   session,path,re2fle,parfle,amgfile
+      character*1024   session,path,re2fle,parfle,amgfile
       common /cfile2/ session,path,re2fle,parfle,amgfile
 
       integer cr_re2,fh_re2
