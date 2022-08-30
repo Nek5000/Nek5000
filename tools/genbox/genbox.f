@@ -129,7 +129,7 @@ c     Get the input file, which specifies the base .rea file
       call blank(string,1024)
       write(6,*) 'input file name:'
       read (5,1024) string
-  1024 format(a1024)
+ 1024 format(a1024)
       open (unit=7,file=string,status='old')
 
 c     Read in name of previously generated NEKTON data set.
@@ -1491,7 +1491,7 @@ c
          write (outfile,81) (string1(j),j=1,lout)
          if (indx1(string,input,len).ne.0) return
       enddo
-  1024 format(a1024)
+ 1024 format(a1024)
    81 format(1024a1)
  
   100 continue
@@ -1511,7 +1511,7 @@ c
          read (infile ,1024,end=100,err=100) string
          if (indx1(string,input,len).ne.0) return
       enddo
-  1024 format(a1024)
+ 1024 format(a1024)
  
   100 continue
       return
@@ -1629,7 +1629,7 @@ c             write(6,1024) string
          endif
  
       enddo
-  1024 format(a1024)
+ 1024 format(a1024)
    81 format(1024a1)
  
   100 continue
@@ -2940,7 +2940,7 @@ c-----------------------------------------------------------------------
          if (indx1(temps,'MESH DATA',9).ne.0) return
       enddo
 
-  1024 format(a1024)
+ 1024 format(a1024)
    81 format(1024a1)
 
   100 continue

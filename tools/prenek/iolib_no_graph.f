@@ -516,7 +516,7 @@ C
          call GETSOLD(S)
       ELSE
          READ(55,1024) S
-  1024    FORMAT(1024A1)
+ 1024    FORMAT(1024A1)
       ENDIF
 C
 c     call GETSOLD(S)

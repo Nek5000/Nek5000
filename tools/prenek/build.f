@@ -3570,7 +3570,7 @@ c-----------------------------------------------------------------------
       character*1024 string
       do i=1,nlogic
          read(io,1024) string
-  1024    format(a1024)
+ 1024    format(a1024)
          call capit(string,1024)
          if (indx1(string,'IFFLOW' ,6).gt.0) then
               read(string,*) IFFLOW
