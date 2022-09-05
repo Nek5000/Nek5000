@@ -397,8 +397,14 @@ c-----------------------------------------------------------------------
             call byte_read(hdr,sizeof(hdr)/4,ierr)
             if(ierr.ne.0) goto 100
 
-            read (hdr,*) version,nelgti,nelgvi,nvi
-c    1       format(a5,2i12,i2)
+            read (hdr,'(a5)') version 
+
+            if (version.eq.'#v002') then
+               read (hdr,*) version,nelgti,nelgvi,nvi
+            else
+               read (hdr,1) version,nelgti,nelgvi,nvi
+            endif
+            write (6,*) ' hdr calling ',version,nelgti,nelgvi,nvi 
 
             call byte_read(test,1,ierr)
             if(ierr.ne.0) goto 100
@@ -406,6 +412,9 @@ c    1       format(a5,2i12,i2)
             if(ierr.ne.0) goto 100
          endif
       endif
+
+   1  format(a5,3i12)
+
       call bcast(nelgti,sizeof(nelgti))
       call bcast(nelgvi,sizeof(nelgvi))
       call bcast(nvi,sizeof(nvi))

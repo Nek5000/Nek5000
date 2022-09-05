@@ -123,7 +123,7 @@ c     write(6,*) len,(file1(k),k=1,len+4)
  
       write(6,*)
       write(6,6) neln,(fout1(k),k=1,lou+4)
-    6 format(i12,' elements written to ',40a1)
+    6 format(i16,' elements written to ',40a1)
 
       if(itype.eq.1) then
         write(6,*)
@@ -321,8 +321,14 @@ c         if (option.eq.'yes') ifsolid = .true.
         write(11,11) -neln,ndim3,nelnv
 
         call blank(hdr,80)
-        write(hdr,111) neln,ndim3,nelnv     ! writes out header for .re2
-  111   format('#v002',i9,i3,i9,' hdr')
+
+        if (neln.lt.10000000)  then         
+           write(hdr,111) neln,ndim3,nelnv  ! writes out header for .re2, 
+        else                             
+           write(hdr,112) neln,ndim3,nelnv  ! writes out header for .re2
+        endif    
+  111   format('#v002',i9,i3,i9,' hdr')     ! E < 10M uses #v002
+  112   format('#v004',i16,i3,i16,' hdr')   ! E > 10M assigns #v004 
         call byte_write(hdr,20,ierr)        ! assumes byte_open() already issued
         call byte_write(test,1,ierr)        ! write the endian discriminator
 
@@ -727,7 +733,7 @@ c        if (cb6.eq.'v  ') cb6='t  '
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.11)
+   23 FORMAT(1x,A3,i16,5G18.11)
 
  
    80 format(a80)
@@ -1496,7 +1502,7 @@ c-----------------------------------------------------------------------
    20 FORMAT(1x,A3,2I3,5G14.6)
    21 FORMAT(1x,A3,i5,i1,5G14.6)
    22 FORMAT(1x,A3,i6,5G14.6)
-   23 FORMAT(1x,A3,i12,5G18.11)
+   23 FORMAT(1x,A3,i16,5G18.11)
       return
       end
 c-----------------------------------------------------------------------
@@ -1555,13 +1561,15 @@ c-----------------------------------------------------------------------
 
       real*8 buf(20)
       real*8 rcun
+      integer*8 ncun
       logical ifcht
 c
 C     .write formatted curve side data 
 C
       neln = nlev*nel
       nelnv= nlev*nelv
-      ncun = 2*nlev*ncurve
+      ncun = ncurve        ! 1. convert ncurve-->int8
+      ncun = 2*nlev*ncun   ! 2. assign int8 output
 
       if(itype.eq.0) then
          write(11,11)
@@ -1832,7 +1840,7 @@ c-----------------------------------------------------------------------
     1 continue
 
       write(io,10) e,jlev,a,igroup
-   10 format(5x,'ELEMENT',i12,' [',i5,a1,']    GROUP',i5)
+   10 format(5x,'ELEMENT',i16,' [',i5,a1,']    GROUP',i5)
 
       return
       end
@@ -1933,7 +1941,7 @@ c-----------------------------------------------------------------------
       subroutine outcurve(r1,r2,r3,r4,r5,cc,edge,e,nel,ipass,itype)
       character*1 cc
 
-      integer ncurve,ilast
+      integer*8 ncurve,ilast
       save    ncurve,ilast
       data    ncurve,ilast  /0,0/
       real*8 buf(10)
