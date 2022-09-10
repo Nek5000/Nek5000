@@ -317,7 +317,8 @@ c         if (option.eq.'yes') ifsolid = .true.
       neln = nlev*nel
       nelnv= nlev*nelv
 
-      nBC = 1
+      nBC = 0
+      if(ifflow) nBC = nBC + 1
       if(ifheat) nBC = nBC + 1
 
       if(itype.eq.1) then    !re2
