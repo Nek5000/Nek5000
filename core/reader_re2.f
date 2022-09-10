@@ -826,7 +826,7 @@ c-----------------------------------------------------------------------
    1     format(a5,i9,i3,i9)
 
          if(ifverbose)
-     $      write (6,*) ' re2 hdr ',version,nelgt,ldimr,nelgv
+     $      write (6,*) ' re2 hdr:',version,nelgt,ldimr,nelgv
              
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
