@@ -90,7 +90,7 @@ c-----------------------------------------------------------------------
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
-      integer*8       nrg
+      integer*8       nrg      
 
       nrg       = nelgt
       nr        = nelt
@@ -165,7 +165,7 @@ c-----------------------------------------------------------------------
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
-      integer*8       nrg
+      integer*8       nrg,nr
       integer*4       nrg4(2)
      
       integer*8       i8gl_running_sum 
@@ -202,7 +202,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + nrg*4*lrs4
 
       if (.not.ifread) return
-      if(nio.eq.0) write(6,'(A,I10)') ' reading curved sides   ', nrg
+      if(nio.eq.0) write(6,'(A,I20)') ' reading curved sides   ', nrg
 
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
@@ -269,7 +269,7 @@ c-----------------------------------------------------------------------
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
-      integer*8       nrg
+      integer*8       nrg,nr
       integer*4       nrg4(2)
 
       integer*8       i8gl_running_sum 
@@ -306,7 +306,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + nrg*4*lrs4
 
       if (.not.ifread) return
-      if(nio.eq.0) write(6,'(A,I10,A,I3)') 
+      if(nio.eq.0) write(6,'(A,I20,A,I3)') 
      $             ' reading boundary faces ', nrg, 
      $             ' for ifield ', ifield
 
@@ -550,6 +550,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       logical ifbswap
+      integer*8 ncurve8
 
       integer e,eg,buf(55)
       real rcurve
@@ -571,14 +572,15 @@ c-----------------------------------------------------------------------
          if(wdsizi.eq.8) then
            call byte_read(rcurve,2,ierr)
            if (ifbswap) call byte_reverse8(rcurve,2,ierr)
-           ncurve = rcurve
+           ncurve8 = rcurve
          else
            call byte_read(ncurve,1,ierr)
            if (ifbswap) call byte_reverse(ncurve,1,ierr)
+           ncurve8 = ncurve
          endif
 
-         if(ncurve.ne.0) write(6,*) '  reading curved sides '
-         do k=1,ncurve
+         if(ncurve8.ne.0) write(6,*) '  reading curved sides '
+         do k=1,ncurve8
            if(ierr.eq.0) then
               call byte_read(buf,nwds,ierr)
               if(wdsizi.eq.8) then
@@ -814,14 +816,30 @@ c-----------------------------------------------------------------------
          call byte_read(hdr,20,ierr)
          if(ierr.ne.0) goto 100
 
-         read (hdr,1) version,nelgt,ldimr,nelgv
-    1    format(a5,i9,i3,i9)
- 
+         read (hdr,'(a5)') version
+
+         if(version.eq.'#v004') then   
+            read (hdr,*) version,nelgt,ldimr,nelgv,nBCre2
+         else                          
+            read (hdr,1) version,nelgt,ldimr,nelgv
+         endif    
+   1     format(a5,i9,i3,i9)
+
+         if(ifverbose)
+     $      write (6,*) ' re2 hdr ',version,nelgt,ldimr,nelgv
+             
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
-         if(version.eq.'#v003') then
-           wdsizi = 8
-           param(32)=1
+         if(version.eq.'#v003') wdsizi = 8
+         if(version.eq.'#v004') wdsizi = 8
+
+         if(version.eq.'#v003') param(32) = 1
+         if(version.eq.'#v004') then
+           if(nBCre2 < 0) then ! boundary IDs 
+             param(32) = abs(nBCre2)
+           else                ! classic
+             param(32) = min(int(param(32)), nBCre2)
+           endif
          endif
 
          call byte_read(test,1,ierr)
