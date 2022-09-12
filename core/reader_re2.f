@@ -800,7 +800,7 @@ c-----------------------------------------------------------------------
       ierr=0
 
       if (nid.eq.0) then
-         if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
+         if (ifverbose) write(6,'(A,A)') ' reading ', re2fle
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
