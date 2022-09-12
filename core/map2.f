@@ -136,6 +136,202 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine get_vert_map_v2(nlv)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(mdw=2+2**ldim)
+      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      common /scrns/ wk(mdw*ndw)
+      integer*8 wk
+
+      integer     wk4(2*mdw*ndw)
+      equivalence (wk4,wk)
+
+      common /ivrtx/ vertex ((2**ldim),lelt)
+      integer*8 vertex
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      integer ibuf(2)
+
+      integer*8 eid8(lelt), vtx8(lelt*2**ldim)
+      integer   iwork(lelt), loc_to_glob_nid(lelt), dest(lelt)
+      common /ctmp0/ eid8, vtx8, iwork, loc_to_glob_nid, dest
+
+      common /scrcg/ xyz(ldim*lelt*2**ldim)
+
+      integer cnt, algo
+      integer opt_parrsb(3), opt_parmetis(10)
+
+      logical ifbswap, ifread_con
+
+      real tol
+
+#if !defined(PARRSB) && !defined(PARMETIS)
+#if defined(DPROCMAP)
+      call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
+#else
+      call read_map(vertex,nlv,wk4,mdw,ndw)
+      return
+#endif      
+#endif
+
+#if defined(PARRSB) || defined(PARMETIS)
+      neli = nelt
+      ifread_con = .true.
+      call read_con(wk4,size(wk),neli,nlv,ierr)
+
+      if (ierr.ne.0) then
+        ifread_con = .false.
+        tol = connectivityTol
+        call find_con(wk,size(wk),tol,ierr)
+        if(ierr.ne.0) then
+          tol = tol / 10.0;
+          call find_con(wk,size(wk),tol,ierr)
+        endif
+        call err_chk(ierr,' find_con failed!$')
+      endif
+
+c fluid elements
+      j  = 0
+      ii = 0
+      cnt= 0
+      do i = 1,neli
+         itmp = wk(ii+1)
+         if (ifread_con) itmp = wk4(ii+1)
+
+         if (itmp .le. nelgv) then
+            j = j + 1
+
+            eid8(j) = wk(ii+1)
+            call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            if (ifread_con) then
+              eid8(j) = wk4(ii+1)
+              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+            endif
+
+            do iv=1,nlv
+              xyz(cnt+1)=xc(iv,i)
+              xyz(cnt+2)=yc(iv,i)
+              if(ldim.eq.3) then
+                xyz(cnt+3)=zc(iv,i)
+                cnt=cnt+3
+              else
+                cnt=cnt+2
+              endif
+            enddo
+         endif
+         ii = ii + (nlv+1)
+      enddo
+      neliv = j
+
+      nel = neliv
+      call fpartMeshV2(dest,eid8,vtx8,xyz,nel,nlv,nekcomm,
+     $  meshPartitioner,0,loglevel,ierr)
+      call err_chk(ierr,'partMesh fluid failed!$')
+
+      nelv = nel
+      nelt = nelv
+      ierr = 0 
+      if (nelv .gt. lelv) ierr = 1
+      call err_chk(ierr,'nelv > lelv!$')
+ 
+      do i = 1,nelv
+         lglel(i) = eid8(i)
+      enddo
+      call isort(lglel,iwork,nelv)
+      do i = 1,nelv
+         call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
+         loc_to_glob_nid(i) = dest(iwork(i))
+      enddo
+
+      cnt=0
+c solid elements
+      if (nelgt.ne.nelgv) then
+         j  = 0
+         ii = 0
+         do i = 1,neli
+            itmp = wk(ii+1)
+            if (ifread_con) itmp = wk4(ii+1)
+
+            if (itmp .gt. nelgv) then
+               j = j + 1
+
+               eid8(j) = wk(ii+1)
+               call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+               if (ifread_con) then
+                 eid8(j) = wk4(ii+1)
+                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+               endif
+
+               do iv=1,nlv
+                 xyz(cnt+1)=xc(iv,i)
+                 xyz(cnt+2)=yc(iv,i)
+                 if(ldim.eq.3) then
+                   xyz(cnt+3)=zc(iv,i)
+                   cnt=cnt+3
+                 else
+                   cnt=cnt+2
+                 endif
+               enddo
+            endif
+            ii = ii + (nlv+1)
+         enddo
+         nelit = j
+
+         nel = nelit
+         call fpartMeshV2(dest,eid8,vtx8,xyz,nel,nlv,nekcomm,
+     $                  2,0,loglevel,ierr)
+         call err_chk(ierr,'partMesh solid failed!$')
+
+         nelt = nelv + nel
+         ierr = 0 
+         if (nelt .gt. lelt) ierr = 1
+         call err_chk(ierr,'nelt > lelt!$')
+    
+         do i = 1,nel
+            lglel(nelv+i) = eid8(i)
+         enddo
+         call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
+         do i = 1,nel
+            call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
+            loc_to_glob_nid(nelv + i) = dest(iwork(i))
+         enddo
+      endif
+
+#ifdef DPROCMAP
+      call dProcMapClearCache()
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt) 
+     $      call exitti('invalid ieg!$',ieg)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+      enddo
+#else
+      call izero(gllnid,nelgt)
+      do i = 1,nelt
+         ieg = lglel(i)
+         gllnid(ieg) = nid
+      enddo
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif
+
+#endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine get_vert_map(nlv)
 
       include 'SIZE'
