@@ -159,7 +159,7 @@ err:
 }
 #endif
 
-void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
+void printPartStat(const long long *vtx, int nel, int nv, comm_ext ce)
 {
   int i,j;
 
@@ -253,6 +253,78 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   comm_free(&comm);
 }
 
+#define fRedistributeElemV2 FORTRAN_UNPREFIXED(fredistributeelemv2,FREDISTRIBUTEELEMV2)
+int fRedistributeElemV2(int *nell, long long *vl, long long *el,
+  const int *part, const int *seq, const int *nve, const int *lell,
+  const int *fcomm)
+{
+  int nel = *nell, nv = *nve, lelt = *lell;
+
+  struct comm comm;
+#if defined(MPI)
+  comm_ext cext = MPI_Comm_f2c(*fcomm);
+#else
+  comm_ext cext = 0;
+#endif
+  comm_init(&comm, cext);
+
+  struct crystal cr;
+  crystal_init(&cr, &comm);
+
+  struct array eList;
+  edata *data;
+
+  /* redistribute data */
+  int e, n;
+  array_init(edata, &eList, nel), eList.n = nel;
+  for (data = eList.ptr, e = 0; e < nel; ++e) {
+    data[e].proc= part[e];
+    data[e].eid = el[e];
+    for(n = 0; n < nv; ++n) {
+      data[e].vtx[n] = vl[e*nv + n];
+    }
+  }
+
+  if (seq != NULL) {
+    for (data = eList.ptr, e=0; e < nel; ++e)
+      data[e].seq=seq[e];
+  }
+
+  sarray_transfer(edata, &eList, proc, 0, &cr);
+  *nell = nel = eList.n;
+
+  sint count = 0, ibuf;
+  if (nel > lelt) count = 1;
+  comm_allreduce(&comm, gs_int, gs_add, &count, 1, &ibuf);
+  if (count > 0) {
+    count = nel;
+    comm_allreduce(&comm, gs_int, gs_max, &count, 1, &ibuf);
+    if (comm.id == 0)
+      printf("ERROR: resulting parition requires lelt=%d!\n", count);
+    return 1;
+  }
+
+  //TODO: sort by seq
+  if (seq != NULL) {
+    buffer bfr; buffer_init(&bfr,1024);
+    sarray_sort(edata, eList.ptr, eList.n, seq, 0, &bfr);
+    buffer_free(&bfr);
+  }
+
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    el[e] = data[e].eid;
+    for(n = 0; n < nv; ++n) {
+      vl[e*nv + n] = data[e].vtx[n];
+    }
+  }
+
+  crystal_free(&cr);
+  comm_free(&comm);
+  array_free(&eList);
+
+  return 0;
+}
+
 int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *seq, int nv, int lelt,
                      struct comm *comm) {
   int nel=*nel_;
@@ -314,9 +386,90 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
   return 0;
 }
 
+#define fpartMeshV2 FORTRAN_UNPREFIXED(fpartmeshv2,FPARTMESHV2)
+void fpartMeshV2(int *dest, long long *vl, double *xyz, const int *nell,
+                 const int *nve, const int *fcomm, const int *fpartitioner,
+                 const int *falgo, const int *loglevel, int *rtval)
+{
+  struct comm comm;
+
+  int nel, nv, partitioner, algo;
+  int e, n;
+  int count, ierr, ibuf;
+  int *seq;
+  int opt[3];
+
+  nel = *nell;
+  nv = *nve;
+  partitioner = *fpartitioner;
+  algo = *falgo; // 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
+
+#if defined(MPI)
+  comm_ext cext = MPI_Comm_f2c(*fcomm);
+#else
+  comm_ext cext = 0;
+#endif
+  comm_init(&comm, cext);
+
+  seq  = (int *)malloc(nel * sizeof(int));
+  ierr = 1;
+#if defined(PARRSB)
+  parrsb_options options = parrsb_default_options;
+
+  options.debug_level = 0;
+  if (*loglevel > 2)
+    options.debug_level = 1;
+
+  if (partitioner & 1)
+    options.partitioner = 0;
+  else if (partitioner & 2)
+    options.partitioner = 1;
+
+  if (partitioner & 1)
+    options.rsb_algo = algo;
+
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
+
+  ierr = parrsb_part_mesh(dest, seq, vl, xyz, nel, nv, options, comm.c);
+  if (ierr != 0)
+    goto err;
+
+  if(*loglevel >2)
+    printPartStat(vl, nel, nv, cext);
+
+#elif defined(PARMETIS)
+  int metis;
+  metis = partitioner & 4;
+
+  if (metis) {
+    opt[0] = 1;
+    opt[1] = 0; /* verbosity */
+    opt[2] = comm.np;
+
+    ierr = parMETIS_partMesh(dest,vl,nel,nv,opt,comm.c);
+  }
+#endif
+
+  free(seq);
+  *rtval = 0;
+
+  if (comm.id == 0) {
+    printf("\n");
+    fflush(stdout);
+  }
+
+  return;
+
+err:
+  fflush(stdout);
+  *rtval = 1;
+}
+
 #define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
-               int *fcomm, int *fpartitioner, int *falgo, int *loglevel, int *rtval)
+void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt,
+               int *nell, const int *nve, int *fcomm, int *fpartitioner,
+               int *falgo, int *loglevel, int *rtval)
 {
   struct comm comm;
 
