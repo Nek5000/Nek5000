@@ -817,16 +817,13 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 100
 
          read (hdr,'(a5)') version
-
          if(version.eq.'#v004') then   
             read (hdr,*) version,nelgt,ldimr,nelgv,nBCre2
          else                          
             read (hdr,1) version,nelgt,ldimr,nelgv
          endif    
    1     format(a5,i9,i3,i9)
-
-         if(ifverbose)
-     $      write (6,*) ' re2 hdr:',version,nelgt,ldimr,nelgv
+         write (6,'(a,a80)') ' hdr:', hdr
              
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8

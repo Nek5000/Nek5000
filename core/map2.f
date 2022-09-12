@@ -404,7 +404,7 @@ c-----------------------------------------------------------------------
             else
                read (hdr,1) version,nelgti,nelgvi,nvi
             endif
-            write (6,*) ' co2 hdr:',version,nelgti,nelgvi,nvi 
+            write (6,'(a,a80)') ' hdr:', hdr
 
             call byte_read(test,1,ierr)
             if(ierr.ne.0) goto 100
