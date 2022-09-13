@@ -96,6 +96,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 c
       logical ifverbm
+      integer ibuf(2), loc_to_glob_nid(lelt)
 c
       etime0 = dnekclock_sync()
       if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
@@ -120,8 +121,36 @@ c     Distributed memory processor mapping
          call exitt
       ENDIF
 
-      nv = 2**ldim
-      call get_vert_map_big(nv)
+      call get_vert_big(loc_to_glob_nid)
+
+      ! TODO: Transfer elements, bcs and curves based on loc_to_glob
+      ! TODO: Setup lglel correctly
+
+#ifdef DPROCMAP
+      call dProcmapInit()
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+      enddo
+#else
+      call izero(gllnid,nelgt)
+      do i = 1,nelt
+         ieg = lglel(i)
+         gllnid(ieg) = nid
+      enddo
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif
 
       if (nelt.gt.lelt) then
          call exitti('nelt > lelt, increase lelt!$',nelt)
@@ -194,7 +223,30 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map_big(nlv)
+      subroutine get_vert_big(loc_to_glob_nid)
+c
+c     Distribute and assign partitions using the .map file
+c
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer loc_to_glob_nid(lelt)
+
+      integer icalld
+      save    icalld
+      data    icalld  /0/
+
+      if(icalld.gt.0) return
+
+      nv = 2**ldim
+      call get_vert_map_big(nv, loc_to_glob_nid)
+
+      icalld = 1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vert_map_big(nlv, loc_to_glob_nid)
 
       include 'SIZE'
       include 'TOTAL'
@@ -204,7 +256,7 @@ c-----------------------------------------------------------------------
       common /scrns/ wk(mdw*ndw)
       integer*8 wk
 
-      integer nlv
+      integer nlv, loc_to_glob_nid(lelt)
       integer     wk4(2*mdw*ndw)
       equivalence (wk4,wk)
 
@@ -213,11 +265,9 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      integer ibuf(2)
-
       integer*8 eid8(lelt), vtx8(lelt*2**ldim)
-      integer   iwork(lelt), loc_to_glob_nid(lelt), dest(lelt)
-      common /ctmp0/ eid8, vtx8, iwork, loc_to_glob_nid, dest
+      integer   iwork(lelt), dest(lelt)
+      common /ctmp0/ eid8, vtx8, iwork, dest
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
@@ -287,7 +337,7 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      call fpartMeshV2(dest,eid8,vtx8,xyz,nel,nlv,nekcomm,
+      call fpartMeshV2(dest,vtx8,xyz,nel,nlv,nekcomm,
      $  meshPartitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
@@ -306,9 +356,10 @@ c fluid elements
          loc_to_glob_nid(i) = dest(iwork(i))
       enddo
 
-      cnt=0
 c solid elements
+      cnt=0
       if (nelgt.ne.nelgv) then
+         write(6,*) 'There are solid elems'
          j  = 0
          ii = 0
          do i = 1,neli
@@ -341,7 +392,7 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMeshV2(dest,eid8,vtx8,xyz,nel,nlv,nekcomm,
+         call fpartMeshV2(dest,vtx8,xyz,nel,nlv,nekcomm,
      $                  2,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
@@ -353,39 +404,14 @@ c solid elements
          do i = 1,nel
             lglel(nelv+i) = eid8(i)
          enddo
-         call isort(lglel(nelv+1),iwork,nel) ! sort locally by global element id
+         ! sort locally by global element id
+         call isort(lglel(nelv+1),iwork,nel)
+
          do i = 1,nel
             call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
             loc_to_glob_nid(nelv + i) = dest(iwork(i))
          enddo
       endif
-
-#ifdef DPROCMAP
-      call dProcMapClearCache()
-      do i = 1,nelt
-         ieg = lglel(i)
-         if (ieg.lt.1 .or. ieg.gt.nelgt) 
-     $      call exitti('invalid ieg!$',ieg)
-         ibuf(1) = i
-         ibuf(2) = nid
-         call dProcmapPut(ibuf,2,0,ieg)
-      enddo
-#else
-      call izero(gllnid,nelgt)
-      do i = 1,nelt
-         ieg = lglel(i)
-         gllnid(ieg) = nid
-      enddo
-      npass = 1 + nelgt/lelt
-      k=1
-      do ipass = 1,npass
-         m = nelgt - k + 1
-         m = min(m,lelt)
-         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
-         k = k+m
-      enddo
-#endif
-
 #endif
 
       return

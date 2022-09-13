@@ -387,9 +387,9 @@ int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *se
 }
 
 #define fpartMeshV2 FORTRAN_UNPREFIXED(fpartmeshv2,FPARTMESHV2)
-void fpartMeshV2(int *dest, long long *vl, double *xyz, const int *nell,
-                 const int *nve, const int *fcomm, const int *fpartitioner,
-                 const int *falgo, const int *loglevel, int *rtval)
+void fpartMeshV2(int *dest, long long *vl, double *xyz, int *nell,
+                 int *nve, int *fcomm, int *fpartitioner,
+                 int *falgo, int *loglevel, int *rtval)
 {
   struct comm comm;
 
