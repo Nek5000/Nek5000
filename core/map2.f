@@ -85,6 +85,64 @@ C     Output the processor-element map:
       return
       end
 c-----------------------------------------------------------------------
+      subroutine mapelpr_big()
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'SCRCT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'CTIMER'
+c
+      logical ifverbm
+c
+      etime0 = dnekclock_sync()
+      if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
+     $  ' partioning elements to MPI ranks'
+
+      MFIELD=2
+      IF (IFFLOW) MFIELD=1
+      IF (IFMVBD) MFIELD=0
+
+c     Set up TEMPORARY value for NFIELD - NFLDT
+      NFLDT = 1
+      IF (IFHEAT) NFLDT = 2 + NPSCAL
+c
+c     Distributed memory processor mapping
+      IF (NP.GT.NELGT) THEN
+         IF(NID.EQ.0) THEN
+           WRITE(6,1000) NP,NELGT
+ 1000      FORMAT(2X,'ABORT: Too many processors (',I8
+     $          ,') for to few elements (',I12,').'
+     $          ,/,2X,'ABORTING IN MAPELPR.')
+         ENDIF
+         call exitt
+      ENDIF
+
+      nv = 2**ldim
+      call get_vert_map_big(nv)
+
+      if (nelt.gt.lelt) then
+         call exitti('nelt > lelt, increase lelt!$',nelt)
+      endif
+
+      DO 1200 IFIELD=MFIELD,NFLDT
+         IF (IFTMSH(IFIELD)) THEN
+            NELG(IFIELD)      = NELGT
+         ELSE
+            NELG(IFIELD)      = NELGV
+         ENDIF
+ 1200 CONTINUE
+
+      dtmp = dnekclock_sync() - etime0
+      if(nio.eq.0 .and. loglevel .gt. 1) then
+        write(6,'(A,g13.5,A,/)')  ' done :: partioning ',dtmp,' sec'
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine outmati(u,m,n,name6)
       integer u(m,n)
       character*6 name6
@@ -136,7 +194,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map_v2(nlv)
+      subroutine get_vert_map_big(nlv)
 
       include 'SIZE'
       include 'TOTAL'
@@ -146,6 +204,7 @@ c-----------------------------------------------------------------------
       common /scrns/ wk(mdw*ndw)
       integer*8 wk
 
+      integer nlv
       integer     wk4(2*mdw*ndw)
       equivalence (wk4,wk)
 
@@ -708,7 +767,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call fparrsb_find_conn(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
-     $  0,ierr)
+     $  1,ierr)
 
       k=1
       l=1

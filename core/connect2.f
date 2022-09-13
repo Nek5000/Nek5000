@@ -16,31 +16,26 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
       call flush_io
 
+      ! parfle is in 'INPUT'
       if (nid.eq.0) inquire(file=parfle, exist=parfound)
-
       call bcast(parfound,lsize) ! check for par file
 
-      if_big_rea = .false.
       if_big_rea = .true.
 
       if (if_big_rea) then
-
-          call readat_big_std ! New reading strategy
-
-      else
-
         if (parfound) then
-
+          call readat_big ! New reading strategy
+        else
+          call exitti('Cannot open .par file!$', 1)
+        endif
+      else
+        if (parfound) then
           if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
           call readat_par
-
         else  
-
           if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
           call readat_std
-
         endif  
-
       endif  
 
       call set_boundary_ids
@@ -1178,44 +1173,68 @@ c
 
       end
 c-----------------------------------------------------------------------
-
+c
 c     NEW READER
-
-      subroutine readat_big_std
+c
+      subroutine readat_big
 
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
       include 'CTIMER'
 
-      call read_re2_data_new ! Data mapped by mod(eg,np)
+      logical ifbswap
 
+      call setDefaultParam
+
+      if(nid.eq.0) call par_read(ierr)
+      call bcast(ierr,isize)
+      if(ierr .ne. 0) call exitt
+      call bcastParam
+
+      call usrdat0
+
+      call read_re2_hdr(ifbswap, .true.)
+
+      nelt = nelgt/np
+      do i = 1, mod(nelgt, np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+      if (nelt .gt. lelt) then
+        call exitti('nelt > lelt!$',nelt)
+      endif
+
+      call chkParam
+
+      call read_re2_data_big(ifbswap) ! Data mapped by mod(eg,np)
+
+      call mapelpr_big       ! Test source code
 c     call get_connect       ! Target source code
 c     call gen_mapping
 c     call swap_rea_data
 
+c     call mapelpr       ! Test source code
+c     call read_re2_data(ifbswap, .true., .true., .true.)
 
-      call mapelpr           ! Test source code
-      call read_re2_data
+      call nekgsync()
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_re2_data_new ! big .re2 reader
+      subroutine read_re2_data_big(ifbswap) ! big .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
       include 'CTIMER'
 
-      logical ifbswap,ifbc
+      logical ifbswap
+
       integer idummy(100)
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
 
-      ifbc = .true.
- 
       etime0 = dnekclock_sync()
 
                   ibc = 2
@@ -1239,20 +1258,19 @@ c-----------------------------------------------------------------------
       call rzero(bc ,size(bc))
 
 #ifndef NOMPIIO
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
       call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
-
-      call reado_re2_mesh (ifbswap)
-      call reado_re2_curve(ifbswap,ifcur)
+      call reado_re2_mesh(ifbswap)
+      call reado_re2_curve(ifbswap)
       do ifield = ibc,nfldt
-        call reado_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-     &    ifbswap,ifbc)
+        call reado_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
 
+      call fgslib_crystal_free(cr_re2)
       call byte_close_mpi(fh_re2,ierr)
-
 #else
 
       call exitti('No serial support for big mesh read! P=$',np)
@@ -1274,14 +1292,13 @@ c     "read only" --- redistribute via q = mod(eg,np)
       include 'SIZE'
       include 'TOTAL'
 
+      logical ifbswap
+
       parameter(nrmax = lelt)             ! maximum number of records
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
       parameter(li    = 2*lrs+2)
 
       integer e,eg,ind(nrmax)
-
-      logical ifbswap
-      logical ifread
 
       integer         bufr(li-2,nrmax)
       common /scrns/  bufr
@@ -1341,19 +1358,19 @@ c     "read only" --- redistribute via q = mod(eg,np)
          call icopy     (bufr,vi(3,i),lrs4)
          call buf_to_xyz(bufr,e,ifbswap,ierr)
       enddo
+      nelt = n
 
  100  call err_chk(ierr,'Error reading .re2 mesh$')
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine reado_re2_curve(ifbswap,ifread)
+      subroutine reado_re2_curve(ifbswap)
 
       include 'SIZE'
       include 'TOTAL'
 
       logical ifbswap
-      logical ifread
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
@@ -1406,7 +1423,6 @@ c-----------------------------------------------------------------------
 
       re2off_b = re2off_b + nrg*4*lrs4
 
-      if (.not.ifread) return
       if(nio.eq.0) write(6,'(A,I20)') ' reading curved sides   ', nrg
 
       nwds4r = nr*lrs4
@@ -1468,7 +1484,7 @@ c-----------------------------------------------------------------------
 
       end
 c-----------------------------------------------------------------------
-      subroutine reado_re2_bc(cbl,bl,ifbswap,ifread)
+      subroutine reado_re2_bc(cbl,bl,ifbswap)
 
       include 'SIZE'
       include 'TOTAL'
@@ -1476,7 +1492,6 @@ c-----------------------------------------------------------------------
       character*3  cbl(  6,lelt)
       real         bl (5,6,lelt)
       logical      ifbswap
-      logical      ifread
 
       parameter(nrmax = 6*lelt) ! maximum number of records
       parameter(lrs   = 2+1+5)  ! record size: eg iside bl(5) cbl
@@ -1527,7 +1542,6 @@ c-----------------------------------------------------------------------
 
       re2off_b = re2off_b + nrg*4*lrs4
 
-      if (.not.ifread) return
       if(nio.eq.0) write(6,'(A,I20,A,I3)') 
      $             ' reading boundary faces ', nrg, 
      $             ' for ifield ', ifield
