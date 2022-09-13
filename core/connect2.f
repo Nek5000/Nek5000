@@ -1,13 +1,190 @@
 c-----------------------------------------------------------------------
+
+c     include 'readat_big.f'   ! New reader
+
+c-----------------------------------------------------------------------
       subroutine readat
+
+c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+      include 'RESTART'
+
+      logical parfound, if_big_rea
+
+      call flush_io
+
+      if (nid.eq.0) inquire(file=parfle, exist=parfound)
+
+      call bcast(parfound,lsize) ! check for par file
+
+      if_big_rea = .false.
+      if_big_rea = .true.
+
+      if (if_big_rea) then
+
+          call readat_big_std ! New reading strategy
+
+      else
+
+        if (parfound) then
+
+          if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
+          call readat_par
+
+        else  
+
+          if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
+          call readat_std
+
+        endif  
+
+      endif  
+
+      call set_boundary_ids
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readat_std
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+      include 'RESTART'
+
+      logical ifbswap,ifre2
+      character*132 string
+      integer idum(3*numsts+3)
+
+      etime0 = dnekclock_sync()
+
+      ierr = 0
+      if(nid.eq.0) then
+        write(6,'(A,A)') ' Reading ', reafle
+        open (unit=9,file=reafle,status='old', iostat=ierr)
+      endif
+
+      call bcast(ierr,isize)
+      if (ierr .gt. 0) call exitti('Cannot open rea file!$',1)
+
+C     Read parameters and logical flags
+      call rdparam
+
+C     Read Mesh Info 
+      if(nid.eq.0) then
+        read(9,*)    ! xfac,yfac,xzero,yzero
+        read(9,*)    ! dummy
+        read(9,*)  nelgs,ldimr,nelgv
+        nelgt = abs(nelgs)
+      endif
+      call bcast(ldimr,ISIZE)
+      call bcast(nelgs,ISIZE)
+      call bcast(nelgv,ISIZE)
+      call bcast(nelgt,ISIZE)
+      ifre2 = .false.
+      if (nelgs.lt.0) ifre2 = .true.
+
+      call usrdat0
+
+      if (nelgt.gt.350000 .and. .not.ifre2) 
+     $   call exitti('Problem size requires .re2!$',1)
+
+      if (ifre2) call read_re2_hdr(ifbswap, .true.) ! rank0 will open and read
+      call chk_nel  ! make certain sufficient array sizes
+
+      call mapelpr
+
+      if (ifre2) then
+        call read_re2_data(ifbswap, .true., .true., .true.)
+      else
+        maxrd = 32               ! max # procs to read at once
+        mread = (np-1)/maxrd+1   ! mod param
+        iread = 0                ! mod param
+        x     = 0
+        do i=0,np-1,maxrd
+           call nekgsync()
+           if (mod(nid,mread).eq.iread) then
+              if (nid.ne.0) then
+                open(UNIT=9,FILE=REAFLE,STATUS='OLD')
+                call cscan(string,'MESH DATA',9)
+                read(9,*) string
+              endif 
+              call rdmesh
+              call rdcurve !  Curved side data
+              call rdbdry  !  Boundary Conditions
+              if (nid.ne.0) close(unit=9)
+           endif
+           iread = iread + 1
+        enddo
+      endif
+
+C     Read Restart options / Initial Conditions / Drive Force
+      CALL RDICDF
+C     Read materials property data
+      CALL RDMATP
+C     Read history data
+      CALL RDHIST
+C     Read output specs
+      CALL RDOUT
+C     Read objects
+      CALL RDOBJ
+
+      call nekgsync()
+
+C     End of input data, close read file.
+      if(nid.eq.0) then
+        close(unit=9)
+        call echopar
+        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     $                             dnekclock()-etime0,' sec'
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_boundary_ids
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      call izero(boundaryID,  size(boundaryID))
+      call izero(boundaryIDt, size(boundaryIDt))
+
+      ifld = 2 
+      if(ifflow) ifld = 1
+      do iel = 1,nelv
+      do ifc = 1,2*ldim   
+         boundaryID(ifc,iel) = bc(5,ifc,iel,ifld)
+      enddo
+      enddo
+
+      ntmsh = 0
+      do i=1,ldimt
+         if(iftmsh(1+i)) ntmsh = ntmsh + 1 
+      enddo
+
+      if (ntmsh.gt.0) then
+        do iel = 1,nelt
+        do ifc = 1,2*ldim   
+           boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
+        enddo
+        enddo
+      endif 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readat_old
 C
 C     Read in data from preprocessor input file (.rea)
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'GEOM'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'CTIMER'
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'CTIMER'
  
       logical ifbswap,ifre2,parfound
       character*132 string
@@ -132,7 +309,7 @@ C     End of input data, close read file.
       endif 
 
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine vrdsmsh
 C
@@ -142,8 +319,8 @@ C        a direct stiffness operation on the X,Y and Z coordinates.
 C     Note that periodic faces are not checked here.
 C=====================================================================
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
       COMMON /SCRNS/ TA(LX1,LY1,LZ1,LELT),TB(LX1,LY1,LZ1,LELT)
      $           ,QMASK(LX1,LY1,LZ1,LELT),tmp(2)
       CHARACTER*3 CB
@@ -372,8 +549,8 @@ C        a direct stiffness operation on the X,Y and Z coordinates.
 C     Note that periodic faces are not checked here.
 C=====================================================================
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
       common /scrns/ tc(lx1,ly1,lz1,lelt),td(lx1,ly1,lz1,lelt)
      $             , ta(lx1,ly1,lz1,lelt),tb(lx1,ly1,lz1,lelt)
      $             , qmask(lx1,ly1,lz1,lelt)
@@ -554,8 +731,8 @@ c-----------------------------------------------------------------------
 C
 C     Rotate NPTS through ANGLE (in two directions IF3D).
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZ(3,1)
       COMMON /CTMP0/ RMTRX(3,3),RX(3,3),RZ(3,3),XYZN(3,10)
 C
@@ -595,14 +772,14 @@ C     Strip mine mxms in chunks of 10:
       ENDIF
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine scale(xyzl,nl)
 C
 C     Rescale XYZL such that the mean value of IXX=IYY=IZZ for each element.
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZL(3,8,LELT)
       COMMON /CTMP0/ VO(LELT),XYZI(3,LELT),CG(3,LELT)
      $              ,TI(6),WORK(6)
@@ -642,7 +819,7 @@ C
   200 CONTINUE
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine inrtia(xyzi,cg,xyzl,n,itype)
 C
@@ -691,11 +868,11 @@ C        std. def'n of inertia.
       ENDIF
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine volume2(vol,xyz,n)
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZ(3,2,2,2,1)
       DIMENSION VOL(1)
 C
@@ -742,13 +919,13 @@ C     2-D:
  1000 CONTINUE
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine findcg(cg,xyz,n)
 C
 C     Compute cg for N elements.
 C
-      INCLUDE 'SIZE'
+      include 'SIZE'
       DIMENSION CG(3,1),XYZ(3,8,1)
 C
       NCRNR=2**ldim
@@ -762,7 +939,7 @@ C
       TMP=1.0/(NCRNR)
       CALL CMULT(CG,TMP,3*N)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine divide(list1,list2,nl1,nl2,ifok,list,nl,xyzi,cg,WGT)
 C
@@ -770,10 +947,10 @@ C     Divide the elements associated with this subdomain according to
 C     the direction having the smallest moment of inertia (the "long"
 C     direction).
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'TSTEP'
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TSTEP'
 C
       DIMENSION LIST(LELT),LIST1(LELT),LIST2(LELT)
       DIMENSION XYZI(3),CG(3,LELT),wgt(1)
@@ -905,7 +1082,7 @@ C
       IF (ABS(WORK(1)-WORK(2)).GT.1) IFOK=.FALSE.
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine bufchk(buf,n)
       integer n
@@ -999,5 +1176,490 @@ c
    80 format(a132)
       return
 
+      end
+c-----------------------------------------------------------------------
+
+c     NEW READER
+
+      subroutine readat_big_std
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+      include 'CTIMER'
+
+      call read_re2_data_new ! Data mapped by mod(eg,np)
+
+c     call get_connect       ! Target source code
+c     call gen_mapping
+c     call swap_rea_data
+
+
+      call mapelpr           ! Test source code
+      call read_re2_data
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_re2_data_new ! big .re2 reader
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+      include 'CTIMER'
+
+      logical ifbswap,ifbc
+      integer idummy(100)
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+ 
+
+      ifbc = .true.
+ 
+      etime0 = dnekclock_sync()
+
+                  ibc = 2
+      if (ifflow) ibc = 1
+
+                  nfldt = 1
+      if (ifheat) nfldt = 2+npscal
+      if (ifmhd ) nfldt = 2+npscal+1
+
+      ! first field to read
+      if (param(33).gt.0) ibc = int(param(33))
+
+      ! number of fields to read
+      if (param(32).gt.0) then
+        nfldt = ibc + int(param(32)) - 1
+        nfldt = max(nfldt,1) 
+        if (nelgt.gt.nelgv) nfldt = max(nfldt,2) 
+      endif
+
+      call blank(cbc,3*size(cbc))
+      call rzero(bc ,size(bc))
+
+#ifndef NOMPIIO
+
+      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call err_chk(ierr,' Cannot open .re2 file!$')
+
+
+      call reado_re2_mesh (ifbswap)
+      call reado_re2_curve(ifbswap,ifcur)
+      do ifield = ibc,nfldt
+        call reado_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
+     &    ifbswap,ifbc)
+      enddo
+
+      call byte_close_mpi(fh_re2,ierr)
+
+#else
+
+      call exitti('No serial support for big mesh read! P=$',np)
+
+#endif
+
+      etime_t = dnekclock_sync() - etime0
+      if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
+     &                   ' done :: read .re2 file   ',
+     &                   etime_t, ' sec'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine reado_re2_mesh(ifbswap) ! version 3 of .re2 reader
+
+c     "read only" --- redistribute via q = mod(eg,np)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)             ! maximum number of records
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer e,eg,ind(nrmax)
+
+      logical ifbswap
+      logical ifread
+
+      integer         bufr(li-2,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      integer*8       lre2off_b,dtmp8
+      integer*8       nrg      
+
+      nrg       = nelgt
+      nr        = nelt
+      irankoff  = igl_running_sum(nr) - nr
+      dtmp8     = irankoff
+      re2off_b  = 84 ! set initial offset (hdr + endian)
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      ! read coordinates from file
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      re2off_b = re2off_b + nrg*4*lrs4
+      if (ierr.gt.0) goto 100
+
+      if (nio.eq.0) write(6,*) 'reading mesh '
+
+      ! pack buffer
+      do i = 1,nr
+         jj      = (i-1)*lrs4 + 1
+         eg      = irankoff + i ! elements are stored in global order
+         vi(1,i) = mod(eg,np)
+         vi(2,i) = eg
+         call icopy(vi(3,i),bufr(jj,1),lrs4)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      n   = nr
+      key = 1 
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,
+     &   vl,0,vr,0,key)
+
+      ! unpack buffer
+      ierr = 0
+      if (n.gt.nrmax) then
+         ierr = 1
+         goto 100
+      endif
+
+      do i = 1,n
+         lglel(i)=vi(2,i)  ! List of global element numbers in v(2,:)
+      enddo
+      call isort(lglel,ind,n)
+
+      do e = 1,n
+         i = ind(e)
+         call icopy     (bufr,vi(3,i),lrs4)
+         call buf_to_xyz(bufr,e,ifbswap,ierr)
+      enddo
+
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine reado_re2_curve(ifbswap,ifread)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      logical ifbswap
+      logical ifread
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(nrmax = 12*lelt) ! maximum number of records
+      parameter(lrs   = 2+1+5)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+1)
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      integer*8       lre2off_b,dtmp8
+      integer*8       nrg,nr
+      integer*4       nrg4(2)
+     
+      integer*8       i8gl_running_sum 
+
+      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
+
+      ! read total number of records
+      nwds4r    = 1*wdsizi/4
+      lre2off_b = re2off_b
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      if(wdsizi.eq.8) then
+         if(ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if(ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+
+      ! read data from file
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      re2off_b = re2off_b + nrg*4*lrs4
+
+      if (.not.ifread) return
+      if(nio.eq.0) write(6,'(A,I20)') ' reading curved sides   ', nrg
+
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      ! pack buffer
+      do i = 1,nr
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then 
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
+         endif
+
+         eg = bufr(jj,1)
+         if (wdsizi.eq.8) call copyi4(eg,bufr(jj,1),1)
+
+         if(eg.le.0 .or. eg.gt.nelgt) goto 100
+         vi(1,i) = mod(eg,np)
+
+         call icopy (vi(2,i),bufr(jj,1),lrs4)  ! First entry is "eg"
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      n    = nr
+      key  = 1
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
+     &                                   key)
+
+      do i = 1,n
+         esort(i)=vi(2,i)  ! List of global element numbers in v(2,:)
+      enddo
+      call isort(esort,ind,n)
+
+         i = ind(e)
+
+      if(n.gt.nrmax) goto 100
+
+      ! unpack buffer
+      e     = 0
+      elast = 0
+      do k = 1,n
+         i  = ind(k)
+
+         eg = vi(2,i)
+         if (eg.ne.elast) e=e+1
+         elast=eg
+
+         call buf_to_curve_loc(e,vi(2,i)) ! Face f is dereferenced from vi(2,:)
+      enddo
+
+      return
+
+ 100  ierr = 1
+      call err_chk(ierr,'Error reading .re2 curved data$')
+
+      end
+c-----------------------------------------------------------------------
+      subroutine reado_re2_bc(cbl,bl,ifbswap,ifread)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3  cbl(  6,lelt)
+      real         bl (5,6,lelt)
+      logical      ifbswap
+      logical      ifread
+
+      parameter(nrmax = 6*lelt) ! maximum number of records
+      parameter(lrs   = 2+1+5)  ! record size: eg iside bl(5) cbl
+      parameter(li    = 2*lrs+1)
+
+      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li  ,nrmax)
+      common /ctmp1/  vi
+
+      integer*8       lre2off_b,dtmp8
+      integer*8       nrg,nr
+      integer*4       nrg4(2)
+
+      integer*8       i8gl_running_sum 
+
+      ! read total number of records
+      nwds4r    = 1*wdsizi/4
+      lre2off_b = re2off_b
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      if(wdsizi.eq.8) then
+         if(ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if(ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+
+      ! read data from file
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      re2off_b = re2off_b + nrg*4*lrs4
+
+      if (.not.ifread) return
+      if(nio.eq.0) write(6,'(A,I20,A,I3)') 
+     $             ' reading boundary faces ', nrg, 
+     $             ' for ifield ', ifield
+
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      ! pack buffer
+      do i = 1,nr
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then 
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
+         endif
+
+         eg = bufr(jj,1)
+         if(wdsizi.eq.8) call copyi4(eg,bufr(jj,1),1)
+
+         if(eg.le.0 .or. eg.gt.nelgt) goto 100
+         vi(1,i) = mod(eg,np)
+
+         call icopy (vi(2,i),bufr(jj,1),lrs4)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      n    = nr
+      key  = 1
+
+      call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
+     &                                   key)
+
+      do i = 1,n
+         esort(i)=vi(2,i)  ! List of global element numbers in v(2,:)
+      enddo
+      call isort(esort,ind,n)
+
+      ! fill up with default
+      do e=1,nelt
+      do k=1,6
+         cbl(k,e) = 'E  '
+      enddo
+      enddo
+
+      ! unpack buffer
+      if (n.gt.nrmax) goto 100
+
+      e     = 0
+      elast = 0
+      do k = 1,n
+         i  = ind(k)
+
+         eg = vi(2,i)
+         if (eg.ne.elast) e=e+1
+         elast=eg
+
+         call buf_to_bc_loc(e,cbl,bl,vi(2,i))
+      enddo
+
+      return
+
+ 100  ierr = 1
+      call err_chk(ierr,'Error reading .re2 boundary data$')
+
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_curve_loc(e,buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  ( curve(1,f,e),buf(5) ,5) !5--14
+        call chcopy(ccurve(  f,e),buf(15),1)!15
+      else
+        eg = buf(1)
+        f  = buf(2)
+
+        call copy4r( curve(1,f,e),buf(3),5)
+        call chcopy(ccurve(f,e)  ,buf(8),1)
+      endif
+
+c     write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
+c   1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc_loc(e,cbl,bl,buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(6,lelt)
+      real         bl(5,6,lelt)
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  (bl(1,f,e),buf(5),5) !5--14
+        call chcopy(cbl( f,e),buf(15),3)!15-16
+
+        if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+
+      else
+        eg = buf(1)
+        f  = buf(2)
+
+        call copy4r ( bl(1,f,e),buf(3),5)
+        call chcopy (cbl(  f,e),buf(8),3)
+
+        if (nelgt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $     bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+      endif
+
+c      write(6,1) eg,e,f,cbl(f,e),' CBC',nid
+c  1   format(2i8,i4,2x,a3,a4,i8)
+
+      return
       end
 c-----------------------------------------------------------------------
