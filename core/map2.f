@@ -128,10 +128,10 @@ c     Distributed memory processor mapping
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
       ! TODO: transfer vertices
-      do e = 1, nelt
-        lglelo(e) = lglel(e)
-      enddo
-      call transfer_re2_mesh(loc_to_glob_nid)
+c     do e = 1, nelt
+c       lglelo(e) = lglel(e)
+c     enddo
+c     call transfer_re2_mesh(loc_to_glob_nid)
 
       ! TODO: bcs and curves based on loc_to_glob
 
@@ -220,16 +220,12 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      integer icalld
-      save    icalld
-      data    icalld  /0/
-
-      if(icalld.gt.0) return
+      if(get_vert_called.gt.0) return
 
       nv = 2**ldim
       call get_vert_map(nv)
 
-      icalld = 1
+      get_vert_called = 1
 
       return
       end
@@ -243,16 +239,12 @@ c
 
       integer loc_to_glob_nid(lelt)
 
-      integer icalld
-      save    icalld
-      data    icalld  /0/
-
-      if(icalld.gt.0) return
+      if(get_vert_called.gt.0) return
 
       nv = 2**ldim
       call get_vert_map_big(nv, loc_to_glob_nid)
 
-      icalld = 1
+      get_vert_called = 1
 
       return
       end
@@ -318,7 +310,7 @@ c fluid elements
       j  = 0
       ii = 0
       cnt= 0
-      do i = 1,neli
+      do i = 1, neli
          itmp = wk(ii+1)
          if (ifread_con) itmp = wk4(ii+1)
 
@@ -347,25 +339,23 @@ c fluid elements
       enddo
       neliv = j
 
-      nel = neliv
-      call fpartMeshV2(dest,vtx8,xyz,nel,nlv,nekcomm,
+      call fpartMeshV2(dest,vtx8,xyz,neliv,nlv,nekcomm,
      $  meshPartitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
-      nelv = nel
-      nelt = nelv
-      ierr = 0 
-      if (nelv .gt. lelv) ierr = 1
-      call err_chk(ierr,'nelv > lelv!$')
- 
-      do i = 1,nelv
+      do i = 1,neliv
          lglel(i) = eid8(i)
       enddo
-      call isort(lglel,iwork,nelv)
-      do i = 1,nelv
+      call isort(lglel,iwork,neliv)
+
+      do i = 1,neliv
          call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
          loc_to_glob_nid(i) = dest(iwork(i))
       enddo
+      nelv = neliv
+      nelt = neliv
+
+      write(6, *) 'after parrsb: nelt, nelv=', nelt, nelv
 
 c solid elements
       cnt=0
@@ -402,26 +392,21 @@ c solid elements
          enddo
          nelit = j
 
-         nel = nelit
-         call fpartMeshV2(dest,vtx8,xyz,nel,nlv,nekcomm,
+         call fpartMeshV2(dest,vtx8,xyz,nelit,nlv,nekcomm,
      $                  2,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
-         nelt = nelv + nel
-         ierr = 0 
-         if (nelt .gt. lelt) ierr = 1
-         call err_chk(ierr,'nelt > lelt!$')
-    
-         do i = 1,nel
-            lglel(nelv+i) = eid8(i)
+         do i = 1, nelit
+            lglel(nelv + i) = eid8(i)
          enddo
          ! sort locally by global element id
-         call isort(lglel(nelv+1),iwork,nel)
+         call isort(lglel(nelv+1),iwork,nelit)
 
-         do i = 1,nel
+         do i = 1, nelit
             call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
             loc_to_glob_nid(nelv + i) = dest(iwork(i))
          enddo
+         nelt = nelv + nelit
       endif
 #endif
 

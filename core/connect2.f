@@ -21,6 +21,7 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
       call bcast(parfound,lsize) ! check for par file
 
       if_big_rea = .true.
+      get_vert_called = 0
 
       if (if_big_rea) then
         if (parfound) then
@@ -32,11 +33,11 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
         if (parfound) then
           if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
           call readat_par
-        else  
+        else
           if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
           call readat_std
-        endif  
-      endif  
+        endif
+      endif
 
       call set_boundary_ids
 
@@ -1209,12 +1210,7 @@ c
       call read_re2_data_big(ifbswap) ! Data mapped by mod(eg,np)
 
       call mapelpr_big       ! Test source code
-c     call get_connect       ! Target source code
-c     call gen_mapping
 c     call swap_rea_data
-
-c     call mapelpr       ! Test source code
-c     call read_re2_data(ifbswap, .true., .true., .true.)
 
       call nekgsync()
 
@@ -1495,8 +1491,6 @@ c-----------------------------------------------------------------------
       parameter(lrs   = 2+1+5)  ! record size: eg iside bl(5) cbl
       parameter(li    = 2*lrs+1)
 
-      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
-
       integer         bufr(li-1,nrmax)
       common /scrns/  bufr
 
@@ -1508,6 +1502,8 @@ c-----------------------------------------------------------------------
       integer*4       nrg4(2)
 
       integer*8       i8gl_running_sum 
+
+      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
@@ -1539,6 +1535,7 @@ c-----------------------------------------------------------------------
       lrs4      = lrs*wdsizi/4
 
       re2off_b = re2off_b + nrg*4*lrs4
+
 
       if(nio.eq.0) write(6,'(A,I20,A,I3)') 
      $             ' reading boundary faces ', nrg, 
@@ -1575,9 +1572,15 @@ c-----------------------------------------------------------------------
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
 
-      do i = 1,n
-         esort(i)=vi(2,i)  ! List of global element numbers in v(2,:)
-      enddo
+      if (wdsizi.eq.8) then
+        do i = 1,n
+          call copyi4(esort(i),vi(2,i),1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1,n
+          esort(i) = vi(2,i)
+        enddo
+      endif
       call isort(esort,ind,n)
 
       ! fill up with default
@@ -1595,7 +1598,7 @@ c-----------------------------------------------------------------------
       do k = 1,n
          i  = ind(k)
 
-         eg = vi(2,i)
+         eg = esort(i)
          if (eg.ne.elast) e=e+1
          elast=eg
 

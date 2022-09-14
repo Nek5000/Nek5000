@@ -132,3 +132,6 @@ c
 
       character*3 bctyps(numsts)
       common /inputmc/ bctyps
+
+      integer get_vert_called
+      common /get_vert_block/ get_vert_called
