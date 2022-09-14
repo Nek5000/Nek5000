@@ -96,8 +96,10 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 c
       logical ifverbm
-      integer ibuf(2), loc_to_glob_nid(lelt)
+      integer ibuf(2), loc_to_glob_nid(lelt), lglelo(lelt)
 c
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
       etime0 = dnekclock_sync()
       if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
@@ -123,8 +125,17 @@ c     Distributed memory processor mapping
 
       call get_vert_big(loc_to_glob_nid)
 
-      ! TODO: Transfer elements, bcs and curves based on loc_to_glob
-      ! TODO: Setup lglel correctly
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
+
+      ! TODO: transfer vertices
+      do e = 1, nelt
+        lglelo(e) = lglel(e)
+      enddo
+      call transfer_re2_mesh(loc_to_glob_nid)
+
+      ! TODO: bcs and curves based on loc_to_glob
+
+      call fgslib_crystal_free(cr_re2)
 
 #ifdef DPROCMAP
       call dProcmapInit()

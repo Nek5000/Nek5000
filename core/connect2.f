@@ -1460,8 +1460,6 @@ c-----------------------------------------------------------------------
       enddo
       call isort(esort,ind,n)
 
-         i = ind(e)
-
       if(n.gt.nrmax) goto 100
 
       ! unpack buffer
@@ -1675,5 +1673,90 @@ c      write(6,1) eg,e,f,cbl(f,e),' CBC',nid
 c  1   format(2i8,i4,2x,a3,a4,i8)
 
       return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_mesh(loc_to_glob_nid)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)             ! maximum number of records
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer e, eg, ind(nrmax), nr, key, loc_to_glob_nid(lelt)
+
+      integer         bufr(li - 2, nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li    , nrmax)
+      common /ctmp1/  vi
+
+      lrs4      = lrs*wdsizi/4
+
+      do e = 1, nelt
+        vi(1, e) = loc_to_glob_nid(e)
+        vi(2, e) = lglel(e)
+        call xyz_to_buf(vi(3, e), e)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nr = nelt
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2,nr,nrmax,vi,li,
+     &  vl,0,vr,0,key)
+
+      ! unpack buffer
+      ierr = 0
+      if (nr.gt.nrmax) then
+         ierr = 1
+         goto 100
+      endif
+
+      ! List of global element numbers in v(2,:)
+      do i = 1, nr
+         lglel(i) = vi(2, i)
+      enddo
+      call isort(lglel, ind, nr)
+
+      do e = 1, nr
+         i = ind(e)
+         call icopy(bufr, vi(3, i), lrs4)
+         call buf_to_xyz(bufr, e, .false., ierr)
+      enddo
+      nelt = nr
+
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+      end
+c-----------------------------------------------------------------------
+      subroutine xyz_to_buf(buf, e)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer buf(0:49), e
+
+        if (wdsizi.eq.8) then
+          call icopy48(buf(0), igroup(e), 1)
+          if (ldim.eq.3) then
+            call copy(buf( 2), xc(1, e), 8)
+            call copy(buf(18), yc(1, e), 8)
+            call copy(buf(34), zc(1, e), 8)
+          else
+            call copy(buf( 2), xc(1, e), 4)
+            call copy(buf(10), yc(1, e), 4)
+          endif
+        else
+          buf(0) = igroup(e)
+          if (ldim.eq.3) then
+            call copy4r(buf( 1), xc(1, e), 8)
+            call copy4r(buf( 9), yc(1, e), 8)
+            call copy4r(buf(17), zc(1, e), 8)
+          else
+            call copy4r(buf( 1), xc(1, e), 4)
+            call copy4r(buf( 5), yc(1, e), 4)
+          endif
+        endif
+
+        return
       end
 c-----------------------------------------------------------------------
