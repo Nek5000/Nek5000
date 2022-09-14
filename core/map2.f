@@ -355,8 +355,6 @@ c fluid elements
       nelv = neliv
       nelt = neliv
 
-      write(6, *) 'after parrsb: nelt, nelv=', nelt, nelv
-
 c solid elements
       cnt=0
       if (nelgt.ne.nelgv) then

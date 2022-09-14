@@ -1386,7 +1386,7 @@ c-----------------------------------------------------------------------
      
       integer*8       i8gl_running_sum 
 
-      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
+      integer e,eg,esort(nrmax),ind(nrmax)
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
@@ -1451,24 +1451,25 @@ c-----------------------------------------------------------------------
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
 
-      do i = 1,n
-         esort(i)=vi(2,i)  ! List of global element numbers in v(2,:)
-      enddo
+      if (wdsizi.eq.8) then
+        do i = 1,n
+          call copyi4(esort(i),vi(2,i),1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1,n
+          esort(i) = vi(2,i)
+        enddo
+      endif
       call isort(esort,ind,n)
 
       if(n.gt.nrmax) goto 100
 
       ! unpack buffer
-      e     = 0
-      elast = 0
       do k = 1,n
          i  = ind(k)
-
-         eg = vi(2,i)
-         if (eg.ne.elast) e=e+1
-         elast=eg
-
-         call buf_to_curve_loc(e,vi(2,i)) ! Face f is dereferenced from vi(2,:)
+         call find_lglel_ind(e, esort(k), nelt)
+         ! Face f is dereferenced from vi(2,:)
+         call buf_to_curve_loc(e,vi(2,i))
       enddo
 
       return
@@ -1503,7 +1504,7 @@ c-----------------------------------------------------------------------
 
       integer*8       i8gl_running_sum 
 
-      integer e,eg,eglast,elast,esort(nrmax),ind(nrmax)
+      integer e,eg,esort(nrmax),ind(nrmax)
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
@@ -1593,15 +1594,9 @@ c-----------------------------------------------------------------------
       ! unpack buffer
       if (n.gt.nrmax) goto 100
 
-      e     = 0
-      elast = 0
       do k = 1,n
          i  = ind(k)
-
-         eg = esort(i)
-         if (eg.ne.elast) e=e+1
-         elast=eg
-
+         call find_lglel_ind(e, esort(k), nelt)
          call buf_to_bc_loc(e,cbl,bl,vi(2,i))
       enddo
 
@@ -1610,6 +1605,25 @@ c-----------------------------------------------------------------------
  100  ierr = 1
       call err_chk(ierr,'Error reading .re2 boundary data$')
 
+      end
+c-----------------------------------------------------------------------
+      subroutine find_lglel_ind(e, eg, nl)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl, i, ierr
+
+        ! TODO: Do a binary search
+        ierr = 1
+        do i = 1, nl
+          if (lglel(i).eq.eg) then
+            ierr = 0
+            e = i
+            return
+          endif
+        enddo
+
+        call err_chk(ierr,'Error finding index in lglel$')
       end
 c-----------------------------------------------------------------------
       subroutine buf_to_curve_loc(e,buf)    ! version 1 of binary reader
