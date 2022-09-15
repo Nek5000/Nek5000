@@ -366,10 +366,10 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-      logical ifbswap
 
 c      integer e,eg,buf(0:49)
-      integer e,eg,buf(0:49)
+      integer buf(0:49),e,ierr
+      logical ifbswap
 
       nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
 

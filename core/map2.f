@@ -88,17 +88,15 @@ c-----------------------------------------------------------------------
       subroutine mapelpr_big()
 
       include 'SIZE'
-      include 'INPUT'
-      include 'PARALLEL'
-      include 'SCRCT'
-      include 'SOLN'
-      include 'TSTEP'
-      include 'CTIMER'
+      include 'TOTAL'
 c
       logical ifverbm
-      integer ibuf(2), loc_to_glob_nid(lelt), lglelo(lelt)
+      integer ibuf(2), loc_to_glob_nid(lelt), lglelo(lelt), nelto
 c
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      common /ivrtx/ vertex((2**ldim),lelt)
+      integer*8 vertex
 
       etime0 = dnekclock_sync()
       if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
@@ -123,15 +121,36 @@ c     Distributed memory processor mapping
          call exitt
       ENDIF
 
-      call get_vert_big(loc_to_glob_nid)
-
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
-      ! TODO: transfer vertices
-c     do e = 1, nelt
-c       lglelo(e) = lglel(e)
-c     enddo
-c     call transfer_re2_mesh(loc_to_glob_nid)
+      call get_vert_big(vertex, loc_to_glob_nid)
+
+      nelto = nelt
+      do e = 1, nelto
+        lglelo(e) = lglel(e)
+        do v = 1, 2**ldim
+          write(6, *) 'pre ',nid,lglel(e),vertex(v,e),
+     $      xc(v,e),yc(v,e),zc(v,e)
+        enddo
+      enddo
+
+      ! vertices must be transfered first
+      call transfer_vertices(vertex, loc_to_glob_nid)
+      if (nid.eq.0) then
+        write(6, *) 'Done :: transfer_vertices'
+      endif
+
+      call transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
+      if (nid.eq.0) then
+        write(6, *) 'Done :: transfer_re2_mesh'
+      endif
+
+      do e = 1, nelt
+        do v = 1, 2**ldim
+          write(6, *) 'post',nid,lglel(e),vertex(v,e),
+     $       xc(v,e),yc(v,e),zc(v,e)
+        enddo
+      enddo
 
       ! TODO: bcs and curves based on loc_to_glob
 
@@ -230,41 +249,41 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_big(loc_to_glob_nid)
+      subroutine get_vert_big(vertex, loc_to_glob_nid)
 c
 c     Distribute and assign partitions using the .map file
 c
       include 'SIZE'
       include 'TOTAL'
 
+      integer*8 vertex(2**ldim,lelt)
       integer loc_to_glob_nid(lelt)
 
       if(get_vert_called.gt.0) return
 
       nv = 2**ldim
-      call get_vert_map_big(nv, loc_to_glob_nid)
+      call get_vert_map_big(nv, vertex, loc_to_glob_nid)
 
       get_vert_called = 1
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map_big(nlv, loc_to_glob_nid)
+      subroutine get_vert_map_big(nlv, vertex, loc_to_glob_nid)
 
       include 'SIZE'
       include 'TOTAL'
+
+      integer nlv, loc_to_glob_nid(lelt)
+      integer*8 vertex(2**ldim,lelt)
 
       parameter(mdw=2+2**ldim)
       parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
       common /scrns/ wk(mdw*ndw)
       integer*8 wk
 
-      integer nlv, loc_to_glob_nid(lelt)
       integer     wk4(2*mdw*ndw)
       equivalence (wk4,wk)
-
-      common /ivrtx/ vertex ((2**ldim),lelt)
-      integer*8 vertex
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -274,10 +293,10 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
-      integer cnt, algo
+      integer cnt, algo, neli, neliv, nelit
       integer opt_parrsb(3), opt_parmetis(10)
 
-      logical ifbswap, ifread_con
+      logical ifread_con
 
       real tol
 
@@ -353,7 +372,7 @@ c fluid elements
          loc_to_glob_nid(i) = dest(iwork(i))
       enddo
       nelv = neliv
-      nelt = neliv
+      nelt = nelv
 
 c solid elements
       cnt=0
@@ -440,7 +459,7 @@ c-----------------------------------------------------------------------
       integer cnt, algo
       integer opt_parrsb(3), opt_parmetis(10)
 
-      logical ifbswap, ifread_con
+      logical ifread_con
 
       real tol
 

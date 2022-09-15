@@ -1692,16 +1692,17 @@ c  1   format(2i8,i4,2x,a3,a4,i8)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_re2_mesh(loc_to_glob_nid)
+      subroutine transfer_vertices(vertex, loc_to_glob_nid)
 
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(nrmax = lelt)             ! maximum number of records
-      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(nrmax = lelt)    ! maximum number of records
+      parameter(lrs   = 2**ldim) ! record size: group x(:,c) ...
       parameter(li    = 2*lrs+2)
 
-      integer e, eg, ind(nrmax), nr, key, loc_to_glob_nid(lelt)
+      integer*8 vertex(2**ldim, lelt)
+      integer loc_to_glob_nid(lelt)
 
       integer         bufr(li - 2, nrmax)
       common /scrns/  bufr
@@ -1709,12 +1710,14 @@ c-----------------------------------------------------------------------
       integer         vi  (li    , nrmax)
       common /ctmp1/  vi
 
+      integer e, eg, ind(nrmax), nr, key
+
       lrs4      = lrs*wdsizi/4
 
       do e = 1, nelt
         vi(1, e) = loc_to_glob_nid(e)
         vi(2, e) = lglel(e)
-        call xyz_to_buf(vi(3, e), e)
+        call vtx_to_buf(vi(3, e), vertex(1, e))
       enddo
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
@@ -1739,9 +1742,104 @@ c-----------------------------------------------------------------------
       do e = 1, nr
          i = ind(e)
          call icopy(bufr, vi(3, i), lrs4)
-         call buf_to_xyz(bufr, e, .false., ierr)
+         call buf_to_vtx(vertex(1, e), bufr)
       enddo
       nelt = nr
+
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+      end
+c-----------------------------------------------------------------------
+      subroutine vtx_to_buf(buf, vtx)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer*8 buf(2**ldim), vtx(2**ldim)
+        integer e
+
+        do e = 1, 2**ldim
+          buf(e) = vtx(e)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_vtx(vtx, buf)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer*8 vtx(2**ldim), buf(2**ldim)
+        integer i
+
+        do i = 1, 2**ldim
+          vtx(i) = buf(i)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)             ! maximum number of records
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
+      integer e, eg, sorted(nrmax), ind(nrmax), nr, key
+
+      integer         bufr(li - 2, nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li    , nrmax)
+      common /ctmp1/  vi
+
+      lrs4      = lrs*wdsizi/4
+
+      do e = 1, nelto
+        vi(1, e) = loc_to_glob_nid(e)
+        vi(2, e) = lglelo(e)
+        call xyz_to_buf(vi(3, e), e)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nr = nelto
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2,nr,nrmax,vi,li,
+     &  vl,0,vr,0,key)
+
+      ! unpack buffer
+      ierr = 0
+      if (nr.gt.nrmax) then
+         ierr = 1
+         goto 100
+      endif
+      if (nr.ne.nelt) then
+        write(6, *) 'Ooops ! nr != nelt',nr,nelt
+        ierr = 1
+        goto 100
+      endif
+
+      ! List of global element numbers in v(2,:)
+      do i = 1, nr
+         sorted(i) = vi(2, i)
+      enddo
+      call isort(sorted, ind, nr)
+
+      do i = 1, nr
+        if (sorted(i).ne.lglel(i)) then
+          write(6, *) 'Ooops ! order error'
+          ierr = 1
+          goto 100
+        endif
+      enddo
+
+      do e = 1, nr
+         i = ind(e)
+         call icopy(bufr, vi(3, i), lrs4)
+         call buf_to_xyz(bufr, e, .false., ierr)
+      enddo
 
  100  call err_chk(ierr,'Error reading .re2 mesh$')
       end
