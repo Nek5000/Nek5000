@@ -823,8 +823,9 @@ c-----------------------------------------------------------------------
             read (hdr,1) version,nelgt,ldimr,nelgv
          endif    
    1     format(a5,i9,i3,i9)
-         write (6,'(a,a80)') ' hdr:', hdr
-             
+
+         if (ifverbose) write (6,'(a,a80)') ' hdr:', hdr
+                        
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') wdsizi = 8
