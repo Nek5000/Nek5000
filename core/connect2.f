@@ -1210,7 +1210,6 @@ c
       call read_re2_data_big(ifbswap) ! Data mapped by mod(eg,np)
 
       call mapelpr_big       ! Test source code
-c     call swap_rea_data
 
       call nekgsync()
 
@@ -1729,14 +1728,22 @@ c-----------------------------------------------------------------------
       ! unpack buffer
       ierr = 0
       if (nr.gt.nrmax) then
-         ierr = 1
-         goto 100
+        ierr = 1
+        goto 100
       endif
 
       ! List of global element numbers in v(2,:)
+      nelt = 0
+      nelv = 0
       do i = 1, nr
-         lglel(i) = vi(2, i)
+        lglel(i) = vi(2, i)
+        if (lglel(i).le.nelgv) then
+          nelv = nelv + 1
+        else
+          nelt = nelt + 1
+        endif
       enddo
+      nelt = nelv + nelt
       call isort(lglel, ind, nr)
 
       do e = 1, nr
@@ -1744,7 +1751,6 @@ c-----------------------------------------------------------------------
          call icopy(bufr, vi(3, i), lrs4)
          call buf_to_vtx(vertex(1, e), bufr)
       enddo
-      nelt = nr
 
  100  call err_chk(ierr,'Error reading .re2 mesh$')
       end
@@ -1812,11 +1818,7 @@ c-----------------------------------------------------------------------
       ! unpack buffer
       ierr = 0
       if (nr.gt.nrmax) then
-         ierr = 1
-         goto 100
-      endif
-      if (nr.ne.nelt) then
-        write(6, *) 'Ooops ! nr != nelt',nr,nelt
+        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
         ierr = 1
         goto 100
       endif
@@ -1827,6 +1829,12 @@ c-----------------------------------------------------------------------
       enddo
       call isort(sorted, ind, nr)
 
+      ! sanity checks: may be we need to get rid of these
+      if (nr.ne.nelt) then
+        write(6, *) 'Ooops ! nr != nelt',nr,nelt
+        ierr = 1
+        goto 100
+      endif
       do i = 1, nr
         if (sorted(i).ne.lglel(i)) then
           write(6, *) 'Ooops ! order error'

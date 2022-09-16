@@ -128,29 +128,19 @@ c     Distributed memory processor mapping
       nelto = nelt
       do e = 1, nelto
         lglelo(e) = lglel(e)
-        do v = 1, 2**ldim
-          write(6, *) 'pre ',nid,lglel(e),vertex(v,e),
-     $      xc(v,e),yc(v,e),zc(v,e)
-        enddo
       enddo
 
       ! vertices must be transfered first
       call transfer_vertices(vertex, loc_to_glob_nid)
       if (nid.eq.0) then
-        write(6, *) 'Done :: transfer_vertices'
+        write(6, *) 'done :: transfer_vertices'
       endif
+      write(6,*) 'nid,nelto=',nid,nelt
 
       call transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
       if (nid.eq.0) then
-        write(6, *) 'Done :: transfer_re2_mesh'
+        write(6, *) 'done :: transfer_re2_mesh'
       endif
-
-      do e = 1, nelt
-        do v = 1, 2**ldim
-          write(6, *) 'post',nid,lglel(e),vertex(v,e),
-     $       xc(v,e),yc(v,e),zc(v,e)
-        enddo
-      enddo
 
       ! TODO: bcs and curves based on loc_to_glob
 
