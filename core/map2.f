@@ -99,17 +99,10 @@ c
       integer*8 vertex
 
       etime0 = dnekclock_sync()
-      if(nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
+
+      if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
 
-      MFIELD=2
-      IF (IFFLOW) MFIELD=1
-      IF (IFMVBD) MFIELD=0
-
-c     Set up TEMPORARY value for NFIELD - NFLDT
-      NFLDT = 1
-      IF (IFHEAT) NFLDT = 2 + NPSCAL
-c
 c     Distributed memory processor mapping
       IF (NP.GT.NELGT) THEN
          IF(NID.EQ.0) THEN
@@ -141,7 +134,31 @@ c     Distributed memory processor mapping
         write(6, *) 'done :: transfer_re2_mesh'
       endif
 
+                  ibc = 2
+      if (ifflow) ibc = 1
+
+                  nfldt = 1
+      if (ifheat) nfldt = 2+npscal
+      if (ifmhd ) nfldt = 2+npscal+1
+
+      ! first field to read
+      if (param(33).gt.0) ibc = int(param(33))
+
+      ! number of fields to read
+      if (param(32).gt.0) then
+        nfldt = ibc + int(param(32)) - 1
+        nfldt = max(nfldt,1)
+        if (nelgt.gt.nelgv) nfldt = max(nfldt,2)
+      endif
+
       ! TODO: bcs and curves based on loc_to_glob
+      do ifield = ibc, nfldt
+        call transfer_re2_bc(cbc(1,1,ifield), bc(1,1,1,ifield),
+     $    loc_to_glob_nid, lglelo, nelto)
+      enddo
+      if (nid.eq.0) then
+        write(6, *) 'done :: transfer_re2_bc'
+      endif
 
       call fgslib_crystal_free(cr_re2)
 

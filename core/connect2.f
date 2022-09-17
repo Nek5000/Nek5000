@@ -1753,6 +1753,7 @@ c-----------------------------------------------------------------------
       enddo
 
  100  call err_chk(ierr, 'Error transferring vertices$')
+      return
       end
 c-----------------------------------------------------------------------
       subroutine vtx_to_buf(buf, vtx)
@@ -1835,6 +1836,7 @@ c-----------------------------------------------------------------------
       enddo
 
  100  call err_chk(ierr, 'Error transferring .re2 mesh$')
+      return
       end
 c-----------------------------------------------------------------------
       subroutine xyz_to_buf(buf, e)
@@ -1866,5 +1868,115 @@ c-----------------------------------------------------------------------
         endif
 
         return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_bc(cbl, bl, loc_to_glob_nid, lglelo,
+     $  nelto)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt*(2*ldim))
+      parameter(lrs = 15)
+      parameter(li = 2*lrs + 1)
+
+      character*3 cbl(2*ldim, lelt)
+      real bl(5, 2*ldim, lelt)
+      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
+
+      integer e, eg, f, cnt, nr, key, ierr, nf
+
+      integer         vi  (li    , nrmax)
+      common /ctmp1/  vi
+
+      cnt = 0
+      nf = 2*ndim
+      do e = 1, nelto
+        eg = lglelo(e)
+        do f = 1, nf
+          cnt = cnt + 1
+          vi(1, cnt) = loc_to_glob_nid(e)
+          call bc_to_buf(vi(2, cnt), cbl(f, e), bl(1, f, e), eg, f)
+        enddo
+      enddo
+
+      nr = cnt
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      ierr = 0
+      if (nr.gt.nrmax) then
+        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
+        ierr = 1
+        goto 100
+      endif
+
+      do i = 1,nr
+         call buf_to_bc_big(cbl, bl, vi(2, i))
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bc_to_buf(buf, cbl, bl, eg, f)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer buf(30), eg, f
+      character*3 cbl
+      real bl(5)
+
+      if (wdsizi.eq.8) then
+        call icopy48(buf(1) , eg, 1) ! 1 - 2
+        call icopy48(buf(3) ,  f, 1) ! 3 - 4
+        call copy   (buf(5) , bl, 5) ! 5 -14
+        call chcopy (buf(15),cbl, 3) !15
+      else
+        call icopy (buf(1), eg, 1) ! 1
+        call icopy (buf(2),  f, 1) ! 2
+        call copyX4(buf(3), bl, 5) ! 3 - 7
+        call chcopy(buf(8),cbl, 3) ! 8
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc_big(cbl, bl, buf)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(2*ldim, lelt)
+      real bl(5, 2*ldim, lelt)
+
+      integer e, f, eg, buf(30)
+
+      if (wdsizi.eq.8) then
+        call icopy84(eg, buf(1) ,1) ! 1 - 2
+        call icopy84(f , buf(3), 1) ! 3 - 4
+        call find_lglel_ind(e, eg, nelt)
+        call copy  (bl(1, f, e), buf(5) , 5) ! 5 -14
+        call chcopy(cbl(f, e)  , buf(15), 3) !15
+
+        ! Integer assign connecting P element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $   call copyi4(bl(1, f, e), buf(5), 1)
+
+      else
+        eg = buf(1)
+        f  = buf(2)
+        call find_lglel_ind(e, eg, nelt)
+        call copy4r(bl(1, f, e), buf(3), 5)
+        call chcopy(cbl(f, e)  , buf(8), 3)
+
+        ! Integer assign of connecting periodic element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $     bl(1, f, e) = buf(3)
+      endif
+
+      return
       end
 c-----------------------------------------------------------------------
