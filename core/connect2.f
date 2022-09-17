@@ -1886,7 +1886,7 @@ c-----------------------------------------------------------------------
 
       integer e, eg, f, cnt, nr, key, ierr, nf
 
-      integer         vi  (li    , nrmax)
+      integer         vi(li, nrmax)
       common /ctmp1/  vi
 
       cnt = 0
@@ -1975,6 +1975,108 @@ c-----------------------------------------------------------------------
         ! Integer assign of connecting periodic element
         if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
      $     bl(1, f, e) = buf(3)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt*(2*ldim*(ldim - 1)))
+      parameter(lrs = 15)
+      parameter(li = 2*lrs + 1)
+
+      ! character*1 ccurve(12, lelt)
+      ! real curve(6, 12, lelt)
+      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
+
+      integer e, eg, f, cnt, nr, key, ierr, nf
+
+      integer         vi(li, nrmax)
+      common /ctmp1/  vi
+
+      cnt = 0
+      nedge = 2*ndim*(ndim - 1)
+      do e = 1, nelto
+        eg = lglelo(e)
+        do f = 1, nedge
+          cnt = cnt + 1
+          vi(1, cnt) = loc_to_glob_nid(e)
+          call curve_to_buf(vi(2, cnt), curve(1, f, e), ccurve(f, e),
+     $      eg, f)
+        enddo
+      enddo
+
+      nr = cnt
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      ierr = 0
+      if (nr.gt.nrmax) then
+        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
+        ierr = 1
+        goto 100
+      endif
+
+      do i = 1,nr
+         call buf_to_curve_big(curve, ccurve, vi(2, i))
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine curve_to_buf(buf, cv, ccv, eg, f)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer buf(30), eg, f
+      real cv(6)
+      character*1 ccv
+
+      if (wdsizi.eq.8) then
+        call icopy48(buf(1) , eg, 1) ! 1 - 2
+        call icopy48(buf(3) ,  f, 1) ! 3 - 4
+        call copy   (buf(5) , cv, 5) ! 5 -14
+        call chcopy (buf(15),ccv, 1) !15
+      else
+        call icopy (buf(1), eg, 1) ! 1
+        call icopy (buf(2),  f, 1) ! 2
+        call copyX4(buf(3), cv, 5) ! 3 - 7
+        call chcopy(buf(8),ccv, 1) ! 8
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_curve_big(cv, ccv, buf)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*1 ccv(12, lelt)
+      real cv(6, 12, lelt)
+      integer buf(30)
+
+      integer e, f, eg
+
+      if (wdsizi.eq.8) then
+        call icopy84(eg, buf(1) ,1) ! 1 - 2
+        call icopy84(f , buf(3), 1) ! 3 - 4
+        call find_lglel_ind(e, eg, nelt)
+        call copy  (cv(1, f, e), buf(5) , 5) ! 5 -14
+        call chcopy(ccv(f, e)  , buf(15), 1) !15
+      else
+        eg = buf(1)
+        f  = buf(2)
+        call find_lglel_ind(e, eg, nelt)
+        call copy4r(cv(1, f, e), buf(3), 5)
+        call chcopy(ccv(f, e)  , buf(8), 1)
       endif
 
       return

@@ -125,12 +125,13 @@ c     Distributed memory processor mapping
         lglelo(e) = lglel(e)
       enddo
 
-      ! vertices must be transfered first
+      ! Vertices must be transfered first
       call transfer_vertices(vertex, loc_to_glob_nid)
       if (nid.eq.0) then
         write(6, *) 'done :: transfer_vertices'
       endif
 
+      ! Then we transfer the coordinates
       call transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
       if (nid.eq.0) then
         write(6, *) 'done :: transfer_re2_mesh'
@@ -153,7 +154,7 @@ c     Distributed memory processor mapping
         if (nelgt.gt.nelgv) nfldt = max(nfldt,2)
       endif
 
-      ! TODO: bcs and curves based on loc_to_glob
+      ! Now we transfer bcs
       do ifield = ibc, nfldt
         call transfer_re2_bc(cbc(1,1,ifield), bc(1,1,1,ifield),
      $    loc_to_glob_nid, lglelo, nelto)
@@ -161,6 +162,9 @@ c     Distributed memory processor mapping
       if (nid.eq.0) then
         write(6, *) 'done :: transfer_re2_bc'
       endif
+
+      ! TODO: transfer curve sides based on loc_to_glob
+      call transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
 
       call fgslib_crystal_free(cr_re2)
 
