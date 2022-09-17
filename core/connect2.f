@@ -1722,8 +1722,8 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       nr = nelt
       key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2,nr,nrmax,vi,li,
-     &  vl,0,vr,0,key)
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     &  vl, 0, vr, 0, key)
 
       ! unpack buffer
       ierr = 0
@@ -1752,7 +1752,7 @@ c-----------------------------------------------------------------------
          call buf_to_vtx(vertex(1, e), bufr)
       enddo
 
- 100  call err_chk(ierr,'Error reading .re2 mesh$')
+ 100  call err_chk(ierr, 'Error transferring vertices$')
       end
 c-----------------------------------------------------------------------
       subroutine vtx_to_buf(buf, vtx)
@@ -1793,7 +1793,7 @@ c-----------------------------------------------------------------------
       parameter(li    = 2*lrs+2)
 
       integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-      integer e, eg, sorted(nrmax), ind(nrmax), nr, key
+      integer i, e, sorted(nrmax), ind(nrmax), nr, key
 
       integer         bufr(li - 2, nrmax)
       common /scrns/  bufr
@@ -1812,13 +1812,12 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       nr = nelto
       key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2,nr,nrmax,vi,li,
-     &  vl,0,vr,0,key)
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     &  vl, 0, vr, 0, key)
 
       ! unpack buffer
       ierr = 0
       if (nr.gt.nrmax) then
-        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
         ierr = 1
         goto 100
       endif
@@ -1829,27 +1828,13 @@ c-----------------------------------------------------------------------
       enddo
       call isort(sorted, ind, nr)
 
-      ! sanity checks: may be we need to get rid of these
-      if (nr.ne.nelt) then
-        write(6, *) 'Ooops ! nr != nelt',nr,nelt
-        ierr = 1
-        goto 100
-      endif
-      do i = 1, nr
-        if (sorted(i).ne.lglel(i)) then
-          write(6, *) 'Ooops ! order error'
-          ierr = 1
-          goto 100
-        endif
-      enddo
-
       do e = 1, nr
          i = ind(e)
          call icopy(bufr, vi(3, i), lrs4)
          call buf_to_xyz(bufr, e, .false., ierr)
       enddo
 
- 100  call err_chk(ierr,'Error reading .re2 mesh$')
+ 100  call err_chk(ierr, 'Error transferring .re2 mesh$')
       end
 c-----------------------------------------------------------------------
       subroutine xyz_to_buf(buf, e)

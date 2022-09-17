@@ -135,7 +135,6 @@ c     Distributed memory processor mapping
       if (nid.eq.0) then
         write(6, *) 'done :: transfer_vertices'
       endif
-      write(6,*) 'nid,nelto=',nid,nelt
 
       call transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
       if (nid.eq.0) then
