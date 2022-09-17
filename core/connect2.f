@@ -1763,7 +1763,7 @@ c-----------------------------------------------------------------------
         integer*8 buf(2**ldim), vtx(2**ldim)
         integer e
 
-        do e = 1, 2**ldim
+        do e = 1, 2**ndim
           buf(e) = vtx(e)
         enddo
 
@@ -1847,7 +1847,7 @@ c-----------------------------------------------------------------------
 
         if (wdsizi.eq.8) then
           call icopy48(buf(0), igroup(e), 1)
-          if (ldim.eq.3) then
+          if (ndim.eq.3) then
             call copy(buf( 2), xc(1, e), 8)
             call copy(buf(18), yc(1, e), 8)
             call copy(buf(34), zc(1, e), 8)
@@ -1857,13 +1857,13 @@ c-----------------------------------------------------------------------
           endif
         else
           buf(0) = igroup(e)
-          if (ldim.eq.3) then
-            call copy4r(buf( 1), xc(1, e), 8)
-            call copy4r(buf( 9), yc(1, e), 8)
-            call copy4r(buf(17), zc(1, e), 8)
+          if (ndim.eq.3) then
+            call copyX4(buf( 1), xc(1, e), 8)
+            call copyX4(buf( 9), yc(1, e), 8)
+            call copyX4(buf(17), zc(1, e), 8)
           else
-            call copy4r(buf( 1), xc(1, e), 4)
-            call copy4r(buf( 5), yc(1, e), 4)
+            call copyX4(buf( 1), xc(1, e), 4)
+            call copyX4(buf( 5), yc(1, e), 4)
           endif
         endif
 

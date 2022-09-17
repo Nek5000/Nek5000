@@ -89,6 +89,8 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
+      include 'RESTART'
+      include 'CTIMER'
 c
       logical ifverbm
       integer ibuf(2), loc_to_glob_nid(lelt), lglelo(lelt), nelto
