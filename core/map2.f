@@ -101,7 +101,6 @@ c
       integer*8 vertex
 
       etime0 = dnekclock_sync()
-
       if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
 
@@ -140,6 +139,10 @@ c     Distributed memory processor mapping
                   ibc = 2
       if (ifflow) ibc = 1
 
+                  MFIELD=2
+      IF (IFFLOW) MFIELD=1
+      IF (IFMVBD) MFIELD=0
+
                   nfldt = 1
       if (ifheat) nfldt = 2+npscal
       if (ifmhd ) nfldt = 2+npscal+1
@@ -163,8 +166,11 @@ c     Distributed memory processor mapping
         write(6, *) 'done :: transfer_re2_bc'
       endif
 
-      ! TODO: transfer curve sides based on loc_to_glob
+      ! transfer curve sides based on loc_to_glob
       call transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
+      if (nid.eq.0) then
+        write(6, *) ' done :: transfer_re2_curve'
+      endif
 
       call fgslib_crystal_free(cr_re2)
 
@@ -299,7 +305,7 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      integer*8 eid8(lelt), vtx8(lelt*2**ldim)
+      integer*8 eid8(lelt), vtx8(lelt*2**ldim), itmp
       integer   iwork(lelt), dest(lelt)
       common /ctmp0/ eid8, vtx8, iwork, dest
 
@@ -335,6 +341,8 @@ c-----------------------------------------------------------------------
           call find_con(wk,size(wk),tol,ierr)
         endif
         call err_chk(ierr,' find_con failed!$')
+      else
+        call transfer_con(wk4,size(wk4),neli,nlv,ierr)
       endif
 
 c fluid elements

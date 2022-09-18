@@ -1748,8 +1748,7 @@ c-----------------------------------------------------------------------
 
       do e = 1, nr
          i = ind(e)
-         call icopy(bufr, vi(3, i), lrs4)
-         call buf_to_vtx(vertex(1, e), bufr)
+         call buf_to_vtx(vertex(1, e), vi(3, i))
       enddo
 
  100  call err_chk(ierr, 'Error transferring vertices$')
@@ -1778,6 +1777,91 @@ c-----------------------------------------------------------------------
         integer i
 
         do i = 1, 2**ldim
+          vtx(i) = buf(i)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_con(wk, nwk, nelti, nlvi, ierr)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer nwk, nelti, nlvi, ierr, wk(nwk)
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      parameter(nrmax = lelt)    ! maximum number of records
+      parameter(lrs   = 2**ldim) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer         vi(li, nrmax)
+      common /ctmp1/  vi
+
+      integer e, i, cnt, ind(nrmax), eg(nrmax), nr, key
+
+      i = 1
+      do e = 1, nelti
+        vi(1, e) = mod(wk(i), np)
+        vi(2, e) = wk(i)
+        call vtx_to_buf_4(vi(3, e), wk(i + 1), nlvi)
+        i = i + nlvi + 1
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nr = nelti
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     &  vl, 0, vr, 0, key)
+
+      ! unpack buffer
+      ierr = 0
+      if (nr.gt.nrmax) then
+        ierr = 1
+        goto 100
+      endif
+
+      ! List of global element numbers in v(2,:)
+      do i = 1, nr
+        eg(i) = vi(2, i)
+      enddo
+      call isort(eg, ind, nr)
+
+      cnt = 1
+      do e = 1, nr
+        wk(cnt) = eg(e)
+        i = ind(e)
+        call buf_to_vtx_4(wk(cnt + 1), vi(3, i), nlvi)
+        cnt = cnt + nlvi + 1
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring vertices$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine vtx_to_buf_4(buf, vtx, nlvi)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer buf(2**ldim), vtx(2**ldim), nlvi
+        integer e
+
+        do e = 1, nlvi
+          buf(e) = vtx(e)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_vtx_4(vtx, buf, nlvi)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer vtx(2**ldim), buf(2**ldim), nlvi
+        integer i
+
+        do i = 1, nlvi
           vtx(i) = buf(i)
         enddo
 
