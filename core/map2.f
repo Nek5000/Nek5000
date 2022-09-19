@@ -94,6 +94,7 @@ c-----------------------------------------------------------------------
 c
       logical ifverbm
       integer ibuf(2), loc_to_glob_nid(lelt), lglelo(lelt), nelto
+      real etimei, etimee
 c
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
@@ -124,16 +125,20 @@ c     Distributed memory processor mapping
         lglelo(e) = lglel(e)
       enddo
 
+      etimei = dnekclock_sync()
       ! Vertices must be transfered first
       call transfer_vertices(vertex, loc_to_glob_nid)
+      etimee = dnekclock_sync() - etimei
       if (nid.eq.0) then
-        write(6, *) 'done :: transfer_vertices'
+        write(6, *) 'done :: transfer_vertices. Time: ', etimee
       endif
 
       ! Then we transfer the coordinates
+      etimei = dnekclock_sync()
       call transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
+      etimee = dnekclock_sync() - etimei
       if (nid.eq.0) then
-        write(6, *) 'done :: transfer_re2_mesh'
+        write(6, *) 'done :: transfer_re2_mesh. Time: ', etimee
       endif
 
                   ibc = 2
@@ -158,18 +163,22 @@ c     Distributed memory processor mapping
       endif
 
       ! Now we transfer bcs
+      etimei = dnekclock_sync()
       do ifield = ibc, nfldt
         call transfer_re2_bc(cbc(1,1,ifield), bc(1,1,1,ifield),
      $    loc_to_glob_nid, lglelo, nelto)
       enddo
+      etimee = dnekclock_sync() - etimei
       if (nid.eq.0) then
-        write(6, *) 'done :: transfer_re2_bc'
+        write(6, *) 'done :: transfer_re2_bc. Time: ', etimee
       endif
 
       ! transfer curve sides based on loc_to_glob
+      etimei = dnekclock_sync()
       call transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
+      etimee = dnekclock_sync() - etimei
       if (nid.eq.0) then
-        write(6, *) ' done :: transfer_re2_curve'
+        write(6, *) 'done :: transfer_re2_curve. Time: ', etimee
       endif
 
       call fgslib_crystal_free(cr_re2)

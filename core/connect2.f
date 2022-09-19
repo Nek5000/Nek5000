@@ -1610,9 +1610,17 @@ c-----------------------------------------------------------------------
         include 'SIZE'
         include 'TOTAL'
 
+        integer e, eg, nl
+        call find_lglel_ind_binary(e, eg, nl)
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_lglel_ind_linear(e, eg, nl)
+        include 'SIZE'
+        include 'TOTAL'
+
         integer e, eg, nl, i, ierr
 
-        ! TODO: Do a binary search
         ierr = 1
         do i = 1, nl
           if (lglel(i).eq.eg) then
@@ -1623,6 +1631,46 @@ c-----------------------------------------------------------------------
         enddo
 
         call err_chk(ierr,'Error finding index in lglel$')
+      end
+c-----------------------------------------------------------------------
+      subroutine find_lglel_ind_binary(e, eg, nl)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl
+        integer i, j, mid, ierr
+
+        ierr = 1
+        if ((eg.lt.lglel(1)).or.(eg.gt.lglel(nl))) then
+          goto 100
+        endif
+
+        i = 1
+        j = nl
+        do while (i.lt.j)
+          mid = (i + j)/2
+          if (eg.gt.lglel(mid)) then
+            i = mid + 1
+          else
+            j = mid
+          endif
+          if (eg.eq.lglel(i)) then
+            ierr = 0
+            e = i
+            return
+          endif
+        enddo
+
+        if (i.eq.j) then
+          if (eg.eq.lglel(i)) then
+            ierr = 0
+            e = i
+            return
+          endif
+        endif
+
+ 100    call err_chk(ierr, 'Error finding index in lglel$')
+        return
       end
 c-----------------------------------------------------------------------
       subroutine buf_to_curve_loc(e,buf)    ! version 1 of binary reader
@@ -1671,7 +1719,7 @@ c-----------------------------------------------------------------------
         call copy  (bl(1,f,e),buf(5),5) !5--14
         call chcopy(cbl( f,e),buf(15),3)!15-16
 
-        if(nelt.ge.1000000.and.cbl(f,e).eq.'P  ')
+        if(nelgt.ge.1000000.and.cbl(f,e).eq.'P  ')
      $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
 
       else
