@@ -296,23 +296,6 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_big_v2(vertex, loc_to_glo_nid)
-      include 'SIZE'
-      include 'TOTAL'
-
-      integer*8 vertex(2**ldim,lelt)
-      integer loc_to_glo_nid(lelt)
-
-      if(get_vert_called.gt.0) return
-
-      nv = 2**ldim
-      call get_vert_map_big_v2(nv, vertex, loc_to_glo_nid)
-
-      get_vert_called = 1
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine get_vert_map_big(nlv, vertex, loc_to_glob_nid)
 
       include 'SIZE'
@@ -475,6 +458,23 @@ c solid elements
       return
       end
 c-----------------------------------------------------------------------
+      subroutine get_vert_big_v2(vertex, loc_to_glo_nid)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer*8 vertex(2**ldim,lelt)
+      integer loc_to_glo_nid(lelt)
+
+      if(get_vert_called.gt.0) return
+
+      nv = 2**ndim
+      call get_vert_map_big_v2(nv, vertex, loc_to_glo_nid)
+
+      get_vert_called = 1
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine get_vert_map_big_v2(nlv, vertex, loc_to_glo_nid)
       include 'SIZE'
       include 'TOTAL'
@@ -498,11 +498,8 @@ c-----------------------------------------------------------------------
 
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
-      integer cnt, ii, j, nelti
-      integer opt_parrsb(3), opt_parmetis(10)
-
-      logical ifread_con
-
+      integer cnt, ii, j, nelti, ierr
+      logical ifreadcon
       real tol
 
 #if !defined(PARRSB) && !defined(PARMETIS)
@@ -511,14 +508,15 @@ c-----------------------------------------------------------------------
 #else
       call read_map(vertex,nlv,wk4,mdw,ndw)
       return
-#endif      
+#endif
 #endif
 
+      ierr = 0
 #if defined(PARRSB) || defined(PARMETIS)
-      ifread_con = .true.
+      ifreadcon = .true.
       call read_con(wk4,size(wk),nelt,nlv,ierr)
       if (ierr.ne.0) then
-        ifread_con = .false.
+        ifreadcon = .false.
         tol = connectivityTol
         call find_con(wk,size(wk),tol,ierr)
         if(ierr.ne.0) then
@@ -534,40 +532,40 @@ c fluid elements
       cnt= 0
       do i = 1, nelt
          itmp = wk(ii+1)
-         if (ifread_con) itmp = wk4(ii+1)
+         if (ifreadcon) itmp = wk4(ii+1)
 
          if (itmp .le. nelgv) then
             j = j + 1
             eid8(j) = wk(ii+1)
             call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
-            if (ifread_con) then
+            if (ifreadcon) then
               eid8(j) = wk4(ii+1)
               call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
             endif
 
-            do iv=1,nlv
-              xyz(cnt+1)=xc(iv,i)
-              xyz(cnt+2)=yc(iv,i)
-              if(ldim.eq.3) then
-                xyz(cnt+3)=zc(iv,i)
-                cnt=cnt+3
+            do iv = 1, nlv
+              xyz(cnt+1) = xc(iv,i)
+              xyz(cnt+2) = yc(iv,i)
+              if (ldim.eq.3) then
+                xyz(cnt+3) = zc(iv,i)
+                cnt = cnt + 3
               else
-                cnt=cnt+2
+                cnt = cnt + 2
               endif
             enddo
          endif
-         ii = ii + (nlv+1)
+         ii = ii + (nlv + 1)
       enddo
       nelv = j
 
-      call fpartMeshV2(dest,vtx8,xyz,nelv,nlv,nekcomm,
-     $  meshPartitioner,0,loglevel,ierr)
+      call fpartMeshV2(dest, vtx8, xyz, nelv, nlv, nekcomm,
+     $  meshPartitioner, 0, loglevel, ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       do i = 1, nelv
          lglel(i) = eid8(i)
       enddo
-      call isort(lglel,iwork,nelv)
+      call isort(lglel, iwork, nelv)
 
       do i = 1, nelv
          call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
@@ -575,46 +573,46 @@ c fluid elements
       enddo
 
 c solid elements
-      if (nelv.ne.nelt) then
+      if (nelv.lt.nelt) then
          j  = 0
          ii = 0
          cnt= 0
          do i = 1, nelt
             itmp = wk(ii+1)
-            if (ifread_con) itmp = wk4(ii+1)
+            if (ifreadcon) itmp = wk4(ii+1)
 
             if (itmp .gt. nelgv) then
                j = j + 1
                eid8(j) = wk(ii+1)
                call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
-               if (ifread_con) then
+               if (ifreadcon) then
                  eid8(j) = wk4(ii+1)
                  call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
                endif
 
-               do iv=1,nlv
-                 xyz(cnt+1)=xc(iv,i)
-                 xyz(cnt+2)=yc(iv,i)
-                 if(ldim.eq.3) then
-                   xyz(cnt+3)=zc(iv,i)
-                   cnt=cnt+3
+               do iv = 1, nlv
+                 xyz(cnt+1) = xc(iv, i)
+                 xyz(cnt+2) = yc(iv, i)
+                 if (ldim.eq.3) then
+                   xyz(cnt+3) = zc(iv, i)
+                   cnt = cnt + 3
                  else
-                   cnt=cnt+2
+                   cnt = cnt + 2
                  endif
                enddo
             endif
-            ii = ii + (nlv+1)
+            ii = ii + (nlv + 1)
          enddo
          nelti = j
 
-         call fpartMeshV2(dest,vtx8,xyz,nelti,nlv,nekcomm,
-     $                  2,0,loglevel,ierr)
+         call fpartMeshV2(dest, vtx8, xyz, nelti, nlv, nekcomm,
+     $                  2, 0, loglevel, ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          do i = 1, nelti
             lglel(nelv + i) = eid8(i)
          enddo
-         call isort(lglel(nelv+1),iwork,nelti)
+         call isort(lglel(nelv + 1), iwork, nelti)
 
          do i = 1, nelti
             call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
@@ -622,7 +620,6 @@ c solid elements
          enddo
       endif
 #endif
-
       return
       end
 c-----------------------------------------------------------------------

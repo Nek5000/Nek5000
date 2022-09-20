@@ -25,7 +25,8 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
       if (if_big_rea) then
         if (parfound) then
-          call readat_big ! New reading strategy
+c         call readat_big ! New reading strategy
+          call readat_big_v2 ! New reading strategy 2
         else
           call exitti('Cannot open .par file!$', 1)
         endif
@@ -1178,7 +1179,6 @@ c
 c     NEW READER
 c
       subroutine readat_big
-
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
@@ -1217,15 +1217,12 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine read_re2_data_big(ifbswap) ! big .re2 reader
-
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
       include 'CTIMER'
 
       logical ifbswap
-
-      integer idummy(100)
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
@@ -1702,7 +1699,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine read_re2_bc_v2(nvi, vi, cbl, bl, ifbswap)
-
       include 'SIZE'
       include 'TOTAL'
 
@@ -1711,9 +1707,9 @@ c-----------------------------------------------------------------------
       parameter(li = 2*lrs + 1)
 
       integer nvi, vi(li, nrmax)
-      character*3  cbl(  6,lelt)
-      real         bl (5,6,lelt)
-      logical      ifbswap
+      character*3 cbl(6, lelt)
+      real bl(5, 6, lelt)
+      logical ifbswap
 
       integer         bufr(li-1,nrmax)
       common /scrns/  bufr
@@ -1883,6 +1879,7 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
+c  Double check this
       subroutine find_sorted_ind_binary(e, eg, nl, sorted)
         include 'SIZE'
         include 'TOTAL'
@@ -1891,12 +1888,11 @@ c-----------------------------------------------------------------------
         integer i, j, mid, ierr
 
         ierr = 1
-        if ((eg.lt.sorted(1)).or.(eg.gt.sorted(nl))) then
+        if (nl.eq.0) then
           goto 100
         endif
 
-        if (nl.eq.0) then
-          ierr = 1
+        if ((eg.lt.sorted(1)).or.(eg.gt.sorted(nl))) then
           goto 100
         endif
 
@@ -1909,19 +1905,17 @@ c-----------------------------------------------------------------------
           else
             j = mid
           endif
-          if (eg.eq.sorted(i)) then
+          if (eg.eq.sorted(mid)) then
             ierr = 0
-            e = i
+            e = mid
             return
           endif
         enddo
 
-        if (i.eq.j) then
-          if (eg.eq.sorted(i)) then
-            ierr = 0
-            e = i
-            return
-          endif
+        if (eg.eq.sorted(i)) then
+          ierr = 0
+          e = i
+          return
         endif
 
  100    call err_chk(ierr, 'Error finding index in sorted$')
@@ -2059,7 +2053,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine transfer_vertices_v2(vertex, loc_to_glo_nid)
-
       include 'SIZE'
       include 'TOTAL'
 
@@ -2078,7 +2071,7 @@ c-----------------------------------------------------------------------
 
       integer e, eg, ind(nrmax), nr, key
 
-      lrs4      = lrs*wdsizi/4
+      lrs4 = lrs*wdsizi/4
 
       do e = 1, nelt
         vi(1, e) = loc_to_glo_nid(e)
@@ -2111,9 +2104,9 @@ c-----------------------------------------------------------------------
         endif
       enddo
       nelt = nelv + nelt
-      call isort(lglel, ind, nr)
+      call isort(lglel, ind, nelt)
 
-      do e = 1, nr
+      do e = 1, nelt
          i = ind(e)
          call buf_to_vtx(vertex(1, e), vi(3, i))
       enddo
@@ -2307,7 +2300,7 @@ c-----------------------------------------------------------------------
       integer         vi  (li    , nrmax)
       common /ctmp1/  vi
 
-      lrs4      = lrs*wdsizi/4
+      lrs4 = lrs*wdsizi/4
 
       do e = 1, nelto
         vi(1, e) = loc_to_glo_nid(e)
@@ -2323,7 +2316,7 @@ c-----------------------------------------------------------------------
 
       ! unpack buffer
       ierr = 0
-      if (nr.gt.nrmax) then
+      if (nr.gt.nrmax .or. nr.ne.nelt) then
         ierr = 1
         goto 100
       endif
@@ -2426,7 +2419,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine transfer_re2_bc_v2(nvi, vi, cbl, bl, loc_to_glo_nid,
      $  lglelo, nelto)
-
       include 'SIZE'
       include 'TOTAL'
 
@@ -2463,8 +2455,7 @@ c-----------------------------------------------------------------------
      $  vl, 0, vr, 0, key)
 
       ierr = 0
-      if (nr.gt.nrmax) then
-        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
+      if (nr.gt.nrmax .or. nr.ne.nelt) then
         ierr = 1
         goto 100
       endif
@@ -2625,7 +2616,7 @@ c-----------------------------------------------------------------------
      $  vl, 0, vr, 0, key)
 
       ierr = 0
-      if (nr.gt.nrmax) then
+      if (nr.gt.nrmax .or. nr.ne.nelt) then
         ierr = 1
         goto 100
       endif
@@ -2690,70 +2681,72 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-c     NEW READER V2
       subroutine readat_big_v2
-
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
       include 'CTIMER'
+
+      parameter(nrmax = 12*lelt) ! maximum number of records
+      parameter(lrs   = 30)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+2)
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
       common /ivrtx/ vertex((2**ldim),lelt)
       integer*8 vertex
 
-      parameter(nrmax = 12*lelt) ! maximum number of records
-      parameter(lrs   = 15)   ! record size: eg iside curve(5) ccurve
-      parameter(li    = 2*lrs+2)
-
-      integer         vi  (li  ,nrmax)
-      common /ctmp1/  vi
+      integer        vi(li, nrmax)
+      common /ctmp1/ vi
 
       logical ifbswap
-      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto
+      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto, nvi, ierr
       real etimei, etimee
 
       call setDefaultParam
 
-      if(nid.eq.0) call par_read(ierr)
+      ierr = 0
+      if (nid.eq.0) call par_read(ierr)
       call bcast(ierr,isize)
-      if(ierr .ne. 0) call exitt
+      if (ierr.ne.0) call exitt
+
       call bcastParam
 
       call usrdat0
 
       etimei = dnekclock_sync()
 
+      ! Read the header to get nelgt, nelgv, ndim and then calculate
+      ! nelt.
       call read_re2_hdr(ifbswap, .true.)
 
-      ! mesh is read by binning -- nelt or nelt + 1 elements in each
-      ! rank.
-      nelt = nelgt/np
+      ! Mesh is read by binning -- nelt or nelt + 1 elements in each
+      ! rank (nelt + 1 on last nr ranks where nr is nelgt % np).
+      nelt = nelgt / np
       do i = 1, mod(nelgt, np)
         if (np-i.eq.nid) nelt = nelt + 1
       enddo
-      if (nelt .gt. lelt) then
+      if (nelt.gt.lelt) then
         call exitti('nelt > lelt!$',nelt)
       endif
 
       call chkParam
 
 #ifndef NOMPIIO
-      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
-      call err_chk(ierr,' Cannot open .re2 file!$')
+      call byte_open_mpi(re2fle, fh_re2, .true. ,ierr)
+      call err_chk(ierr, ' Cannot open .re2 file!$')
 #else
       call exitti('No serial support for big mesh read! P=$',np)
 #endif
 
       call read_re2_mesh_v2(ifbswap)
 
-      if (nid.eq.0 .and. loglevel.gt.1) write(6,'(A)')
+      if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
 
 c     Distributed memory processor mapping
       if (np.gt.nelgt) then
-         if(nid.eq.0) then
+         if(nio.eq.0) then
            write(6,1000) np,nelgt
  1000      format(2X,'ABORT: Too many processors (',I8
      $          ,') for to few elements (',I12,').'
@@ -2762,9 +2755,9 @@ c     Distributed memory processor mapping
          call exitt
       endif
 
-      call fgslib_crystal_setup(cr_re2,nekcomm,np)
-
       call get_vert_big_v2(vertex, loc_to_glo_nid)
+
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
       ! transfer vertices
       nelto = nelt
@@ -2778,7 +2771,8 @@ c     Distributed memory processor mapping
 
       ! read and transfer curve sides
       call read_re2_curve_v2(nvi, vi, ifbswap)
-      call transfer_re2_curve_v2(vi, loc_to_glo_nid, lglelo, nelto)
+      call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
+     $  nelto)
 
       ! transfer bcs
                   ibc = 2
@@ -2804,8 +2798,8 @@ c     Distributed memory processor mapping
       do ifield = ibc, nfldt
         call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
      $    ifbswap)
-        call transfer_re2_bc_v2(cbc(1,1,ifield), bc(1,1,1,ifield),
-     $    loc_to_glo_nid, lglelo, nelto)
+        call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
+     $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
       enddo
 
 #ifndef NOMPIIO
@@ -2820,26 +2814,23 @@ c     Distributed memory processor mapping
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_re2_mesh_v2(ifbswap) ! version 3 of .re2 reader
-
+      subroutine read_re2_mesh_v2(ifbswap)
       include 'SIZE'
       include 'TOTAL'
-
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-
-      logical ifbswap
 
       parameter(nrmax = lelt)             ! maximum number of records
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
       parameter(li    = 2*lrs)
 
-      integer e, eg, ind(nrmax)
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
       integer         bufr(li, nrmax)
       common /scrns/  bufr
 
-      integer*8       lre2off_b,dtmp8
-      integer*8       nrg
+      logical ifbswap
+      integer e, eg, ind(nrmax), ierr
+
+      integer*8 lre2off_b, dtmp8, nrg
 
       nrg       = nelgt
       nr        = nelt
@@ -2850,6 +2841,7 @@ c-----------------------------------------------------------------------
       lrs4      = lrs*wdsizi/4
 
       ! read coordinates from file
+      ierr = 0
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
@@ -2881,7 +2873,7 @@ c-----------------------------------------------------------------------
         if (eg.le.nstar) then
           p = (eg - 1) / nlt
         else
-          p = (eg - nstar - 1) / (nlt + 1)
+          p = (eg - nstar - 1) / (nlt + 1) + np - nr - 1
         endif
       end
 c-----------------------------------------------------------------------
