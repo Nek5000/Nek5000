@@ -1,8 +1,4 @@
 c-----------------------------------------------------------------------
-
-c     include 'readat_big.f'   ! New reader
-
-c-----------------------------------------------------------------------
       subroutine readat
 
 c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
@@ -1482,7 +1478,7 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
       parameter(nrmax = 12*lelt) ! maximum number of records
-      parameter(lrs   = 15)   ! record size: eg iside curve(5) ccurve
+      parameter(lrs   = 8)   ! record size: eg iside curve(5) ccurve
       parameter(li    = 2*lrs+1)
 
       integer nvi, vi(li, nrmax)
@@ -1500,6 +1496,8 @@ c-----------------------------------------------------------------------
       integer e, eg, ierr
 
       ! read total number of records
+      nvi = 0
+      ierr = 0
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
       call byte_set_view(lre2off_b,fh_re2)
@@ -1592,7 +1590,6 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg,nr
       integer*4       nrg4(2)
-
       integer*8       i8gl_running_sum 
 
       integer e,eg,esort(nrmax),ind(nrmax)
@@ -1703,7 +1700,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter(nrmax = 6*lelt)
-      parameter(lrs = 15)
+      parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
       integer nvi, vi(li, nrmax)
@@ -1722,6 +1719,7 @@ c-----------------------------------------------------------------------
       integer i, e, k, eg, ierr, key
 
       ! read total number of records
+      nvi       = 0
       ierr      = 0
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
@@ -1754,7 +1752,7 @@ c-----------------------------------------------------------------------
       re2off_b = re2off_b + nrg*4*lrs4
 
 
-      if(nid.eq.0) write(6,'(A,I20,A,I3)')
+      if(nio.eq.0) write(6,'(A,I20,A,I3)')
      $             ' reading boundary faces ', nrg,
      $             ' for ifield ', ifield
 
@@ -1775,7 +1773,10 @@ c-----------------------------------------------------------------------
 
          eg = bufr(jj,1)
          if(wdsizi.eq.8) call copyi4(eg,bufr(jj,1),1)
-         if(eg.le.0 .or. eg.gt.nelgt) goto 100
+         if(eg.le.0 .or. eg.gt.nelgt) then
+           ierr = 1
+           goto 100
+         endif
 
          call get_dest_proc(vi(1,i), eg, np, nelgt)
          call icopy (vi(2,i),bufr(jj,1),lrs4)
@@ -1838,6 +1839,9 @@ c-----------------------------------------------------------------------
         integer i, j, mid, ierr
 
         ierr = 1
+        if (nl.eq.0) then
+          goto 100
+        endif
         if ((eg.lt.lglel(1)).or.(eg.gt.lglel(nl))) then
           goto 100
         endif
@@ -1851,22 +1855,22 @@ c-----------------------------------------------------------------------
           else
             j = mid
           endif
-          if (eg.eq.lglel(i)) then
-            ierr = 0
-            e = i
+          if (eg.eq.lglel(mid)) then
+            e = mid
             return
           endif
         enddo
 
-        if (i.eq.j) then
-          if (eg.eq.lglel(i)) then
-            ierr = 0
-            e = i
-            return
-          endif
+        if (eg.eq.lglel(i)) then
+          e = i
+          return
+        endif
+        if (eg.eq.lglel(j)) then
+          e = j
+          return
         endif
 
- 100    call err_chk(ierr, 'Error finding index in lglel$')
+ 100    call err_chk(ierr, 'Error finding index in lglel binary$')
         return
       end
 c-----------------------------------------------------------------------
@@ -1891,7 +1895,6 @@ c  Double check this
         if (nl.eq.0) then
           goto 100
         endif
-
         if ((eg.lt.sorted(1)).or.(eg.gt.sorted(nl))) then
           goto 100
         endif
@@ -1906,15 +1909,17 @@ c  Double check this
             j = mid
           endif
           if (eg.eq.sorted(mid)) then
-            ierr = 0
             e = mid
             return
           endif
         enddo
 
         if (eg.eq.sorted(i)) then
-          ierr = 0
           e = i
+          return
+        endif
+        if (eg.eq.sorted(j)) then
+          e = j
           return
         endif
 
@@ -2373,8 +2378,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(nrmax = lelt*(2*ldim))
-      parameter(lrs = 15)
+      parameter(nrmax = 6*lelt)
+      parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
       character*3 cbl(2*ldim, lelt)
@@ -2404,7 +2409,6 @@ c-----------------------------------------------------------------------
 
       ierr = 0
       if (nr.gt.nrmax) then
-        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
         ierr = 1
         goto 100
       endif
@@ -2423,7 +2427,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter(nrmax = 6*lelt)
-      parameter(lrs = 15)
+      parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
       integer nvi, vi(li, nrmax)
@@ -2434,6 +2438,7 @@ c-----------------------------------------------------------------------
       integer i, e, nr, key, ierr
       integer eg(nrmax)
 
+      ierr = 0
       if (wdsizi.eq.8) then
         do i = 1, nvi
           call copyi4(eg(i), vi(2, i), 1)
@@ -2454,14 +2459,24 @@ c-----------------------------------------------------------------------
       call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
      $  vl, 0, vr, 0, key)
 
-      ierr = 0
-      if (nr.gt.nrmax .or. nr.ne.nelt) then
+      if (nr.gt.nrmax) then
         ierr = 1
         goto 100
       endif
 
-      do i = 1,nr
-         call buf_to_bc_big(cbl, bl, vi(2, i))
+      if (wdsizi.eq.8) then
+        do i = 1, nr
+          call copyi4(eg(i), vi(2, i), 1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1, nr
+          eg(i) = vi(2, i)
+        enddo
+      endif
+
+      do i = 1, nr
+         call find_lglel_ind(e, eg(i), nelt)
+         call buf_to_bc_loc(e, cbl, bl, vi(2, i))
       enddo
 
  100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
@@ -2565,7 +2580,6 @@ c-----------------------------------------------------------------------
 
       ierr = 0
       if (nr.gt.nrmax) then
-        write(6, *) 'Ooops ! nr > nrmax',nr,nrmax
         ierr = 1
         goto 100
       endif
@@ -2586,7 +2600,7 @@ c-----------------------------------------------------------------------
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
       parameter(nrmax = 12*lelt)
-      parameter(lrs = 15)
+      parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
       integer nvi, vi(li, nrmax)
@@ -2616,16 +2630,27 @@ c-----------------------------------------------------------------------
      $  vl, 0, vr, 0, key)
 
       ierr = 0
-      if (nr.gt.nrmax .or. nr.ne.nelt) then
+      if (nr.gt.nrmax) then
         ierr = 1
         goto 100
       endif
 
+      if (wdsizi.eq.8) then
+        do i = 1, nr
+          call copyi4(eg(i), vi(2, i), 1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1, nr
+          eg(i) = vi(2, i)
+        enddo
+      endif
+
       do i = 1, nr
-         call buf_to_curve_big(curve, ccurve, vi(2, i))
+         call find_lglel_ind(e, eg(i), nelt)
+         call buf_to_curve_loc(e, vi(2, i))
       enddo
 
- 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
+ 100  call err_chk(ierr, 'Error transferring .re2 curve data$')
       return
       end
 c-----------------------------------------------------------------------
@@ -2701,6 +2726,7 @@ c-----------------------------------------------------------------------
 
       logical ifbswap
       integer loc_to_glo_nid(lelt), lglelo(lelt), nelto, nvi, ierr
+      integer ibuf(2)
       real etimei, etimee
 
       call setDefaultParam
@@ -2765,14 +2791,26 @@ c     Distributed memory processor mapping
         lglelo(i) = lglel(i)
       enddo
       call transfer_vertices_v2(vertex, loc_to_glo_nid)
+      if (nio.eq.0) then
+        write(6, *) 'done :: transfer vertices'
+      endif
 
       ! transfer coordinates
       call transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
+      if (nio.eq.0) then
+        write(6, *) 'done :: transfer coordinates'
+      endif
 
       ! read and transfer curve sides
       call read_re2_curve_v2(nvi, vi, ifbswap)
+      if (nio.eq.0) then
+        write(6, *) 'done :: read curve sides'
+      endif
       call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
      $  nelto)
+      if (nio.eq.0) then
+        write(6, *) 'done :: transfer curve sides'
+      endif
 
       ! transfer bcs
                   ibc = 2
@@ -2798,18 +2836,47 @@ c     Distributed memory processor mapping
       do ifield = ibc, nfldt
         call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
      $    ifbswap)
+        if (nio.eq.0) then
+          write(6, *) 'done :: read bcs ifield=', ifield
+        endif
         call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
      $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
+        if (nio.eq.0) then
+          write(6, *) 'done :: transfer bcs ifield=', ifield
+        endif
       enddo
+
+      call fgslib_crystal_free(cr_re2)
 
 #ifndef NOMPIIO
       call byte_close_mpi(fh_re2,ierr)
 #endif
 
-      etimee = dnekclock_sync() - etimei
-      if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
-     &                   ' done :: read .re2 file   ',
-     &                   etimee, ' sec'
+#ifdef DPROCMAP
+      call dProcmapInit()
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+      enddo
+#else
+      call izero(gllnid,nelgt)
+      do i = 1,nelt
+         ieg = lglel(i)
+         gllnid(ieg) = nid
+      enddo
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif
 
       return
       end
@@ -2820,11 +2887,11 @@ c-----------------------------------------------------------------------
 
       parameter(nrmax = lelt)             ! maximum number of records
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
-      parameter(li    = 2*lrs)
+      parameter(li    = 2*lrs+2)
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 
-      integer         bufr(li, nrmax)
+      integer         bufr(li-2, nrmax)
       common /scrns/  bufr
 
       logical ifbswap
@@ -2873,7 +2940,8 @@ c-----------------------------------------------------------------------
         if (eg.le.nstar) then
           p = (eg - 1) / nlt
         else
-          p = (eg - nstar - 1) / (nlt + 1) + np - nr - 1
+          p = (eg - nstar - 1) / (nlt + 1) + np - nr
         endif
+        return
       end
 c-----------------------------------------------------------------------
