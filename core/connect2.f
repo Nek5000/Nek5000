@@ -21,6 +21,15 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
       if (if_big_rea) then
         if (parfound) then
+          call setDefaultParam
+
+          if (nid.eq.0) call par_read(ierr)
+          call bcast(ierr, isize)
+          if (ierr.ne.0) call exitt
+          call bcastParam
+
+          call usrdat0
+
 c         call readat_big ! New reading strategy
           call readat_big_v2 ! New reading strategy 2
         else
@@ -1182,18 +1191,9 @@ c
 
       logical ifbswap
 
-      call setDefaultParam
-
-      if(nid.eq.0) call par_read(ierr)
-      call bcast(ierr,isize)
-      if(ierr .ne. 0) call exitt
-      call bcastParam
-
-      call usrdat0
-
       call read_re2_hdr(ifbswap, .true.)
 
-      nelt = nelgt/np
+      nelt = nelgt / np
       do i = 1, mod(nelgt, np)
         if (np-i.eq.nid) nelt = nelt + 1
       enddo
@@ -2727,20 +2727,9 @@ c-----------------------------------------------------------------------
       logical ifbswap
       integer loc_to_glo_nid(lelt), lglelo(lelt), nelto, nvi, ierr
       integer ibuf(2)
-      real etimei, etimee
-
-      call setDefaultParam
+      real etimei, etimee, dur0, dur1
 
       ierr = 0
-      if (nid.eq.0) call par_read(ierr)
-      call bcast(ierr,isize)
-      if (ierr.ne.0) call exitt
-
-      call bcastParam
-
-      call usrdat0
-
-      etimei = dnekclock_sync()
 
       ! Read the header to get nelgt, nelgv, ndim and then calculate
       ! nelt.
@@ -2765,10 +2754,16 @@ c-----------------------------------------------------------------------
       call exitti('No serial support for big mesh read! P=$',np)
 #endif
 
-      call read_re2_mesh_v2(ifbswap)
-
       if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
+      etimei = dnekclock_sync()
+
+      dur0 = dnekclock_sync()
+      call read_re2_mesh_v2(ifbswap)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.o .and. loglevel.gt.1) then
+        write(6, *) 'done :: read coordinates: ', dur1
+      endif
 
 c     Distributed memory processor mapping
       if (np.gt.nelgt) then
@@ -2790,26 +2785,36 @@ c     Distributed memory processor mapping
       do i = 1, nelt
         lglelo(i) = lglel(i)
       enddo
+
+      dur0 = dnekclock_sync()
       call transfer_vertices_v2(vertex, loc_to_glo_nid)
-      if (nio.eq.0) then
-        write(6, *) 'done :: transfer vertices'
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer vertices: ', dur1
       endif
 
       ! transfer coordinates
+      dur0 = dnekclock_sync()
       call transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
-      if (nio.eq.0) then
-        write(6, *) 'done :: transfer coordinates'
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer coordinates: ', dur1
       endif
 
       ! read and transfer curve sides
+      dur0 = dnekclock_sync()
       call read_re2_curve_v2(nvi, vi, ifbswap)
-      if (nio.eq.0) then
-        write(6, *) 'done :: read curve sides'
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: read curved sides: ', dur1
       endif
+
+      dur0 = dnekclock_sync()
       call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
      $  nelto)
-      if (nio.eq.0) then
-        write(6, *) 'done :: transfer curve sides'
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer curved sides: ', dur1
       endif
 
       ! transfer bcs
@@ -2834,14 +2839,19 @@ c     Distributed memory processor mapping
       call rzero(bc ,size(bc))
 
       do ifield = ibc, nfldt
+        dur0 = dnekclock_sync()
         call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
      $    ifbswap)
-        if (nio.eq.0) then
+        dur1 = dnekclock_sync() - dur0
+        if (nio.eq.0 .and. loglevel.gt.1) then
           write(6, *) 'done :: read bcs ifield=', ifield
         endif
+
+        dur0 = dnekclock_sync()
         call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
      $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
-        if (nio.eq.0) then
+        dur1 = dnekclock_sync() - dur0
+        if (nio.eq.0 .and. loglevel.gt.1) then
           write(6, *) 'done :: transfer bcs ifield=', ifield
         endif
       enddo
@@ -2877,6 +2887,10 @@ c     Distributed memory processor mapping
          k = k+m
       enddo
 #endif
+      etimee = dnekclock_sync() - etimei
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: partitioning: ', etimee
+      endif
 
       return
       end
