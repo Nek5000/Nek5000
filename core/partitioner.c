@@ -397,7 +397,6 @@ void fpartMeshV2(int *dest, long long *vl, double *xyz, int *nell,
   int e, n;
   int count, ierr, ibuf;
   int *seq;
-  int opt[3];
 
   nel = *nell;
   nv = *nve;
@@ -412,14 +411,27 @@ void fpartMeshV2(int *dest, long long *vl, double *xyz, int *nell,
   comm_init(&comm, cext);
 
   seq  = (int *)malloc(nel * sizeof(int));
+
   ierr = 1;
 #if defined(PARRSB)
+  // General options
+  //   partitioner: Partition algo: 0 - RSB, 1 - RCB, 2 - RIB (Default: 0)
+  //   verbose_level: Verbose level: 0, 1, 2, .. etc (Default: 1)
+  //   profile_level: Profile level: 0, 1, 2, .. etc (Default: 1)
+  //   two_level: Use two level partitioning algo (Default: 0)
+  //   repair: Repair disconnected components: 0 - No, 1 - Yes (Default: 0)
+  // RSB specific
+  //   rsb_algo: RSB algo: 0 - Lanczos, 1 - RQI (Default: 0)
+  //   rsb_pre: RSB pre-partition algo: 0 - None, 1 - RCB , 2 - RIB (Default: 1)
+  //   rsb_max_iter: Maximum iterations in Lanczos or RQI (Default: 50)
+  //   rsb_tol: Tolerance for Lanczos or RQI (Default: 1e-3)
+  // RSB-MG specific
+  //   rsb_mg_grammian: MG Grammian: 0 or 1 (Default: 0)
+  //   rsb_mg_factor: MG Coarsening factor (Default: 2, should be > 1)
+  // RSB-Lanczos specific
+  //   rsb_lanczos_max_restarts: Maximum restarts in Lanczos (Default: 50)
   parrsb_options options = parrsb_default_options;
-
-  options.debug_level = 0;
-  if (*loglevel > 2)
-    options.debug_level = 1;
-
+  options.verbose_level = *loglevel;
   if (partitioner & 1)
     options.partitioner = 0;
   else if (partitioner & 2)
@@ -428,27 +440,15 @@ void fpartMeshV2(int *dest, long long *vl, double *xyz, int *nell,
   if (partitioner & 1)
     options.rsb_algo = algo;
 
-  if(*loglevel >2)
+  if (*loglevel > 2)
     printPartStat(vl, nel, nv, cext);
 
   ierr = parrsb_part_mesh(dest, seq, vl, xyz, nel, nv, options, comm.c);
   if (ierr != 0)
     goto err;
 
-  if(*loglevel >2)
+  if (*loglevel > 2)
     printPartStat(vl, nel, nv, cext);
-
-#elif defined(PARMETIS)
-  int metis;
-  metis = partitioner & 4;
-
-  if (metis) {
-    opt[0] = 1;
-    opt[1] = 0; /* verbosity */
-    opt[2] = comm.np;
-
-    ierr = parMETIS_partMesh(dest,vl,nel,nv,opt,comm.c);
-  }
 #endif
 
   free(seq);
@@ -476,7 +476,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt,
   int nel, nv, partitioner, algo;
   int e, n;
   int count, ierr, ibuf;
-  int *part,*seq;
+  int *part, *seq;
   int opt[3];
 
   nel  = *nell;
@@ -496,12 +496,24 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt,
 
   ierr = 1;
 #if defined(PARRSB)
+  // General options
+  //   partitioner: Partition algo: 0 - RSB, 1 - RCB, 2 - RIB (Default: 0)
+  //   verbose_level: Verbose level: 0, 1, 2, .. etc (Default: 1)
+  //   profile_level: Profile level: 0, 1, 2, .. etc (Default: 1)
+  //   two_level: Use two level partitioning algo (Default: 0)
+  //   repair: Repair disconnected components: 0 - No, 1 - Yes (Default: 0)
+  // RSB specific
+  //   rsb_algo: RSB algo: 0 - Lanczos, 1 - RQI (Default: 0)
+  //   rsb_pre: RSB pre-partition algo: 0 - None, 1 - RCB , 2 - RIB (Default: 1)
+  //   rsb_max_iter: Maximum iterations in Lanczos or RQI (Default: 50)
+  //   rsb_tol: Tolerance for Lanczos or RQI (Default: 1e-3)
+  // RSB-MG specific
+  //   rsb_mg_grammian: MG Grammian: 0 or 1 (Default: 0)
+  //   rsb_mg_factor: MG Coarsening factor (Default: 2, should be > 1)
+  // RSB-Lanczos specific
+  //   rsb_lanczos_max_restarts: Maximum restarts in Lanczos (Default: 50)
   parrsb_options options = parrsb_default_options;
-
-  options.debug_level = 0;
-  if (*loglevel > 2)
-    options.debug_level = 1;
-
+  options.verbose_level = *loglevel;
   if (partitioner & 1)
     options.partitioner = 0;
   else if (partitioner & 2)
@@ -521,7 +533,7 @@ void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt,
   if (ierr != 0)
     goto err;
 
-  if(*loglevel >2)
+  if (*loglevel >2)
     printPartStat(vl, nel, nv, cext);
 
 #elif defined(PARMETIS)
