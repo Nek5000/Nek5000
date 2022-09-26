@@ -2818,6 +2818,8 @@ c     Distributed memory processor mapping
       endif
 
       ! transfer bcs
+      dur0 = dnekclock_sync()
+
                   ibc = 2
       if (ifflow) ibc = 1
 
@@ -2839,22 +2841,17 @@ c     Distributed memory processor mapping
       call rzero(bc ,size(bc))
 
       do ifield = ibc, nfldt
-        dur0 = dnekclock_sync()
         call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
      $    ifbswap)
-        dur1 = dnekclock_sync() - dur0
-        if (nio.eq.0 .and. loglevel.gt.1) then
-          write(6, *) 'done :: read bcs ifield=', ifield
-        endif
 
-        dur0 = dnekclock_sync()
         call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
      $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
-        dur1 = dnekclock_sync() - dur0
-        if (nio.eq.0 .and. loglevel.gt.1) then
-          write(6, *) 'done :: transfer bcs ifield=', ifield
-        endif
       enddo
+
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: read and transfer bcs: ', dur1
+      endif
 
       call fgslib_crystal_free(cr_re2)
 
