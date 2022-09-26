@@ -94,7 +94,9 @@ c-----------------------------------------------------------------------
 
       nrg       = nelgt
       nr        = nelt
+      etime0    = dnekclock_sync()
       irankoff  = igl_running_sum(nr) - nr
+      etime_s1  = dnekclock_sync() - etime0
       dtmp8     = irankoff
       re2off_b  = 84 ! set initial offset (hdr + endian)
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
@@ -103,7 +105,9 @@ c-----------------------------------------------------------------------
       ! read coordinates from file
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
+      etime0 = dnekclock_sync()
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      etime_s2 = dnekclock_sync() - etime0
       re2off_b = re2off_b + nrg*4*lrs4
       if (ierr.gt.0) goto 100
 
@@ -112,6 +116,7 @@ c-----------------------------------------------------------------------
       if (nio.eq.0) write(6,*) 'reading mesh '
 
       ! pack buffer
+      etime0 = dnekclock_sync()
       do i = 1,nr
          jj      = (i-1)*lrs4 + 1
          ielg    = irankoff + i ! elements are stored in global order
@@ -119,12 +124,15 @@ c-----------------------------------------------------------------------
          vi(2,i) = ielg
          call icopy(vi(3,i),bufr(jj,1),lrs4)
       enddo
+      etime_t1 = dnekclock_sync() - etime0
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n   = nr
       key = 1 
+      etime0 = dnekclock_sync()
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,
      &   vl,0,vr,0,key)
+      etime_t2 = dnekclock_sync() - etime0
 
       ! unpack buffer
       ierr = 0
@@ -133,11 +141,20 @@ c-----------------------------------------------------------------------
          goto 100
       endif
 
+      etime0 = dnekclock_sync()
       do i = 1,n
          iel = gllel(vi(2,i)) 
          call icopy     (bufr,vi(3,i),lrs4)
          call buf_to_xyz(bufr,iel,ifbswap,ierr)
       enddo
+      etime_t3 = dnekclock_sync() - etime0
+
+      if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
+      if(nio.eq.0) write(6,2) etime_s1,etime_s2
+
+   1  format(3x,'readp_re2_mesh:pack/cr/unpack :',3(1e9.2))
+   2  format(3x,'readp_re2_mesh:running_sum/byte_read_mpi :',2(1e9.2))
+
 
  100  call err_chk(ierr,'Error reading .re2 mesh$')
 
@@ -174,7 +191,9 @@ c-----------------------------------------------------------------------
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
       call byte_set_view(lre2off_b,fh_re2)
+      etime0 = dnekclock_sync()
       call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      etime_s1 = dnekclock_sync() - etime0
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -195,7 +214,9 @@ c-----------------------------------------------------------------------
       do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
+      etime0 = dnekclock_sync()
       dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      etime_s2 = dnekclock_sync() - etime0
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
       lrs4      = lrs*wdsizi/4
 
@@ -206,10 +227,13 @@ c-----------------------------------------------------------------------
 
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
+      etime0 = dnekclock_sync()
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      etime_s3 = dnekclock_sync() - etime0
       if(ierr.gt.0) goto 100
 
       ! pack buffer
+      etime0 = dnekclock_sync()
       do i = 1,nr
          jj = (i-1)*lrs4 + 1
 
@@ -227,19 +251,31 @@ c-----------------------------------------------------------------------
 
          call icopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
+      etime_t1 = dnekclock_sync() - etime0
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
+      etime0 = dnekclock_sync()
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
+      etime_t2 = dnekclock_sync() - etime0
 
       ! unpack buffer
+      etime0 = dnekclock_sync()
       if(n.gt.nrmax) goto 100
       do i = 1,n
          call icopy       (bufr,vi(2,i),lrs4)
          call buf_to_curve(bufr)
       enddo
+      etime_t3 = dnekclock_sync() - etime0
+
+      if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
+      if(nio.eq.0) write(6,2) etime_s1,etime_s2,etime_s3
+
+   1  format(3x,'readp_re2_curve:pack/cr/unpack :',3(1e9.2))
+   2  format(3x,'readp_re2_curve:byte_read_mpi/running_sum/byte_read_mpi
+     $ :',3(1e9.2))
 
       return
 
@@ -278,7 +314,9 @@ c-----------------------------------------------------------------------
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
       call byte_set_view(lre2off_b,fh_re2)
+      etime0    = dnekclock_sync()
       call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      etime_s1  = dnekclock_sync() - etime0
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -299,7 +337,9 @@ c-----------------------------------------------------------------------
       do i = 0,mod(nrg,dtmp8)-1
          if(i.eq.nid) nr = nr + 1
       enddo
+      etime0    = dnekclock_sync()
       dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      etime_s2  = dnekclock_sync() - etime0
       lre2off_b = re2off_b + dtmp8*lrs*wdsizi
       lrs4      = lrs*wdsizi/4
 
@@ -312,10 +352,13 @@ c-----------------------------------------------------------------------
 
       nwds4r = nr*lrs4
       call byte_set_view(lre2off_b,fh_re2)
+      etime0 = dnekclock_sync()
       call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      etime_s3 = dnekclock_sync() - etime0
       if(ierr.gt.0) goto 100
 
       ! pack buffer
+      etime0 = dnekclock_sync()
       do i = 1,nr
          jj = (i-1)*lrs4 + 1
 
@@ -333,13 +376,16 @@ c-----------------------------------------------------------------------
 
          call icopy (vi(2,i),bufr(jj,1),lrs4)
       enddo
+      etime_t1 = dnekclock_sync() - etime0
 
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       n    = nr
       key  = 1
 
+      etime0 = dnekclock_sync()
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
+      etime_t2 = dnekclock_sync() - etime0
 
       ! fill up with default
       do iel=1,nelt
@@ -350,10 +396,19 @@ c-----------------------------------------------------------------------
 
       ! unpack buffer
       if(n.gt.nrmax) goto 100
+      etime0 = dnekclock_sync()
       do i = 1,n
          call icopy    (bufr,vi(2,i),lrs4)
          call buf_to_bc(cbl,bl,bufr)
       enddo
+      etime_t3 = dnekclock_sync() - etime0
+
+      if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
+      if(nio.eq.0) write(6,2) etime_s1,etime_s2,etime_s3
+
+   1  format(3x,'readp_re2_bc:pack/cr/unpack :',3(1e9.2))
+   2  format(3x,'readp_re2_bc:byte_read_mpi/running_sum/byte_read_mpi :'
+     $,3(1e9.2))
 
       return
 
@@ -800,7 +855,7 @@ c-----------------------------------------------------------------------
       ierr=0
 
       if (nid.eq.0) then
-         if (ifverbose) write(6,'(A,A)') ' Reading ', re2fle
+         if (ifverbose) write(6,'(A,A)') ' reading ', re2fle
          call izero(fnami,33)
          m = indx2(re2fle,132,' ',1)-1
          call chcopy(fname,re2fle,m)
@@ -817,7 +872,6 @@ c-----------------------------------------------------------------------
          if(ierr.ne.0) goto 100
 
          read (hdr,'(a5)') version
-
          if(version.eq.'#v004') then   
             read (hdr,*) version,nelgt,ldimr,nelgv,nBCre2
          else                          
@@ -825,9 +879,8 @@ c-----------------------------------------------------------------------
          endif    
    1     format(a5,i9,i3,i9)
 
-         if(ifverbose)
-     $      write (6,*) ' re2 hdr:',version,nelgt,ldimr,nelgv
-             
+         if (ifverbose) write (6,'(a,a80)') ' hdr:', hdr
+                        
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') wdsizi = 8
