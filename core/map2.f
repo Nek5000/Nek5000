@@ -998,7 +998,7 @@ c-----------------------------------------------------------------------
         enddo
       enddo
 
-      call fparrsb_find_conn(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
+      call fparrsb_conn_mesh(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
      $  1,ierr)
 
       k=1

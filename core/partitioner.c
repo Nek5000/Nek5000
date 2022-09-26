@@ -431,7 +431,7 @@ void fpartMeshV2(int *dest, long long *vl, double *xyz, int *nell,
   // RSB-Lanczos specific
   //   rsb_lanczos_max_restarts: Maximum restarts in Lanczos (Default: 50)
   parrsb_options options = parrsb_default_options;
-  options.verbose_level = *loglevel;
+  options.verbose_level = 1;
   if (partitioner & 1)
     options.partitioner = 0;
   else if (partitioner & 2)
