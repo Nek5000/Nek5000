@@ -635,6 +635,7 @@ C
          CALL SETHLM  (H1,H2,INTYPE)
          CALL BCNEUSC (TA,-1)
          CALL ADD2    (H2,TA,NTOT)
+         call add2    (h2,adqp(1,ifield-1,jp),ntot)
          CALL BCDIRSC (TP(1,IFIELD-1,jp))
          CALL AXHELM  (TA,TP (1,IFIELD-1,jp),H1,H2,IMESH,1)
          CALL SUB3    (TB,BQP(1,IFIELD-1,jp),TA,NTOT)
@@ -699,7 +700,7 @@ C
       time = time-dt                           ! time is tn
 c
       call rzero   ( bqp(1,ifield-1,jp) ,    ntot)
-      call setqvol ( bqp(1,ifield-1,jp)          )
+      call setqvol ( bqp(1,ifield-1,jp) , adqp(1,ifield-1,jp))
       call col2    ( bqp(1,ifield-1,jp) ,bm1,ntot)
 c
       time = time+dt                           ! restore time
