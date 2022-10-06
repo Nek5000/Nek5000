@@ -845,12 +845,12 @@ c set connectivity tolerance
 
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
-      if(ifnd.ge.1) ifbmap(1)=.true.
       if(ifnd.gt.lbid) then
         write(6,'(a)')"Too many BCs specified for velocity in par"
         ierr = 1
         ifnd = 0
       endif
+      if(ifnd.ge.1) ifbmap(1)=.true.
       nbctype(1)=ifnd
       do i = 1,nbctype(1)
         call finiparser_getToken(c_out,i)
@@ -896,7 +896,7 @@ c read BC values for velocity
           ifnd = 0
         endif
       endif
-      ifbvmap(1)=.true.
+      if(ifnd.ge.1) ifbvmap(1)=.true.
       do i = 1,min(ifnd,nbctype(1))
         call finiparser_getToken(c_out,i)
         read (c_out,*) cbc_vmap(i,1)
