@@ -1056,6 +1056,7 @@ C
          DO 120 IY=KY1,KY2
          DO 120 IX=KX1,KX2
             if (optlevel.le.2) CALL NEKASGN (IX,IY,IZ,IEL)
+            if(bvmap(ifield)) un=cbc_vmap(bid,ifield)
             CALL USERBC  (IX,IY,IZ,IFACE,IEG)
             V1(IX,IY,IZ) = UN
             V2(IX,IY,IZ) = U1
@@ -2180,6 +2181,54 @@ c
         enddo
         enddo
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine setbcpar
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+
+      iBCmin = 999999
+      do iel = 1,nelv
+      do ifc = 1,2*ndim
+        iBC = BoundaryID(ifc,iel)
+        if(iBC.gt.0) iBCmin = min(iBC,iBCmin)
+      enddo
+      enddo
+      ioffset = iglmin(iBCmin,1)-1
+
+      iBCmin = 999999
+      do iel = 1,nelt
+      do ifc = 1,2*ndim
+        iBC = BoundaryIDt(ifc,iel)
+        if(iBC.gt.0) iBCmin = min(iBC,iBCmin)
+      enddo
+      enddo
+      ioffsett = iglmin(iBCmin,1)-1
+
+      do ifld = 1,ldimt1
+      if(ifbmap(ifld))then
+        if(iftmsh(ifld)) then
+          do iel = 1,nelt
+          do ifc = 1,2*ndim
+            iBC = BoundaryIDt(ifc,iel)-ioffsett
+            if(iBC.ge.1.and.iBC.le.lbid)
+     &                            cbc(ifc,iel,ifld) = cbc_bmap(iBC,ifld)
+          enddo
+          enddo
+        else
+          do iel = 1,nelv
+          do ifc = 1,2*ndim
+            iBC = BoundaryID(ifc,iel)-ioffset
+            if(iBC.ge.1.and.iBC.le.lbid)
+     &                            cbc(ifc,iel,ifld) = cbc_bmap(iBC,ifld)
+          enddo
+          enddo
+        endif
+      endif
+      enddo
 
       return
       end
