@@ -21,6 +21,7 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
       if (if_big_rea) then
         if (parfound) then
+          !--> May be this section should go in readat_big_v2
           call setDefaultParam
 
           if (nid.eq.0) call par_read(ierr)
@@ -29,9 +30,9 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
           call bcastParam
 
           call usrdat0
+          ! --<
 
-c         call readat_big ! New reading strategy
-          call readat_big_v2 ! New reading strategy 2
+          call readat_big_v2 ! New reading strategy
         else
           call exitti('Cannot open .par file!$', 1)
         endif
@@ -41,7 +42,7 @@ c         call readat_big ! New reading strategy
           call readat_par
         else
           if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
-          call readat_std
+          call readat_rea
         endif
       endif
 
@@ -50,7 +51,7 @@ c         call readat_big ! New reading strategy
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readat_std
+      subroutine readat_rea
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
@@ -170,141 +171,6 @@ c-----------------------------------------------------------------------
       if (ntmsh.gt.0) then
         do iel = 1,nelt
         do ifc = 1,2*ldim   
-           boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
-        enddo
-        enddo
-      endif 
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine readat_old
-C
-C     Read in data from preprocessor input file (.rea)
-C
-      include 'SIZE'
-      include 'INPUT'
-      include 'GEOM'
-      include 'PARALLEL'
-      include 'CTIMER'
- 
-      logical ifbswap,ifre2,parfound
-      character*132 string
-      integer idum(3*numsts+3)
-
-      ierr = 0
-      call flush_io
-
-      ! check if new rea file version exists
-      if(nid.eq.0) inquire(file=parfle, exist=parfound)
-      call bcast(parfound,lsize)
-      if (parfound) then
-         if(nio.eq.0) write(6,'(A,A)') ' Reading ', parfle
-         call readat_par
-         goto 99
-      endif  
-
-      etime0 = dnekclock_sync()
-
-      if(nid.eq.0) then
-        write(6,'(A,A)') ' Reading ', reafle
-        open (unit=9,file=reafle,status='old', iostat=ierr)
-      endif
-
-      call bcast(ierr,isize)
-      if (ierr .gt. 0) call exitti('Cannot open rea file!$',1)
-
-C     Read parameters and logical flags
-      call rdparam
-
-C     Read Mesh Info 
-      if(nid.eq.0) then
-        read(9,*)    ! xfac,yfac,xzero,yzero
-        read(9,*)    ! dummy
-        read(9,*)  nelgs,ldimr,nelgv
-        nelgt = abs(nelgs)
-      endif
-      call bcast(ldimr,ISIZE)
-      call bcast(nelgs,ISIZE)
-      call bcast(nelgv,ISIZE)
-      call bcast(nelgt,ISIZE)
-      ifre2 = .false.
-      if (nelgs.lt.0) ifre2 = .true.
-
-      call usrdat0
-
-      if (nelgt.gt.350000 .and. .not.ifre2) 
-     $   call exitti('Problem size requires .re2!$',1)
-
-      if (ifre2) call read_re2_hdr(ifbswap, .true.) ! rank0 will open and read
-      call chk_nel  ! make certain sufficient array sizes
-
-      call mapelpr
-
-      if (ifre2) then
-        call read_re2_data(ifbswap, .true., .true., .true.)
-      else
-        maxrd = 32               ! max # procs to read at once
-        mread = (np-1)/maxrd+1   ! mod param
-        iread = 0                ! mod param
-        x     = 0
-        do i=0,np-1,maxrd
-           call nekgsync()
-           if (mod(nid,mread).eq.iread) then
-              if (nid.ne.0) then
-                open(UNIT=9,FILE=REAFLE,STATUS='OLD')
-                call cscan(string,'MESH DATA',9)
-                read(9,*) string
-              endif 
-              call rdmesh
-              call rdcurve !  Curved side data
-              call rdbdry  !  Boundary Conditions
-              if (nid.ne.0) close(unit=9)
-           endif
-           iread = iread + 1
-        enddo
-      endif
-
-C     Read Restart options / Initial Conditions / Drive Force
-      CALL RDICDF
-C     Read materials property data
-      CALL RDMATP
-C     Read history data
-      CALL RDHIST
-C     Read output specs
-      CALL RDOUT
-C     Read objects
-      CALL RDOBJ
-
-      call nekgsync()
-
-C     End of input data, close read file.
-      if(nid.eq.0) then
-        close(unit=9)
-        call echopar
-        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
-     $                             dnekclock()-etime0,' sec'
-      endif
-
- 99   call izero(boundaryID, size(boundaryID))
-      call izero(boundaryIDt, size(boundaryIDt))
-
-      ifld = 2 
-      if(ifflow) ifld = 1
-      do iel = 1,nelv
-      do ifc = 1,2*ndim   
-         boundaryID(ifc,iel) = bc(5,ifc,iel,ifld)
-      enddo
-      enddo
-
-      ntmsh = 0
-      do i=1,ldimt
-         if(iftmsh(1+i)) ntmsh = ntmsh + 1 
-      enddo
-
-      if (ntmsh.gt.0) then
-        do iel = 1,nelt
-        do ifc = 1,2*ndim   
            boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
         enddo
         enddo
@@ -1178,34 +1044,6 @@ c
    80 format(a132)
       return
 
-      end
-c-----------------------------------------------------------------------
-c
-c     NEW READER
-c
-      subroutine readat_big
-      include 'SIZE'
-      include 'TOTAL'
-      include 'RESTART'
-      include 'CTIMER'
-
-      logical ifbswap
-
-      call read_re2_hdr(ifbswap, .true.)
-
-      nelt = nelgt / np
-      do i = 1, mod(nelgt, np)
-        if (np-i.eq.nid) nelt = nelt + 1
-      enddo
-      if (nelt .gt. lelt) then
-        call exitti('nelt > lelt!$',nelt)
-      endif
-
-      call chkParam
-
-      call nekgsync()
-
-      return
       end
 c-----------------------------------------------------------------------
       subroutine read_re2_curve_v2(nvi, vi, ifbswap)
