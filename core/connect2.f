@@ -1603,70 +1603,6 @@ c  1   format(2i8,i4,2x,a3,a4,i8)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_vertices(vertex, loc_to_glob_nid)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt)    ! maximum number of records
-      parameter(lrs   = 2**ldim) ! record size: group x(:,c) ...
-      parameter(li    = 2*lrs+2)
-
-      integer*8 vertex(2**ldim, lelt)
-      integer loc_to_glob_nid(lelt)
-
-      integer         bufr(li - 2, nrmax)
-      common /scrns/  bufr
-
-      integer         vi  (li    , nrmax)
-      common /ctmp1/  vi
-
-      integer e, eg, ind(nrmax), nr, key
-
-      lrs4      = lrs*wdsizi/4
-
-      do e = 1, nelt
-        vi(1, e) = loc_to_glob_nid(e)
-        vi(2, e) = lglel(e)
-        call vtx_to_buf(vi(3, e), vertex(1, e))
-      enddo
-
-      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-      nr = nelt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     &  vl, 0, vr, 0, key)
-
-      ! unpack buffer
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      ! List of global element numbers in v(2,:)
-      nelt = 0
-      nelv = 0
-      do i = 1, nr
-        lglel(i) = vi(2, i)
-        if (lglel(i).le.nelgv) then
-          nelv = nelv + 1
-        else
-          nelt = nelt + 1
-        endif
-      enddo
-      nelt = nelv + nelt
-      call isort(lglel, ind, nr)
-
-      do e = 1, nr
-         i = ind(e)
-         call buf_to_vtx(vertex(1, e), vi(3, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring vertices$')
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_vertices_v2(vertex, loc_to_glo_nid)
       include 'SIZE'
       include 'TOTAL'
@@ -1758,61 +1694,6 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_re2_mesh(loc_to_glob_nid, lglelo, nelto)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt)             ! maximum number of records
-      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
-      parameter(li    = 2*lrs+2)
-
-      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-      integer i, e, sorted(nrmax), ind(nrmax), nr, key
-
-      integer         bufr(li - 2, nrmax)
-      common /scrns/  bufr
-
-      integer         vi  (li    , nrmax)
-      common /ctmp1/  vi
-
-      lrs4      = lrs*wdsizi/4
-
-      do e = 1, nelto
-        vi(1, e) = loc_to_glob_nid(e)
-        vi(2, e) = lglelo(e)
-        call xyz_to_buf(vi(3, e), e)
-      enddo
-
-      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-      nr = nelto
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     &  vl, 0, vr, 0, key)
-
-      ! unpack buffer
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      ! List of global element numbers in v(2,:)
-      do i = 1, nr
-         sorted(i) = vi(2, i)
-      enddo
-      call isort(sorted, ind, nr)
-
-      do e = 1, nr
-         i = ind(e)
-         call icopy(bufr, vi(3, i), lrs4)
-         call buf_to_xyz(bufr, e, .false., ierr)
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring .re2 mesh$')
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
       include 'SIZE'
       include 'TOTAL'
@@ -1895,55 +1776,6 @@ c-----------------------------------------------------------------------
         endif
 
         return
-      end
-c-----------------------------------------------------------------------
-      subroutine transfer_re2_bc(cbl, bl, loc_to_glob_nid, lglelo,
-     $  nelto)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = 6*lelt)
-      parameter(lrs = 8)
-      parameter(li = 2*lrs + 1)
-
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
-      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-
-      integer e, eg, f, cnt, nr, key, ierr, nf
-
-      integer         vi(li, nrmax)
-      common /ctmp1/  vi
-
-      cnt = 0
-      nf = 2*ndim
-      do e = 1, nelto
-        eg = lglelo(e)
-        do f = 1, nf
-          cnt = cnt + 1
-          vi(1, cnt) = loc_to_glob_nid(e)
-          call bc_to_buf(vi(2, cnt), cbl(f, e), bl(1, f, e), eg, f)
-        enddo
-      enddo
-
-      nr = cnt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     $  vl, 0, vr, 0, key)
-
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      do i = 1,nr
-         call buf_to_bc_big(cbl, bl, vi(2, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
-      return
       end
 c-----------------------------------------------------------------------
       subroutine transfer_re2_bc_v2(nvi, vi, cbl, bl, loc_to_glo_nid,
@@ -2065,55 +1897,6 @@ c-----------------------------------------------------------------------
      $     bl(1, f, e) = buf(3)
       endif
 
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt*(2*ldim*(ldim - 1)))
-      parameter(lrs = 15)
-      parameter(li = 2*lrs + 1)
-
-      ! character*1 ccurve(12, lelt)
-      ! real curve(6, 12, lelt)
-      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-
-      integer e, eg, f, cnt, nr, key, ierr, nf
-
-      integer         vi(li, nrmax)
-      common /ctmp1/  vi
-
-      cnt = 0
-      nedge = 2*ndim*(ndim - 1)
-      do e = 1, nelto
-        eg = lglelo(e)
-        do f = 1, nedge
-          cnt = cnt + 1
-          vi(1, cnt) = loc_to_glob_nid(e)
-          call curve_to_buf(vi(2, cnt), curve(1, f, e), ccurve(f, e),
-     $      eg, f)
-        enddo
-      enddo
-
-      nr = cnt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     $  vl, 0, vr, 0, key)
-
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      do i = 1,nr
-         call buf_to_curve_big(curve, ccurve, vi(2, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
       return
       end
 c-----------------------------------------------------------------------
@@ -2415,69 +2198,5 @@ c     Distributed memory processor mapping
       endif
 
       return
-      end
-c-----------------------------------------------------------------------
-      subroutine read_re2_mesh_v2(ifbswap)
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt)             ! maximum number of records
-      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
-      parameter(li    = 2*lrs+2)
-
-      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
-
-      integer         bufr(li-2, nrmax)
-      common /scrns/  bufr
-
-      logical ifbswap
-      integer e, eg, ind(nrmax), ierr
-
-      integer*8 lre2off_b, dtmp8, nrg
-
-      nrg       = nelgt
-      nr        = nelt
-      irankoff  = igl_running_sum(nr) - nr
-      dtmp8     = irankoff
-      re2off_b  = 84 ! set initial offset (hdr + endian)
-      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
-      lrs4      = lrs*wdsizi/4
-
-      ! read coordinates from file
-      ierr = 0
-      nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      re2off_b = re2off_b + nrg*4*lrs4
-      if (ierr.gt.0) goto 100
-
-      if (nio.eq.0) write(6,*) 'reading mesh '
-
-      ! pack buffer
-      do e = 1, nr
-         lglel(e)= irankoff + e ! elements are stored in global order
-         jj      = (e-1)*lrs4 + 1
-         call buf_to_xyz(bufr(jj,1),e,ifbswap,ierr)
-      enddo
-
- 100  call err_chk(ierr,'Error reading .re2 mesh$')
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine get_dest_proc(p, eg, np, nelgt)
-        integer p, eg, np, nelgt
-        integer nlt, nr, nstar
-
-        nlt = nelgt / np
-        nr = nelgt - nlt * np
-        nstar = nlt * (np - nr)
-
-        if (eg.le.nstar) then
-          p = (eg - 1) / nlt
-        else
-          p = (eg - nstar - 1) / (nlt + 1) + np - nr
-        endif
-        return
       end
 c-----------------------------------------------------------------------

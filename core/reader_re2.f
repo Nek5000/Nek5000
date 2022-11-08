@@ -917,3 +917,68 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine read_re2_mesh_v2(ifbswap)
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)             ! maximum number of records
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      integer         bufr(li-2, nrmax)
+      common /scrns/  bufr
+
+      logical ifbswap
+      integer e, eg, ind(nrmax), ierr
+
+      integer*8 lre2off_b, dtmp8, nrg
+
+      nrg       = nelgt
+      nr        = nelt
+      irankoff  = igl_running_sum(nr) - nr
+      dtmp8     = irankoff
+      re2off_b  = 84 ! set initial offset (hdr + endian)
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      ! read coordinates from file
+      ierr = 0
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      re2off_b = re2off_b + nrg*4*lrs4
+      if (ierr.gt.0) goto 100
+
+      if (nio.eq.0) write(6,*) 'reading mesh '
+
+      ! pack buffer
+      do e = 1, nr
+         lglel(e)= irankoff + e ! elements are stored in global order
+         jj      = (e-1)*lrs4 + 1
+         call buf_to_xyz(bufr(jj,1),e,ifbswap,ierr)
+      enddo
+
+ 100  call err_chk(ierr,'Error reading .re2 mesh$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_dest_proc(p, eg, np, nelgt)
+        integer p, eg, np, nelgt
+        integer nlt, nr, nstar
+
+        nlt = nelgt / np
+        nr = nelgt - nlt * np
+        nstar = nlt * (np - nr)
+
+        if (eg.le.nstar) then
+          p = (eg - 1) / nlt
+        else
+          p = (eg - nstar - 1) / (nlt + 1) + np - nr
+        endif
+        return
+      end
+c-----------------------------------------------------------------------
