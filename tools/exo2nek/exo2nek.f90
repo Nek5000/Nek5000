@@ -823,6 +823,7 @@
       integer ip,np,ipe,ipe2,nipe(2)
       integer ptags(2)
       integer fnode(4)
+      integer mappingOption,eOffset
       real pvec(3)
       real fpxyz(3,2)
       real AB_v(3),AD_v(3),farea,product_v(3)
@@ -853,18 +854,7 @@
       do ibc = 1,nbc 
         write(6,*) 'input surface 1 and  surface 2  sideSet ID'
         read (5,*) ptags(1),ptags(2)
-        write(6,*) 'input translation vector (surface 1 -> surface 2)'
-
-        pvec(1) = 0.0
-        pvec(2) = 0.0
-        pvec(3) = 0.0
-	
-        if (num_dim.eq.2) then
-          read (5,*) pvec(1),pvec(2)
-        else
-          read (5,*) pvec(1),pvec(2),pvec(3)
-        endif 
-
+		
           ipe = 0
           do ihex = 1, num_elem
             do iface = 1,2*num_dim
@@ -895,6 +885,37 @@
             write(6,*) 'EORROR, face numbers are not matching'
           endif
 
+        mappingOption = 0
+        write(6,*) 'Enter mapping option (1 for general mapping, 2 for uniform element order offset):'
+        write(6,*) 'Note: (2 for uniform element order offset) only works for extruded hex20 mesh'
+        read (5,*) mappingOption
+ 
+        if (mappingOption.eq.1) then
+        write(6,*) 'general mapping(could be slow for super large mesh):'
+        pvec(1) = 0.0
+        pvec(2) = 0.0
+        pvec(3) = 0.0
+
+        write(6,*) 'input translation vector (surface 1 -> surface 2)'
+        if (num_dim.eq.2) then
+          read (5,*) pvec(1),pvec(2)
+        else
+          read (5,*) pvec(1),pvec(2),pvec(3)
+        endif 
+
+        else if (mappingOption.eq.2) then
+
+        write(6,*) 'uniform element order offset approach assuming element on surface 1 + offset will find element on surface 2'
+        write(6,*) 'please input uniform element order offset:'
+        read(5,*) eOffset
+		
+        else 
+
+        write(6,*) 'invalid option, periodicity not done properly'
+        call exitt()
+
+        endif
+
 ! 1st loop, loop faces on surface 1
       do ipe = 1,nipe(1)
          ihex = parray(1,1,ipe)
@@ -920,6 +941,7 @@
            enddo
          endif
 
+        if (mappingOption.eq.1) then ! general mapping 
 ! 2nd loop over surface 2
          distMax = ptol
          do ipe2 = 1,nipe(2)
@@ -932,7 +954,7 @@
                fpxyz(3,2) = 0.0
              if (num_dim.eq.2) then
                do ifnode = 1,2
-                fnode(ifnode)=quad_edge_node(ifnode,iface)
+                fnode(ifnode)=quad_edge_node(ifnode,iface2)
                 fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.5
                 fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.5
                enddo
@@ -955,6 +977,25 @@
                   bc(2,iface,ihex) = iface2*1.0
                endif
          enddo
+		 
+         else if (mappingOption.eq.2) then ! uniform element order offset
+		 
+            ihex2 = ihex + eOffset
+            iface2 = -1
+            do ifc2= 1,2*num_dim
+               if(bc(5,ifc2,ihex2).eq.ptags(2)) then
+                 iface2 = ifc2
+               endif
+            enddo
+            if (iface2.eq.-1) then 
+            write(6,*) 'ERROR: the offset element does not have face of sideSet: ',ptags(2)
+            call exitt()
+            endif
+
+            bc(1,iface,ihex) = ihex2*1.0
+            bc(2,iface,ihex) = iface2*1.0
+        endif
+  
       enddo
 
 ! change. only assign periodic face at the end of loop.
@@ -1035,7 +1076,7 @@
       enddo
 
       deallocate(parray)
-	  
+
       write(6,*) '******************************************************'
       write(6,*) 'Please set boundary conditions to all non-periodic boundaries'
       write(6,*) 'in .usr file usrdat2() subroutine'

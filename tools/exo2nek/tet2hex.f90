@@ -46,10 +46,10 @@
       write(6,'(A)') 'Converting elements ... '
 
       !call rzero_int(hexss,6*8) 
-      write(6,*) 'flag1'
+      ! write(6,*) 'flag1'
       vert_index_exo = 0
       iel_nek =  eacc_old !0
-	  write(6,*) 'flag2'
+	  ! write(6,*) 'flag2'
 
       do iblk = 1,num_elem_blk
 	  
