@@ -8,7 +8,7 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
       include 'CTIMER'
       include 'RESTART'
 
-      logical parfound, if_big_rea
+      logical parfound
 
       call flush_io
 
@@ -16,10 +16,9 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
       if (nid.eq.0) inquire(file=parfle, exist=parfound)
       call bcast(parfound,lsize) ! check for par file
 
-      if_big_rea = .true.
       get_vert_called = 0
 
-      if (if_big_rea) then
+      if (ifnewre2rdr) then
         if (parfound) then
           !--> May be this section should go in readat_big_v2
           call setDefaultParam
