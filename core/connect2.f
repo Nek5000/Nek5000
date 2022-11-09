@@ -1701,42 +1701,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine buf_to_bc_big(cbl, bl, buf)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
-
-      integer e, f, eg, buf(30)
-
-      if (wdsizi.eq.8) then
-        call icopy84(eg, buf(1) ,1) ! 1 - 2
-        call icopy84(f , buf(3), 1) ! 3 - 4
-        call find_lglel_ind(e, eg, nelt)
-        call copy  (bl(1, f, e), buf(5) , 5) ! 5 -14
-        call chcopy(cbl(f, e)  , buf(15), 3) !15
-
-        ! Integer assign connecting P element
-        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
-     $   call copyi4(bl(1, f, e), buf(5), 1)
-
-      else
-        eg = buf(1)
-        f  = buf(2)
-        call find_lglel_ind(e, eg, nelt)
-        call copy4r(bl(1, f, e), buf(3), 5)
-        call chcopy(cbl(f, e)  , buf(8), 3)
-
-        ! Integer assign of connecting periodic element
-        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
-     $     bl(1, f, e) = buf(3)
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
      $  nelto)
       include 'SIZE'
@@ -1818,34 +1782,6 @@ c-----------------------------------------------------------------------
         call icopy (buf(2),  f, 1) ! 2
         call copyX4(buf(3), cv, 5) ! 3 - 7
         call chcopy(buf(8),ccv, 1) ! 8
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine buf_to_curve_big(cv, ccv, buf)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      character*1 ccv(12, lelt)
-      real cv(6, 12, lelt)
-      integer buf(30)
-
-      integer e, f, eg
-
-      if (wdsizi.eq.8) then
-        call icopy84(eg, buf(1) ,1) ! 1 - 2
-        call icopy84(f , buf(3), 1) ! 3 - 4
-        call find_lglel_ind(e, eg, nelt)
-        call copy  (cv(1, f, e), buf(5) , 5) ! 5 -14
-        call chcopy(ccv(f, e)  , buf(15), 1) !15
-      else
-        eg = buf(1)
-        f  = buf(2)
-        call find_lglel_ind(e, eg, nelt)
-        call copy4r(cv(1, f, e), buf(3), 5)
-        call chcopy(ccv(f, e)  , buf(8), 1)
       endif
 
       return
