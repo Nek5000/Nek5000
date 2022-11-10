@@ -71,6 +71,9 @@ C
 
       param(47) = 0.4  ! viscosity for mesh elasticity solver
 
+      param(54) = 0    ! Direction of constant flow rate  
+      param(55) = 0    ! meanVelocity if param(55)<0 else meanVolumentricFlow
+
       param(59) = 1    ! No fast operator eval
 
       param(65) = 1    ! just one i/o node
@@ -552,6 +555,40 @@ c        stabilization type: none, explicit or hpfrt
          call finiparser_getDbl(d_out,txt,ifnd)
          if(ifnd .eq. 1) uparam(i) = d_out
       enddo
+
+c constant flow rate
+      call finiparser_getString(c_out,'general:constFlowRate',ifnd)
+      if (ifnd .eq. 1) then
+         call capit(c_out,132)
+
+         if (index(c_out,'X') .eq. 1) then
+            param(54) = 1 
+         else if (index(c_out,'Y') .eq. 1) then
+            param(54) = 2 
+         else if (index(c_out,'Z') .eq. 1) then
+            param(54) = 3 
+         else
+            write(6,*) 'value: ',trim(c_out)
+            write(6,*) 'is invalid for general:constFlowRate'
+            goto 999
+         endif
+         call finiparser_getDbl(d_out,'general:meanVelocity',ifnd)
+         if (ifnd .eq. 1) then
+            param(54) = - param(54)
+            param(55) = d_out
+            if (int(param(101)).eq.0) filterType = 0
+         else
+            call finiparser_getDbl
+     $           (d_out,'general:meanVolumetricFlow',ifnd)
+            if (ifnd .eq. 1) then
+              param(55) = d_out
+            else 
+              write(6,*) 'general:meanVelocity or meanVolumetricFlow'
+              write(6,*) 'is required for general:constFlowRate!'
+              goto 999
+            endif
+         endif
+      endif
 
 c set logical flags
       call finiparser_getString(c_out,'general:timeStepper',ifnd)
