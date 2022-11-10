@@ -994,6 +994,9 @@
 
             bc(1,iface,ihex) = ihex2*1.0
             bc(2,iface,ihex) = iface2*1.0
+            bc(1,iface2,ihex2) = ihex*1.0
+            bc(2,iface2,ihex2) = iface*1.0
+
         endif
   
       enddo
