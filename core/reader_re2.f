@@ -150,10 +150,10 @@ c-----------------------------------------------------------------------
       etime_t3 = dnekclock_sync() - etime0
 
       if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
-      if(nio.eq.0) write(6,2) etime_s1,etime_s2
+      if(nio.eq.0) write(6,2) etime_s2
 
    1  format(3x,'readp_re2_mesh:pack/cr/unpack :',3(1e9.2))
-   2  format(3x,'readp_re2_mesh:running_sum/byte_read_mpi :',2(1e9.2))
+   2  format(3x,'readp_re2_mesh:byte_read_mpi  :',1(1e9.2))
 
 
  100  call err_chk(ierr,'Error reading .re2 mesh$')
@@ -271,11 +271,10 @@ c-----------------------------------------------------------------------
       etime_t3 = dnekclock_sync() - etime0
 
       if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
-      if(nio.eq.0) write(6,2) etime_s1,etime_s2,etime_s3
+      if(nio.eq.0) write(6,2) etime_s3
 
    1  format(3x,'readp_re2_curve:pack/cr/unpack :',3(1e9.2))
-   2  format(3x,'readp_re2_curve:byte_read_mpi/running_sum/byte_read_mpi
-     $ :',3(1e9.2))
+   2  format(3x,'readp_re2_curve:byte_read_mpi  :',1(1e9.2))
 
       return
 
@@ -404,11 +403,10 @@ c-----------------------------------------------------------------------
       etime_t3 = dnekclock_sync() - etime0
 
       if(nio.eq.0) write(6,1) etime_t1,etime_t2,etime_t3
-      if(nio.eq.0) write(6,2) etime_s1,etime_s2,etime_s3
+      if(nio.eq.0) write(6,2) etime_s3
 
    1  format(3x,'readp_re2_bc:pack/cr/unpack :',3(1e9.2))
-   2  format(3x,'readp_re2_bc:byte_read_mpi/running_sum/byte_read_mpi :'
-     $,3(1e9.2))
+   2  format(3x,'readp_re2_bc:byte_read_mpi  :',1(1e9.2))
 
       return
 
