@@ -26,6 +26,7 @@
       integer,save,allocatable,dimension(:) ::  findex1,findex2	  ! ipe->index
       integer,save,allocatable,dimension(:) ::  cfindex2
 	  integer,save,allocatable,dimension(:,:) :: rfindex2 	      ! index->ipe
+	  integer,save,allocatable,dimension(:,:,:)   :: parray
 
       integer nseg(3),maxEinBucket,ix,iy,iz,index1,ipe2_bucket
       
@@ -33,13 +34,23 @@
       real xdiff,ydiff,zdiff,maxDiff
 
 ! boundary condition summary
+!      write(6,*) '******************************************************'
+!      write(6,*) 'Boundary info summary'
+!      write(6,*) 'sideSet ID'
+!      do ibc= 1,bcNumber
+!      write(6,*) bcID(ibc)
+!      enddo
+!      write(6,*) '******************************************************'
+ 
+ ! boundary condition summary
       write(6,*) '******************************************************'
       write(6,*) 'Boundary info summary'
-      write(6,*) 'sideSet ID'
+      write(6,*) 'BoundaryName     BoundaryID'
       do ibc= 1,bcNumber
-      write(6,*) bcID(ibc)
+      write(6,*) trim(bcChar(ibc)),bcID(1,ibc)
       enddo
       write(6,*) '******************************************************'
+ 
  
  
       write(6,*) 'Enter number of periodic boundary surface pairs:'

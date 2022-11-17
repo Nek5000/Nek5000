@@ -15,7 +15,7 @@
          call gmsh_read_2d_binary
          endif
          call convert_2d
-         call setbc_2d
+         !call setbc_2d
       elseif(option.eq.3) then
          call read_input_name
          if(aorb.eq.0) then
@@ -24,12 +24,13 @@
          call gmsh_read_3d_binary
          endif
          call convert_3d
-         call setbc_3d
+         !call setbc_3d
       else
         write(6,*) 'Unknown input option'
         STOP
       endif
 
+      call set_periodicity()
       call deallocate_all_msh_arrays  ! deallocate_all_msh_arrays to save memory
       call gen_re2                    ! write nek mesh re2 file 
 
@@ -2366,3 +2367,11 @@
       return
       end
 !-----------------------------------------------------------------
+!-----------------------------------------------------------------------
+      subroutine rzero_int2(A,N)
+      integer N,I
+      integer A(1)
+      DO 100 I = 1, N
+ 100     A(I) = 0
+      return
+      END
