@@ -457,7 +457,8 @@ c-----------------------------------------------------------------------
 
       if (n.gt.m) then
          write(6,1) nid,n,m,avar5,lvar5,sub_name10
-    1    format(i8,' ERROR: :',2i12,2(1x,a5),1x,a10)
+    1    format(i8,' ERROR buffer too small: ','req ',
+     $          i12,' alloc ',i12,2(1x,a5),1x,a10)
          call exitti('lim_chk problem. $',n)
       endif
 
