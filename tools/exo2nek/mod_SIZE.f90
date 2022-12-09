@@ -42,6 +42,8 @@ module SIZE
 	  
       integer converting_option,converting_option_old
 	  
+      integer quadratic_option
+	  
 	  
 	  
 !

@@ -6,6 +6,7 @@
 
       integer option
       integer iexo1,flag
+      logical if_pre
 !-----------------------------------------------------------
 
       etot_est = 0
@@ -83,6 +84,23 @@
          call convert_new
          elseif(converting_option.EQ.2) then
          call split_convert_new
+		 
+         elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+
+      ! this is to fix some wedge element, which maybe too thin
+      quadratic_option = 1
+      do i =1,4
+      call split_convert1_quadratic(quadratic_option)
+      enddo
+      ! this is to linearize tet to make sure no non-right-hand elements
+      quadratic_option = 2
+      do i = 1,2
+      call split_convert1_quadratic(quadratic_option)
+      enddo
+      ! this is the actual splitting step
+      quadratic_option = 3
+      call split_convert1_quadratic(quadratic_option)
+
          endif
       endif
 
@@ -115,6 +133,25 @@
          call convert_new
          elseif(converting_option.EQ.2) then
          call split_convert_new
+		 
+       elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+
+      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet+wedge) mesh'
+
+      ! this is to fix some wedge element, which maybe too thin
+      quadratic_option = 1
+      do i =1,4
+      call split_convert1_quadratic
+      enddo
+      ! this is to linearize tet to make sure no non-right-hand elements
+      quadratic_option = 2
+      do i = 1,2
+      call split_convert1_quadratic
+      enddo
+      ! this is the actual splitting step
+      quadratic_option = 3
+      call split_convert1_quadratic
+
          endif
       endif
 
@@ -143,6 +180,7 @@
       !   call setbc_3d
       !endif
 
+      call right_hand_check ! check non-right-hand element here
       call gather_bc_info
       call set_periodicity
 	  
@@ -394,6 +432,18 @@
            write(6,*) "one WEDGE6 divide into 6 Nek hex elements"
            converting_option = 2
            etot_est = etot_est + num_elem_in_block(i)*6
+        else if ((typ5.eq.'TETRA').and.(nvert.eq.10))then 
+           write(6,*) "TETRA10 is valid element in a 3D mesh."
+           write(6,*) "assume quadratic hybrid mesh (tetra-wedge)"
+           write(6,*) "one TETRA10 divide into 4 Nek hex elements"
+           converting_option = 3
+           etot_est = etot_est + num_elem_in_block(i)*4
+        else if ((typ5.eq.'WEDGE').and.(nvert.eq.15)) then 
+           write(6,*) "WEDGE15 is valid element in a 3D mesh."
+           write(6,*) "assume quadratic hybrid mesh (tetra-wedge)"
+           write(6,*) "one WEDGE15 divide into 3 Nek hex elements"
+           converting_option = 3
+           etot_est = etot_est + num_elem_in_block(i)*3
         else
           write(6,*) "ERROR: invalid element in a 3D mesh!"
           STOP
@@ -774,6 +824,28 @@
       return
       end
 !--------------------------------------------------------------------
+      subroutine cross_prod(nv,p1,p2,p3)
+      real*8 nv(3),p1(3),p2(3),p3(3)
+      real*8 v12(3),v13(3),mag
+	  
+      do i = 1,3
+      v12(i) = p2(i) - p1(i)
+      v13(i) = p3(i) - p1(i)
+      enddo
+	  
+      nv(1) = v12(2)*v13(3) - v12(3)*v13(2)
+      nv(2) = v12(3)*v13(1) - v12(1)*v13(3)
+      nv(3) = v12(1)*v13(2) - v12(2)*v13(1)
+	  
+      mag = sqrt(nv(1)**2.0+nv(2)**2.0+nv(3)**2.0)
+
+      do i = 1,3
+      nv(i) = nv(i)/mag
+      enddo
+
+      return
+      end
+!------------------------------------
       subroutine assignvec(a,b)
       real*8 a(3),b(3)
       a(1) = b(1)
@@ -1506,69 +1578,7 @@
       return
       end
 !--------------------------------------------------------------------
-      subroutine right_hand_check
-! check if there is non-right hand elements (3D)
-! because if mesh is from ICEM, and mirror operation is made in ICEM,
-! the exported exo file will contain non-right hand elements.
-! this subroutine will:
-! 1. check right-hand
-! 2. fix if not
-      use SIZE
-      integer*8 iel
-      logical ifnonrighthand
 
-      write(6,*) 'performing non-right-hand check'
-	  
-      do iel=1,num_elem
-         !write(6,*) 'performing non-right-hand check on element ',iel
-         call check_if_non_right(ifnonrighthand,iel)
-         if (ifnonrighthand) call fix_if_non_right(iel)		 
-      enddo
-
-      write(6,*) 'done: non-right-hand check'
-	  
-      return
-      end
-!--------------------------------------------------------------------
-      subroutine check_if_non_right(ifnonrighthand,iel)
-      use SIZE
-      logical ifnonrighthand
-      integer iel
-      integer hex8_to_hex27_vertex(8)
-      data hex8_to_hex27_vertex /1,3,7,9,19,21,25,27/ 
-      real*8 hex8_vertex(3,8),vec12(3),vec14(3),vec15(3)
-      real*8 vec1(3),AA,dot_prod
-
-      do iver = 1,8
-       hex8_vertex(1,iver) = xm1(hex8_to_hex27_vertex(iver),1,1,iel)
-       hex8_vertex(2,iver) = ym1(hex8_to_hex27_vertex(iver),1,1,iel)
-       hex8_vertex(3,iver) = zm1(hex8_to_hex27_vertex(iver),1,1,iel)       
-      enddo
-	  
-      vec12(1) = hex8_vertex(1,2) - hex8_vertex(1,1)
-      vec12(2) = hex8_vertex(2,2) - hex8_vertex(2,1)
-      vec12(3) = hex8_vertex(3,2) - hex8_vertex(3,1)
-
-      vec14(1) = hex8_vertex(1,4) - hex8_vertex(1,1)
-      vec14(2) = hex8_vertex(2,4) - hex8_vertex(2,1)
-      vec14(3) = hex8_vertex(3,4) - hex8_vertex(3,1)
-
-      vec15(1) = hex8_vertex(1,5) - hex8_vertex(1,1)
-      vec15(2) = hex8_vertex(2,5) - hex8_vertex(2,1)
-      vec15(3) = hex8_vertex(3,5) - hex8_vertex(3,1)
-
-      call cross_product(vec12,vec14,vec1,AA) 
-      dot_prod = vec1(1)*vec15(1) + vec1(2)*vec15(2) + vec1(3)*vec15(3)
-  
-      if(dot_prod.gt.0.0) then
-       ifnonrighthand = .FALSE.
-      else
-       ifnonrighthand = .TRUE.
-       !write(6,*) 'non-right hand element detected'
-      endif  
-
-      return
-      end
 !-----------------------------------------------------------------------
       subroutine cross_product(AB_v,AC_v,prod_v,area)
 ! calculate cross product of two vectors
@@ -1587,51 +1597,6 @@
       return 
       end
 !------------------------------------------------------------------------------------------
-!--------------------------------------------------------------------
-      subroutine fix_if_non_right(iel)
-! fix non-right hand element
-! 1 <->19, 3 <-> 21, 7<->25, 9 <->27 
-      use SIZE
-      integer iel,iver
-      real*8 xm2(27),ym2(27),zm2(27)
-      character(3) cbc5,cbc6
-      real bc55,bc56
-
-! swap vertex
-      do iver = 1,27
-       xm2(iver) = xm1(iver,1,1,iel)
-       ym2(iver) = ym1(iver,1,1,iel)
-       zm2(iver) = zm1(iver,1,1,iel)
-      enddo
-
-      do iver = 1,9
-       xm1(iver,1,1,iel) = xm2(iver+18)
-       ym1(iver,1,1,iel) = ym2(iver+18)
-       zm1(iver,1,1,iel) = zm2(iver+18)
-      enddo
-     
-      do iver = 19,27
-       xm1(iver,1,1,iel) = xm2(iver-18)
-       ym1(iver,1,1,iel) = ym2(iver-18)
-       zm1(iver,1,1,iel) = zm2(iver-18)
-      enddo
-
-! swap face 5 <-> 6
-
-      cbc5 = cbc(5,iel)
-      bc55 = bc(5,5,iel)
- 
-      cbc6 = cbc(6,iel)
-      bc56 = bc(5,6,iel)
-
-      cbc(5,iel)   = cbc6
-      bc (5,5,iel) = bc56
-
-      cbc(6,iel)   = cbc5
-      bc (5,6,iel) = bc55 
-
-      return
-      end
 !--------------------------------------------------------------------
       subroutine gen_re2
 
