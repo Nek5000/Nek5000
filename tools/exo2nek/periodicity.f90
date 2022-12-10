@@ -190,7 +190,7 @@
            call get_quadArea(quadNode,quadArea)
 
            ssa(1) = ssa(1) + quadArea
-           ssc(1,1) = ssc(1,1) +  fpxyz(1,1)*quadArea
+           ssc(1,1) = ssc(1,1) + fpxyz(1,1)*quadArea
            ssc(2,1) = ssc(2,1) + fpxyz(2,1)*quadArea
            ssc(3,1) = ssc(3,1) + fpxyz(3,1)*quadArea         
 
@@ -261,7 +261,7 @@
 ! based on area-weighted sideset center...
         pvec(1) = ssc(1,2) - ssc(1,1)
         pvec(2) = ssc(2,2) - ssc(2,1)
-        pvec(3) = ssc(2,2) - ssc(2,1)
+        pvec(3) = ssc(3,2) - ssc(3,1)
 
 
 !================================================================================
@@ -599,7 +599,8 @@
 
       do i = 1,4
       i1 = i
-      i2 = (i+1)%4
+      i2 = i+1
+      if (i2>4) i2 = 1 
 
       vec1(1) =  quadNode(1,i1) - center(1)
       vec1(2) =  quadNode(2,i1) - center(2)

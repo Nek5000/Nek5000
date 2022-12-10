@@ -33,6 +33,11 @@
       real xmin,xmax,ymin,ymax,zmin,zmax
       real xdiff,ydiff,zdiff,maxDiff
 
+      real ssa(2) ! total ss area
+      real ssc(3,2) ! ss center xyz
+      real quadNode(3,4) ! quad node xyz
+      real quadArea
+
 ! boundary condition summary
 !      write(6,*) '******************************************************'
 !      write(6,*) 'Boundary info summary'
@@ -128,12 +133,12 @@
         pvec(2) = 0.0
         pvec(3) = 0.0
 
-        write(6,*) 'input translation vector (surface 1 -> surface 2)'
-        if (num_dim.eq.2) then
-          read (5,*) pvec(1),pvec(2)
-        else
-          read (5,*) pvec(1),pvec(2),pvec(3)
-        endif 
+        !write(6,*) 'input translation vector (surface 1 -> surface 2)'
+        !if (num_dim.eq.2) then
+        !  read (5,*) pvec(1),pvec(2)
+        !else
+        !  read (5,*) pvec(1),pvec(2),pvec(3)
+        !endif 
 
         else if (mappingOption.eq.3) then
 
@@ -154,6 +159,12 @@
        allocate (fc2 (3,nipe(1)))
 !================================================================================
 ! calculate face center array fc1, fc2
+! calculate sideset center xyz..... inorder to calculate translation vector...
+! get sideset area, and area weighted center xyz...
+
+       call rzero(ssa,2)
+       call rzero(ssc,6)
+
        do ipe = 1,nipe(1)
          ihex = parray(1,1,ipe)
          iface = parray(2,1,ipe)
@@ -167,19 +178,44 @@
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.5
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.5
            enddo
+
+           length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
+           ssa(1) = ssa(1) + length
+           ssc(1,1) = fpxyz(1,1)*length
+           ssc(2,1) = fpxyz(2,1)*length
+
          else
            do ifnode = 1,4
              fnode(ifnode)=hex_face_node(ifnode,iface)
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.25
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.25
              fpxyz(3,1) = fpxyz(3,1)+zm1(fnode(ifnode),1,1,ihex)*0.25
+
+             
+            quadNode(1,ifnode) = xm1(fnode(ifnode),1,1,ihex)
+            quadNode(2,ifnode) = ym1(fnode(ifnode),1,1,ihex)
+            quadNode(3,ifnode) = zm1(fnode(ifnode),1,1,ihex)
+
            enddo
+
+           call get_quadArea(quadNode,quadArea)
+
+           ssa(1) = ssa(1) + quadArea
+           ssc(1,1) = ssc(1,1) + fpxyz(1,1)*quadArea
+           ssc(2,1) = ssc(2,1) + fpxyz(2,1)*quadArea
+           ssc(3,1) = ssc(3,1) + fpxyz(3,1)*quadArea         
+
          endif
 
          fc1(1,ipe) = fpxyz(1,1)
          fc1(2,ipe) = fpxyz(2,1)
          fc1(3,ipe) = fpxyz(3,1)
        enddo
+
+       ssc(1,1) = ssc(1,1)/ssa(1)  ! get avg sideset center
+       ssc(2,1) = ssc(2,1)/ssa(1) 
+       ssc(3,1) = ssc(3,1)/ssa(1)   
+
 
        do ipe = 1,nipe(1)
          ihex = parray(1,2,ipe)
@@ -194,13 +230,32 @@
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.5
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.5
            enddo
+
+           length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
+           ssa(2) = ssa(2) + length
+           ssc(1,2) = fpxyz(1,1)*length
+           ssc(2,2) = fpxyz(2,1)*length
+    
          else
            do ifnode = 1,4
              fnode(ifnode)=hex_face_node(ifnode,iface)
              fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.25
              fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.25
              fpxyz(3,1) = fpxyz(3,1)+zm1(fnode(ifnode),1,1,ihex)*0.25
+
+            quadNode(1,ifnode) = xm1(fnode(ifnode),1,1,ihex)
+            quadNode(2,ifnode) = ym1(fnode(ifnode),1,1,ihex)
+            quadNode(3,ifnode) = zm1(fnode(ifnode),1,1,ihex)
+
            enddo
+
+           call get_quadArea(quadNode,quadArea)
+
+           ssa(2) = ssa(2) + quadArea
+           ssc(1,2) = ssc(1,2)  + fpxyz(1,1)*quadArea
+           ssc(2,2) = ssc(2,2)  + fpxyz(2,1)*quadArea
+           ssc(3,2) = ssc(3,2)  + fpxyz(3,1)*quadArea         
+
          endif
 
          fc2(1,ipe) = fpxyz(1,1)
@@ -208,6 +263,18 @@
          fc2(3,ipe) = fpxyz(3,1)
        enddo
 
+       ssc(1,2) = ssc(1,2)/ssa(2)  ! get avg sideset center
+       ssc(2,2) = ssc(2,2)/ssa(2) 
+       ssc(3,2) = ssc(3,2)/ssa(2)   
+
+! calculate translate vector
+! based on area-weighted sideset center...
+        pvec(1) = ssc(1,2) - ssc(1,1)
+        pvec(2) = ssc(2,2) - ssc(2,1)
+        pvec(3) = ssc(3,2) - ssc(3,1)
+
+
+!================================================================================
 !================================================================================
 ! preprocess fc1 and fc2 for option 1 and 2
        if ((mappingOption.eq.1) .or. (mappingOption.eq.2)) then
@@ -521,3 +588,61 @@
       return
       end
 !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      subroutine  get_quadArea(quadNode,quadArea)
+
+! get quad area.
+! 1st, get center xyz,
+! 2nd, get area of 4 triangles...
+
+      real quadNode(3,4),quadArea
+      real*8 triArea
+      real center(3)
+      real*8 vec1(1),vec2(3),prod_v(3)
+  
+      quadArea = 0.0
+      call rzero(center,3)
+
+      do i = 1,4
+      center(1) = center(1)+quadNode(1,i)/4.0
+      center(2) = center(2)+quadNode(2,i)/4.0
+      center(3) = center(3)+quadNode(3,i)/4.0
+      enddo
+
+      do i = 1,4
+      i1 = i
+      i2 = i+1
+      if (i2>4) i2 = 1 
+
+      vec1(1) =  quadNode(1,i1) - center(1)
+      vec1(2) =  quadNode(2,i1) - center(2)
+      vec1(3) =  quadNode(3,i1) - center(3)
+
+      vec2(1) =  quadNode(1,i2) - center(1)
+      vec2(2) =  quadNode(2,i2) - center(2)
+      vec2(3) =  quadNode(3,i2) - center(3)
+
+      call cross_product(vec1,vec2,prod_v,triArea)
+      quadArea = quadArea + triArea
+      enddo
+
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine cross_product(AB_v,AC_v,prod_v,area)
+! calculate cross product of two vectors
+
+      real*8 AB_v(3),AC_v(3),prod_v(3)
+      real*8 area
+
+      prod_v(1) = AB_v(2)*AC_v(3)-AB_v(3)*AC_v(2)
+      prod_v(2) = AB_v(3)*AC_v(1)-AB_v(1)*AC_v(3)
+      prod_v(3) = AB_v(1)*AC_v(2)-AB_v(2)*AC_v(1)
+
+      area = prod_v(1)**2 + prod_v(2)**2+prod_v(3)**2
+      area = sqrt(area)
+      area = area/2.0
+ 
+      return 
+      end
