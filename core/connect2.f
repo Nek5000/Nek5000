@@ -2725,8 +2725,9 @@ c-----------------------------------------------------------------------
       common /ctmp1/ vi
 
       logical ifbswap
-      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto, nvi, ierr
+      integer loc_to_glo_nid(lelt),lglelo(lelt),nelto,nvi,ierr
       integer ibuf(2)
+      integer iwork(lelt)
       real etimei, etimee, dur0, dur1
 
       ierr = 0
@@ -2776,7 +2777,7 @@ c     Distributed memory processor mapping
          call exitt
       endif
 
-      call get_vert_big_v2(vertex, loc_to_glo_nid)
+      call get_vert_big_v2(vertex,loc_to_glo_nid)
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 
@@ -2787,7 +2788,7 @@ c     Distributed memory processor mapping
       enddo
 
       dur0 = dnekclock_sync()
-      call transfer_vertices_v2(vertex, loc_to_glo_nid)
+      call transfer_vertices_v2(vertex,loc_to_glo_nid)
       dur1 = dnekclock_sync() - dur0
       if (nio.eq.0 .and. loglevel.gt.1) then
         write(6, *) 'done :: transfer vertices: ', dur1
@@ -2870,10 +2871,13 @@ c     Distributed memory processor mapping
          call dProcmapPut(ibuf,2,0,ieg)
       enddo
 #else
-      call izero(gllnid,nelgt)
+      call izero(gllel,nelgt)
       do i = 1,nelt
          ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
          gllnid(ieg) = nid
+         gllel(ieg) = i
       enddo
       npass = 1 + nelgt/lelt
       k=1
@@ -2881,9 +2885,11 @@ c     Distributed memory processor mapping
          m = nelgt - k + 1
          m = min(m,lelt)
          if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         if (m.gt.0) call igop(gllel(k) ,iwork,'+  ',m)
          k = k+m
       enddo
 #endif
+
       etimee = dnekclock_sync() - etimei
       if (nio.eq.0 .and. loglevel.gt.1) then
         write(6, *) 'done :: partitioning: ', etimee
