@@ -999,7 +999,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call fparrsb_conn_mesh(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
-     $  1,ierr)
+     $  ierr)
 
       k=1
       l=1
