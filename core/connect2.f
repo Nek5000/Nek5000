@@ -30,8 +30,8 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
           call usrdat0
 
-          call readat_big ! New reading strategy
-c         call readat_big_v2 ! New reading strategy 2
+c         call readat_big ! New reading strategy
+          call readat_big_v2 ! New reading strategy 2
         else
           call exitti('Cannot open .par file!$', 1)
         endif
