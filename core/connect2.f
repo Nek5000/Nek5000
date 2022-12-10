@@ -8,7 +8,7 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
       include 'CTIMER'
       include 'RESTART'
 
-      logical parfound, if_big_rea
+      logical parfound
 
       call flush_io
 
@@ -16,33 +16,31 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
       if (nid.eq.0) inquire(file=parfle, exist=parfound)
       call bcast(parfound,lsize) ! check for par file
 
-      if_big_rea = .true.
       get_vert_called = 0
 
-      if (if_big_rea) then
-        if (parfound) then
-          call setDefaultParam
+      if (parfound) then
+        if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
 
-          if (nid.eq.0) call par_read(ierr)
-          call bcast(ierr, isize)
-          if (ierr.ne.0) call exitt
-          call bcastParam
+        call setDefaultParam
 
-          call usrdat0
+        if (nid.eq.0) call par_read(ierr)
+        call bcast(ierr, isize)
+        if (ierr.ne.0) call exitt
+        call bcastParam
 
-c         call readat_big ! New reading strategy
-          call readat_big_v2 ! New reading strategy 2
+        call usrdat0
+
+        if (ifnewre2reader) then
+          if(nio.eq.0) write(6,'(a)') ' Using new re2 reader ...'
+          call readat_big_v2
         else
-          call exitti('Cannot open .par file!$', 1)
-        endif
-      else
-        if (parfound) then
-          if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
+          if(nio.eq.0) write(6,'(a)') ' Using old re2 reader ...'
           call readat_par
-        else
-          if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
-          call readat_std
         endif
+
+      else
+        if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
+        call readat_std
       endif
 
       call set_boundary_ids

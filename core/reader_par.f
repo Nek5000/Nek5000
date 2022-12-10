@@ -11,15 +11,6 @@ C
 c
       logical ifbswap
 
-      call setDefaultParam
-
-      if(nid.eq.0) call par_read(ierr)
-      call bcast(ierr,isize)
-      if(ierr .ne. 0) call exitt
-      call bcastParam
-
-      call usrdat0
-
       call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
@@ -147,6 +138,7 @@ C
 
       meshPartitioner=3 ! HYBRID (RSB+RCB)
       connectivityTol=0.2
+      ifnewre2reader = .true.
 
       ifprojfld(0) = .false. 
       ifprojfld(1) = .false. 
@@ -837,6 +829,12 @@ c set connectivity tolerance
       call finiparser_getDbl(d_out,'mesh:connectivityTol',ifnd)
       if(ifnd .eq. 1) connectivityTol = d_out
 
+c turn off new connectivity reader
+      call finiparser_getBool(i_out,'mesh:newre2reader',ifnd)
+      if(ifnd .eq. 1) then
+        if(i_out .eq. 0) ifnewre2reader = .false.
+      endif
+
 100   if(ierr.eq.0) call finiparser_dump()
       return
 
@@ -899,6 +897,7 @@ C
 
       call bcast(meshPartitioner,isize)
       call bcast(connectivityTol,wdsize)
+      call bcast(ifnewre2reader,lsize)
 
       call bcast(iftmsh   , (ldimt1+1)*lsize)
       call bcast(ifprojfld, (ldimt1+1)*lsize)
