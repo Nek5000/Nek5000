@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 85)
+      parameter(PARDICT_NKEYS = 95)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -68,29 +68,40 @@ c
      &  pardictkey(58) / 'GENERAL:USERPARAM08' /
      &  pardictkey(59) / 'GENERAL:USERPARAM09' /
      &  pardictkey(60) / 'GENERAL:USERPARAM10' /
-     &  pardictkey(61) / 'SCALAR%%' /
-     &  pardictkey(62) / 'SCALAR%%:SOLVER' /
-     &  pardictkey(63) / 'SCALAR%%:RESIDUALTOL' /
-     &  pardictkey(64) / 'SCALAR%%:DENSITY' /
-     &  pardictkey(65) / 'SCALAR%%:DIFFUSIVITY' /
-     &  pardictkey(66) / 'SCALAR%%:WRITETOFIELDFILE' /
-     &  pardictkey(67) / 'SCALAR%%:ABSOLUTETOL' /
-     &  pardictkey(68) / 'SCALAR%%:CONJUGATEHEATTRANSFER' /
-     &  pardictkey(69) / 'TEMPERATURE:SOLVER' /
-     &  pardictkey(70) / 'TEMPERATURE:RESIDUALTOL' /
-     &  pardictkey(71) / 'TEMPERATURE:ABSOLUTETOL' /
-     &  pardictkey(72) / 'PROBLEMTYPE:DP0DT' /
-     &  pardictkey(73) / 'CVODE' /
-     &  pardictkey(74) / 'CVODE:ABSOLUTETOL' /
-     &  pardictkey(75) / 'CVODE:RELATIVETOL' /
-     &  pardictkey(76) / 'CVODE:STIFF' /
-     &  pardictkey(77) / 'CVODE:MODE' /
-     &  pardictkey(78) / 'CVODE:PRECONDITIONER' /
-     &  pardictkey(79) / 'CVODE:DTMAX' /
-     &  pardictkey(80) / 'CVODE:DQJINCREMENTFACTOR' /
-     &  pardictkey(81) / 'CVODE:RATIOLNLTOL' /
-     &  pardictkey(82) / ':PARVERSION' /
-     &  pardictkey(83) / 'MESH:NUMBEROFBCFIELDS' /
-     &  pardictkey(84) / 'GENERAL:OPTLEVEL' /
-     &  pardictkey(85) / 'GENERAL:LOGLEVEL' /
+     &  pardictkey(61) / 'GENERAL:USERPARAM11' /
+     &  pardictkey(62) / 'GENERAL:USERPARAM12' /
+     &  pardictkey(63) / 'GENERAL:USERPARAM13' /
+     &  pardictkey(64) / 'GENERAL:USERPARAM14' /
+     &  pardictkey(65) / 'GENERAL:USERPARAM15' /
+     &  pardictkey(66) / 'GENERAL:USERPARAM16' /
+     &  pardictkey(67) / 'GENERAL:USERPARAM17' /
+     &  pardictkey(68) / 'GENERAL:USERPARAM18' /
+     &  pardictkey(69) / 'GENERAL:USERPARAM19' /
+     &  pardictkey(70) / 'GENERAL:USERPARAM20' / 
+     &  pardictkey(71) / 'SCALAR%%' /
+     &  pardictkey(72) / 'SCALAR%%:SOLVER' /
+     &  pardictkey(73) / 'SCALAR%%:RESIDUALTOL' /
+     &  pardictkey(74) / 'SCALAR%%:DENSITY' /
+     &  pardictkey(75) / 'SCALAR%%:DIFFUSIVITY' /
+     &  pardictkey(76) / 'SCALAR%%:WRITETOFIELDFILE' /
+     &  pardictkey(77) / 'SCALAR%%:ABSOLUTETOL' /
+     &  pardictkey(78) / 'SCALAR%%:CONJUGATEHEATTRANSFER' /
+     &  pardictkey(79) / 'TEMPERATURE:SOLVER' /
+     &  pardictkey(80) / 'TEMPERATURE:RESIDUALTOL' /
+     &  pardictkey(81) / 'TEMPERATURE:ABSOLUTETOL' /
+     &  pardictkey(82) / 'PROBLEMTYPE:DP0DT' /
+     &  pardictkey(83) / 'CVODE' /
+     &  pardictkey(84) / 'CVODE:ABSOLUTETOL' /
+     &  pardictkey(85) / 'CVODE:RELATIVETOL' /
+     &  pardictkey(86) / 'CVODE:STIFF' /
+     &  pardictkey(87) / 'CVODE:MODE' /
+     &  pardictkey(88) / 'CVODE:PRECONDITIONER' /
+     &  pardictkey(89) / 'CVODE:DTMAX' /
+     &  pardictkey(90) / 'CVODE:DQJINCREMENTFACTOR' /
+     &  pardictkey(91) / 'CVODE:RATIOLNLTOL' /
+     &  pardictkey(92) / ':PARVERSION' /
+     &  pardictkey(93) / 'MESH:NUMBEROFBCFIELDS' /
+     &  pardictkey(94) / 'GENERAL:OPTLEVEL' /
+     &  pardictkey(95) / 'GENERAL:LOGLEVEL' /
+
 

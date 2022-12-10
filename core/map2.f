@@ -673,12 +673,13 @@ c-----------------------------------------------------------------------
       if (ierr.ne.0) then
         ifread_con = .false.
         tol = connectivityTol
-        call find_con(wk,size(wk),tol,ierr)
+        call find_con(wk,nwk,tol,ierr)
         if(ierr.ne.0) then
           tol = tol / 10.0;
-          call find_con(wk,size(wk),tol,ierr)
+          call find_con(wk,nwk,tol,ierr)
         endif
-        call err_chk(ierr,' find_con failed!$')
+        call err_chk(ierr,'Connectivity calculation failed! '//
+     &    'Try tightening mesh::connectivityTol$')
       endif
 
 c fluid elements
