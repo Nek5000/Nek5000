@@ -30,14 +30,16 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 
         call usrdat0
 
+#ifdef NOMPIIO
+        call readat_par
+#else
         if (ifnewre2reader) then
           if(nio.eq.0) write(6,'(a)') ' Using new re2 reader ...'
           call readat_big_v2
         else
-          if(nio.eq.0) write(6,'(a)') ' Using old re2 reader ...'
           call readat_par
         endif
-
+#endif
       else
         if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
         call readat_std
