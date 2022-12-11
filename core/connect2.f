@@ -1395,24 +1395,6 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
-      subroutine find_lglel_ind_linear(e, eg, nl)
-        include 'SIZE'
-        include 'TOTAL'
-
-        integer e, eg, nl, i, ierr
-
-        ierr = 1
-        do i = 1, nl
-          if (lglel(i).eq.eg) then
-            ierr = 0
-            e = i
-            return
-          endif
-        enddo
-
-        call err_chk(ierr,'Error finding index in lglel$')
-      end
-c-----------------------------------------------------------------------
       subroutine find_lglel_ind_binary(e, eg, nl)
         include 'SIZE'
         include 'TOTAL'
@@ -1465,7 +1447,6 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
-c  Double check this
       subroutine find_sorted_ind_binary(e, eg, nl, sorted)
         include 'SIZE'
         include 'TOTAL'
