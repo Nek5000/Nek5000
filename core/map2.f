@@ -429,7 +429,7 @@ c fluid elements
       enddo
 
 c solid elements
-      if (nelv.lt.nelt) then
+      if (nelgt.ne.nelgv) then
          j  = 0
          ii = 0
          cnt= 0
@@ -476,6 +476,7 @@ c solid elements
          enddo
       endif
 #endif
+
       return
       end
 c-----------------------------------------------------------------------
