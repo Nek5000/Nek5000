@@ -24,6 +24,198 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine readat_big_v2
+      include 'SIZE'
+      include 'TOTAL'
+      include 'RESTART'
+      include 'CTIMER'
+
+      parameter(nrmax = 12*lelt) ! maximum number of records
+      parameter(lrs   = 30)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+2)
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      common /ivrtx/ vertex((2**ldim),lelt)
+      integer*8 vertex
+
+      integer        vi(li, nrmax)
+      common /ctmp1/ vi
+
+      logical ifbswap
+      integer loc_to_glo_nid(lelt),lglelo(lelt),nelto,nvi,ierr
+      integer ibuf(2)
+      integer iwork(lelt)
+      real etimei, etimee, dur0, dur1
+
+      ierr = 0
+
+      ! Read the header to get nelgt, nelgv, ndim and then calculate
+      ! nelt.
+      call read_re2_hdr(ifbswap, .true.)
+
+      ! Mesh is read by binning -- nelt or nelt + 1 elements in each
+      ! rank (nelt + 1 on last nr ranks where nr is nelgt % np).
+      nelt = nelgt / np
+      do i = 1, mod(nelgt, np)
+        if (np-i.eq.nid) nelt = nelt + 1
+      enddo
+      if (nelt.gt.lelt) then
+        call exitti('nelt > lelt!$',nelt)
+      endif
+
+      call chkParam
+
+#ifndef NOMPIIO
+      call byte_open_mpi(re2fle, fh_re2, .true. ,ierr)
+      call err_chk(ierr, ' Cannot open .re2 file!$')
+#else
+      call exitti('No serial support for big mesh read! P=$',np)
+#endif
+
+      if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
+     $  ' partioning elements to MPI ranks'
+      etimei = dnekclock_sync()
+
+      dur0 = dnekclock_sync()
+      call read_re2_mesh_v2(ifbswap)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.o .and. loglevel.gt.1) then
+        write(6, *) 'done :: read coordinates: ', dur1
+      endif
+
+c     Distributed memory processor mapping
+      if (np.gt.nelgt) then
+         if(nio.eq.0) then
+           write(6,1000) np,nelgt
+ 1000      format(2X,'ABORT: Too many processors (',I8
+     $          ,') for to few elements (',I12,').'
+     $          ,/,2X,'Aborting in readat_big_v2.')
+         endif
+         call exitt
+      endif
+
+      call get_vert_big_v2(vertex,loc_to_glo_nid)
+
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
+
+      ! transfer vertices
+      nelto = nelt
+      do i = 1, nelt
+        lglelo(i) = lglel(i)
+      enddo
+
+      dur0 = dnekclock_sync()
+      call transfer_vertices_v2(vertex,loc_to_glo_nid)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer vertices: ', dur1
+      endif
+
+      ! transfer coordinates
+      dur0 = dnekclock_sync()
+      call transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer coordinates: ', dur1
+      endif
+
+      ! read and transfer curve sides
+      dur0 = dnekclock_sync()
+      call read_re2_curve_v2(nvi, vi, ifbswap)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: read curved sides: ', dur1
+      endif
+
+      dur0 = dnekclock_sync()
+      call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
+     $  nelto)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer curved sides: ', dur1
+      endif
+
+      ! transfer bcs
+      dur0 = dnekclock_sync()
+
+                  ibc = 2
+      if (ifflow) ibc = 1
+
+                  nfldt = 1
+      if (ifheat) nfldt = 2+npscal
+      if (ifmhd ) nfldt = 2+npscal+1
+
+      ! first field to read
+      if (param(33).gt.0) ibc = int(param(33))
+
+      ! number of fields to read
+      if (param(32).gt.0) then
+        nfldt = ibc + int(param(32)) - 1
+        nfldt = max(nfldt,1)
+        if (nelgt.gt.nelgv) nfldt = max(nfldt,2)
+      endif
+
+      call blank(cbc,3*size(cbc))
+      call rzero(bc ,size(bc))
+
+      do ifield = ibc, nfldt
+        call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
+     $    ifbswap)
+
+        call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
+     $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
+      enddo
+
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: read and transfer bcs: ', dur1
+      endif
+
+      call fgslib_crystal_free(cr_re2)
+
+#ifndef NOMPIIO
+      call byte_close_mpi(fh_re2,ierr)
+#endif
+
+#ifdef DPROCMAP
+      call dProcmapInit()
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
+         ibuf(1) = i
+         ibuf(2) = nid
+         call dProcmapPut(ibuf,2,0,ieg)
+      enddo
+#else
+      call izero(gllel,nelgt)
+      do i = 1,nelt
+         ieg = lglel(i)
+         if (ieg.lt.1 .or. ieg.gt.nelgt)
+     $      call exitti('invalid ieg!$',ieg)
+         gllnid(ieg) = nid
+         gllel(ieg) = i
+      enddo
+      npass = 1 + nelgt/lelt
+      k=1
+      do ipass = 1,npass
+         m = nelgt - k + 1
+         m = min(m,lelt)
+         if (m.gt.0) call igop(gllnid(k),iwork,'+  ',m)
+         if (m.gt.0) call igop(gllel(k) ,iwork,'+  ',m)
+         k = k+m
+      enddo
+#endif
+
+      etimee = dnekclock_sync() - etimei
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: partitioning: ', etimee
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine setDefaultParam
 C
       INCLUDE 'SIZE'
