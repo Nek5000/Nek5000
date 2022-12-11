@@ -964,3 +964,209 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine read_re2_bc_v2(nvi, vi, cbl, bl, ifbswap)
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = 6*lelt)
+      parameter(lrs = 8)
+      parameter(li = 2*lrs + 1)
+
+      integer nvi, vi(li, nrmax)
+      character*3 cbl(6, lelt)
+      real bl(5, 6, lelt)
+      logical ifbswap
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer*8       lre2off_b,dtmp8
+      integer*8       nrg,nr
+      integer*4       nrg4(2)
+      integer*8       i8gl_running_sum
+
+      integer i, e, k, eg, ierr, key
+
+      ! read total number of records
+      nvi       = 0
+      ierr      = 0
+      nwds4r    = 1*wdsizi/4
+      lre2off_b = re2off_b
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      if(wdsizi.eq.8) then
+         if(ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if(ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+
+      ! read data from file
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      re2off_b = re2off_b + nrg*4*lrs4
+
+
+      if(nio.eq.0) write(6,'(A,I20,A,I3)')
+     $             ' reading boundary faces ', nrg,
+     $             ' for ifield ', ifield
+
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      ! pack buffer
+      do i = 1, nr
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
+         endif
+
+         eg = bufr(jj,1)
+         if(wdsizi.eq.8) call copyi4(eg,bufr(jj,1),1)
+         if(eg.le.0 .or. eg.gt.nelgt) then
+           ierr = 1
+           goto 100
+         endif
+
+         call get_dest_proc(vi(1,i), eg, np, nelgt)
+         call icopy (vi(2,i),bufr(jj,1),lrs4)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nvi = nr
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nvi, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      if (nvi.gt.nrmax) then
+        ierr = 1
+        goto 100
+      endif
+
+      ! fill up with default
+      do e=1,nelt
+      do k=1,6
+         cbl(k,e) = 'E  '
+      enddo
+      enddo
+
+ 100  call err_chk(ierr, 'Error reading .re2 boundary data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_re2_curve_v2(nvi, vi, ifbswap)
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(nrmax = 12*lelt) ! maximum number of records
+      parameter(lrs   = 8)   ! record size: eg iside curve(5) ccurve
+      parameter(li    = 2*lrs+1)
+
+      integer nvi, vi(li, nrmax)
+      logical ifbswap
+
+      integer         bufr(li-1,nrmax)
+      common /scrns/  bufr
+
+      integer*8       lre2off_b,dtmp8
+      integer*8       nrg,nr
+      integer*4       nrg4(2)
+
+      integer*8       i8gl_running_sum
+
+      integer e, eg, ierr
+
+      ! read total number of records
+      nvi = 0
+      ierr = 0
+      nwds4r    = 1*wdsizi/4
+      lre2off_b = re2off_b
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      if(wdsizi.eq.8) then
+         if(ifbswap) call byte_reverse8(nrg4,nwds4r,ierr)
+         call copy(dnrg,nrg4,1)
+         nrg = dnrg
+      else
+         if(ifbswap) call byte_reverse (nrg4,nwds4r,ierr)
+         nrg = nrg4(1)
+      endif
+      re2off_b = re2off_b + 4*nwds4r
+
+      if(nrg.eq.0) return
+
+      ! read data from file
+      dtmp8 = np
+      nr = nrg/dtmp8
+      do i = 0,mod(nrg,dtmp8)-1
+         if(i.eq.nid) nr = nr + 1
+      enddo
+      dtmp8     = i8gl_running_sum(int(nr,8)) - nr
+      lre2off_b = re2off_b + dtmp8*lrs*wdsizi
+      lrs4      = lrs*wdsizi/4
+
+      re2off_b = re2off_b + nrg*4*lrs4
+
+      if(nid.eq.0) write(6,'(A,I20)') ' reading curved sides   ', nrg
+
+      nwds4r = nr*lrs4
+      call byte_set_view(lre2off_b,fh_re2)
+      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      if(ierr.gt.0) goto 100
+
+      ! pack buffer
+      do i = 1, nr
+         jj = (i-1)*lrs4 + 1
+
+         if(ifbswap) then
+           lrs4s = lrs4 - wdsizi/4 ! words to swap (last is char)
+           if(wdsizi.eq.8) call byte_reverse8(bufr(jj,1),lrs4s,ierr)
+           if(wdsizi.eq.4) call byte_reverse (bufr(jj,1),lrs4s,ierr)
+         endif
+
+         eg = bufr(jj,1)
+         if (wdsizi.eq.8) call copyi4(eg,bufr(jj,1),1)
+         if(eg.le.0 .or. eg.gt.nelgt) goto 100
+
+         call get_dest_proc(vi(1,i), eg, np, nelgt)
+         ! First entry is "eg"
+         call icopy (vi(2,i),bufr(jj,1),lrs4)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nvi = nr
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nvi, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      if(nvi.gt.nrmax) then
+        ierr = 1
+      endif
+
+ 100  call err_chk(ierr,'Error reading .re2 curved data$')
+      return
+      end
+c-----------------------------------------------------------------------
