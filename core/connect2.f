@@ -1350,70 +1350,6 @@ c  1   format(2i8,i4,2x,a3,a4,i8)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_vertices(vertex, loc_to_glob_nid)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt)    ! maximum number of records
-      parameter(lrs   = 2**ldim) ! record size: group x(:,c) ...
-      parameter(li    = 2*lrs+2)
-
-      integer*8 vertex(2**ldim, lelt)
-      integer loc_to_glob_nid(lelt)
-
-      integer         bufr(li - 2, nrmax)
-      common /scrns/  bufr
-
-      integer         vi  (li    , nrmax)
-      common /ctmp1/  vi
-
-      integer e, eg, ind(nrmax), nr, key
-
-      lrs4      = lrs*wdsizi/4
-
-      do e = 1, nelt
-        vi(1, e) = loc_to_glob_nid(e)
-        vi(2, e) = lglel(e)
-        call vtx_to_buf(vi(3, e), vertex(1, e))
-      enddo
-
-      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-      nr = nelt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     &  vl, 0, vr, 0, key)
-
-      ! unpack buffer
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      ! List of global element numbers in v(2,:)
-      nelt = 0
-      nelv = 0
-      do i = 1, nr
-        lglel(i) = vi(2, i)
-        if (lglel(i).le.nelgv) then
-          nelv = nelv + 1
-        else
-          nelt = nelt + 1
-        endif
-      enddo
-      nelt = nelv + nelt
-      call isort(lglel, ind, nr)
-
-      do e = 1, nr
-         i = ind(e)
-         call buf_to_vtx(vertex(1, e), vi(3, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring vertices$')
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_vertices_v2(vertex, loc_to_glo_nid)
       include 'SIZE'
       include 'TOTAL'
@@ -1589,55 +1525,6 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_re2_bc(cbl, bl, loc_to_glob_nid, lglelo,
-     $  nelto)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = 6*lelt)
-      parameter(lrs = 8)
-      parameter(li = 2*lrs + 1)
-
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
-      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-
-      integer e, eg, f, cnt, nr, key, ierr, nf
-
-      integer         vi(li, nrmax)
-      common /ctmp1/  vi
-
-      cnt = 0
-      nf = 2*ndim
-      do e = 1, nelto
-        eg = lglelo(e)
-        do f = 1, nf
-          cnt = cnt + 1
-          vi(1, cnt) = loc_to_glob_nid(e)
-          call bc_to_buf(vi(2, cnt), cbl(f, e), bl(1, f, e), eg, f)
-        enddo
-      enddo
-
-      nr = cnt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     $  vl, 0, vr, 0, key)
-
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      do i = 1,nr
-         call buf_to_bc_big(cbl, bl, vi(2, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_re2_bc_v2(nvi, vi, cbl, bl, loc_to_glo_nid,
      $  lglelo, nelto)
       include 'SIZE'
@@ -1724,91 +1611,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine buf_to_bc_big(cbl, bl, buf)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
-
-      integer e, f, eg, buf(30)
-
-      if (wdsizi.eq.8) then
-        call icopy84(eg, buf(1) ,1) ! 1 - 2
-        call icopy84(f , buf(3), 1) ! 3 - 4
-        call find_lglel_ind(e, eg, nelt)
-        call copy  (bl(1, f, e), buf(5) , 5) ! 5 -14
-        call chcopy(cbl(f, e)  , buf(15), 3) !15
-
-        ! Integer assign connecting P element
-        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
-     $   call copyi4(bl(1, f, e), buf(5), 1)
-
-      else
-        eg = buf(1)
-        f  = buf(2)
-        call find_lglel_ind(e, eg, nelt)
-        call copy4r(bl(1, f, e), buf(3), 5)
-        call chcopy(cbl(f, e)  , buf(8), 3)
-
-        ! Integer assign of connecting periodic element
-        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
-     $     bl(1, f, e) = buf(3)
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine transfer_re2_curve(loc_to_glob_nid, lglelo, nelto)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      parameter(nrmax = lelt*(2*ldim*(ldim - 1)))
-      parameter(lrs = 15)
-      parameter(li = 2*lrs + 1)
-
-      ! character*1 ccurve(12, lelt)
-      ! real curve(6, 12, lelt)
-      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
-
-      integer e, eg, f, cnt, nr, key, ierr, nf
-
-      integer         vi(li, nrmax)
-      common /ctmp1/  vi
-
-      cnt = 0
-      nedge = 2*ndim*(ndim - 1)
-      do e = 1, nelto
-        eg = lglelo(e)
-        do f = 1, nedge
-          cnt = cnt + 1
-          vi(1, cnt) = loc_to_glob_nid(e)
-          call curve_to_buf(vi(2, cnt), curve(1, f, e), ccurve(f, e),
-     $      eg, f)
-        enddo
-      enddo
-
-      nr = cnt
-      key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
-     $  vl, 0, vr, 0, key)
-
-      ierr = 0
-      if (nr.gt.nrmax) then
-        ierr = 1
-        goto 100
-      endif
-
-      do i = 1,nr
-         call buf_to_curve_big(curve, ccurve, vi(2, i))
-      enddo
-
- 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
      $  nelto)
       include 'SIZE'
@@ -1890,34 +1692,6 @@ c-----------------------------------------------------------------------
         call icopy (buf(2),  f, 1) ! 2
         call copyX4(buf(3), cv, 5) ! 3 - 7
         call chcopy(buf(8),ccv, 1) ! 8
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine buf_to_curve_big(cv, ccv, buf)
-
-      include 'SIZE'
-      include 'TOTAL'
-
-      character*1 ccv(12, lelt)
-      real cv(6, 12, lelt)
-      integer buf(30)
-
-      integer e, f, eg
-
-      if (wdsizi.eq.8) then
-        call icopy84(eg, buf(1) ,1) ! 1 - 2
-        call icopy84(f , buf(3), 1) ! 3 - 4
-        call find_lglel_ind(e, eg, nelt)
-        call copy  (cv(1, f, e), buf(5) , 5) ! 5 -14
-        call chcopy(ccv(f, e)  , buf(15), 1) !15
-      else
-        eg = buf(1)
-        f  = buf(2)
-        call find_lglel_ind(e, eg, nelt)
-        call copy4r(cv(1, f, e), buf(3), 5)
-        call chcopy(ccv(f, e)  , buf(8), 1)
       endif
 
       return
