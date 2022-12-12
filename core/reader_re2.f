@@ -306,7 +306,6 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg,nr
       integer*4       nrg4(2)
-
       integer*8       i8gl_running_sum 
 
       ! read total number of records
@@ -968,31 +967,29 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(nrmax = 6*lelt)
-      parameter(lrs = 8)
-      parameter(li = 2*lrs + 1)
-
       character*3 cbl(6, lelt)
       real bl(5, 6, lelt)
       logical ifbswap
 
-      integer        vi(li, nrmax)
-      common /ctmp1/ vi
+      parameter(nrmax = 6*lelt)
+      parameter(lrs = 2+1+5)
+      parameter(li = 2*lrs + 1)
 
       integer         bufr(li-1,nrmax)
       common /scrns/  bufr
+
+      integer        vi(li, nrmax)
+      common /ctmp1/ vi
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg,nr
       integer*4       nrg4(2)
       integer*8       i8gl_running_sum
 
-      integer i, e, k, eg, ierr, key
+      integer i,e,k,eg,ierr,key,nvi
       integer ega(nrmax)
 
       ! read total number of records
-      nvi       = 0
-      ierr      = 0
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
       call byte_set_view(lre2off_b,fh_re2)
@@ -1022,7 +1019,6 @@ c-----------------------------------------------------------------------
       lrs4      = lrs*wdsizi/4
 
       re2off_b = re2off_b + nrg*4*lrs4
-
 
       if(nio.eq.0) write(6,'(A,I20,A,I3)')
      $             ' reading boundary faces ', nrg,
@@ -1057,8 +1053,8 @@ c-----------------------------------------------------------------------
       ! crystal route nr real items of size lrs to rank vi(key,1:nr)
       nvi = nr
       key = 1
-      call fgslib_crystal_tuple_transfer(cr_re2, nvi, nrmax, vi, li,
-     $  vl, 0, vr, 0, key)
+      call fgslib_crystal_tuple_transfer(cr_re2,nvi,nrmax,vi,li,vl,0,
+     $  vr,0,key)
 
       if (nvi.gt.nrmax) then
         ierr = 1

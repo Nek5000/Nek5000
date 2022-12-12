@@ -1535,8 +1535,8 @@ c-----------------------------------------------------------------------
       parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
+      character*3 cbl(6,lelt)
+      real bl(5,6,lelt)
       integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
 
       integer e, eg, f, cnt, nr, key, ierr, nf
@@ -1574,20 +1574,20 @@ c-----------------------------------------------------------------------
       enddo
 
       do i = 1,nr
-         call buf_to_bc_big(cbl, bl, vi(2, i))
+         call buf_to_bc_v2(cbl, bl, vi(2, i))
       enddo
 
  100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
       return
       end
 c-----------------------------------------------------------------------
-      subroutine buf_to_bc_big(cbl, bl, buf)
+      subroutine buf_to_bc_v2(cbl, bl, buf)
 
       include 'SIZE'
       include 'TOTAL'
 
-      character*3 cbl(2*ldim, lelt)
-      real bl(5, 2*ldim, lelt)
+      character*3 cbl(6, lelt)
+      real bl(5, 6, lelt)
 
       integer e, f, eg, buf(30)
 
