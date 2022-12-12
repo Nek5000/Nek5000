@@ -39,13 +39,11 @@ c-----------------------------------------------------------------------
       common /ivrtx/ vertex((2**ldim),lelt)
       integer*8 vertex
 
-      integer        vi(li, nrmax)
-      common /ctmp1/ vi
+      integer vi(li, nrmax),nvi
 
       logical ifbswap
-      integer loc_to_glo_nid(lelt),lglelo(lelt),nelto,nvi,ierr
-      integer ibuf(2)
-      integer iwork(lelt)
+      integer loc_to_glo_nid(lelt),lglelo(lelt),nelto,ierr
+      integer iwork(lelt),ibuf(2)
       real etimei, etimee, dur0, dur1
 
       ierr = 0
@@ -76,69 +74,27 @@ c-----------------------------------------------------------------------
       if (nio.eq.0 .and. loglevel.gt.1) write(6,'(A)')
      $  ' partioning elements to MPI ranks'
       etimei = dnekclock_sync()
-
+c
+c     Read mesh coordinates
+c
       dur0 = dnekclock_sync()
       call read_re2_mesh_v2(ifbswap)
       dur1 = dnekclock_sync() - dur0
       if (nio.eq.o .and. loglevel.gt.1) then
         write(6, *) 'done :: read coordinates: ', dur1
       endif
-
-c     Distributed memory processor mapping
-      if (np.gt.nelgt) then
-         if(nio.eq.0) then
-           write(6,1000) np,nelgt
- 1000      format(2X,'ABORT: Too many processors (',I8
-     $          ,') for to few elements (',I12,').'
-     $          ,/,2X,'Aborting in readat_big_v2.')
-         endif
-         call exitt
-      endif
-
-      call get_vert_big_v2(vertex,loc_to_glo_nid)
-
-      call fgslib_crystal_setup(cr_re2,nekcomm,np)
-
-      ! transfer vertices
-      nelto = nelt
-      do i = 1, nelt
-        lglelo(i) = lglel(i)
-      enddo
-
-      dur0 = dnekclock_sync()
-      call transfer_vertices_v2(vertex,loc_to_glo_nid)
-      dur1 = dnekclock_sync() - dur0
-      if (nio.eq.0 .and. loglevel.gt.1) then
-        write(6, *) 'done :: transfer vertices: ', dur1
-      endif
-
-      ! transfer coordinates
-      dur0 = dnekclock_sync()
-      call transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
-      dur1 = dnekclock_sync() - dur0
-      if (nio.eq.0 .and. loglevel.gt.1) then
-        write(6, *) 'done :: transfer coordinates: ', dur1
-      endif
-
-      ! read and transfer curve sides
+c
+c      Read curve sides
+c
       dur0 = dnekclock_sync()
       call read_re2_curve_v2(nvi, vi, ifbswap)
       dur1 = dnekclock_sync() - dur0
       if (nio.eq.0 .and. loglevel.gt.1) then
         write(6, *) 'done :: read curved sides: ', dur1
       endif
-
-      dur0 = dnekclock_sync()
-      call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
-     $  nelto)
-      dur1 = dnekclock_sync() - dur0
-      if (nio.eq.0 .and. loglevel.gt.1) then
-        write(6, *) 'done :: transfer curved sides: ', dur1
-      endif
-
-      ! transfer bcs
-      dur0 = dnekclock_sync()
-
+c
+c     Read BCs
+c
                   ibc = 2
       if (ifflow) ibc = 1
 
@@ -159,17 +115,74 @@ c     Distributed memory processor mapping
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
 
+      dur0 = dnekclock_sync()
       do ifield = ibc, nfldt
-        call read_re2_bc_v2(nvi, vi, cbc(1,1,ifield), bc(1,1,1,ifield),
-     $    ifbswap)
-
-        call transfer_re2_bc_v2(nvi, vi, cbc(1,1,ifield),
-     $    bc(1,1,1,ifield), loc_to_glo_nid, lglelo, nelto)
+        call read_re2_bc_v2(cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
       enddo
-
       dur1 = dnekclock_sync() - dur0
       if (nio.eq.0 .and. loglevel.gt.1) then
-        write(6, *) 'done :: read and transfer bcs: ', dur1
+        write(6, *) 'done :: read bcs: ', dur1
+      endif
+c
+c     Distributed memory processor mapping
+c
+      if (np.gt.nelgt) then
+         if(nio.eq.0) then
+           write(6,1000) np,nelgt
+ 1000      format(2X,'ABORT: Too many processors (',I8
+     $          ,') for to few elements (',I12,').'
+     $          ,/,2X,'Aborting in readat_big_v2.')
+         endif
+         call exitt
+      endif
+
+      call get_vert_big_v2(vertex,loc_to_glo_nid)
+
+      call fgslib_crystal_setup(cr_re2,nekcomm,np)
+c
+c      Transfer vertices
+c
+      nelto = nelt
+      do i = 1, nelt
+        lglelo(i) = lglel(i)
+      enddo
+
+      dur0 = dnekclock_sync()
+      call transfer_vertices_v2(vertex,loc_to_glo_nid)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer vertices: ', dur1
+      endif
+c
+c      Transfer coordinates
+c
+      dur0 = dnekclock_sync()
+      call transfer_re2_mesh_v2(loc_to_glo_nid,lglelo,nelto)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer coordinates: ', dur1
+      endif
+c
+c      Transfer BCs
+c
+      dur0 = dnekclock_sync()
+      do ifield = ibc, nfldt
+        call transfer_re2_bc_v2(cbc(1,1,ifield),bc(1,1,1,ifield),
+     $    loc_to_glo_nid,lglelo,nelto)
+      enddo
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer bcs: ', dur1
+      endif
+c
+c      Transfer curve sides
+c
+      dur0 = dnekclock_sync()
+      call transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
+     $  nelto)
+      dur1 = dnekclock_sync() - dur0
+      if (nio.eq.0 .and. loglevel.gt.1) then
+        write(6, *) 'done :: transfer curved sides: ', dur1
       endif
 
       call fgslib_crystal_free(cr_re2)

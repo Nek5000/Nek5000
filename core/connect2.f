@@ -1525,8 +1525,9 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
-      subroutine transfer_re2_bc_v2(nvi, vi, cbl, bl, loc_to_glo_nid,
-     $  lglelo, nelto)
+      subroutine transfer_re2_bc_v2(cbl,bl,loc_to_glob_nid,lglelo,
+     $  nelto)
+
       include 'SIZE'
       include 'TOTAL'
 
@@ -1534,56 +1535,85 @@ c-----------------------------------------------------------------------
       parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
-      integer nvi, vi(li, nrmax)
-      character*3 cbl(6, lelt)
-      real bl(5, 6, lelt)
-      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto
+      character*3 cbl(2*ldim, lelt)
+      real bl(5, 2*ldim, lelt)
+      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
 
-      integer i, e, nr, key, ierr
-      integer eg(nrmax)
+      integer e, eg, f, cnt, nr, key, ierr, nf
 
-      ierr = 0
-      if (wdsizi.eq.8) then
-        do i = 1, nvi
-          call copyi4(eg(i), vi(2, i), 1)
+      integer         vi(li, nrmax)
+      common /ctmp1/  vi
+
+      cnt = 0
+      nf = 2*ndim
+      do e = 1, nelto
+        eg = lglelo(e)
+        do f = 1, nf
+          cnt = cnt + 1
+          vi(1, cnt) = loc_to_glob_nid(e)
+          call bc_to_buf(vi(2, cnt), cbl(f, e), bl(1, f, e), eg, f)
         enddo
-      else if (wdsizi.eq.4) then
-        do i = 1, nvi
-          eg(i) = vi(2, i)
-        enddo
-      endif
-
-      do i = 1, nvi
-        call find_sorted_ind(e, eg(i), nelto, lglelo)
-        vi(1, i) = loc_to_glo_nid(e)
       enddo
 
-      nr  = nvi
+      nr = cnt
       key = 1
       call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
      $  vl, 0, vr, 0, key)
 
+      ierr = 0
       if (nr.gt.nrmax) then
         ierr = 1
         goto 100
       endif
 
-      if (wdsizi.eq.8) then
-        do i = 1, nr
-          call copyi4(eg(i), vi(2, i), 1)
-        enddo
-      else if (wdsizi.eq.4) then
-        do i = 1, nr
-          eg(i) = vi(2, i)
-        enddo
-      endif
+      ! fill up with default
+      do e=1,nelto
+      do k=1,6
+         cbl(k,e) = 'E  '
+      enddo
+      enddo
 
-      do i = 1, nr
-         call find_lglel_ind(e, eg(i), nelt)
-         call buf_to_bc_loc(e, cbl, bl, vi(2, i))
+      do i = 1,nr
+         call buf_to_bc_big(cbl, bl, vi(2, i))
       enddo
 
  100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc_big(cbl, bl, buf)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(2*ldim, lelt)
+      real bl(5, 2*ldim, lelt)
+
+      integer e, f, eg, buf(30)
+
+      if (wdsizi.eq.8) then
+        call icopy84(eg, buf(1) ,1) ! 1 - 2
+        call icopy84(f , buf(3), 1) ! 3 - 4
+        call find_lglel_ind(e, eg, nelt)
+        call copy  (bl(1, f, e), buf(5) , 5) ! 5 -14
+        call chcopy(cbl(f, e)  , buf(15), 3) !15
+
+        ! Integer assign connecting P element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $   call copyi4(bl(1, f, e), buf(5), 1)
+
+      else
+        eg = buf(1)
+        f  = buf(2)
+        call find_lglel_ind(e, eg, nelt)
+        call copy4r(bl(1, f, e), buf(3), 5)
+        call chcopy(cbl(f, e)  , buf(8), 3)
+
+        ! Integer assign of connecting periodic element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $     bl(1, f, e) = buf(3)
+      endif
+
       return
       end
 c-----------------------------------------------------------------------

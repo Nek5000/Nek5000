@@ -964,7 +964,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_re2_bc_v2(nvi, vi, cbl, bl, ifbswap)
+      subroutine read_re2_bc_v2(cbl, bl, ifbswap)
       include 'SIZE'
       include 'TOTAL'
 
@@ -972,10 +972,12 @@ c-----------------------------------------------------------------------
       parameter(lrs = 8)
       parameter(li = 2*lrs + 1)
 
-      integer nvi, vi(li, nrmax)
       character*3 cbl(6, lelt)
       real bl(5, 6, lelt)
       logical ifbswap
+
+      integer        vi(li, nrmax)
+      common /ctmp1/ vi
 
       integer         bufr(li-1,nrmax)
       common /scrns/  bufr
@@ -986,6 +988,7 @@ c-----------------------------------------------------------------------
       integer*8       i8gl_running_sum
 
       integer i, e, k, eg, ierr, key
+      integer ega(nrmax)
 
       ! read total number of records
       nvi       = 0
@@ -1067,6 +1070,22 @@ c-----------------------------------------------------------------------
       do k=1,6
          cbl(k,e) = 'E  '
       enddo
+      enddo
+
+      ierr = 0
+      if (wdsizi.eq.8) then
+        do i = 1, nvi
+          call copyi4(ega(i), vi(2, i), 1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1, nvi
+          ega(i) = vi(2, i)
+        enddo
+      endif
+
+      do i = 1, nvi
+        call find_lglel_ind(e, ega(i), nelt)
+        call buf_to_bc_loc(e, cbl, bl, vi(2, i))
       enddo
 
  100  call err_chk(ierr, 'Error reading .re2 boundary data$')
