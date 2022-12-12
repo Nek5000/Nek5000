@@ -74,7 +74,7 @@
       do iexo = 1,fnexo
       flag = 1
       call trasnfer_exo_name(flag) ! copy fluidexo to exoname
-      call exodus_read_new
+      call exodus_read_new  ! actual read exodus file
 
       eacc_old = eacc
       if (num_dim.eq.2) then
@@ -83,23 +83,28 @@
          if(converting_option.EQ.1) then
          call convert_new
          elseif(converting_option.EQ.2) then
+         write(6,*) 'Doing linear tet2hex conversion for hybrid (tet4+wedge6+hex8) mesh'
+
          call split_convert_new
 		 
-         elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+       elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+
+       write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15) mesh'
 
       ! this is to fix some wedge element, which maybe too thin
       quadratic_option = 1
       do i =1,4
-      call split_convert1_quadratic(quadratic_option)
+      call split_convert1_quadratic
       enddo
       ! this is to linearize tet to make sure no non-right-hand elements
       quadratic_option = 2
       do i = 1,2
-      call split_convert1_quadratic(quadratic_option)
+      call split_convert1_quadratic
       enddo
       ! this is the actual splitting step
       quadratic_option = 3
-      call split_convert1_quadratic(quadratic_option)
+      call split_convert1_quadratic
+
 
          endif
       endif
@@ -132,11 +137,14 @@
          if(converting_option.EQ.1) then
          call convert_new
          elseif(converting_option.EQ.2) then
+
+      write(6,*) 'Doing linear tet2hex conversion for hybrid (tet4+wedge6+hex8) mesh'
+
          call split_convert_new
 		 
        elseif (converting_option.EQ.3) then ! for quadratic tet2hex
 
-      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet+wedge) mesh'
+      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15) mesh'
 
       ! this is to fix some wedge element, which maybe too thin
       quadratic_option = 1
@@ -151,6 +159,7 @@
       ! this is the actual splitting step
       quadratic_option = 3
       call split_convert1_quadratic
+
 
          endif
       endif
@@ -168,17 +177,6 @@
 
       etot = eacc
       num_elem = etot
-
-      !if (num_dim.eq.2) then
-      !   ! for 2d mesh
-      !   call gather_bc_info
-      !   call setbc_2d
-      !else if (num_dim.eq.3) then
-      !   ! for 3d mesh
-      !   call right_hand_check
-      !   call gather_bc_info
-      !   call setbc_3d
-      !endif
 
       call right_hand_check ! check non-right-hand element here
       call gather_bc_info
@@ -842,6 +840,20 @@
       do i = 1,3
       nv(i) = nv(i)/mag
       enddo
+
+      return
+      end
+!--------------------------------------------------------------------
+      subroutine distance(a,b,d)
+      real*8 a(3),b(3),d
+ 
+      d = 0.0
+
+      do i=1,3
+       d = d + (a(i)-b(i))**2.0
+      enddo
+
+      d = d**0.5
 
       return
       end

@@ -36,7 +36,8 @@
       real ssa(2) ! total ss area
       real ssc(3,2) ! ss center xyz
       real quadNode(3,4) ! quad node xyz
-      real quadArea
+      real quadArea,length
+      integer adjacent_ibucket(27),n
 
 ! boundary condition summary
 !      write(6,*) '******************************************************'
@@ -61,10 +62,12 @@
       write(6,*) 'Enter number of periodic boundary surface pairs:'
       read (5,*) nbc
 	  
-      if(nbc.ne.0) then
-      write(6,*) 'Enter relative search tolerance (recommend 1e-3 for coarse mesh, 1e-5 for refine mesh):'
-      read (5,*) ptol
-      endif
+       !if(nbc.ne.0) then
+      !write(6,*) 'Enter relative search tolerance (recommend 1e-3 for coarse mesh, 1e-5 for refine mesh):'
+      !read (5,*) ptol
+      !endif
+      ptol = 1e-2 !1e-3	  
+	
 	  
       if(nbc.le.0) return
 	  
@@ -273,6 +276,8 @@
         pvec(2) = ssc(2,2) - ssc(2,1)
         pvec(3) = ssc(3,2) - ssc(3,1)
 
+        write (6,*) 'translation vector: ',pvec(1),' ',pvec(2),' ',pvec(3)
+
 
 !================================================================================
 !================================================================================
@@ -333,7 +338,6 @@
        endif
 
        endif
-
 
 !================================================================================
 ! deal with option 2.
@@ -413,15 +417,52 @@
 
 ! now, loop face1, and search in this bucket only, this saves a lot of time .... 
 ! to find the closest point.
-      do ipe = 1,nipe(1)
+     do ipe = 1,nipe(1)
          ihex = parray(1,1,ipe)
          iface = parray(2,1,ipe)
-         index1 = findex1(ipe) ! bucket number
+         
+		 ! index1 = findex1(ipe) ! bucket number
+
+         n = 27
+         call rzero_int2(adjacent_ibucket,n)
+
+! get adjacent bucket number.
+         ix =  int(fc1(1,ipe)*dble(nseg(1)-1))+1
+         iy =  int(fc1(2,ipe)*dble(nseg(2)-1))+1
+         iz =  int(fc1(3,ipe)*dble(nseg(3)-1))+1 
+
+         ib = 0 ! for all 27 buckets..
+         do k = 1,3
+         do j = 1,3
+         do i = 1,3
+         
+         ix1 = ix-2 + i
+         iy1 = iy-2 + j
+         iz1 = iz-2 + k
+         
+         ibucket = ix1 + (iy1-1)*nseg(1) + (iz1-1)*nseg(1)*nseg(2)
+         
+         if ((ix1.lt.1).or.(ix1.gt.nseg(1))) ibucket = 0
+         if ((iy1.lt.1).or.(iy1.gt.nseg(2)))  ibucket = 0
+         if ((iz1.lt.1).or.(iz1.gt.nseg(3)))  ibucket = 0
+         
+         ib = ib + 1
+         adjacent_ibucket(ib) = ibucket
+         
+         enddo
+         enddo
+         enddo
+
 
          distMax = ptol
-         do ipe2_bucket = 1,cfindex2(index1)  ! only search in the same bucket
 
-          ipe2 = rfindex2(ipe2_bucket,index1) ! counter, and bucket number 
+         do ib = 1,27
+         ibucket = adjacent_ibucket(ib)        ! loop in all adjacent bucket
+         if (ibucket.gt.0) then
+
+         do ipe2_bucket = 1,cfindex2(ibucket)  ! loop in this bucket
+
+          ipe2 = rfindex2(ipe2_bucket,ibucket) ! counter, and bucket number 
           ihex2 = parray(1,2,ipe2)
           iface2 = parray(2,2,ipe2)
 
@@ -436,6 +477,10 @@
           endif
 
          enddo
+
+         endif
+         enddo
+		 
 
       enddo
 
@@ -496,7 +541,21 @@
       enddo
       endif
 !================================================================================
-
+! add a quick check here
+     quickCheckPass = 0
+     do ipe = 1,nipe(1)
+         ihex = parray(1,1,ipe)
+         iface = parray(2,1,ipe)
+         ihex2 = int(bc(1,iface,ihex))
+         iface2 = int(bc(2,iface,ihex)) 
+         if ((ihex2.eq.0).or.(iface2.eq.0)) then
+          quickCheckPass = 1
+         endif
+     enddo
+     if (quickCheckPass.eq.1) then
+      write(6,*) 'Error, quick check failed, please check your periodic faces'
+     endif
+!================================================================================
 ! change. only assign periodic face at the end of loop.
 ! this will assign the closest face for periodicity.
 

@@ -28,6 +28,7 @@
       real*8 tetver(3,10),wedgever(3,15),wedgever2(3,15)
       real*8 ehexver(3,20)
       real*8 vert1(3),vert2(3)
+      real*8 wedThickness,dist
 
 !  exoss is used to store sideset information for all exo elements.
 !  tet,hex,wedge
@@ -35,12 +36,13 @@
 
       integer tetss(4),wedgess(5),ehexss(6),hexss(6,8)
       integer*8 ehexnumber,tetnumber,wedgenumber,bctot
-      integer*8 vert_index_exo
+      integer*8 vert_index_exo,ivert_index_exo
       integer*8 iel_nek,iel_exo,ifc_exo,iel_exo_g
 	  
       real*8 XYZorg(3,8),nv(3),delta_offset
 
-	  integer iblk,iblk1,icorrection
+	  integer iblk,iblk1,icorrection,n
+      integer iss
 
       logical hasnrh,ifnrh_in_wedge,ifnonrighthand
 
@@ -55,7 +57,8 @@
       write(6,'(a)') ''
       write(6,'(a)') 'Store SideSet information from EXO file'
         do iss=1,num_side_sets   ! loop over ss 
-        write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
+        !write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
+        write(6,*) 'Sideset ',idss(iss), ' ...'
            do i=1,num_sides_in_set(iss) ! loop over sides in ss
              iel_exo = elem_list(i,iss) ! exo element number
              ifc_exo = side_list(i,iss) ! exo element face number
@@ -85,7 +88,8 @@
           do iel_exo = 1,num_elem_in_block(iblk)
            !write(6,*) 'iel_exo, ',iel_exo
 
-         iel_exo_g = iel_exo
+         iel_exo_g = iel_exo ! iel_exo is element number in this block
+		 !   iel_exo_g is global exo element number
          if (iblk.gt.1) then
             do iblk1 = 1,iblk-1
              iel_exo_g = iel_exo_g + num_elem_in_block(iblk1)
@@ -95,7 +99,7 @@
           if (quadratic_option.eq.1) then
 ! only read tet10, but doing nothing
        do ivert = 1,10
-       vert_index_exo = vert_index_exo + 1  
+       vert_index_exo = vert_index_exo + 1  ! advance vertice index
        tetver(1,ivert) = x_exo(connect(vert_index_exo))
        tetver(2,ivert) = y_exo(connect(vert_index_exo))
        tetver(3,ivert) = z_exo(connect(vert_index_exo))
@@ -103,8 +107,9 @@
  
           else if  (quadratic_option.eq.2) then
 
-! linearze tet elements if non-right hand elements are created
-       call rzero_int(tetss,4)
+! linearize tet elements if non-right hand elements are created
+       n = 4
+       call rzero_int2(tetss,n) 
        if (num_side_sets.ne.0) then
         do ifc_exo=1,4
          tetss(ifc_exo) = 0
@@ -131,9 +136,7 @@
 !       call if_in_nj_list(iel_nek,ifnj)
 !       hasnrh = (hasnrh.or.ifnj) ! 
 !       enddo
-	  
-       
- 
+
        if (hasnrh) then
 	
           icorrection = icorrection + 1
@@ -176,7 +179,7 @@
 
           do ivert = 1, 10
           ivert_index_exo = vert_index_exo + ivert  
-          x_exo(connect(ivert_index_exo)) = tetver(1,ivert)
+          x_exo(connect(ivert_index_exo)) = tetver(1,ivert) ! return adjusted tet
           y_exo(connect(ivert_index_exo)) = tetver(2,ivert)
           z_exo(connect(ivert_index_exo)) = tetver(3,ivert)
           enddo
@@ -191,15 +194,15 @@
 
 
           else if (quadratic_option.eq.3) then
-
-       call rzero_int(tetss,4)
+! actual splitting.
+       n = 4
+       call rzero_int2(tetss,n)
        if (num_side_sets.ne.0) then
         do ifc_exo=1,4
          tetss(ifc_exo) = 0
          tetss(ifc_exo) = exoss(ifc_exo,iel_exo_g)
         enddo
        endif
-		
 
 !  read tet 10
        do ivert = 1, 10
@@ -209,14 +212,6 @@
        tetver(3,ivert) = z_exo(connect(vert_index_exo))
        enddo
 
-!  assign sideset to tet elements
-       call rzero_int(tetss,4)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,4
-         tetss(ifc_exo) = 0
-         tetss(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
 !  given tet10 vertices, and return you four hex27 coords.
 !       call tettohex(hexver,tetver,hexss,tetss) 
 
@@ -246,7 +241,6 @@
        enddo		
 	   
           endif
-		 
 
           enddo
 
@@ -259,7 +253,6 @@
              iel_exo_g = iel_exo_g + num_elem_in_block(iblk1)
             enddo
          endif
-
 
           if (quadratic_option.eq.1) then
 
@@ -274,14 +267,13 @@
        wedgever(2,ivert) = y_exo(connect(ivert_index_exo))
        wedgever(3,ivert) = z_exo(connect(ivert_index_exo))
        enddo
-	   
+
        do ivert = 7,15
        ivert_index_exo = vert_index_exo + ivert  
        wedgever2(1,ivert) = x_exo(connect(ivert_index_exo))
        wedgever2(2,ivert) = y_exo(connect(ivert_index_exo))
        wedgever2(3,ivert) = z_exo(connect(ivert_index_exo))
        enddo
-	   
 
        call average2vec(wedgever(1,7),wedgever(1,1), &
        wedgever(1,2))
@@ -302,15 +294,20 @@
        call average2vec(wedgever(1,15),wedgever(1,4), &
       wedgever(1,6))
 
-!  assign sideset to wedge elements
-       call rzero_int(wedgess,5)
+
+!  assign sideset to wedge element
+       n = 5
+       call rzero_int2(wedgess,n)
        if (num_side_sets.ne.0) then
         do ifc_exo=1,5
           wedgess(ifc_exo) = exoss(ifc_exo,iel_exo_g)
         enddo
        endif
 
+
 !  given wedge15 vertices, and return you 3 hex coords.
+! this is done in linear way,
+! just to check if non-right-hand..
        call wedgetohex(hexver,wedgever,hexss,wedgess)
 
 ! evaluate non-right-hand ness
@@ -339,9 +336,19 @@
            exit
           endif
 
-          delta_offset = 1e-4 ! adjustment thickness
+!          delta_offset = 1e-4 ! adjustment thickness
+! get wedge element thickness.
+          wedThickness = 0.0
+          do ivert = 1,3
+          call distance(wedgever(1,ivert),wedgever(1,ivert+3),dist)
+	      wedThickness = wedThickness + dist/3.0
+          enddo
+          delta_offset = wedThickness*0.01
 
-! move the triangle with sideset>0 with offset delta
+! expand this wedge with delta_offset
+! 1st layer elements are moved towards outside more, and inwards slightly.
+! non-1st layer element, are moved in both directions. 
+
           if (wedgess(4).gt.0) then
 
           call cross_prod(nv,wedgever(1,1),wedgever(1,3),wedgever(1,2))
@@ -397,7 +404,39 @@
           wedgever2(2,ivert) = wedgever2(2,ivert) - nv(2)*delta_offset*0.01
           wedgever2(3,ivert) = wedgever2(3,ivert) - nv(3)*delta_offset*0.01
           enddo
+
+          else  ! if non wedgess(4) nor wedgess(5) > 0, expand in both direction slightly..
+
+
+          call cross_prod(nv,wedgever(1,1),wedgever(1,3),wedgever(1,2))
+
+	      do ivert = 1,3
+          wedgever(1,ivert) = wedgever(1,ivert) + nv(1)*delta_offset*0.01
+          wedgever(2,ivert) = wedgever(2,ivert) + nv(2)*delta_offset*0.01
+          wedgever(3,ivert) = wedgever(3,ivert) + nv(3)*delta_offset*0.01
+          enddo
 		  
+	      do ivert = 7,9
+          wedgever2(1,ivert) = wedgever2(1,ivert) + nv(1)*delta_offset*0.01
+          wedgever2(2,ivert) = wedgever2(2,ivert) + nv(2)*delta_offset*0.01
+          wedgever2(3,ivert) = wedgever2(3,ivert) + nv(3)*delta_offset*0.01
+          enddo
+
+
+          call cross_prod(nv,wedgever(1,4),wedgever(1,5),wedgever(1,6))
+
+	      do ivert = 4,6
+          wedgever(1,ivert) = wedgever(1,ivert) + nv(1)*delta_offset*0.01
+          wedgever(2,ivert) = wedgever(2,ivert) + nv(2)*delta_offset*0.01
+          wedgever(3,ivert) = wedgever(3,ivert) + nv(3)*delta_offset*0.01
+          enddo
+
+	      do ivert = 13,15
+          wedgever2(1,ivert) = wedgever2(1,ivert) + nv(1)*delta_offset*0.01
+          wedgever2(2,ivert) = wedgever2(2,ivert) + nv(2)*delta_offset*0.01
+          wedgever2(3,ivert) = wedgever2(3,ivert) + nv(3)*delta_offset*0.01
+          enddo
+
 	      endif
 
           do ivert = 1,6
@@ -420,20 +459,12 @@
        endif
 
        enddo
-	 
+
        vert_index_exo = vert_index_exo + 15		  
 
 		  
           else if  (quadratic_option.eq.2) then
 		 
-!  assign sideset to wedge elements
-       call rzero_int(wedgess,5)
-       if (num_side_sets.ne.0) then
-        do ifc_exo=1,5
-          wedgess(ifc_exo) = exoss(ifc_exo,iel_exo)
-        enddo
-       endif
-
 !  given wedge15 vertices, and return you 3 hex coords.
 !       call wedgetohex(hexver,wedgever,hexss,wedgess)
 !       call wedgetohex_quadratic(hexver,wedgever,hexss,wedgess)
@@ -536,7 +567,8 @@
        enddo
 
 !  assign sideset to wedge elements
-       call rzero_int(wedgess,5)
+       n = 5
+       call rzero_int2(wedgess,n)
        if (num_side_sets.ne.0) then
         do ifc_exo=1,5
           wedgess(ifc_exo) = exoss(ifc_exo,iel_exo_g)
@@ -581,9 +613,9 @@
 
       enddo
 
+      if (quadratic_option.eq.3) then
       write(6,*) 'Converted elements in nek:',iel_nek-eacc_old
       write(6,'(A)') 'Done :: Converting elements '
-
 
       deallocate(x_exo,y_exo,z_exo,connect)
       deallocate (elem_list,side_list)
@@ -593,6 +625,7 @@
       deallocate ( num_elem_in_block  )
       deallocate ( num_sides_in_set   )
       deallocate ( idss               )
+      endif
 
       return
       end

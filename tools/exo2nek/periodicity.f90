@@ -28,6 +28,8 @@
 	  integer,save,allocatable,dimension(:,:) :: rfindex2 	      ! index->ipe
 
       integer nseg(3),maxEinBucket,ix,iy,iz,index1,ipe2_bucket
+	  
+      integer*8 n
       
       real xmin,xmax,ymin,ymax,zmin,zmax
       real xdiff,ydiff,zdiff,maxDiff
@@ -35,7 +37,9 @@
       real ssa(2) ! total ss area
       real ssc(3,2) ! ss center xyz
       real quadNode(3,4) ! quad node xyz
-      real quadArea
+      real quadArea,length
+	  
+      integer adjacent_ibucket(27),quickCheckPass
 
 ! boundary condition summary
       write(6,*) '******************************************************'
@@ -50,11 +54,12 @@
       write(6,*) 'Enter number of periodic boundary surface pairs:'
       read (5,*) nbc
 	  
-      if(nbc.ne.0) then
-      write(6,*) 'Enter relative search tolerance (recommend 1e-3 for coarse mesh, 1e-5 for refine mesh):'
-      read (5,*) ptol
-      endif
-	  
+      !if(nbc.ne.0) then
+      !write(6,*) 'Enter relative search tolerance (recommend 1e-3 for coarse mesh, 1e-5 for refine mesh):'
+      !read (5,*) ptol
+      !endif
+      ptol = 1e-2 ! 1e-3	  
+
       if(nbc.le.0) return
 	  
       allocate ( parray (2,2,num_elem))
@@ -146,13 +151,16 @@
 !================================================================================
        allocate (fc1 (3,nipe(1)))
        allocate (fc2 (3,nipe(1)))
+
 !================================================================================
 ! calculate face center array fc1, fc2
 ! calculate sideset center xyz..... inorder to calculate translation vector...
 ! get sideset area, and area weighted center xyz...
 
-       call rzero(ssa,2)
-       call rzero(ssc,6)
+       n = 2
+       call rzero(ssa,n)
+       n = 6
+       call rzero(ssc,n)
 
        do ipe = 1,nipe(1)
          ihex = parray(1,1,ipe)
@@ -205,7 +213,6 @@
        ssc(2,1) = ssc(2,1)/ssa(1) 
        ssc(3,1) = ssc(3,1)/ssa(1)   
 
-
        do ipe = 1,nipe(1)
          ihex = parray(1,2,ipe)
          iface = parray(2,2,ipe)
@@ -252,7 +259,6 @@
          fc2(3,ipe) = fpxyz(3,1)
        enddo
 
-
        ssc(1,2) = ssc(1,2)/ssa(2)  ! get avg sideset center
        ssc(2,2) = ssc(2,2)/ssa(2) 
        ssc(3,2) = ssc(3,2)/ssa(2)   
@@ -262,6 +268,7 @@
         pvec(1) = ssc(1,2) - ssc(1,1)
         pvec(2) = ssc(2,2) - ssc(2,1)
         pvec(3) = ssc(3,2) - ssc(3,1)
+        write (6,*) 'translation vector: ',pvec(1),' ',pvec(2),' ',pvec(3)
 
 
 !================================================================================
@@ -394,8 +401,12 @@
        allocate (rfindex2 (maxEinBucket,nseg(1)*nseg(2)*nseg(3)))
        call rzero_int2(rfindex2,maxEinBucket*nseg(1)*nseg(2)*nseg(3))
        call rzero_int2(cfindex2,nseg(1)*nseg(2)*nseg(3))
-
-       do ipe = 1,nipe(1)
+	   
+       do ipe = 1,nipe(1)   
+	     ! findex2(ipe) is the bucket number
+		 ! cfindex2(findex2(ipe)) is the counter of this bucket
+		 ! rfindex2(cfindex2(findex2(ipe)),findex2(ipe)) is the face number of this counter in this bucket.
+		 
           cfindex2(findex2(ipe)) = cfindex2(findex2(ipe))+1 ! is the counter of each bucket
           rfindex2(cfindex2(findex2(ipe)),findex2(ipe))=ipe ! store ipe in this bucket(findex2(ipe))
        enddo
@@ -405,12 +416,49 @@
       do ipe = 1,nipe(1)
          ihex = parray(1,1,ipe)
          iface = parray(2,1,ipe)
-         index1 = findex1(ipe) ! bucket number
+         
+		 ! index1 = findex1(ipe) ! bucket number
 
+         n = 27
+         call rzero_int2(adjacent_ibucket,n)
+
+! get adjacent bucket number.
+         ix =  int(fc1(1,ipe)*dble(nseg(1)-1))+1
+         iy =  int(fc1(2,ipe)*dble(nseg(2)-1))+1
+         iz =  int(fc1(3,ipe)*dble(nseg(3)-1))+1 
+
+         ib = 0 ! for all 27 buckets..
+         do k = 1,3
+         do j = 1,3
+         do i = 1,3
+         
+         ix1 = ix-2 + i
+         iy1 = iy-2 + j
+         iz1 = iz-2 + k
+         
+         ibucket = ix1 + (iy1-1)*nseg(1) + (iz1-1)*nseg(1)*nseg(2)
+         
+         if ((ix1.lt.1).or.(ix1.gt.nseg(1))) ibucket = 0
+         if ((iy1.lt.1).or.(iy1.gt.nseg(2)))  ibucket = 0
+         if ((iz1.lt.1).or.(iz1.gt.nseg(3)))  ibucket = 0
+         
+         ib = ib + 1
+         adjacent_ibucket(ib) = ibucket
+         
+         enddo
+         enddo
+         enddo
+
+         
          distMax = ptol
-         do ipe2_bucket = 1,cfindex2(index1)  ! only search in the same bucket
 
-          ipe2 = rfindex2(ipe2_bucket,index1) ! counter, and bucket number 
+         do ib = 1,27
+         ibucket = adjacent_ibucket(ib)        ! loop in all adjacent bucket
+         if (ibucket.gt.0) then
+
+         do ipe2_bucket = 1,cfindex2(ibucket)  ! loop in this bucket
+
+          ipe2 = rfindex2(ipe2_bucket,ibucket) ! counter, and bucket number 
           ihex2 = parray(1,2,ipe2)
           iface2 = parray(2,2,ipe2)
 
@@ -426,12 +474,16 @@
 
          enddo
 
-      enddo
+         endif
+         enddo
+		 
 
+      enddo
+  
       deallocate (findex1)
       deallocate (findex2)
-      deallocate(cfindex2)
-      deallocate(rfindex2)
+      deallocate (cfindex2)
+      deallocate (rfindex2)
 
       endif
 !================================================================================
@@ -485,7 +537,21 @@
       enddo
       endif
 !================================================================================
-
+! add a quick check here
+     quickCheckPass = 0
+     do ipe = 1,nipe(1)
+         ihex = parray(1,1,ipe)
+         iface = parray(2,1,ipe)
+         ihex2 = int(bc(1,iface,ihex))
+         iface2 = int(bc(2,iface,ihex)) 
+         if ((ihex2.eq.0).or.(iface2.eq.0)) then
+          quickCheckPass = 1
+         endif
+     enddo
+     if (quickCheckPass.eq.1) then
+      write(6,*) 'Error, quick check failed, please check your periodic faces'
+     endif
+!================================================================================
 ! change. only assign periodic face at the end of loop.
 ! this will assign the closest face for periodicity.
 
@@ -613,7 +679,6 @@
       call cross_product(vec1,vec2,prod_v,triArea)
       quadArea = quadArea + triArea
       enddo
-
 
       return
       end
