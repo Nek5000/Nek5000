@@ -24,7 +24,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readat_big_v2
+      subroutine readat_v2
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
@@ -131,12 +131,12 @@ c
            write(6,1000) np,nelgt
  1000      format(2X,'ABORT: Too many processors (',I8
      $          ,') for to few elements (',I12,').'
-     $          ,/,2X,'Aborting in readat_big_v2.')
+     $          ,/,2X,'Aborting in readat_v2.')
          endif
          call exitt
       endif
 
-      call get_vert_big_v2(vertex,loc_to_glo_nid)
+      call get_vert_v2(vertex,loc_to_glo_nid)
 
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
 c

@@ -132,7 +132,7 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_big_v2(vertex, loc_to_glo_nid)
+      subroutine get_vert_v2(vertex, loc_to_glo_nid)
       include 'SIZE'
       include 'TOTAL'
 
@@ -142,14 +142,14 @@ c-----------------------------------------------------------------------
       if(get_vert_called.gt.0) return
 
       nv = 2**ndim
-      call get_vert_map_big_v2(nv, vertex, loc_to_glo_nid)
+      call get_vert_map_v2(nv, vertex, loc_to_glo_nid)
 
       get_vert_called = 1
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine get_vert_map_big_v2(nlv, vertex, loc_to_glo_nid)
+      subroutine get_vert_map_v2(nlv, vertex, loc_to_glo_nid)
       include 'SIZE'
       include 'TOTAL'
 

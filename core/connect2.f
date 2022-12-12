@@ -35,7 +35,7 @@ c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
 #else
         if (ifnewre2reader) then
           if(nio.eq.0) write(6,'(a)') ' Using new re2 reader ...'
-          call readat_big_v2
+          call readat_v2
         else
           call readat_par
         endif
