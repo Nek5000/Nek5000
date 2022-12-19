@@ -19,6 +19,7 @@ module SIZE
       integer,save,allocatable,dimension(:,:)     :: bcID ! bcID(1) = bcID, bcID(2) = surface total quad/lines elements number, bcID(3)=periodic bc id
       character(32),save,allocatable,dimension(:) :: bcChar
 
+	  
 ! NEK CORE variables:
 !
       real,save,allocatable,dimension(:,:,:)   ::  bc, curve
