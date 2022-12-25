@@ -2402,7 +2402,7 @@ c
       call blank(fname,132)
       call chcopy(frontc, fname_in, 1)
       if (frontc .ne. '/') then
-        lenp = ltrunc(path,132)
+        lenp = 0 !ltrunc(path,132)
         lenf = ltrunc(fname_in,132)
         call chcopy(fnam1(1),path,lenp)
         call chcopy(fnam1(lenp+1),fname_in,lenf)

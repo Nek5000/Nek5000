@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 #include <string.h>
+#include <unistd.h> 
 #include "name.h"
 
 
@@ -10,6 +11,22 @@
 #define sizeOfLongInt FORTRAN_UNPREFIXED(sizeoflongint, SIZEOFLONGINT)
 #define getmaxrss FORTRAN_UNPREFIXED(getmaxrss, GETMAXRSS)
 #define set_stdout FORTRAN_UNPREFIXED(set_stdout, SET_STDOUT)
+#define cchdir FORTRAN_UNPREFIXED(fchdir, FCHDIR)
+
+void cchdir(char *path, int plen)
+{
+  char *dir = (char *) malloc((plen+1)*sizeof(char));
+  strncpy(dir, path, plen);
+  int i;
+  for (i=plen-1; i>=0; i--) if (dir[i] != ' ') break;
+  dir[i+1] = '\0';
+
+  if(chdir(dir) != 0) {
+    printf("ERROR: Cannot change working directory '%s'!\n", dir);
+    exit(1);
+  }
+  free(dir);
+}
 
 #if defined __GLIBC__
 
@@ -28,6 +45,7 @@ void print_stack(void)
 }
 #else
 void print_stack(){};
+
 #endif
 
 double getmaxrss()

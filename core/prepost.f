@@ -475,7 +475,7 @@ C
       call blank(fldfle,132)
 C
       LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LPP=0 !LTRUNC(PATH,132)
       LSP=LS+LPP
       l = 0
 
@@ -1138,7 +1138,7 @@ c-----------------------------------------------------------------------
       endif
       ndigit = log10(rfileo) + 1
 
-      lenp = ltrunc(path,132)
+      lenp = 0 !ltrunc(path,132)
       call chcopy(fnam1(1),path,lenp)    
       k = 1 + lenp 
 
