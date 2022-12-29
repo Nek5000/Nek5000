@@ -6,6 +6,7 @@
 
       integer option
       integer iexo1,flag
+      logical if_pre
 !-----------------------------------------------------------
 
       etot_est = 0
@@ -73,7 +74,7 @@
       do iexo = 1,fnexo
       flag = 1
       call trasnfer_exo_name(flag) ! copy fluidexo to exoname
-      call exodus_read_new
+      call exodus_read_new  ! actual read exodus file
 
       eacc_old = eacc
       if (num_dim.eq.2) then
@@ -82,7 +83,29 @@
          if(converting_option.EQ.1) then
          call convert_new
          elseif(converting_option.EQ.2) then
+         write(6,*) 'Doing linear tet2hex conversion for hybrid (tet4+wedge6+hex8) mesh'
+
          call split_convert_new
+		 
+       elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+
+       write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15) mesh'
+
+      ! this is to fix some wedge element, which maybe too thin
+      quadratic_option = 1
+      do i =1,4
+      call split_convert1_quadratic
+      enddo
+      ! this is to linearize tet to make sure no non-right-hand elements
+      quadratic_option = 2
+      do i = 1,2
+      call split_convert1_quadratic
+      enddo
+      ! this is the actual splitting step
+      quadratic_option = 3
+      call split_convert1_quadratic
+
+
          endif
       endif
 
@@ -114,7 +137,30 @@
          if(converting_option.EQ.1) then
          call convert_new
          elseif(converting_option.EQ.2) then
+
+      write(6,*) 'Doing linear tet2hex conversion for hybrid (tet4+wedge6+hex8) mesh'
+
          call split_convert_new
+		 
+       elseif (converting_option.EQ.3) then ! for quadratic tet2hex
+
+      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15) mesh'
+
+      ! this is to fix some wedge element, which maybe too thin
+      quadratic_option = 1
+      do i =1,4
+      call split_convert1_quadratic
+      enddo
+      ! this is to linearize tet to make sure no non-right-hand elements
+      quadratic_option = 2
+      do i = 1,2
+      call split_convert1_quadratic
+      enddo
+      ! this is the actual splitting step
+      quadratic_option = 3
+      call split_convert1_quadratic
+
+
          endif
       endif
 
@@ -132,19 +178,9 @@
       etot = eacc
       num_elem = etot
 
-      !if (num_dim.eq.2) then
-      !   ! for 2d mesh
-      !   call gather_bc_info
-      !   call setbc_2d
-      !else if (num_dim.eq.3) then
-      !   ! for 3d mesh
-      !   call right_hand_check
-      !   call gather_bc_info
-      !   call setbc_3d
-      !endif
-
+      call right_hand_check ! check non-right-hand element here
       call gather_bc_info
-      call setbc_new
+      call set_periodicity
 	  
       write(6,*) 'please give re2 file name:'
       call read_re2_name
@@ -394,6 +430,18 @@
            write(6,*) "one WEDGE6 divide into 6 Nek hex elements"
            converting_option = 2
            etot_est = etot_est + num_elem_in_block(i)*6
+        else if ((typ5.eq.'TETRA').and.(nvert.eq.10))then 
+           write(6,*) "TETRA10 is valid element in a 3D mesh."
+           write(6,*) "assume quadratic hybrid mesh (tetra-wedge)"
+           write(6,*) "one TETRA10 divide into 4 Nek hex elements"
+           converting_option = 3
+           etot_est = etot_est + num_elem_in_block(i)*4
+        else if ((typ5.eq.'WEDGE').and.(nvert.eq.15)) then 
+           write(6,*) "WEDGE15 is valid element in a 3D mesh."
+           write(6,*) "assume quadratic hybrid mesh (tetra-wedge)"
+           write(6,*) "one WEDGE15 divide into 3 Nek hex elements"
+           converting_option = 3
+           etot_est = etot_est + num_elem_in_block(i)*3
         else
           write(6,*) "ERROR: invalid element in a 3D mesh!"
           STOP
@@ -774,6 +822,42 @@
       return
       end
 !--------------------------------------------------------------------
+      subroutine cross_prod(nv,p1,p2,p3)
+      real*8 nv(3),p1(3),p2(3),p3(3)
+      real*8 v12(3),v13(3),mag
+	  
+      do i = 1,3
+      v12(i) = p2(i) - p1(i)
+      v13(i) = p3(i) - p1(i)
+      enddo
+	  
+      nv(1) = v12(2)*v13(3) - v12(3)*v13(2)
+      nv(2) = v12(3)*v13(1) - v12(1)*v13(3)
+      nv(3) = v12(1)*v13(2) - v12(2)*v13(1)
+	  
+      mag = sqrt(nv(1)**2.0+nv(2)**2.0+nv(3)**2.0)
+
+      do i = 1,3
+      nv(i) = nv(i)/mag
+      enddo
+
+      return
+      end
+!--------------------------------------------------------------------
+      subroutine distance(a,b,d)
+      real*8 a(3),b(3),d
+ 
+      d = 0.0
+
+      do i=1,3
+       d = d + (a(i)-b(i))**2.0
+      enddo
+
+      d = d**0.5
+
+      return
+      end
+!------------------------------------
       subroutine assignvec(a,b)
       real*8 a(3),b(3)
       a(1) = b(1)
@@ -807,243 +891,6 @@
       return
       end
 ! -------------------------------------------------------------------
-!--------------------------------------------------------------------
-      subroutine setbc_new
-! handle 2d 3d mesh together
-      use SIZE
-	 
-      integer quad_edge_node(2,4)
-      data quad_edge_node /1,3,3,9,7,9,1,7/
-	 
-      integer hex_face_node(4,6)
-      data hex_face_node /1,3,21,19,3,9,27,21,7,9,27,25,1,7,25,19,1,7,9,3,19,21,27,25/
-      
-      character*3 ubc
-      integer tags(2),ibc,nbc,io
-      integer ip,np,ipe,ipe2,nipe(2)
-      integer ptags(2)
-      integer fnode(4)
-      real pvec(3)
-      real fpxyz(3,2)
-      real AB_v(3),AD_v(3),farea,product_v(3)
-      real dist,distMax,ptol
-
-! boundary condition summary
-      write(6,*) '******************************************************'
-      write(6,*) 'Boundary info summary'
-      write(6,*) 'sideSet ID'
-      do ibc= 1,bcNumber
-      write(6,*) bcID(ibc)
-      enddo
-      write(6,*) '******************************************************'
- 
- 
-      write(6,*) 'Enter number of periodic boundary surface pairs:'
-      read (5,*) nbc
-	  
-      if(nbc.ne.0) then
-      write(6,*) 'Enter search tolerance:'
-      read (5,*) ptol
-      endif
-	  
-      if(nbc.le.0) return
-	  
-      allocate ( parray (2,2,num_elem))
-
-      do ibc = 1,nbc 
-        write(6,*) 'input surface 1 and  surface 2  sideSet ID'
-        read (5,*) ptags(1),ptags(2)
-        write(6,*) 'input translation vector (surface 1 -> surface 2)'
-
-        pvec(1) = 0.0
-        pvec(2) = 0.0
-        pvec(3) = 0.0
-	
-        if (num_dim.eq.2) then
-          read (5,*) pvec(1),pvec(2)
-        else
-          read (5,*) pvec(1),pvec(2),pvec(3)
-        endif 
-
-          ipe = 0
-          do ihex = 1, num_elem
-            do iface = 1,2*num_dim
-               if(bc(5,iface,ihex).eq.ptags(1)) then   
-                ipe = ipe + 1
-                parray(1,1,ipe) = ihex
-                parray(2,1,ipe) = iface
-               endif
-            enddo
-          enddo
-          nipe(1) = ipe
-	  
-          ipe = 0
-          do ihex = 1, num_elem
-            do iface = 1,2*num_dim
-               if(bc(5,iface,ihex).eq.ptags(2)) then
-                ipe = ipe + 1
-                parray(1,2,ipe) = ihex
-                parray(2,2,ipe) = iface
-               endif
-            enddo
-          enddo
-          nipe(2) = ipe
-
-          if(nipe(1).ne.nipe(2))  then
-            write(6,*)'mapping sideset ',ptags(1),'with',nipe(1),'faces'
-            write(6,*)'to sideset ',ptags(2),'with',nipe(2),'faces'
-            write(6,*) 'EORROR, face numbers are not matching'
-          endif
-
-! 1st loop, loop faces on surface 1
-      do ipe = 1,nipe(1)
-         ihex = parray(1,1,ipe)
-         iface = parray(2,1,ipe)
-! get face center xyz
-         !call rzero(fpxyz(1,1),3)
-         fpxyz(1,1) = 0.0
-         fpxyz(2,1) = 0.0
-         fpxyz(3,1) = 0.0
-
-         if (num_dim.eq.2) then
-           do ifnode = 1,2
-             fnode(ifnode)=quad_edge_node(ifnode,iface)
-             fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.5
-             fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.5
-           enddo
-         else
-           do ifnode = 1,4
-             fnode(ifnode)=hex_face_node(ifnode,iface)
-             fpxyz(1,1) = fpxyz(1,1)+xm1(fnode(ifnode),1,1,ihex)*0.25
-             fpxyz(2,1) = fpxyz(2,1)+ym1(fnode(ifnode),1,1,ihex)*0.25
-             fpxyz(3,1) = fpxyz(3,1)+zm1(fnode(ifnode),1,1,ihex)*0.25
-           enddo
-         endif
-
-! 2nd loop over surface 2
-         distMax = ptol
-         do ipe2 = 1,nipe(2)
-                ihex2 = parray(1,2,ipe2)
-                iface2 = parray(2,2,ipe2)
-! get face center xyz
-               !call rzero(fpxyz(1,2),3)
-               fpxyz(1,2) = 0.0
-               fpxyz(2,2) = 0.0
-               fpxyz(3,2) = 0.0
-             if (num_dim.eq.2) then
-               do ifnode = 1,2
-                fnode(ifnode)=quad_edge_node(ifnode,iface)
-                fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.5
-                fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.5
-               enddo
-             else
-               do ifnode = 1,4
-               fnode(ifnode)=hex_face_node(ifnode,iface2)
-               fpxyz(1,2) = fpxyz(1,2)+xm1(fnode(ifnode),1,1,ihex2)*0.25
-               fpxyz(2,2) = fpxyz(2,2)+ym1(fnode(ifnode),1,1,ihex2)*0.25
-               fpxyz(3,2) = fpxyz(3,2)+zm1(fnode(ifnode),1,1,ihex2)*0.25
-              enddo
-             endif
- 
-       dist = sqrt((fpxyz(1,2)-fpxyz(1,1)-pvec(1))**2 &
-      +(fpxyz(2,2)-fpxyz(2,1)-pvec(2))**2 &
-      +(fpxyz(3,2)-fpxyz(3,1)-pvec(3))**2)
-
-               if (dist.lt.distMax) then 
-                  distMax = dist
-                  bc(1,iface,ihex) = ihex2*1.0
-                  bc(2,iface,ihex) = iface2*1.0
-               endif
-         enddo
-      enddo
-
-! change. only assign periodic face at the end of loop.
-! this will assign the closest face for periodicity.
-
-     do ipe = 1,nipe(1)
-         ihex = parray(1,1,ipe)
-         iface = parray(2,1,ipe)
-         ihex2 = int(bc(1,iface,ihex))
-         iface2 = int(bc(2,iface,ihex)) 
-         bc(1,iface2,ihex2) = ihex*1.0
-         bc(2,iface2,ihex2) = iface*1.0
-         cbc(iface,ihex) = 'P  '
-         cbc(iface2,ihex2) = 'P  '
-     enddo
-
-        nperror = 0
-   
-          write(6,*)'doing periodic check for surface',ptags(1)
-
-          do ipe = 1,nipe(1)
-             ihex = parray(1,1,ipe)
-             iface = parray(2,1,ipe)
-             if (cbc(iface,ihex).ne.'P  ') then
-                  nperror = nperror +1 
-             endif
-          enddo
-          if (nperror.gt.0) write(6,*) 'ERROR,',nperror, ' faces did not for periodicity'
-
-          nperror = 0
-
-          do ipe = 1,nipe(1)
-             ihex = parray(1,1,ipe)
-             iface = parray(2,1,ipe)
-             ihex2 = int(bc(1,iface,ihex))
-             iface2 = int(bc(2,iface,ihex))
-             ihex3 = int(bc(1,iface2,ihex2))
-             iface3 = int(bc(2,iface2,ihex2))
-             if ((ihex.ne.ihex3).or.(iface.ne.iface3)) then
-               nperror = nperror + 1
-             endif
-          enddo
-
-          if (nperror.gt.0) then
-          write(6,*) 'ERROR,',nperror,'faces are wrong out of total ',nipe(1),' faces'
-          endif
-  
-          write(6,*)'doing periodic check for surface',ptags(2)
-
-          nperror = 0
-
-          do ipe = 1,nipe(2)
-             ihex = parray(1,2,ipe)
-             iface = parray(2,2,ipe)
-             if (cbc(iface,ihex).ne.'P  ') then
-                  nperror = nperror +1 
-             endif
-          enddo
-          if (nperror.gt.0) write(6,*) 'ERROR,',nperror, ' faces did not map for periodicity'
-
-          nperror = 0
-          do ipe = 1,nipe(2)
-             ihex = parray(1,2,ipe)
-             iface = parray(2,2,ipe)
-             ihex2 = int(bc(1,iface,ihex))
-             iface2 = int(bc(2,iface,ihex))
-             ihex3 = int(bc(1,iface2,ihex2))
-             iface3 = int(bc(2,iface2,ihex2))
-             if ((ihex.ne.ihex3).or.(iface.ne.iface3)) then
-                nperror = nperror + 1
-             endif
-          enddo		  
-
-          if (nperror.gt.0) then
-          write(6,*) 'ERROR,',nperror,'faces are wrong out of total ',nipe(2),' faces'
-          endif
- 
-      enddo
-
-      deallocate(parray)
-	  
-      write(6,*) '******************************************************'
-      write(6,*) 'Please set boundary conditions to all non-periodic boundaries'
-      write(6,*) 'in .usr file usrdat2() subroutine'
-      write(6,*) '******************************************************'
-
-      return
-      end
-!-----------------------------------------------------------------------
 !--------------------------------------------------------------------
       subroutine setbc_3d
       use SIZE
@@ -1743,69 +1590,7 @@
       return
       end
 !--------------------------------------------------------------------
-      subroutine right_hand_check
-! check if there is non-right hand elements (3D)
-! because if mesh is from ICEM, and mirror operation is made in ICEM,
-! the exported exo file will contain non-right hand elements.
-! this subroutine will:
-! 1. check right-hand
-! 2. fix if not
-      use SIZE
-      integer*8 iel
-      logical ifnonrighthand
 
-      write(6,*) 'performing non-right-hand check'
-	  
-      do iel=1,num_elem
-         !write(6,*) 'performing non-right-hand check on element ',iel
-         call check_if_non_right(ifnonrighthand,iel)
-         if (ifnonrighthand) call fix_if_non_right(iel)		 
-      enddo
-
-      write(6,*) 'done: non-right-hand check'
-	  
-      return
-      end
-!--------------------------------------------------------------------
-      subroutine check_if_non_right(ifnonrighthand,iel)
-      use SIZE
-      logical ifnonrighthand
-      integer iel
-      integer hex8_to_hex27_vertex(8)
-      data hex8_to_hex27_vertex /1,3,7,9,19,21,25,27/ 
-      real*8 hex8_vertex(3,8),vec12(3),vec14(3),vec15(3)
-      real*8 vec1(3),AA,dot_prod
-
-      do iver = 1,8
-       hex8_vertex(1,iver) = xm1(hex8_to_hex27_vertex(iver),1,1,iel)
-       hex8_vertex(2,iver) = ym1(hex8_to_hex27_vertex(iver),1,1,iel)
-       hex8_vertex(3,iver) = zm1(hex8_to_hex27_vertex(iver),1,1,iel)       
-      enddo
-	  
-      vec12(1) = hex8_vertex(1,2) - hex8_vertex(1,1)
-      vec12(2) = hex8_vertex(2,2) - hex8_vertex(2,1)
-      vec12(3) = hex8_vertex(3,2) - hex8_vertex(3,1)
-
-      vec14(1) = hex8_vertex(1,4) - hex8_vertex(1,1)
-      vec14(2) = hex8_vertex(2,4) - hex8_vertex(2,1)
-      vec14(3) = hex8_vertex(3,4) - hex8_vertex(3,1)
-
-      vec15(1) = hex8_vertex(1,5) - hex8_vertex(1,1)
-      vec15(2) = hex8_vertex(2,5) - hex8_vertex(2,1)
-      vec15(3) = hex8_vertex(3,5) - hex8_vertex(3,1)
-
-      call cross_product(vec12,vec14,vec1,AA) 
-      dot_prod = vec1(1)*vec15(1) + vec1(2)*vec15(2) + vec1(3)*vec15(3)
-  
-      if(dot_prod.gt.0.0) then
-       ifnonrighthand = .FALSE.
-      else
-       ifnonrighthand = .TRUE.
-       !write(6,*) 'non-right hand element detected'
-      endif  
-
-      return
-      end
 !-----------------------------------------------------------------------
       subroutine cross_product(AB_v,AC_v,prod_v,area)
 ! calculate cross product of two vectors
@@ -1824,51 +1609,6 @@
       return 
       end
 !------------------------------------------------------------------------------------------
-!--------------------------------------------------------------------
-      subroutine fix_if_non_right(iel)
-! fix non-right hand element
-! 1 <->19, 3 <-> 21, 7<->25, 9 <->27 
-      use SIZE
-      integer iel,iver
-      real*8 xm2(27),ym2(27),zm2(27)
-      character(3) cbc5,cbc6
-      real bc55,bc56
-
-! swap vertex
-      do iver = 1,27
-       xm2(iver) = xm1(iver,1,1,iel)
-       ym2(iver) = ym1(iver,1,1,iel)
-       zm2(iver) = zm1(iver,1,1,iel)
-      enddo
-
-      do iver = 1,9
-       xm1(iver,1,1,iel) = xm2(iver+18)
-       ym1(iver,1,1,iel) = ym2(iver+18)
-       zm1(iver,1,1,iel) = zm2(iver+18)
-      enddo
-     
-      do iver = 19,27
-       xm1(iver,1,1,iel) = xm2(iver-18)
-       ym1(iver,1,1,iel) = ym2(iver-18)
-       zm1(iver,1,1,iel) = zm2(iver-18)
-      enddo
-
-! swap face 5 <-> 6
-
-      cbc5 = cbc(5,iel)
-      bc55 = bc(5,5,iel)
- 
-      cbc6 = cbc(6,iel)
-      bc56 = bc(5,6,iel)
-
-      cbc(5,iel)   = cbc6
-      bc (5,5,iel) = bc56
-
-      cbc(6,iel)   = cbc5
-      bc (5,6,iel) = bc55 
-
-      return
-      end
 !--------------------------------------------------------------------
       subroutine gen_re2
 
@@ -2423,6 +2163,14 @@
 !-----------------------------------------------------------------------
       subroutine rzero_int(A,N)
       integer*8 N,I
+      integer A(1)
+      DO 100 I = 1, N
+ 100     A(I) = 0
+      return
+      END
+!-----------------------------------------------------------------------
+      subroutine rzero_int2(A,N)
+      integer N,I
       integer A(1)
       DO 100 I = 1, N
  100     A(I) = 0

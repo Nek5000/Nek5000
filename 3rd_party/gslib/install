@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-VER=1.0.7
+VER=1.0.8
 
 if [ "$1" == "clean" ]; then
-  rm -rf lib include 2>/dev/null 
+  rm -rf lib include 2>/dev/null
   find . -name '*.o' -exec rm {} +
-  find . -name '*.a' -exec rm {} + 
+  find . -name '*.a' -exec rm {} +
   exit 0
 fi
 
@@ -16,7 +16,7 @@ fi
 
 if [ ! -d ./gslib ]; then
   wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
-  mkdir gslib 
+  mkdir gslib
   tar -zxvf v$VER.tar.gz -C ./gslib --strip-components=1
 fi
 
