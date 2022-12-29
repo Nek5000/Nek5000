@@ -2186,49 +2186,29 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setbcpar
+      subroutine setbcpar 
+      implicit none
       include 'SIZE'
       include 'INPUT'
       include 'GEOM'
 
-      iBCmin = 999999
-      do iel = 1,nelv
-      do ifc = 1,2*ndim
-        iBC = BoundaryID(ifc,iel)
-        if(iBC.gt.0) iBCmin = min(iBC,iBCmin)
-      enddo
-      enddo
-      ioffset = iglmin(iBCmin,1)-1
-
-      iBCmin = 999999
-      do iel = 1,nelt
-      do ifc = 1,2*ndim
-        iBC = BoundaryIDt(ifc,iel)
-        if(iBC.gt.0) iBCmin = min(iBC,iBCmin)
-      enddo
-      enddo
-      ioffsett = iglmin(iBCmin,1)-1
+      integer ifld,iel,ifc,bid,ibd
 
       do ifld = 1,ldimt1
-      if(ifbmap(ifld))then
-        if(iftmsh(ifld)) then
+        if(ifbmap(ifld))then
           do iel = 1,nelt
           do ifc = 1,2*ndim
-            iBC = BoundaryIDt(ifc,iel)-ioffsett
-            if(iBC.ge.1.and.iBC.le.lbid)
-     &                            cbc(ifc,iel,ifld) = cbc_bmap(iBC,ifld)
-          enddo
-          enddo
-        else
-          do iel = 1,nelv
-          do ifc = 1,2*ndim
-            iBC = BoundaryID(ifc,iel)-ioffset
-            if(iBC.ge.1.and.iBC.le.lbid)
-     &                            cbc(ifc,iel,ifld) = cbc_bmap(iBC,ifld)
+            bid = BoundaryID(ifc,iel)
+            if(iftmsh(ifld)) bid = BoundaryIDt(ifc,iel)
+            if(bid.gt.1) then
+              do ibd = 1,nbctype
+                if(bid.eq.cbc_imap(ibd))
+     &            cbc(ifc,iel,ifld)=cbc_bmap(ibd,ifld)
+              enddo
+            endif 
           enddo
           enddo
         endif
-      endif
       enddo
 
       return

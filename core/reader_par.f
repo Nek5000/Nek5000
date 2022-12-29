@@ -154,10 +154,13 @@ C
          ifprojfld(1+i) = .false.
       enddo
 
+      nbctype=0
       do i=1,ldimt1
-        ifbmap(i)=.false.
-        ifbvmap(i)=.false.
-        nbctype(i)=0
+        ifbmap(i)=.false.  !get cbc from par
+        ifbvmap(i)=.false. !get boundary values from par
+      enddo
+      do i=1,lbid
+        boundaryIDmap(i)=i !sequential IDs as default
       enddo
 
       ifflow    = .false.
@@ -702,7 +705,6 @@ c set logical flags
         ifstrs = .false.
         if(i_out .eq. 1) ifstrs = .true.
       endif
-
       call finiparser_getBool(i_out,
      &                        'problemType:variableProperties',ifnd)
       if(ifnd .eq. 1) then
@@ -842,6 +844,20 @@ c set partitioner options
 c set connectivity tolerance
       call finiparser_getDbl(d_out,'mesh:connectivityTol',ifnd)
       if(ifnd .eq. 1) connectivityTol = d_out
+
+c read BoundaryID map
+      call finiparser_findTokens('mesh:boundaryidmap', ',' ,ifnd)
+      if(ifnd.gt.lbid) then
+        write(6,'(a)')"Too many BC IDs specified in par"
+        write(6,'(a,i3)')"  Nek5000 only supports up to ",lbid
+        ierr = 1
+        ifnd = 0
+      else if(ifnd.ge.1) then
+        do i = 1,ifnd
+          call finiparser_getToken(c_out,i)
+          read(c_out,'(i132)') cbc_imap(i)
+        enddo
+      endif
 
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
