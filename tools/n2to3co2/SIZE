@@ -1,0 +1,4 @@
+      parameter(nelxym=1100000) ! Max number of elements in x-y plane
+
+      common /arrai/ nlev,nel,npscal,nelv,icon2d(4,nelxym)
+

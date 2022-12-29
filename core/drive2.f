@@ -475,7 +475,7 @@ C
 C     Construct file names containing full path to host:
 C
       LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LPP=0 !LTRUNC(PATH,132)
       LSP=LS+LPP
 c
       call chcopy(nam1(    1),path1,lpp)

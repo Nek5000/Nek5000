@@ -475,7 +475,7 @@ C
       call blank(fldfle,132)
 C
       LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LPP=0 !LTRUNC(PATH,132)
       LSP=LS+LPP
       l = 0
 
@@ -1092,6 +1092,10 @@ c-----------------------------------------------------------------------
       character*3 prefx3
       data        prefx3 / "   " /
 
+      character*132  name
+      character*1    nam1(132)
+      equivalence   (nam1,name)
+
       character*132  fname
       character*1    fnam1(132)
       equivalence   (fnam1,fname)
@@ -1109,7 +1113,8 @@ c-----------------------------------------------------------------------
       save    nopen
       data    nopen  / 2000*0 /
 
-      call blank(fname,132)      !  zero out for byte_open()
+      call blank(fname,132)
+      call blank(name,132)
 
       iprefix = i_find_prefix(prefix,1000)
       if (ifreguo) then
@@ -1133,9 +1138,12 @@ c-----------------------------------------------------------------------
       endif
       ndigit = log10(rfileo) + 1
 
-      lenp = ltrunc(path,132)
+      lenp = 0 !ltrunc(path,132)
       call chcopy(fnam1(1),path,lenp)    
       k = 1 + lenp 
+
+      call blank(name,132)
+      kk = 1
  
       if (ifdiro) then                                  !  Add directory
          call chcopy(fnam1(k),'A',1)
@@ -1150,17 +1158,32 @@ c-----------------------------------------------------------------------
          if(prefx3 .ne. '   ') then
            call chcopy(fnam1(k),prefix,len(prefix))
            k = k + len(prefix)
+           call chcopy(nam1(kk),prefix,len(prefix))
+           kk = kk + len(prefix) 
          endif 
       endif
 
-      ll=ltrunc(session,132)                           !  Add SESSION
+      ll=ltrunc(session,132)
       call chcopy(fnam1(k),session,ll)
       k = k+ll
-     
+      call chcopy(nam1(kk),session,ll)
+      kk = kk + ll
+
       if (ifreguo) then
          ll=4
          call chcopy(fnam1(k),'_reg',ll)
-         k = k+ll
+         k = k + ll
+         call chcopy(nam1(kk),'_reg',ll)
+         kk = kk + ll
+      endif
+
+      if(nid.eq.0) then
+        call chcopy(nam1(kk),'.nek5000',8)
+        open(unit=101,file=name)
+        write(101,*) "filetemplate: ", trim(fname), "%01d.f%05d"
+        write(101,*) "firsttimestep: 1"
+        write(101,*) "numtimesteps: ", nfld
+        close(101) 
       endif
 
       call chcopy(fnam1(k),six,ndigit)                  !  Add file-id holder
