@@ -2192,24 +2192,44 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'GEOM'
 
-      integer ifld,iel,ifc,bid,ibd
+      integer ifld,iel,ifc,bid,ibd,nobc(lbid),wk(lbid),ierr
+      integer iglsum
+
+c     write(*,*)  nid,"in setbcpar"
+
+      ierr = 0
 
       do ifld = 1,ldimt1
-        if(ifbmap(ifld))then
+        if(ifbmap(ifld))then 
+          call izero(nobc,lbid)
           do iel = 1,nelt
           do ifc = 1,2*ndim
             bid = BoundaryID(ifc,iel)
             if(iftmsh(ifld)) bid = BoundaryIDt(ifc,iel)
-            if(bid.gt.1) then
+            if(bid.ge.1) then
+c             write(*,*) nid,bid,nbctype
               do ibd = 1,nbctype
-                if(bid.eq.cbc_imap(ibd))
-     &            cbc(ifc,iel,ifld)=cbc_bmap(ibd,ifld)
+                if(bid.eq.cbc_imap(ibd)) then
+                  cbc(ifc,iel,ifld)=cbc_bmap(ibd,ifld)
+                  nobc(ibd)=1
+                endif
               enddo
             endif 
           enddo
           enddo
+          call igop(nobc,wk,'+  ',nbctype)
+          do ibd=1,nbctype
+            if(nobc(ibd).eq.0) then
+              if(nio.eq.0) write(*,'(a,i4,a)')
+     &               "ERROR: Boundary ID ",cbc_imap(ibd)," NOT FOUND!"
+              ierr=1 !check all the IDs instead of just quitting now
+            endif
+          enddo
         endif
       enddo
+
+      ierr=iglsum(ierr,1)
+      if(ierr.gt.0) call exitt
 
       return
       end

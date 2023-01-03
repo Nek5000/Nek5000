@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 120)
+      parameter(PARDICT_NKEYS = 121)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data

@@ -160,7 +160,7 @@ C
         ifbvmap(i)=.false. !get boundary values from par
       enddo
       do i=1,lbid
-        boundaryIDmap(i)=i !sequential IDs as default
+        cbc_imap(i)=i !sequential IDs as default
       enddo
 
       ifflow    = .false.
@@ -860,6 +860,11 @@ c read BoundaryID map
         enddo
       endif
 
+c     write(*,*) "Boundary ID map"
+c     do i=1,nbctype
+c       write(*,*) i, cbc_imap(i)
+c     enddo
+
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
       if(ifnd.gt.lbid) then
@@ -906,6 +911,11 @@ c read BC map for velocity
         endif
       enddo
 
+c     write(*,*) "Velocity boundary type map"
+c     do i=1,nbctype
+c       write(*,*) i,cbc_bmap(i,1)
+c     enddo
+
 c read BC values for velocity
       call finiparser_findTokens('velocity:boundaryvalues', ',' , ifnd)
       if(ifnd.ge.1) then
@@ -915,7 +925,7 @@ c read BC values for velocity
           ierr = 1
           ifnd = 0
         endif
-        if(ifnd.ne.nbctype(1)) then
+        if(ifnd.ne.nbctype) then
           write(6,'(a,a)') "Number of velocity boundary values ",
      &                    "does not match the number of BC types in par"
           ierr = 1
@@ -923,89 +933,97 @@ c read BC values for velocity
         endif
       endif
       if(ifnd.ge.1) ifbvmap(1)=.true.
-      do i = 1,min(ifnd,nbctype(1))
+      do i = 1,min(ifnd,nbctype)
         call finiparser_getToken(c_out,i)
         read (c_out,*) cbc_vmap(i,1)
+        if(cbc_bmap(i,1).eq.'v  ') then
+          write(*,*) "converting 'v  ' BC to 'vl '"
+          cbc_bmap(i,1)='vl '
+        endif
       enddo
 
+c     write(*,*) "Velocity boundary values"
+c     do i=1,nbctype
+c       write(*,*) i,cbc_vmap(i,1)
+c     enddo
+
 c read BC map for temperature/scalars
-      do i = 1,ldimt
-        ifld = i+1
-        call blank(txt,132)
-        write(txt,"('scalar',i2.2)") i-1
-        if(i.eq.1) write(txt,"('temperature')")
-        write(txt2,"(a,a)")trim(txt),":boundarytypemap"
-        call finiparser_findTokens(txt2,',',ifnd)
-        if(ifnd.ge.1) ifbmap(ifld)=.true.
-        if(ifnd.gt.lbid) then
-          write(6,'(a,a,a)')"Too many BCs specified for ",txt," in par"
-          ierr = 1
-          ifnd = 0
-        endif
-        nbctype(ifld)=ifnd
-        do j = 1,nbctype(ifld)
-          call finiparser_getToken(c_out,j)
-          call capit(c_out,132)
-          if(index(c_out,'AXIS').eq.1) then
-            cbc_bmap(j,ifld)='A  '
-          elseif(index(c_out,'DIRICHLET').eq.1) then
-            cbc_bmap(j,ifld)='t  '
-          elseif(index(c_out,'FLUX').eq.1) then
-            cbc_bmap(j,ifld)='f  '
-          elseif(index(c_out,'INLET').eq.1) then
-            cbc_bmap(j,ifld)='t  '
-          elseif(index(c_out,'INSULATED').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          elseif(index(c_out,'INTERPOLATED').eq.1) then
-            cbc_bmap(j,ifld)='int'
-          elseif(index(c_out,'NEUMANN').eq.1) then
-            cbc_bmap(j,ifld)='f  '
-          elseif(index(c_out,'OUTLET').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          elseif(index(c_out,'PERIODIC').eq.1) then
-            cbc_bmap(j,ifld)='P  '
-          elseif(index(c_out,'ROBIN').eq.1) then
-            cbc_bmap(j,ifld)='c  '
-          elseif(index(c_out,'SYMMETRY').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          else
-            write(6,'(a,a,a)')"Invalid ",txt,
-     &                             " boundary type in par: ",trim(c_out)
-            ierr=1
-          endif
-        enddo
-      enddo
+c     do i = 1,ldimt
+c       ifld = i+1
+c       call blank(txt,132)
+c       write(txt,"('scalar',i2.2)") i-1
+c       if(i.eq.1) write(txt,"('temperature')")
+c       write(txt2,"(a,a)")trim(txt),":boundarytypemap"
+c       call finiparser_findTokens(txt2,',',ifnd)
+c       if(ifnd.ge.1) ifbmap(ifld)=.true.
+c       if(ifnd.gt.lbid) then
+c         write(6,'(a,a,a)')"Too many BCs specified for ",txt," in par"
+c         ierr = 1
+c         ifnd = 0
+c       endif
+c       nbctype=ifnd
+c       do j = 1,nbctype
+c         call finiparser_getToken(c_out,j)
+c         call capit(c_out,132)
+c         if(index(c_out,'AXIS').eq.1) then
+c           cbc_bmap(j,ifld)='A  '
+c         elseif(index(c_out,'DIRICHLET').eq.1) then
+c           cbc_bmap(j,ifld)='t  '
+c         elseif(index(c_out,'FLUX').eq.1) then
+c           cbc_bmap(j,ifld)='f  '
+c         elseif(index(c_out,'INLET').eq.1) then
+c           cbc_bmap(j,ifld)='t  '
+c         elseif(index(c_out,'INSULATED').eq.1) then
+c           cbc_bmap(j,ifld)='I  '
+c         elseif(index(c_out,'INTERPOLATED').eq.1) then
+c           cbc_bmap(j,ifld)='int'
+c         elseif(index(c_out,'NEUMANN').eq.1) then
+c           cbc_bmap(j,ifld)='f  '
+c         elseif(index(c_out,'OUTLET').eq.1) then
+c           cbc_bmap(j,ifld)='I  '
+c         elseif(index(c_out,'PERIODIC').eq.1) then
+c           cbc_bmap(j,ifld)='P  '
+c         elseif(index(c_out,'ROBIN').eq.1) then
+c           cbc_bmap(j,ifld)='c  '
+c         elseif(index(c_out,'SYMMETRY').eq.1) then
+c           cbc_bmap(j,ifld)='I  '
+c         else
+c           write(6,'(a,a,a)')"Invalid ",txt,
+c    &                             " boundary type in par: ",trim(c_out)
+c           ierr=1
+c         endif
+c       enddo
+c     enddo
 
 c read BC values for temperature/scalars
-      do i =1,ldimt
-        ifld = i+1
-        call blank(txt,132)
-        write(txt,"('scalar',i2.2)") i-1
-        if(i.eq.1) write(txt,"('temperature')")
-        write(txt2,"(a,a)") trim(txt),":boundaryvalues"
-        call finiparser_findTokens(txt2, ',' , ifnd)
-        if(ifnd.ge.1) then
-          if(.not.ifbmap(ifld)) then
-            write(6,*) 'boundaryTypeMap'
-            write(6,*) 'is required for boundaryValues'
-            ierr = 1
-            ifnd = 0
-          endif
-          if(ifnd.ne.nbctype(ifld)) then
-            write(6,'(a,a,a)') "Number of ",trim(txt),
-     &   " boundary values does not match the number of BC types in par"
-            ierr = 1
-            ifnd = 0
-          endif
-        endif
-        ifbvmap(ifld)=.true.
-        do j = 1,min(ifnd,nbctype(ifld))
-          call finiparser_getToken(c_out,i)
-          read (c_out,*) cbc_vmap(i,ifld)
-        enddo
-      enddo
+c     do i =1,ldimt
+c       ifld = i+1
+c       call blank(txt,132)
+c       write(txt,"('scalar',i2.2)") i-1
+c       if(i.eq.1) write(txt,"('temperature')")
+c       write(txt2,"(a,a)") trim(txt),":boundaryvalues"
+c       call finiparser_findTokens(txt2, ',' , ifnd)
+c       if(ifnd.ge.1) then
+c         if(.not.ifbmap(ifld)) then
+c           write(6,*) 'boundaryTypeMap'
+c           write(6,*) 'is required for boundaryValues'
+c           ierr = 1
+c           ifnd = 0
+c         endif
+c         if(ifnd.ne.nbctype) then
+c           write(6,'(a,a,a)') "Number of ",trim(txt),
+c    &   " boundary values does not match the number of BC types in par"
+c           ierr = 1
+c           ifnd = 0
+c         endif
+c       endif
+c       ifbvmap(ifld)=.true.
+c       do j = 1,min(ifnd,nbctype)
+c         call finiparser_getToken(c_out,i)
+c         read (c_out,*) cbc_vmap(i,ifld)
+c       enddo
+c     enddo
   
-c read BC map for temperature/scalars
 c set properties
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -1083,9 +1101,10 @@ C
 
       call bcast(initc, 15*132*csize) 
 
+      call bcast(nbctype,               isize)
       call bcast(ifbmap,         ldimt1*lsize)
+      call bcast(cbc_imap,  lbid*       isize)
       call bcast(cbc_bmap,3*lbid*ldimt1*csize)
-      call bcast(nbctype,        ldimt1*isize)
       call bcast(cbc_vmap,  lbid*ldimt1*wdsize)
 
       call bcast(timeioe,sizeof(timeioe))
