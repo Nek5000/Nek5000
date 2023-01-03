@@ -853,6 +853,7 @@ c read BoundaryID map
         ierr = 1
         ifnd = 0
       else if(ifnd.ge.1) then
+        nbctype=ifnd
         do i = 1,ifnd
           call finiparser_getToken(c_out,i)
           read(c_out,'(i132)') cbc_imap(i)
@@ -863,12 +864,21 @@ c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
       if(ifnd.gt.lbid) then
         write(6,'(a)')"Too many BCs specified for velocity in par"
+        write(6,'(a,i3)')"  Nek5000 only supports up to ",lbid
+        ierr = 1
+        ifnd = 0
+      elseif(ifnd.ge.1.and.nbctype.eq.0) then
+        nbctype=ifnd
+      elseif(ifnd.ne.nbctype) then
+        write(6,'(a,a,2i3)')
+     &                     "Number of BCs specified for velocity in par"
+     &                    ," does not match boundaryIDMap!",ifnd,nbctype
         ierr = 1
         ifnd = 0
       endif
+
       if(ifnd.ge.1) ifbmap(1)=.true.
-      nbctype(1)=ifnd
-      do i = 1,nbctype(1)
+      do i = 1,nbctype
         call finiparser_getToken(c_out,i)
         call capit(c_out,132)
         if(index(c_out,'AXIS').eq.1) then
