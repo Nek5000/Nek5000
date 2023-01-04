@@ -2195,8 +2195,6 @@ c-----------------------------------------------------------------------
       integer ifld,iel,ifc,bid,ibd,nobc(lbid),wk(lbid),ierr
       integer iglsum
 
-c     write(*,*)  nid,"in setbcpar"
-
       ierr = 0
 
       do ifld = 1,ldimt1
@@ -2207,7 +2205,6 @@ c     write(*,*)  nid,"in setbcpar"
             bid = BoundaryID(ifc,iel)
             if(iftmsh(ifld)) bid = BoundaryIDt(ifc,iel)
             if(bid.ge.1) then
-c             write(*,*) nid,bid,nbctype
               do ibd = 1,nbctype
                 if(bid.eq.cbc_imap(ibd)) then
                   cbc(ifc,iel,ifld)=cbc_bmap(ibd,ifld)
@@ -2221,14 +2218,14 @@ c             write(*,*) nid,bid,nbctype
           do ibd=1,nbctype
             if(nobc(ibd).eq.0) then
               if(nio.eq.0) write(*,'(a,i4,a)')
-     &               "ERROR: Boundary ID ",cbc_imap(ibd)," NOT FOUND!"
+     &         "ERROR: Boundary ID ",cbc_imap(ibd)," not found in mesh!"
               ierr=1 !check all the IDs instead of just quitting now
             endif
           enddo
         endif
       enddo
 
-      ierr=iglsum(ierr,1)
+      ierr=iglsum(ierr,1) !I don't think this is necessary
       if(ierr.gt.0) call exitt
 
       return

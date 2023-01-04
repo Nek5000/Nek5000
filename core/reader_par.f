@@ -229,6 +229,9 @@ c     - mhd support
       INCLUDE 'TSTEP'
 
       character*132 c_out,txt, txt2
+      character*3 cb3
+
+      logical isvalidcbc,isvalidcbct
 
       call finiparser_load(parfle,ierr)
       if(ierr .ne. 0) return
@@ -885,8 +888,11 @@ c read BC map for velocity
       if(ifnd.ge.1) ifbmap(1)=.true.
       do i = 1,nbctype
         call finiparser_getToken(c_out,i)
+        write(cb3,'(a3)')c_out
         call capit(c_out,132)
-        if(index(c_out,'AXIS').eq.1) then
+        if(isvalidcbc(cb3))then
+          cbc_bmap(i,1)=cb3
+        elseif(index(c_out,'AXIS').eq.1) then
           cbc_bmap(i,1)='A  '
         elseif(index(c_out,'DIRICHLET').eq.1) then
           cbc_bmap(i,1)='v  '
@@ -937,7 +943,8 @@ c read BC values for velocity
         call finiparser_getToken(c_out,i)
         read (c_out,*) cbc_vmap(i,1)
         if(cbc_bmap(i,1).eq.'v  ') then
-          write(*,*) "converting 'v  ' BC to 'vl '"
+          write(*,'(a,i4)') 
+     &           "converting 'v  ' BC to 'vl ' on boundary ",cbc_imap(i)
           cbc_bmap(i,1)='vl '
         endif
       enddo
@@ -948,52 +955,69 @@ c       write(*,*) i,cbc_vmap(i,1)
 c     enddo
 
 c read BC map for temperature/scalars
-c     do i = 1,ldimt
-c       ifld = i+1
-c       call blank(txt,132)
-c       write(txt,"('scalar',i2.2)") i-1
-c       if(i.eq.1) write(txt,"('temperature')")
-c       write(txt2,"(a,a)")trim(txt),":boundarytypemap"
-c       call finiparser_findTokens(txt2,',',ifnd)
-c       if(ifnd.ge.1) ifbmap(ifld)=.true.
-c       if(ifnd.gt.lbid) then
-c         write(6,'(a,a,a)')"Too many BCs specified for ",txt," in par"
-c         ierr = 1
-c         ifnd = 0
-c       endif
-c       nbctype=ifnd
-c       do j = 1,nbctype
-c         call finiparser_getToken(c_out,j)
-c         call capit(c_out,132)
-c         if(index(c_out,'AXIS').eq.1) then
-c           cbc_bmap(j,ifld)='A  '
-c         elseif(index(c_out,'DIRICHLET').eq.1) then
-c           cbc_bmap(j,ifld)='t  '
-c         elseif(index(c_out,'FLUX').eq.1) then
-c           cbc_bmap(j,ifld)='f  '
-c         elseif(index(c_out,'INLET').eq.1) then
-c           cbc_bmap(j,ifld)='t  '
-c         elseif(index(c_out,'INSULATED').eq.1) then
-c           cbc_bmap(j,ifld)='I  '
-c         elseif(index(c_out,'INTERPOLATED').eq.1) then
-c           cbc_bmap(j,ifld)='int'
-c         elseif(index(c_out,'NEUMANN').eq.1) then
-c           cbc_bmap(j,ifld)='f  '
-c         elseif(index(c_out,'OUTLET').eq.1) then
-c           cbc_bmap(j,ifld)='I  '
-c         elseif(index(c_out,'PERIODIC').eq.1) then
-c           cbc_bmap(j,ifld)='P  '
-c         elseif(index(c_out,'ROBIN').eq.1) then
-c           cbc_bmap(j,ifld)='c  '
-c         elseif(index(c_out,'SYMMETRY').eq.1) then
-c           cbc_bmap(j,ifld)='I  '
-c         else
-c           write(6,'(a,a,a)')"Invalid ",txt,
-c    &                             " boundary type in par: ",trim(c_out)
-c           ierr=1
-c         endif
-c       enddo
-c     enddo
+      do i = 1,ldimt
+        ifld = i+1
+        call blank(txt,132)
+        write(txt,"('scalar',i2.2)") i-1
+        if(i.eq.1) write(txt,"('temperature')")
+        write(txt2,"(a,a)")trim(txt),":boundarytypemap"
+        call finiparser_findTokens(txt2,',',ifnd)
+        if(ifnd.gt.lbid) then
+          write(6,'(3a)')
+     &                 "Too many BCs specified for ",trim(txt)," in par"
+          write(6,'(a,i3)')"  Nek5000 only supports up to ",lbid
+          ierr = 1
+          ifnd = 0
+        else if(ifnd.ge.1.and.nbctype.eq.0) then
+          nbctype=ifnd
+        else if(ifnd.ne.nbctype) then
+          write(6,'(3a,2i3)')
+     &                          "Number of BCs specified for ",trim(txt)
+     &              ," in par does not match other fields!",ifnd,nbctype
+          ierr=1
+          ifnd=0
+        endif
+
+        if(ifnd.ge.1) ifbmap(ifld)=.true.
+        do j = 1,nbctype
+          call finiparser_getToken(c_out,j)
+          write(cb3,'(a3)') c_out
+          call capit(c_out,132)
+          if(isvalidcbct(cb3)) then
+            cbc_bmap(j,ifld)=cb3
+          elseif(index(c_out,'AXIS').eq.1) then
+            cbc_bmap(j,ifld)='A  '
+          elseif(index(c_out,'CONVECTION').eq.1) then
+            cbc_bmap(j,ifld)='c  '
+          elseif(index(c_out,'DIRICHLET').eq.1) then
+            cbc_bmap(j,ifld)='t  '
+          elseif(index(c_out,'FLUX').eq.1) then
+            cbc_bmap(j,ifld)='f  '
+          elseif(index(c_out,'INLET').eq.1) then
+            cbc_bmap(j,ifld)='t  '
+          elseif(index(c_out,'INSULATED').eq.1) then
+            cbc_bmap(j,ifld)='I  '
+          elseif(index(c_out,'INTERPOLATED').eq.1) then
+            cbc_bmap(j,ifld)='int'
+          elseif(index(c_out,'NEUMANN').eq.1) then
+            cbc_bmap(j,ifld)='f  '
+          elseif(index(c_out,'OUTLET').eq.1) then
+            cbc_bmap(j,ifld)='I  '
+          elseif(index(c_out,'PERIODIC').eq.1) then
+            cbc_bmap(j,ifld)='P  '
+          elseif(index(c_out,'RADIATION').eq.1) then
+            cbc_bmap(j,ifld)='r  '
+          elseif(index(c_out,'ROBIN').eq.1) then
+            cbc_bmap(j,ifld)='c  '
+          elseif(index(c_out,'SYMMETRY').eq.1) then
+            cbc_bmap(j,ifld)='I  '
+          else
+            write(6,'(a,a,a)')"Invalid ",txt,
+     &                             " boundary type in par: ",trim(c_out)
+            ierr=1
+          endif
+        enddo
+      enddo
 
 c read BC values for temperature/scalars
 c     do i =1,ldimt
@@ -1407,3 +1431,50 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      logical function isvalidcbc(cbin)
+
+      integer nvcbc
+      parameter(nvcbc=22)
+
+      character*3 cbin
+      character*3 cblist(nvcbc)
+
+      data cblist /'W  ','v  ','O  ','P  ','p  ','SYM','E  ','A  ','int'
+     &            ,'o  ','on ','s  ','sl ','mm ','ms ','vl ','wsl','sl '
+     &            ,'shl','msi','mv ','mvn'/
+
+       isvalidcbc=.false.
+       do i=1,nvcbc
+         if(cbin.eq.cblist(i)) then
+           isvalidcbc=.true.
+           goto 256
+         endif
+       enddo
+ 256   continue
+
+       return
+       end
+c-----------------------------------------------------------------------
+      logical function isvalidcbct(cbin)
+
+      integer nvcbc
+      parameter(nvcbc=14)
+
+      character*3 cbin
+      character*3 cblist(nvcbc)
+
+      data cblist /'t  ','I  ','f  ','P  ','p  ','E  ','A  ','int','c  '
+     &            ,'kd ','ed ','r  ','SYM','O  '/
+
+       isvalidcbct=.false.
+       do i=1,nvcbc
+         if(cbin.eq.cblist(i)) then
+           isvalidcbct=.true.
+           goto 256
+         endif
+       enddo
+ 256   continue
+
+       return
+       end
