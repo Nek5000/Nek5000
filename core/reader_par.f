@@ -90,7 +90,7 @@ C
       param(161) = 2   ! cvode use stiff integration 
       param(162) = 0   ! cvode absolute tolerance
       param(163) = -1  ! cvode realtive tolerance
-      param(164) = 100 ! cvode don't limit internal dt
+      param(164) = 100 ! cvode don t limit internal dt
       param(165) = 1   ! cvode increment factor DQJ
       param(166) = 0   ! cvode use default ratio linear/non-linear tolerances
       param(167) = 0   ! cvode use no preconditioner
@@ -894,6 +894,8 @@ c read BC map for velocity
           cbc_bmap(i,1)='v  '
         elseif(index(c_out,'INTERPOLATED').eq.1) then
           cbc_bmap(i,1)='int'
+        elseif(index(c_out,'NONE').eq.1) then  !useful for conjugate ht
+          cbc_bmap(i,1)='   '
         elseif(index(c_out,'OUTLET').eq.1) then
           cbc_bmap(i,1)='O  '
         elseif(index(c_out,'PERIODIC').eq.1) then
@@ -1362,14 +1364,14 @@ c-----------------------------------------------------------------------
       logical function isvalidcbc(cbin)
 
       integer nvcbc
-      parameter(nvcbc=22)
+      parameter(nvcbc=23)
 
       character*3 cbin
       character*3 cblist(nvcbc)
 
       data cblist /'W  ','v  ','O  ','P  ','p  ','SYM','E  ','A  ','int'
      &            ,'o  ','on ','s  ','sl ','mm ','ms ','vl ','wsl','sl '
-     &            ,'shl','msi','mv ','mvn'/
+     &            ,'shl','msi','mv ','mvn','   '/
 
        isvalidcbc=.false.
        do i=1,nvcbc

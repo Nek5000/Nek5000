@@ -1006,7 +1006,6 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'NEKUSE'
       INCLUDE 'PARALLEL'
-      INCLUDE 'INPUT'
 C
       dimension v1(nx,ny,nz),v2(nx,ny,nz),v3(nx,ny,nz)
       character cb*3
