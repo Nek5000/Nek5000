@@ -157,7 +157,6 @@ C
       nbctype=0
       do i=1,ldimt1
         ifbmap(i)=.false.  !get cbc from par
-        ifbvmap(i)=.false. !get boundary values from par
       enddo
       do i=1,lbid
         cbc_imap(i)=i !sequential IDs as default
@@ -863,11 +862,6 @@ c read BoundaryID map
         enddo
       endif
 
-c     write(*,*) "Boundary ID map"
-c     do i=1,nbctype
-c       write(*,*) i, cbc_imap(i)
-c     enddo
-
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
       if(ifnd.gt.lbid) then
@@ -878,9 +872,9 @@ c read BC map for velocity
       elseif(ifnd.ge.1.and.nbctype.eq.0) then
         nbctype=ifnd
       elseif(ifnd.ne.nbctype) then
-        write(6,'(a,a,2i3)')
-     &                     "Number of BCs specified for velocity in par"
-     &                    ," does not match boundaryIDMap!",ifnd,nbctype
+        write(6,'(a,i3,a,i3,a)')
+     &              "Number of BCs specified for velocity in par (",ifnd
+     &                  ,") does not match boundaryIDMap (",nbctype,")!"
         ierr = 1
         ifnd = 0
       endif
@@ -916,43 +910,6 @@ c read BC map for velocity
           ierr=1
         endif
       enddo
-
-c     write(*,*) "Velocity boundary type map"
-c     do i=1,nbctype
-c       write(*,*) i,cbc_bmap(i,1)
-c     enddo
-
-c read BC values for velocity
-      call finiparser_findTokens('velocity:boundaryvalues', ',' , ifnd)
-      if(ifnd.ge.1) then
-        if(.not.ifbmap(1)) then
-          write(6,*) 'boundaryTypeMap'
-          write(6,*) 'is required for boundaryValues'
-          ierr = 1
-          ifnd = 0
-        endif
-        if(ifnd.ne.nbctype) then
-          write(6,'(a,a)') "Number of velocity boundary values ",
-     &                    "does not match the number of BC types in par"
-          ierr = 1
-          ifnd = 0
-        endif
-      endif
-      if(ifnd.ge.1) ifbvmap(1)=.true.
-      do i = 1,min(ifnd,nbctype)
-        call finiparser_getToken(c_out,i)
-        read (c_out,*) cbc_vmap(i,1)
-        if(cbc_bmap(i,1).eq.'v  ') then
-          write(*,'(a,i4)') 
-     &           "converting 'v  ' BC to 'vl ' on boundary ",cbc_imap(i)
-          cbc_bmap(i,1)='vl '
-        endif
-      enddo
-
-c     write(*,*) "Velocity boundary values"
-c     do i=1,nbctype
-c       write(*,*) i,cbc_vmap(i,1)
-c     enddo
 
 c read BC map for temperature/scalars
       do i = 1,ldimt
@@ -1019,35 +976,6 @@ c read BC map for temperature/scalars
         enddo
       enddo
 
-c read BC values for temperature/scalars
-c     do i =1,ldimt
-c       ifld = i+1
-c       call blank(txt,132)
-c       write(txt,"('scalar',i2.2)") i-1
-c       if(i.eq.1) write(txt,"('temperature')")
-c       write(txt2,"(a,a)") trim(txt),":boundaryvalues"
-c       call finiparser_findTokens(txt2, ',' , ifnd)
-c       if(ifnd.ge.1) then
-c         if(.not.ifbmap(ifld)) then
-c           write(6,*) 'boundaryTypeMap'
-c           write(6,*) 'is required for boundaryValues'
-c           ierr = 1
-c           ifnd = 0
-c         endif
-c         if(ifnd.ne.nbctype) then
-c           write(6,'(a,a,a)') "Number of ",trim(txt),
-c    &   " boundary values does not match the number of BC types in par"
-c           ierr = 1
-c           ifnd = 0
-c         endif
-c       endif
-c       ifbvmap(ifld)=.true.
-c       do j = 1,min(ifnd,nbctype)
-c         call finiparser_getToken(c_out,i)
-c         read (c_out,*) cbc_vmap(i,ifld)
-c       enddo
-c     enddo
-  
 c set properties
 100   if(ierr.eq.0) call finiparser_dump()
       return
@@ -1129,7 +1057,6 @@ C
       call bcast(ifbmap,         ldimt1*lsize)
       call bcast(cbc_imap,  lbid*       isize)
       call bcast(cbc_bmap,3*lbid*ldimt1*csize)
-      call bcast(cbc_vmap,  lbid*ldimt1*wdsize)
 
       call bcast(timeioe,sizeof(timeioe))
 

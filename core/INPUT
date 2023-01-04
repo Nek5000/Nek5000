@@ -51,7 +51,7 @@ c
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
      $               ,ifmpiio,ifrich,ifvvisp
-     $               ,ifbmap(ldimt1),ifbvmap(ldimt1)
+     $               ,ifbmap(ldimt1)
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
@@ -67,7 +67,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
-     $               ,ifmpiio,ifrich,ifvvisp,ifbmap,ifbvmap
+     $               ,ifmpiio,ifrich,ifvvisp,ifbmap
 
       logical         ifnav
       equivalence    (ifnav, ifadvc(1))
@@ -112,10 +112,9 @@ c
       character*1     ccurve(12,lelt),cdof(6,lelt)
       character*3     cbc(6,lelt,0:ldimt1)
       character*3     cbc_bmap(lbid,ldimt1)
-      real            cbc_vmap(lbid,ldimt1)
       integer         cbc_imap(lbid)
       integer         nbctype
-      common /input8/ cbc,ccurve,cdof,cbc_bmap,cbc_vmap,cbc_imap,nbctype
+      common /input8/ cbc,ccurve,cdof,cbc_bmap,cbc_imap,nbctype
 
       integer ieact(lelt),neact
       common /input9/ ieact,neact

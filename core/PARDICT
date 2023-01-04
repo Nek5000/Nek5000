@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 121)
+      parameter(PARDICT_NKEYS = 118)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -122,7 +122,4 @@ c
      &  pardictkey(115) / 'VELOCITY:BOUNDARYTYPEMAP' /
      &  pardictkey(116) / 'TEMPERATURE:BOUNDARYTYPEMAP' /
      &  pardictkey(117) / 'SCALAR%%:BOUNDARYTYPEMAP' /
-     &  pardictkey(118) / 'VELOCITY:BOUNDARYVALUES' /
-     &  pardictkey(119) / 'TEMPERATURE:BOUNDARYVALUES' /
-     &  pardictkey(120) / 'SCALAR%%:BOUNDARYVALUES' /
-     &  pardictkey(121) / 'MESH:BOUNDARYIDMAP' /
+     &  pardictkey(118) / 'MESH:BOUNDARYIDMAP' /
