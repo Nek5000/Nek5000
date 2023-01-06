@@ -2185,7 +2185,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine setbcpar 
-      implicit none
+
       include 'SIZE'
       include 'INPUT'
       include 'GEOM'
@@ -2209,6 +2209,7 @@ c-----------------------------------------------------------------------
                   nobc(ibd)=1
                 endif
               enddo
+              if(cbc_bmap(ibd,ifld).eq.'   ') nobc(ibd)=1 !allow extra empty BCs
             endif 
           enddo
           enddo
@@ -2223,7 +2224,7 @@ c-----------------------------------------------------------------------
         endif
       enddo
 
-      ierr=iglsum(ierr,1) !I don't think this is necessary
+      ierr=iglsum(ierr,1) !I don t think this is necessary
       if(ierr.gt.0) call exitt
 
       return
