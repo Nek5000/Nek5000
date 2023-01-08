@@ -49,13 +49,13 @@
 !      write(6,*) '******************************************************'
  
  ! boundary condition summary
-      write(6,*) '******************************************************'
-      write(6,*) 'Boundary info summary'
-      write(6,*) 'BoundaryName     BoundaryID'
-      do ibc= 1,bcNumber
-      write(6,*) trim(bcChar(ibc)),bcID(1,ibc)
-      enddo
-      write(6,*) '******************************************************'
+!      write(6,*) '******************************************************'
+!      write(6,*) 'Boundary info summary'
+!      write(6,*) 'BoundaryName     BoundaryID'
+!      do ibc= 1,bcNumber
+!      write(6,*) trim(bcChar(ibc)),bcID(1,ibc)
+!      enddo
+!      write(6,*) '******************************************************'
  
  
  
