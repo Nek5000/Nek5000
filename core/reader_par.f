@@ -960,6 +960,8 @@ c read BC map for temperature/scalars
             cbc_bmap(j,ifld)='int'
           elseif(index(c_out,'NEUMANN').eq.1) then
             cbc_bmap(j,ifld)='f  '
+          elseif(index(c_out,'NONE').eq.1) then
+            cbc_bmap(j,ifld)='   '
           elseif(index(c_out,'OUTLET').eq.1) then
             cbc_bmap(j,ifld)='I  '
           elseif(index(c_out,'PERIODIC').eq.1) then
@@ -1363,19 +1365,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       logical function isvalidcbc(cbin)
 
-      integer nvcbc
-      parameter(nvcbc=23)
+      include 'BCDICT'
 
       character*3 cbin
-      character*3 cblist(nvcbc)
-
-      data cblist /'W  ','v  ','O  ','P  ','p  ','SYM','E  ','A  ','int'
-     &            ,'o  ','on ','s  ','sl ','mm ','ms ','vl ','wsl','sl '
-     &            ,'shl','msi','mv ','mvn','   '/
 
        isvalidcbc=.false.
-       do i=1,nvcbc
-         if(cbin.eq.cblist(i)) then
+       do i=1,nvcbcv
+         if(cbin.eq.cblistv(i)) then
            isvalidcbc=.true.
            goto 256
          endif
@@ -1387,18 +1383,13 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       logical function isvalidcbct(cbin)
 
-      integer nvcbc
-      parameter(nvcbc=14)
+      include 'BCDICT'
 
       character*3 cbin
-      character*3 cblist(nvcbc)
-
-      data cblist /'t  ','I  ','f  ','P  ','p  ','E  ','A  ','int','c  '
-     &            ,'kd ','ed ','r  ','SYM','O  '/
 
        isvalidcbct=.false.
-       do i=1,nvcbc
-         if(cbin.eq.cblist(i)) then
+       do i=1,nvcbct
+         if(cbin.eq.cblistt(i)) then
            isvalidcbct=.true.
            goto 256
          endif

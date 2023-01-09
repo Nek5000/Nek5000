@@ -2208,8 +2208,8 @@ c-----------------------------------------------------------------------
                   cbc(ifc,iel,ifld)=cbc_bmap(ibd,ifld)
                   nobc(ibd)=1
                 endif
+                if(cbc_bmap(ibd,ifld).eq.'   ') nobc(ibd)=1 !allow extra empty BCs
               enddo
-              if(cbc_bmap(ibd,ifld).eq.'   ') nobc(ibd)=1 !allow extra empty BCs
             endif 
           enddo
           enddo
