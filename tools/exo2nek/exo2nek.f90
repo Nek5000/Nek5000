@@ -182,7 +182,7 @@
       call gather_bc_info
 
       call set_periodicity(1)
-      if (eftot.nt.num_elem)  call set_periodicity(2)
+      if (eftot.ne.num_elem)  call set_periodicity(2)
 	  
       write(6,*) 'please give re2 file name:'
       call read_re2_name
