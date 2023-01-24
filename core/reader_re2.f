@@ -9,11 +9,20 @@ c-----------------------------------------------------------------------
       logical ifbswap
       logical ifxyz, ifcur, ifbc
       integer idummy(100)
+      integer re2_h
+      integer np_io
 
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
  
- 
       etime0 = dnekclock_sync()
+
+!
+!     NOTE: When using .par file, p61 can be redefined only by 
+!           calling usrdat0() from the .usr file.  usrdat0() is 
+!           not native to the .usr file - you must add it.
+!
+      np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
                   ibc = 2
       if (ifflow) ibc = 1
@@ -34,44 +43,35 @@ c-----------------------------------------------------------------------
 
       call blank(cbc,3*size(cbc))
       call rzero(bc ,size(bc))
-
-#ifndef NOMPIIO
+      
       call fgslib_crystal_setup(cr_re2,nekcomm,np)
-
-      call byte_open_mpi(re2fle,fh_re2,.true.,ierr)
+      call nek_file_open(nekcomm,re2fle,0,0,np_io,re2_h,ierr)
       call err_chk(ierr,' Cannot open .re2 file!$')
 
-      call readp_re2_mesh (ifbswap,ifxyz)
-      call readp_re2_curve(ifbswap,ifcur)
+      call readp_re2_mesh (re2_h,ifbswap,ifxyz)
+      call readp_re2_curve(re2_h,ifbswap,ifcur)
+      write(6,*) 'herereeeeeeeeee ', ibc, nfldt
       do ifield = ibc,nfldt
-        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),
-     &    ifbswap,ifbc)
+        call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),re2_h,
+     &                    ifbswap,ifbc)
+        if (nek_file_eof(re2_h,ierr).gt.0) goto 80
+        if (ierr.gt.0)  goto 100
       enddo
 
+  80  call nek_file_close(re2_h,ierr)
       call fgslib_crystal_free(cr_re2)
-      call byte_close_mpi(fh_re2,ierr)
-#else
-      call byte_open(re2fle,ierr)
-      call byte_read(idummy,21,ierr) ! skip hdr+endian code 
-
-      call bin_rd1_mesh (ifbswap)
-      call bin_rd1_curve(ifbswap)
-      do ifield = ibc,nfldt
-         call bin_rd1_bc (cbc(1,1,ifield),bc(1,1,1,ifield),ifbswap)
-      enddo
-
-      call byte_close(ierr)
-#endif
 
       etime_t = dnekclock_sync() - etime0
       if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
      &                   ' done :: read .re2 file   ',
      &                   etime_t, ' sec'
 
+ 100  call err_chk(ierr,'Error nek_file_eof')
+
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_mesh(ifbswap,ifread) ! version 2 of .re2 reader
+      subroutine readp_re2_mesh(re2_h,ifbswap,ifread) ! version 2 of .re2 reader
 
       include 'SIZE'
       include 'TOTAL'
@@ -90,7 +90,8 @@ c-----------------------------------------------------------------------
       common /ctmp1/  vi
 
       integer*8       lre2off_b,dtmp8
-      integer*8       nrg      
+      integer*8       nrg
+      integer*8       count_b
 
       nrg       = nelgt
       nr        = nelt
@@ -103,12 +104,12 @@ c-----------------------------------------------------------------------
       lrs4      = lrs*wdsizi/4
 
       ! read coordinates from file
-      nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
+      nwds4r  = nr*lrs4
+      count_b = int(nwds4r,8)*4
       etime0 = dnekclock_sync()
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
-      etime_s2 = dnekclock_sync() - etime0
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       re2off_b = re2off_b + nrg*4*lrs4
+      etime_s2 = dnekclock_sync() - etime0
       if (ierr.gt.0) goto 100
 
       if (.not.ifread) return
@@ -161,7 +162,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_curve(ifbswap,ifread)
+      subroutine readp_re2_curve(re2_h,ifbswap,ifread)
 
       include 'SIZE'
       include 'TOTAL'
@@ -184,16 +185,22 @@ c-----------------------------------------------------------------------
       integer*8       lre2off_b,dtmp8
       integer*8       nrg,nr
       integer*4       nrg4(2)
+      integer*8       count_b
      
       integer*8       i8gl_running_sum 
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call byte_set_view(lre2off_b,fh_re2)
+      ierr = 0
+      
+      count_b = int(nwds4r,8)*4
+      if (nid.ne.0) count_b = 0
       etime0 = dnekclock_sync()
-      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,count_b,lre2off_b,nrg4,ierr)
       etime_s1 = dnekclock_sync() - etime0
+      call bcast(nrg4,wdsizi)
+
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -225,11 +232,12 @@ c-----------------------------------------------------------------------
       if (.not.ifread) return
       if(nio.eq.0) write(6,'(A,I20)') ' reading curved sides   ', nrg
 
-      nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
+      nwds4r  = nr*lrs4
+      count_b = int(nwds4r,8)*4
       etime0 = dnekclock_sync()
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       etime_s3 = dnekclock_sync() - etime0
+
       if(ierr.gt.0) goto 100
 
       ! pack buffer
@@ -283,7 +291,7 @@ c-----------------------------------------------------------------------
 
       end
 c-----------------------------------------------------------------------
-      subroutine readp_re2_bc(cbl,bl,ifbswap,ifread)
+      subroutine readp_re2_bc(cbl,bl,re2_h,ifbswap,ifread)
 
       include 'SIZE'
       include 'TOTAL'
@@ -303,19 +311,25 @@ c-----------------------------------------------------------------------
       integer         vi  (li  ,nrmax)
       common /ctmp1/  vi
 
-      integer*8       lre2off_b,dtmp8
-      integer*8       nrg,nr
+      integer*8       lre2off_b,dtmp8,nbcs
+      integer*8       nrg, nr
       integer*4       nrg4(2)
+      integer*8       count_b
 
       integer*8       i8gl_running_sum 
 
       ! read total number of records
       nwds4r    = 1*wdsizi/4
       lre2off_b = re2off_b
-      call byte_set_view(lre2off_b,fh_re2)
+      ierr = 0
+
+      count_b = int(nwds4r,8)*4
+      if (nid.ne.0) count_b = 0
       etime0    = dnekclock_sync()
-      call byte_read_mpi(nrg4,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,count_b,lre2off_b,nrg4,ierr)
+
       etime_s1  = dnekclock_sync() - etime0
+      call bcast(nrg4,wdsizi)
       if(ierr.gt.0) goto 100
 
       if(wdsizi.eq.8) then
@@ -350,11 +364,14 @@ c-----------------------------------------------------------------------
      $             ' for ifield ', ifield
 
       nwds4r = nr*lrs4
-      call byte_set_view(lre2off_b,fh_re2)
+      count_b = int(nwds4r,8)*4
       etime0 = dnekclock_sync()
-      call byte_read_mpi(bufr,nwds4r,-1,fh_re2,ierr)
+      call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       etime_s3 = dnekclock_sync() - etime0
+
+
       if(ierr.gt.0) goto 100
+
 
       ! pack buffer
       etime0 = dnekclock_sync()
@@ -385,6 +402,9 @@ c-----------------------------------------------------------------------
       call fgslib_crystal_tuple_transfer(cr_re2,n,nrmax,vi,li,vl,0,vr,0,
      &                                   key)
       etime_t2 = dnekclock_sync() - etime0
+
+      nbcs = n
+      nbcs = i8glsum(nbcs,1)
 
       ! fill up with default
       do iel=1,nelt
@@ -528,310 +548,6 @@ c  1   format(2i8,i4,2x,a3,a4,i8)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine bin_rd1_mesh(ifbswap)    ! version 1 of binary reader
-
-      include 'SIZE'
-      include 'TOTAL'
-      logical ifbswap
-
-      integer e,eg,buf(55)
-
-      if (nio.eq.0) write(6,*)    '  reading mesh '
-
-      nwds = (1 + ldim*(2**ldim))*(wdsizi/4) ! group + 2x4 for 2d, 3x8 for 3d
-      len  = 4*nwds                          ! 4 bytes / wd
-
-      if (nwds.gt.55.or.isize.gt.4) then
-         write(6,*) nid,' Error in bin_rd1_mesh: buf size',nwds,isize
-         call exitt
-      endif
-
-      call nekgsync()
-
-      niop = 10
-      do k=1,8
-         if (nelgt/niop .lt. 100) goto 10
-         niop = niop*10
-      enddo
-   10 continue
-
-      ierr  = 0
-      ierr2 = 0
-      len1  = 4
-      do eg=1,nelgt             ! sync NOT needed here
-
-         mid = gllnid(eg)
-         e   = gllel (eg)
-#ifdef DEBUG
-         if (nio.eq.0.and.mod(eg,niop).eq.0) write(6,*) eg,' mesh read'
-#endif
-         if (mid.ne.nid.and.nid.eq.0) then              ! read & send
-
-            if(ierr.eq.0) then
-              call byte_read  (buf,nwds,ierr)
-              call csend(e,ierr,len1,mid,0)
-              if(ierr.eq.0) call csend(e,buf,len,mid,0)
-            else
-              call csend(e,ierr,len1,mid,0)
-            endif
-
-         elseif (mid.eq.nid.and.nid.ne.0) then          ! recv & process
-
-            call crecv      (e,ierr,len1)
-            if(ierr.eq.0) then
-              call crecv      (e,buf,len)
-              call buf_to_xyz (buf,e,ifbswap,ierr2)
-            endif
- 
-         elseif (mid.eq.nid.and.nid.eq.0) then          ! read & process
-
-            if(ierr.eq.0) then
-              call byte_read  (buf,nwds,ierr)
-              call buf_to_xyz (buf,e,ifbswap,ierr2)
-            endif
-         endif
-
-      enddo
-      ierr = ierr + ierr2
-      call err_chk(ierr,'Error reading .re2 mesh. Abort. $')
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine bin_rd1_curve (ifbswap) ! v. 1 of curve side reader
-
-      include 'SIZE'
-      include 'TOTAL'
-      logical ifbswap
-      integer*8 ncurve8
-
-      integer e,eg,buf(55)
-      real rcurve
-
-      nwds = (2 + 1 + 5)*(wdsizi/4) !eg+iside+ccurve+curve(6,:,:) !only 5 in rea
-      len  = 4*nwds      ! 4 bytes / wd
-
-      if (nwds.gt.55.or.isize.gt.4) then
-         write(6,*)nid,' Error in bin_rd1_curve: buf size',nwds,isize
-         call exitt
-      endif
-
-      call nekgsync()
-
-      ierr = 0
-      len1 = 4
-      if (nid.eq.0) then  ! read & send/process
-
-         if(wdsizi.eq.8) then
-           call byte_read(rcurve,2,ierr)
-           if (ifbswap) call byte_reverse8(rcurve,2,ierr)
-           ncurve8 = rcurve
-         else
-           call byte_read(ncurve,1,ierr)
-           if (ifbswap) call byte_reverse(ncurve,1,ierr)
-           ncurve8 = ncurve
-         endif
-
-         if(ncurve8.ne.0) write(6,*) '  reading curved sides '
-         do k=1,ncurve8
-           if(ierr.eq.0) then
-              call byte_read(buf,nwds,ierr)
-              if(wdsizi.eq.8) then
-                if(ifbswap) call byte_reverse8(buf,nwds-2,ierr)
-                call copyi4(eg,buf(1),1)  !1,2
-              else
-                if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-                eg  = buf(1)
-              endif
-
-              mid = gllnid(eg)
-              if (mid.eq.0.and.ierr.eq.0) then
-                 call buf_to_curve(buf)
-              else
-                 if(ierr.eq.0) then
-                   call csend(mid,buf,len,mid,0)
-                 else
-                   goto 98
-                 endif
-              endif
-           else
-              goto 98
-           endif
-         enddo
-  98     call buf_close_out  ! notify all procs: no more data
-
-      else               ! wait for data from node 0
-
-         ncurve_mx = 12*nelt
-         do k=1,ncurve_mx+1   ! +1 to make certain we receive the close-out
-
-            call crecv(nid,buf,len)
-            if(wdsizi.eq.8) then 
-               call copyi4(ichk,buf(1),1)
-               if(ichk.eq.0) goto 99
-               call buf_to_curve(buf)
-            elseif (buf(1).eq.0) then
-               goto 99
-            else
-               call buf_to_curve(buf)
-            endif
-            
-         enddo
-   99    call buf_close_out
-
-      endif
-      call err_chk(ierr,'Error reading .re2 curved data. Abort.$')
-
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine bin_rd1_bc (cbl,bl,ifbswap) ! v. 1 of bc reader
-
-      include 'SIZE'
-      include 'TOTAL'
-      logical ifbswap
-
-      character*3 cbl(6,lelt)
-      real         bl(5,6,lelt)
-
-      integer e,eg,buf(55)
-      real rbc_max
-
-      nwds = (2 + 1 + 5)*(wdsizi/4)   ! eg + iside + cbc + bc(5,:,:)
-      len  = 4*nwds      ! 4 bytes / wd
-
-      if (nwds.gt.55.or.isize.gt.4) then
-         write(6,*) nid,' Error in bin_rd1_bc: buf size',nwds,isize
-         call exitt
-      endif
-
-      do e=1,nelt   ! fill up cbc w/ default
-      do k=1,6
-         cbl(k,e) = 'E  '
-      enddo
-      enddo
-
-      call nekgsync()
-      ierr=0
-      len1=4
-      if (nid.eq.0) then  ! read & send/process
-  
-         if(wdsizi.eq.8) then
-           call byte_read(rbc_max,2,ierr)
-           if (ifbswap) call byte_reverse8(rbc_max,2,ierr) ! last is char
-           nbc_max = rbc_max
-         else
-           call byte_read(nbc_max,1,ierr)
-           if (ifbswap) call byte_reverse(nbc_max,1,ierr) ! last is char
-         endif
-
-         if(nbc_max.ne.0) write(6,*) '  reading bc for ifld',ifield
-         do k=1,nbc_max
-c           write(6,*) k,' dobc1 ',nbc_max
-            if(ierr.eq.0) then
-               call byte_read(buf,nwds,ierr)
-               if(wdsizi.eq.8) then
-                 if (ifbswap) call byte_reverse8(buf,nwds-2,ierr)
-                 call copyi4(eg,buf(1),1) !1&2 of buf
-               else
-                 if (ifbswap) call byte_reverse(buf,nwds-1,ierr) ! last is char
-                 eg  = buf(1)
-               endif
-               mid = gllnid(eg)
-c              write(6,*) k,' dobc3 ',eg,mid
-
-               if (mid.eq.0.and.ierr.eq.0) then
-                   call buf_to_bc(cbl,bl,buf)
-               else
-c                  write(6,*) mid,' sendbc1 ',eg
-                   if(ierr.eq.0) then
-                     call csend(mid,buf,len,mid,0)
-                   else
-                     goto 98
-                   endif
-c                  write(6,*) mid,' sendbc2 ',eg
-               endif
-c              write(6,*) k,' dobc2 ',nbc_max,eg
-            else
-               goto 98
-            endif
-         enddo
-c        write(6,*) mid,' bclose ',eg,nbc_max
-  98     call buf_close_outv ! notify all procs: no more data
-
-      else               ! wait for data from node 0
-
-         nbc_max = 2*ldim*nelt
-         do k=1,nbc_max+1  ! Need one extra !
-
-c           write(6,*) nid,' recvbc1',k
-            call crecv(nid,buf,len)
-c           write(6,*) nid,' recvbc2',k,buf(1)
-
-            if(wdsizi.eq.8) then 
-               call copyi4(ichk,buf(1),1)
-               if(ichk.eq.0) goto 99
-               call buf_to_bc(cbl,bl,buf)
-            elseif (buf(1).eq.0) then
-                goto 99
-            else
-                call buf_to_bc(cbl,bl,buf)
-            endif
-            
-         enddo
-   99    call buf_close_outv
-
-      endif
-
-      call err_chk(ierr,'Error reading boundary data for re2. Abort.$')
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine buf_close_outv  ! this is the stupid O(P) formulation
-
-      include 'SIZE'
-      include 'PARALLEL'
-      integer*4 zero
-      real      rzero
-
-      len   = wdsizi
-      rzero = 0
-      zero  = 0
-c     write(6,*) nid,' bufclose'
-      if (nid.eq.0) then
-         do mid=1,np-1
-            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
-            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
-c           write(6,*) mid,' sendclose'
-         enddo
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      subroutine buf_close_out  ! this is the stupid O(P) formulation
-
-      include 'SIZE'
-      include 'PARALLEL'
-      integer*4 zero
-      real      rzero
-
-c     len  = 4
-      len   = wdsizi
-      zero = 0
-      rzero = 0
-      if (nid.eq.0) then
-         do mid=1,np-1
-            if(wdsizi.eq.8)call csend(mid,rzero,len,mid,0)
-            if(wdsizi.eq.4)call csend(mid, zero,len,mid,0)
-         enddo
-      endif
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine read_re2_hdr(ifbswap, ifverbose) ! open file & chk for byteswap
 
       include 'SIZE'
@@ -915,3 +631,4 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------

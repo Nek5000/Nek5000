@@ -355,8 +355,15 @@ c-----------------------------------------------------------------------
       integer nvi
       integer*8 nelgti,nelgvi
       integer*8 offs, offs0
+      integer*8 count_b
+      integer co2_h
+      integer np_io
 
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+      
       ierr = 0
+      np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       ifco2 = .false.
       ifmpiio = .true.
@@ -428,9 +435,9 @@ c-----------------------------------------------------------------------
       if (nelgvi .ne. nelgv)
      $   call exitti('nelgt for mesh/con differs!$',0)
 
-      if (ifco2 .and. ifmpiio) then
+      if (ifco2) then
         if (nid.eq.0) call byte_close(ierr)
-        call byte_open_mpi(confle,ifh,.true.,ierr)
+        call nek_file_open(nekcomm,confle,0,0,np_io,co2_h,ierr)
         offs0 = sizeof(hdr) + sizeof(test)
 
         call lim_chk(nelr*(nvi+1),nwk,'nelr ','nwk   ','read_con  ')
@@ -438,10 +445,10 @@ c-----------------------------------------------------------------------
         nelBr = igl_running_sum(nelr) - nelr
         offs  = offs0 + int(nelBr,8)*(nvi+1)*ISIZE
 
-        call byte_set_view(offs,ifh)
-        call byte_read_mpi(wk,(nvi+1)*nelr,-1,ifh,ierr)
+        count_b = int((nvi+1)*nelr,8)*4
+        call nek_file_read(co2_h,count_b,offs,wk,ierr)
         call err_chk(ierr,' Error while reading con file!$')
-        call byte_close_mpi(ifh,ierr)
+        call nek_file_close(co2_h,ierr)
         if (ifbswap) call byte_reverse(wk,(nvi+1)*nelr,ierr)
       endif
 
@@ -714,9 +721,16 @@ c-----------------------------------------------------------------------
       logical ifma2,ifmap
       integer e,eg,eg0,eg1
       integer itmp20(20)
+      integer ma2_h
+      integer*8 lma2off_b,count_b
+      integer np_io
 
+      common /nekmpi/ nnid,npp,nekcomm,nekgroup,nekreal
+      
       ierr = 0
       ifma2 = .false.
+      np_io = param(61)
+      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       if (nid.eq.0) then
          lfname = ltrunc(reafle,132) - 4
@@ -735,10 +749,11 @@ c-----------------------------------------------------------------------
       if(nid.eq.0) write(6,'(A,A)') ' Reading ', mapfle
       call err_chk(ierr,' Cannot find map file!$')
       call bcast(ifma2,lsize)
+      call bcast(mapfle,sizeof(mapfle))
       ierr = 0
 
       if (nid.eq.0) then
-         if (ifma2) then         
+         if (ifma2) then
             call byte_open(mapfle,ierr)
             if(ierr.ne.0) goto 100
 
@@ -771,6 +786,8 @@ c-----------------------------------------------------------------------
       if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
       call nekgsync
 
+      call nek_file_open(nekcomm,mapfle,0,0,np_io,ma2_h,ierr)
+      lma2off_b = 136
       if (nid.eq.0) then
          eg0 = 0
          do ipass=1,npass
@@ -778,7 +795,9 @@ c-----------------------------------------------------------------------
 
             if (ifma2) then
                nwds = (eg1 - eg0)*(mdw-1)
-               call byte_read(wk,nwds,ierr)
+               count_b = int(nwds,8)*4
+               call nek_file_read(ma2_h,count_b,lma2off_b,wk,ierr)
+               lma2off_b = lma2off_b+count_b
                if (ierr.ne.0) goto 200
                if (ifbswap) call byte_reverse(wk,nwds,ierr)
 
@@ -810,17 +829,29 @@ c-----------------------------------------------------------------------
 
          ntuple = m
 
-         if (ifma2) then
-            call byte_close(ierr)
-         else
+         if (.not.ifma2) then
             close(80)
          endif
-      elseif (nid.lt.npass) then
-         call msgwait(msg_id)
-         ntuple = ndw
       else
-         ntuple = 0
+         eg = 0
+         if (ifma2) then
+           do ipass=1,npass
+             eg1 = min(eg0+ndw,neli)
+             nwds = (eg1 - eg0)*(mdw-1)
+             count_b = 0
+             call nek_file_read(ma2_h,count_b,lma2off_b,wk,ierr)
+             lma2off_b = lma2off_b+int(nwds,8)*4
+           enddo
+         endif
+         if (nid.lt.npass) then
+           call msgwait(msg_id)
+           ntuple = ndw
+         else
+           ntuple = 0
+         endif
       endif
+      call nek_file_close(ma2_h,ierr)
+
 
       lng = isize*neli
       call bcast(gllnid,lng)
