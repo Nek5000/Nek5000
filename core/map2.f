@@ -397,28 +397,34 @@ c-----------------------------------------------------------------------
 
       ! read header
       if (nid.eq.0) then
-         if (ifco2) then
-            call byte_open(confle,ierr)
-            if(ierr.ne.0) goto 100
+        if (ifco2) then
+           call nek_file_open(MPI_COMM_NULL,confle,0,0,
+     $                        np_io,co2_h,ierr)
+           if(ierr.ne.0) goto 100
 
-            call blank(hdr,sizeof(hdr))
-            call byte_read(hdr,sizeof(hdr)/4,ierr)
-            if(ierr.ne.0) goto 100
+           call blank(hdr,sizeof(hdr))
+           offs = 0
+           call nek_file_read(co2_h,sizeof(hdr),offs,hdr,ierr)
+           offs = offs + sizeof(hdr)
+           if(ierr.ne.0) goto 100
 
-            read (hdr,'(a5)') version 
+           read (hdr,'(a5)') version 
 
-            if (version.eq.'#v002') then
-               read (hdr,*) version,nelgti,nelgvi,nvi
-            else
-               read (hdr,1) version,nelgti,nelgvi,nvi
-            endif
-            write (6,'(a,a80)') ' hdr:', hdr
+           if (version.eq.'#v002') then
+              read (hdr,*) version,nelgti,nelgvi,nvi
+           else
+              read (hdr,1) version,nelgti,nelgvi,nvi
+           endif
+           write (6,'(a,a128)') ' hdr:', hdr
 
-            call byte_read(test,1,ierr)
-            if(ierr.ne.0) goto 100
-            ifbswap = if_byte_swap_test(test,ierr)
-            if(ierr.ne.0) goto 100
-         endif
+           call nek_file_read(co2_h,sizeof(test),offs,test,ierr)
+           if(ierr.ne.0) goto 100
+           call nek_file_close(co2_h,ierr) 
+           if(ierr.ne.0) goto 100
+
+           ifbswap = if_byte_swap_test(test,ierr)
+           if(ierr.ne.0) goto 100
+        endif
       endif
 
    1  format(a5,3i12)
@@ -754,18 +760,24 @@ c-----------------------------------------------------------------------
 
       if (nid.eq.0) then
          if (ifma2) then
-            call byte_open(mapfle,ierr)
+            call nek_file_open(MPI_COMM_NULL,mapfle,0,0,
+     $                         np_io,ma2_h,ierr)
             if(ierr.ne.0) goto 100
 
             call blank(hdr,132)
-            call byte_read(hdr,132/4,ierr)
+            call nek_file_read(ma2_h,sizeof(hdr),int(0,8),hdr,ierr)
+            lma2off_b = sizeof(hdr)
             if(ierr.ne.0) goto 100
 
             read (hdr,1) version,neli,nnzi
     1       format(a5,2i12)
 
-            call byte_read(test,1,ierr)
+            call nek_file_read(ma2_h,sizeof(test),lma2off_b,test,ierr)
             if(ierr.ne.0) goto 100
+
+            call nek_file_close(ma2_h,ierr)
+            if(ierr.ne.0) goto 100
+
             ifbswap = if_byte_swap_test(test,ierr)
             if(ierr.ne.0) goto 100
          else

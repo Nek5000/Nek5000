@@ -50,12 +50,9 @@ c-----------------------------------------------------------------------
 
       call readp_re2_mesh (re2_h,ifbswap,ifxyz)
       call readp_re2_curve(re2_h,ifbswap,ifcur)
-      write(6,*) 'herereeeeeeeeee ', ibc, nfldt
       do ifield = ibc,nfldt
         call readp_re2_bc(cbc(1,1,ifield),bc(1,1,1,ifield),re2_h,
      &                    ifbswap,ifbc)
-        if (nek_file_eof(re2_h,ierr).gt.0) goto 80
-        if (ierr.gt.0)  goto 100
       enddo
 
   80  call nek_file_close(re2_h,ierr)
@@ -65,8 +62,6 @@ c-----------------------------------------------------------------------
       if(nio.eq.0) write(6,'(A,1(1g9.2),A,/)')
      &                   ' done :: read .re2 file   ',
      &                   etime_t, ' sec'
-
- 100  call err_chk(ierr,'Error nek_file_eof')
 
       return
       end
@@ -369,9 +364,7 @@ c-----------------------------------------------------------------------
       call nek_file_read(re2_h,count_b,lre2off_b,bufr,ierr)
       etime_s3 = dnekclock_sync() - etime0
 
-
       if(ierr.gt.0) goto 100
-
 
       ! pack buffer
       etime0 = dnekclock_sync()
@@ -560,10 +553,11 @@ c-----------------------------------------------------------------------
       character*132 fname
       equivalence (fname,fnami)
 
-      character*132 hdr
-      character*5 version
-      real*4      test
+      character*80 hdr
+      character*5  version
+      real*4       test
 
+      integer re2_h
       logical iffound
 
       ierr=0
@@ -580,9 +574,10 @@ c-----------------------------------------------------------------------
       call err_chk(ierr,' Cannot find re2 file!$')
 
       if (nid.eq.0) then
-         call byte_open(fname,ierr)
+         call nek_file_open(MPI_COMM_NULL,re2fle,0,0,1,re2_h,ierr)
          if(ierr.ne.0) goto 100
-         call byte_read(hdr,20,ierr)
+        
+         call nek_file_read(re2_h,sizeof(hdr),int(0,8),hdr,ierr)
          if(ierr.ne.0) goto 100
 
          read (hdr,'(a5)') version
@@ -609,12 +604,12 @@ c-----------------------------------------------------------------------
            endif
          endif
 
-         call byte_read(test,1,ierr)
+         call nek_file_read(re2_h,sizeof(test),int(sizeof(hdr),8),
+     $                      test,ierr)
          if(ierr.ne.0) goto 100
          ifbswap = if_byte_swap_test(test,ierr)
          if(ierr.ne.0) goto 100
-        
-         call byte_close(ierr)
+         call nek_file_close(re2_h,ierr) 
       endif
  
  100  call err_chk(ierr,'Error reading re2 header$')
