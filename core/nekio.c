@@ -150,7 +150,7 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
         nek_fh->agg_id = rank_node/ratio; 
       }
 
-#if 1 
+#if 0 
       {
         cb_nodes = 3;
         const int _cb_nodes = ceil((double)nek_fh->comm->np/cb_nodes);
