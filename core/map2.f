@@ -333,6 +333,7 @@ c solid elements
 c-----------------------------------------------------------------------
       subroutine read_con(wk,nwk,nelr,nv,ierr)
 
+      include 'mpif.h'
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -363,7 +364,6 @@ c-----------------------------------------------------------------------
       
       ierr = 0
       np_io = param(61)
-      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       ifco2 = .false.
       ifmpiio = .true.
@@ -707,6 +707,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine read_map(vertex,nlv,wk,mdw,ndw)
 
+      include 'mpif.h'
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -736,7 +737,6 @@ c-----------------------------------------------------------------------
       ierr = 0
       ifma2 = .false.
       np_io = param(61)
-      np_io = min(np_io,np)  ! Do not use more than P ranks
 
       if (nid.eq.0) then
          lfname = ltrunc(reafle,132) - 4

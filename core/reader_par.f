@@ -21,11 +21,6 @@ c
 
       call usrdat0
       
-      np_io = param(61)
-      np_io = max(1,np_io)
-      np_io = min(np_io,np)  ! Do not use more than P ranks
-      param(61) = np_io
-
       call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
@@ -79,7 +74,7 @@ C
 
       param(59) = 1    ! No fast operator eval
  
-      param(61) = min(100,np/10) ! number of aggregators
+      param(61) = 0    ! default number of aggregators
 
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary

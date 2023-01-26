@@ -22,7 +22,6 @@ c-----------------------------------------------------------------------
 !           not native to the .usr file - you must add it.
 !
       np_io = param(61)
-      np_io = min(np_io,np)  ! Do not use more than P ranks
 
                   ibc = 2
       if (ifflow) ibc = 1
@@ -543,6 +542,7 @@ c  1   format(2i8,i4,2x,a3,a4,i8)
 c-----------------------------------------------------------------------
       subroutine read_re2_hdr(ifbswap, ifverbose) ! open file & chk for byteswap
 
+      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
 

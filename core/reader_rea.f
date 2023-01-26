@@ -489,16 +489,9 @@ c     SET DEFAULT NUMBER OF AGGREGATOR
 !           not native to the .usr file - you must add it.
 !
  
-      np_io = min(100,np/10)
+      np_io = 0 
       if (param(61).gt.0) np_io = param(61)
-      np_io = max(1,np_io)
-      np_io = min(np_io,np)  ! Do not use more than P ranks
       param(61) = np_io
-      if (nid.eq.0) then
-        write(6,*) ' '
-        write(6,*) ' Number of ioranks :', np_io
-        write(6,*) ' '
-      endif
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6

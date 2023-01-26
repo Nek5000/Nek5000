@@ -14,17 +14,11 @@
 #include "gslib.h"
 #include "name.h"
 
-#define fNEK_File_open FORTRAN_UNPREFIXED(nek_file_open, NEK_FILE_OPEN)
-#define fNEK_File_read FORTRAN_UNPREFIXED(nek_file_read, NEK_FILE_READ)
-#define fNEK_File_write FORTRAN_UNPREFIXED(nek_file_write, NEK_FILE_WRITE)
-#define fNEK_File_close FORTRAN_UNPREFIXED(nek_file_close, NEK_FILE_CLOSE)
 
 #define READ 0
 #define WRITE 1
-#define MAX_NAME 132
 #define CB_BUFFER_SIZE (2<<23)
 
-// Error code
 #define NEKIO_RDERR_COUNT 1
 #define NEKIO_RDERR_WRONL 2
 #define NEKIO_RDERR_NONFL 3
@@ -44,30 +38,23 @@
 #define NEKIO_WRERR_MPIWA 5
 #define NEKIO_WRERR_NSUPP 6
 
-#define SWAP(a, b) \
-  temp = (a);      \
-  (a) = (b);       \
-  (b) = temp;
-
-
 typedef struct NEK_File_handle {
   char *name;
   int mpiio;
-  int cbnodes;
+  int agg_id;
+  int mode;
   struct comm *comm;
-
-  int agg_rank;
-  struct comm *aggcomm;
-
-  struct crystal *cr;
 
   MPI_File *mpifh;
   MPI_Info info;
-  int mode;
+
+  int agg_rank;
+  struct comm *aggcomm;
+  struct crystal *cr;
 
   FILE *file;
-  struct array *tarr;     // Array holding tuples (nektp)
-  struct array *io2parr;  // Array holding file blocks (nekfb)
+  struct array *tarr;
+  struct array *io2parr;
 } nekfh;
 
 typedef struct NEK_File_block {
@@ -79,8 +66,8 @@ typedef struct NEK_File_block {
 
 typedef struct NEK_File_tuple {
   uint proc;
-  long long int start;  // byte start of the file
-  long long int end;    // byte end of the file
+  long long int start;
+  long long int end;
 } nektp;
 
 static int handle_n = 0;
@@ -88,10 +75,10 @@ static int handle_max = 0;
 static nekfh **fhandle_arr = 0;
 static char tmp_buffer[CB_BUFFER_SIZE];
 
+
 int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amode,
                   int ifmpiio, int cb_nodes) {
   int rank;
-
 
   nekfh *nek_fh = (nekfh *)handle;
   nek_fh->name = filename;
@@ -123,32 +110,64 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
     comm_init(nek_fh->comm, comm_in);
     rank = nek_fh->comm->id;
 
-    MPI_Comm shmcomm, nodecomm;
-    MPI_Comm_split_type(nek_fh->comm->c, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shmcomm);
-
-    int shmrank;
-    MPI_Comm_rank(shmcomm, &shmrank);
-    MPI_Comm_split(nek_fh->comm->c, shmrank, 0, &nodecomm);
-
-    int num_nodes;
-    MPI_Comm_size(nodecomm, &num_nodes);
-    MPI_Comm_free(&shmcomm);
-    MPI_Comm_free(&nodecomm);
-    cb_nodes = (cb_nodes == 0) ? num_nodes : cb_nodes;
-    nek_fh->cbnodes = cb_nodes;
   }
 
   if (!ifmpiio && !single_proc) {
-    const int ratio = nek_fh->comm->np / nek_fh->cbnodes;
-    const int aggid = rank / ratio;
 
-    nek_fh->aggcomm = (struct comm*) malloc(sizeof(struct comm));
-    MPI_Comm aggcomm_mpi;
-    MPI_Comm_split(nek_fh->comm->c, aggid, 0, &aggcomm_mpi);
-    comm_init(nek_fh->aggcomm, aggcomm_mpi);
-   
-    if (nek_fh->aggcomm->id == 0) nek_fh->agg_rank = rank;
-    MPI_Bcast(&nek_fh->agg_rank, 1, MPI_INT, 0, nek_fh->aggcomm->c);
+    // map aggregator to compute nodes 
+    int num_nodes, rank_node;
+    {
+      MPI_Comm shmcomm;
+      MPI_Comm_split_type(nek_fh->comm->c, MPI_COMM_TYPE_SHARED,
+                          nek_fh->comm->id, MPI_INFO_NULL, &shmcomm);
+
+      int shmrank;
+      MPI_Comm_rank(shmcomm, &shmrank);
+      int color = MPI_UNDEFINED; 
+      if(shmrank == 0) color = 1;      
+
+      MPI_Comm nodecomm;
+      MPI_Comm_split(nek_fh->comm->c, color, nek_fh->comm->id, &nodecomm);
+      if(nodecomm != MPI_COMM_NULL) {
+        MPI_Comm_size(nodecomm, &num_nodes);
+        MPI_Comm_rank(nodecomm, &rank_node);
+      }
+      if(nodecomm != MPI_COMM_NULL) MPI_Comm_free(&nodecomm);
+
+      MPI_Bcast(&num_nodes, 1, MPI_INT, 0, shmcomm);
+      MPI_Bcast(&rank_node, 1, MPI_INT, 0, shmcomm);
+
+      MPI_Comm_free(&shmcomm);
+
+      if(cb_nodes == 0) {
+        cb_nodes = num_nodes;
+        nek_fh->agg_id = rank_node;
+      } else if(cb_nodes == 1) {
+        nek_fh->agg_id = 0;
+      } else {
+        const int _cb_nodes = ceil((double)num_nodes/cb_nodes);
+        const int ratio = (_cb_nodes < num_nodes) ? num_nodes/_cb_nodes : 1;
+        nek_fh->agg_id = rank_node/ratio; 
+      }
+
+#if 1 
+      {
+        cb_nodes = 3;
+        const int _cb_nodes = ceil((double)nek_fh->comm->np/cb_nodes);
+        const int ratio = (_cb_nodes < nek_fh->comm->np) ? nek_fh->comm->np/_cb_nodes : 1;
+        nek_fh->agg_id = rank/ratio; 
+        printf("cb_nodes %d nek_fh->agg_id %d\n", cb_nodes, nek_fh->agg_id);
+      }
+#endif
+ 
+      nek_fh->aggcomm = (struct comm*) malloc(sizeof(struct comm));
+      MPI_Comm aggcomm_mpi;
+      MPI_Comm_split(nek_fh->comm->c, nek_fh->agg_id, nek_fh->comm->id, &aggcomm_mpi);
+      comm_init(nek_fh->aggcomm, aggcomm_mpi);
+     
+      if (nek_fh->aggcomm->id == 0) nek_fh->agg_rank = rank;
+      MPI_Bcast(&nek_fh->agg_rank, 1, MPI_INT, 0, nek_fh->aggcomm->c);
+    }
 
     nek_fh->cr = (struct crystal*) malloc(sizeof(struct crystal));
     crystal_init(nek_fh->cr, nek_fh->aggcomm);
@@ -158,6 +177,7 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
   }
 
   if (ifmpiio) {
+
     char *value = (char *) malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
     MPI_Info_create(&nek_fh->info);
     MPI_Info_set(nek_fh->info, "cb_config_list", "*:1");
@@ -295,7 +315,7 @@ int NEK_File_read(void *handle, void *buf, long long int count,
       nektp *p = nek_fh->tarr->ptr;
       p[0].start = start_p;
       p[0].end = end_p;
-      p[0].proc = 0; // aggregator rank (always root of nek_fh->aggcomm.c)
+      p[0].proc = 0; // aggregator rank (always root of aggcomm)
       nek_fh->tarr->n = 1;
     }
     sarray_transfer(nektp, nek_fh->tarr, proc, 1, nek_fh->cr);
@@ -323,6 +343,9 @@ int NEK_File_read(void *handle, void *buf, long long int count,
       ierr = 0;
       if (rank == nek_fh->agg_rank) {
         ierr = fseek(nek_fh->file, start_b, SEEK_SET);
+#if 1
+        printf("fread on rank %d\n", rank);
+#endif
         fread(tmp_buffer, 1, nbyte_b, nek_fh->file);
       }
       ierr = (ierr || ferror(nek_fh->file) || feof(nek_fh->file));
@@ -393,7 +416,6 @@ int NEK_File_write(void *handle, void *buf, long long int count,
   }
 
   if (nek_fh->mpiio) {
-    // Use MPIIO
     ierr = (nek_fh->mode == MPI_MODE_RDONLY);
     MPI_Allreduce(MPI_IN_PLACE, &ierr, 1, MPI_INT, MPI_MAX, comm);
     if (ierr) {
@@ -423,55 +445,63 @@ int NEK_File_write(void *handle, void *buf, long long int count,
     }
 
   } else {
-    // TODO: parallel write
-    return NEKIO_WRERR_NSUPP;
+
+    printf("NEK_File_write: no MPI-IO mode currently not supported!");
+    exit(1);
   }
+
   return 0;
 }
 
 void NEK_File_close(void *handle, int *ierr) {
   nekfh *nek_fh = (nekfh *)handle;
-  int ferr, rank;
-  struct comm *c = nek_fh->comm;
 
-  rank = 0;
-  if(c != NULL)
-    rank = c->id;
+  int rank = 0;
+  if(nek_fh->comm != NULL)
+    rank = nek_fh->comm->id;
 
   if (nek_fh->mpiio) {
-    ferr = MPI_File_close(nek_fh->mpifh);
+
+    int ferr = MPI_File_close(nek_fh->mpifh);
     free(nek_fh->mpifh);
     if (ferr != MPI_SUCCESS) {
-      // collective call
-      if (rank == 0) {
+      if (rank == 0)
         printf("Nek_File_close() :: MPI_File_close failure!\n");
-      }
+
       *ierr = 1;
     }
+
   } else {
-    if (!nek_fh->file) {
+
+    if (!nek_fh->file)
       return;
-    }
 
     if (fclose(nek_fh->file)) {
-      if (rank == 0) {
+      if (rank == 0)
         printf("Nek_File_close() :: couldn't fclose file\n");
-      }
+
       *ierr = 1;
       return;
     }
+
+    if(nek_fh->cr) crystal_free(nek_fh->cr);
+    if(nek_fh->tarr) array_free(nek_fh->tarr);
+    if(nek_fh->io2parr) array_free(nek_fh->io2parr);
+    if(nek_fh->aggcomm) comm_free(nek_fh->aggcomm);
   }
 
-  if(nek_fh->cr) crystal_free(nek_fh->cr);
-  if(nek_fh->tarr) array_free(nek_fh->tarr);
-  if(nek_fh->io2parr) array_free(nek_fh->io2parr);
   if(nek_fh->comm) comm_free(nek_fh->comm);
-  if(nek_fh->aggcomm) comm_free(nek_fh->aggcomm);
 
   *ierr = 0;
 }
 
 // Fortran wrappers
+
+#define fNEK_File_open FORTRAN_UNPREFIXED(nek_file_open, NEK_FILE_OPEN)
+#define fNEK_File_read FORTRAN_UNPREFIXED(nek_file_read, NEK_FILE_READ)
+#define fNEK_File_write FORTRAN_UNPREFIXED(nek_file_write, NEK_FILE_WRITE)
+#define fNEK_File_close FORTRAN_UNPREFIXED(nek_file_close, NEK_FILE_CLOSE)
+
 void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio,
                     int *cb_nodes, int *handle, int *ierr, int nlen) {
   *ierr = 1;
@@ -483,10 +513,10 @@ void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio,
   }
   fhandle_arr[handle_n] = (nekfh *)tmalloc(nekfh, 1);
 
-  char fname[MAX_NAME + 1];
+  char *fname = (char*) calloc((nlen+1), sizeof(char));
   {
     int i;
-    strncpy(fname, filename, MAX_NAME);
+    strncpy(fname, filename, nlen);
     for (i = nlen - 1; i > 0; i--)
       if (fname[i] != ' ') break;
     fname[i + 1] = '\0';
@@ -494,6 +524,8 @@ void fNEK_File_open(const int *fcomm, char *filename, int *amode, int *ifmpiio,
   *ierr = NEK_File_open(c, fhandle_arr[handle_n], fname, *amode, *ifmpiio,
                         *cb_nodes);
   *handle = handle_n++;
+
+  free(fname);
 }
 
 void fNEK_File_read(int *handle, long long int *count, long long int *offset,
