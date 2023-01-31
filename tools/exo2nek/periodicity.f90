@@ -1,5 +1,5 @@
 !--------------------------------------------------------------------
-      subroutine set_periodicity
+      subroutine set_periodicity(f_or_s)
 ! handle 2d 3d mesh together
 ! set periodicity, using bucket sorting.
 ! 
@@ -41,6 +41,9 @@
 	  
       integer adjacent_ibucket(27),quickCheckPass
 
+      integer f_or_s,ih_start,ih_end
+
+
 ! boundary condition summary
       write(6,*) '******************************************************'
       write(6,*) 'Boundary info summary'
@@ -51,8 +54,15 @@
       write(6,*) '******************************************************'
  
  
+      if (f_or_s.eq.1) then ! for fluid 
+      write(6,*) 'For Fluid domain'
       write(6,*) 'Enter number of periodic boundary surface pairs:'
       read (5,*) nbc
+      elseif(f_or_s.eq.2) then ! for solid 
+      write(6,*) 'For Solid domain'
+      write(6,*) 'Enter number of periodic boundary surface pairs:'
+      read (5,*) nbc
+      endif
 	  
       !if(nbc.ne.0) then
       !write(6,*) 'Enter relative search tolerance (recommend 1e-3 for coarse mesh, 1e-5 for refine mesh):'
@@ -68,8 +78,14 @@
         write(6,*) 'input surface 1 and  surface 2  sideSet ID'
         read (5,*) ptags(1),ptags(2)
 		
+          ih_start = 1
+          ih_end = num_elem
+
+          if (f_or_s.eq.1) ih_end = eftot 
+          if (f_or_s.eq.2) ih_start = eftot+1
+		
           ipe = 0
-          do ihex = 1, num_elem
+          do ihex = ih_start, ih_end
             do iface = 1,2*num_dim
                if(bc(5,iface,ihex).eq.ptags(1)) then   
                 ipe = ipe + 1
@@ -81,7 +97,7 @@
           nipe(1) = ipe
 	  
           ipe = 0
-          do ihex = 1, num_elem
+          do ihex = ih_start, ih_end
             do iface = 1,2*num_dim
                if(bc(5,iface,ihex).eq.ptags(2)) then
                 ipe = ipe + 1
