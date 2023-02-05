@@ -14,7 +14,7 @@ clean:
 	@cd ./cgns ; ./install clean
 
 lib:
-	@cd cgns; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install
+	@cd cgns; env CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" FFLAGS="$(FFLAGS)" ./install
 
 t.o  		 : t.F90			;  $(FC) -c $(FFLAGS) $(INC) t.F90 
 module_global.o  : module_global.f90		;  $(FC) -c $(FFLAGS) module_global.f90 
