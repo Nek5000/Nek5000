@@ -230,7 +230,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine setup_int_neknek(dxf,dyf,dzf)
 
-      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'

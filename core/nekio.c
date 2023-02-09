@@ -1,14 +1,9 @@
-#include <ctype.h>
-#include <float.h>
-#include <limits.h>
-#include <math.h>
 #include <mpi.h>
-#include <stdint.h>
+#include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <time.h>
 
 #include "gslib.h"
@@ -53,27 +48,27 @@ typedef struct NEK_File_handle {
   struct crystal *cr;
 
   FILE *file;
-  struct array *tarr;
-  struct array *io2parr;
+  struct array *agg;
+  struct array *agg2c;
 } nekfh;
 
-typedef struct NEK_File_block {
+typedef struct file_block {
   uint proc;
   long long int offset;
-  long long int bytes;
+  long long int count;
   char buf[CB_BUFFER_SIZE];
-} nekfb;
+} fb;
 
-typedef struct NEK_File_tuple {
+typedef struct aggregator_child {
   uint proc;
   long long int start;
   long long int end;
-} nektp;
+} aggc;
 
 static int handle_n = 0;
 static int handle_max = 0;
 static nekfh **fhandle_arr = 0;
-static char tmp_buffer[CB_BUFFER_SIZE];
+static char fread_buffer[CB_BUFFER_SIZE];
 
 
 int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amode,
@@ -95,8 +90,8 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
   nek_fh->comm = NULL;
   nek_fh->aggcomm = NULL;
   nek_fh->cr = NULL;
-  nek_fh->tarr = NULL;
-  nek_fh->io2parr = NULL;
+  nek_fh->agg = NULL;
+  nek_fh->agg2c = NULL;
 
   if(single_proc) {
 
@@ -112,10 +107,10 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
 
   }
 
+
   if (!ifmpiio && !single_proc) {
 
     // map aggregator to compute nodes 
-    int num_nodes, rank_node;
     {
       MPI_Comm shmcomm;
       MPI_Comm_split_type(nek_fh->comm->c, MPI_COMM_TYPE_SHARED,
@@ -126,6 +121,8 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
       int color = MPI_UNDEFINED; 
       if(shmrank == 0) color = 1;      
 
+      int num_nodes; 
+      int rank_node;
       MPI_Comm nodecomm;
       MPI_Comm_split(nek_fh->comm->c, color, nek_fh->comm->id, &nodecomm);
       if(nodecomm != MPI_COMM_NULL) {
@@ -152,14 +149,14 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
 
 #if 0 
       {
-        cb_nodes = 3;
-        const int _cb_nodes = ceil((double)nek_fh->comm->np/cb_nodes);
+        cb_nodes = 2;
+        const int _cb_nodes = cb_nodes;
         const int ratio = (_cb_nodes < nek_fh->comm->np) ? nek_fh->comm->np/_cb_nodes : 1;
         nek_fh->agg_id = rank/ratio; 
-        printf("cb_nodes %d nek_fh->agg_id %d\n", cb_nodes, nek_fh->agg_id);
+        printf("cb_nodes %d ratio %d nek_fh->agg_id %d\n", cb_nodes, ratio, nek_fh->agg_id);
       }
 #endif
- 
+
       nek_fh->aggcomm = (struct comm*) malloc(sizeof(struct comm));
       MPI_Comm aggcomm_mpi;
       MPI_Comm_split(nek_fh->comm->c, nek_fh->agg_id, nek_fh->comm->id, &aggcomm_mpi);
@@ -172,8 +169,8 @@ int NEK_File_open(const MPI_Comm comm_in, void *handle, char *filename, int amod
     nek_fh->cr = (struct crystal*) malloc(sizeof(struct crystal));
     crystal_init(nek_fh->cr, nek_fh->aggcomm);
 
-    nek_fh->tarr = (struct array*) calloc(1, sizeof(struct array));
-    nek_fh->io2parr = (struct array*) calloc(1, sizeof(struct array)); 
+    nek_fh->agg = (struct array*) calloc(1, sizeof(struct array));
+    nek_fh->agg2c = (struct array*) calloc(1, sizeof(struct array)); 
   }
 
   if (ifmpiio) {
@@ -309,44 +306,42 @@ int NEK_File_read(void *handle, void *buf, long long int count,
     const long long int end_p = start_p + count;
 
     // Add aggregator childs
-    array_reserve(nektp, nek_fh->tarr, 1);
-    nek_fh->tarr->n = 0;
+    array_reserve(aggc, nek_fh->agg, 1);
+    nek_fh->agg->n = 0;
     if(count) {
-      nektp *p = nek_fh->tarr->ptr;
+      aggc *p = nek_fh->agg->ptr;
       p[0].start = start_p;
       p[0].end = end_p;
       p[0].proc = 0; // aggregator rank (always root of aggcomm)
-      nek_fh->tarr->n = 1;
+      nek_fh->agg->n = 1;
     }
-    sarray_transfer(nektp, nek_fh->tarr, proc, 1, nek_fh->cr);
-    const int nchilds_agg = nek_fh->tarr->n;
+    sarray_transfer(aggc, nek_fh->agg, proc, 1, nek_fh->cr);
+    const int nchilds_agg = nek_fh->agg->n;
 
     // Determine byte to read for each aggregator
-    long long int nbyte;
-    MPI_Allreduce(&count, &nbyte, 1, MPI_LONG_LONG_INT, MPI_SUM,
+    long long int count_agg;
+    MPI_Allreduce(&count, &count_agg, 1, MPI_LONG_LONG_INT, MPI_SUM,
                   nek_fh->aggcomm->c);
 
     // read + distribute data in chunks from aggreator to consumer
-    int num_pass = (nbyte + CB_BUFFER_SIZE - 1) / CB_BUFFER_SIZE;
-    MPI_Bcast(&num_pass, 1, MPI_INT, 0, nek_fh->aggcomm->c);
+    int num_b = (count_agg + CB_BUFFER_SIZE - 1) / CB_BUFFER_SIZE;
+    MPI_Bcast(&num_b, 1, MPI_INT, 0, nek_fh->aggcomm->c);
 
     long long int chk_sum_userbuf = 0;
-    for (int n_pass = 0; n_pass < num_pass; ++n_pass) {
-      long long int nbyte_b = (n_pass < num_pass - 1)
+
+    for (int block = 0; block < num_b; ++block) {
+      long long int count_b = (block < num_b - 1)
                               ? CB_BUFFER_SIZE
-                              : nbyte - n_pass * CB_BUFFER_SIZE;
-      MPI_Bcast(&nbyte_b, 1, MPI_LONG_LONG_INT, 0, nek_fh->aggcomm->c);
-      long long int start_b = start_p + n_pass * CB_BUFFER_SIZE;
+                              : count_agg - block * CB_BUFFER_SIZE;
+      MPI_Bcast(&count_b, 1, MPI_LONG_LONG_INT, 0, nek_fh->aggcomm->c);
+      long long int start_b = start_p + block * CB_BUFFER_SIZE;
       MPI_Bcast(&start_b, 1, MPI_LONG_LONG_INT, 0, nek_fh->aggcomm->c);
-      long long int end_b = start_b + nbyte_b;
+      long long int end_b = start_b + count_b;
 
       ierr = 0;
       if (rank == nek_fh->agg_rank) {
         ierr = fseek(nek_fh->file, start_b, SEEK_SET);
-#if 1
-        printf("fread on rank %d\n", rank);
-#endif
-        fread(tmp_buffer, 1, nbyte_b, nek_fh->file);
+        fread(fread_buffer, 1, count_b, nek_fh->file);
       }
       ierr = (ierr || ferror(nek_fh->file) || feof(nek_fh->file));
       MPI_Allreduce(MPI_IN_PLACE, &ierr, 1, MPI_INT, MPI_MAX,
@@ -356,38 +351,36 @@ int NEK_File_read(void *handle, void *buf, long long int count,
       }
 
       // Distribute chunk to matching childs
-      array_reserve(nekfb, nek_fh->io2parr, nchilds_agg);
+      array_reserve(fb, nek_fh->agg2c, nchilds_agg);
       int nr = 0;
       for (int k = 0; k < nchilds_agg; ++k) {
-        nektp *child = nek_fh->tarr->ptr;
+        aggc *child = nek_fh->agg->ptr;
 
         // chunk overlaps (partly or completely) with child
         if (start_b <= child[k].end && child[k].start <= end_b) {
-          const long long int sid =
+          const size_t idx_s =
               (child[k].start < start_b) ? start_b : child[k].start;
-          const long long int eid =
+          const size_t idx_e =
               (child[k].end > end_b) ? end_b : child[k].end;
 
-          nekfb *s = nek_fh->io2parr->ptr;
+          fb *s = nek_fh->agg2c->ptr;
           s[nr].proc = child[k].proc;
-          s[nr].offset = sid;
-          s[nr].bytes = eid - sid;
+          s[nr].offset = idx_s;
+          s[nr].count = idx_e - idx_s;
 
-          const long long int idx = s[nr].offset - start_b;
-          memcpy(s[nr].buf, tmp_buffer + idx, s[nr].bytes);
-
+          memcpy(s[nr].buf, fread_buffer + idx_s - start_b, idx_e - idx_s);
           nr++;
         }
       }
-      nek_fh->io2parr->n = nr;
-      sarray_transfer(nekfb, nek_fh->io2parr, proc, 1, nek_fh->cr);
+      nek_fh->agg2c->n = nr;
+      sarray_transfer(fb, nek_fh->agg2c, proc, 1, nek_fh->cr);
 
       // copy back into user buffer
-      for (int k = 0; k < nek_fh->io2parr->n; k++) {
-        nekfb *s = nek_fh->io2parr->ptr;
-        chk_sum_userbuf += s[k].bytes;
-        const long long int idx = s[k].offset - start_p;
-        memcpy(buf + idx, s[k].buf, s[k].bytes);
+      for (int k = 0; k < nek_fh->agg2c->n; k++) {
+        fb *s = nek_fh->agg2c->ptr;
+        chk_sum_userbuf += s[k].count;
+        const size_t offset = s[k].offset - start_p;
+        memcpy(buf + offset, s[k].buf, s[k].count);
       }
     }
 
@@ -485,8 +478,8 @@ void NEK_File_close(void *handle, int *ierr) {
     }
 
     if(nek_fh->cr) crystal_free(nek_fh->cr);
-    if(nek_fh->tarr) array_free(nek_fh->tarr);
-    if(nek_fh->io2parr) array_free(nek_fh->io2parr);
+    if(nek_fh->agg) array_free(nek_fh->agg);
+    if(nek_fh->agg2c) array_free(nek_fh->agg2c);
     if(nek_fh->aggcomm) comm_free(nek_fh->aggcomm);
   }
 
