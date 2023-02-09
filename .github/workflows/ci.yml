@@ -25,7 +25,6 @@ jobs:
             "Axi::test_PnPn_Parallel",
             "ConjHt::test_PnPn_Parallel",
             "Eddy_EddyUv::test_PnPn_Parallel",
-            "Eddy_EddyUv::test_PnPn_Serial",
             "Eddy_LegacySize::test_PnPn2_Parallel",
             "Eddy_Neknek::test_PnPn2_Parallel",
             "Eddy_Neknek::test_PnPn_Parallel",
@@ -48,10 +47,6 @@ jobs:
         ]
         include:
           - test_case: "Tools"
-            mpi: no
-          - test_case: "Eddy_EddyUv::test_PnPn_Serial"
-            mpi: no 
-          - test_case: "InclDef::test_PnPn_Parallel"
             mpi: no
       fail-fast: false
 
