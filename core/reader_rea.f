@@ -12,6 +12,7 @@ C
       INCLUDE 'CTIMER'
 
       character*132 string(100)
+      integer np_io
 
       VNEKTON = 3 ! dummy not really used anymore
 
@@ -479,6 +480,18 @@ c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
                 ! 1 use original 2 level scheme
       param(44) = 0 ! base top-level additive Schwarz on restrictions of E
                 ! 1 base top-level additive Schwarz on restrictions of A
+
+c     SET DEFAULT NUMBER OF AGGREGATOR
+
+!
+!     NOTE: When using .par file, p61 can be redefined only by 
+!           calling usrdat0() from the .usr file.  usrdat0() is
+!           not native to the .usr file - you must add it.
+!
+ 
+      np_io = 0 
+      if (param(61).gt.0) np_io = param(61)
+      param(61) = np_io
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
@@ -1164,5 +1177,5 @@ C
       NOBJ=0
  
       return
-      END
-
+      end
+c-----------------------------------------------------------------------

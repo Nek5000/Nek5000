@@ -36,7 +36,7 @@ PPS_C = $(patsubst %,-D%,$(PPS))
 
 # CORE##########################################################################
 CORE = drive1.o drive2.o \
-plan5.o \
+plan5.o nekio.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
@@ -228,6 +228,7 @@ $(OBJDIR)/crs_amg.o          :$S/core/crs_amg.c;           $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PARRSB_IFLAGS) $< -o $@
+$(OBJDIR)/nekio.o          :$S/core/nekio.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;	     $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@

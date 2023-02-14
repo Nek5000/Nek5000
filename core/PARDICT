@@ -4,7 +4,7 @@ c     Note: Keys have to be in captial letters
 c
       integer PARDICT_NKEYS
 
-      parameter(PARDICT_NKEYS = 115)
+      parameter(PARDICT_NKEYS = 118)
 
       character*132 pardictkey(PARDICT_NKEYS)
       data
@@ -114,10 +114,12 @@ c
      &  pardictkey(107) / 'GENERAL:MAXNUMSESSIONS' /
      &  pardictkey(108) / 'GENERAL:MAXNUMELEMENTS' /
      &  pardictkey(109) / 'GENERAL:MAXNUMHISTORYPOINTS' /
-     &  pardictkey(110)/ 'GENERAL:FILTERMODES' /
-     &  pardictkey(111)/ 'PRESSURE:SOLVER' /
-     &  pardictkey(112)/ 'MESH:PARTITIONER' /
-     &  pardictkey(113)/ 'MESH:CONNECTIVITYTOL' /
-     &  pardictkey(114)/ 'MESH:NEWRE2READER' /
-     &  pardictkey(115)/ 'SCALAR%%:ADVECTION' /
-
+     &  pardictkey(110) / 'GENERAL:FILTERMODES' /
+     &  pardictkey(111) / 'PRESSURE:SOLVER' /
+     &  pardictkey(112) / 'MESH:PARTITIONER' /
+     &  pardictkey(113) / 'MESH:CONNECTIVITYTOL' /
+     &  pardictkey(114) / 'MESH:NEWRE2READER' /
+     &  pardictkey(115) / 'SCALAR%%:ADVECTION' /
+     &  pardictkey(116) / 'GENERAL:CONSTFLOWRATE' /
+     &  pardictkey(117) / 'GENERAL:MEANVELOCITY' /
+     &  pardictkey(118) / 'GENERAL:MEANVOLUMETRICFLOW' /

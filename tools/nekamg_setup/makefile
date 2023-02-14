@@ -10,7 +10,7 @@ nekamg_setup: amg_setup.o
 	$(CC) -DHAVE_CONFIG_H -DHYPRE_SEQUENTIAL -DHYPRE_TIMING $(CFLAGS) -I./hypre/include -c $<
 
 lib:
-	@cd hypre; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install
+	@cd hypre; env CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" FFLAGS="$(FFLAGS)" ./install
 
 clean:
 	@rm -rf amg_setup *.o hypre/lib hypre/include hypre/hypre*
