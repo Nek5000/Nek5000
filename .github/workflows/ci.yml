@@ -43,7 +43,9 @@ jobs:
             "chan2d::test_PnPn_Parallel",
             "eddy_mv::test_PnPn_Parallel",
             "lpm_one::test_PnPn_Parallel",
-            "lpm_two::test_PnPn_Parallel" 
+            "lpm_two::test_PnPn_Parallel",
+	    "RANSChannel::test_Std_ktau",
+	    "RANSChannel::test_Reg_komega"	 
         ]
         include:
           - test_case: "Tools"

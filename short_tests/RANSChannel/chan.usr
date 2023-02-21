@@ -1,0 +1,234 @@
+#define RANSMODELID uparam(1)
+C     
+C  USER SPECIFIED ROUTINES: 
+C
+C     - boundary conditions 
+C     - initial conditions  
+C     - variable properties 
+C     - forcing function for fluid (f)
+C     - forcing function for passive scalar (q)
+C     - general purpose routine for checking errors etc.        
+C
+c-----------------------------------------------------------------------
+      include "experimental/rans_komg.f"
+      include "experimental/rans_wallfunctions.f"
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer ix,iy,iz,e,eg
+      real rans_mut,rans_mutsk,rans_mutso,rans_turbPrandtl
+      real mu_t,Pr_t
+
+      e = gllel(eg)
+
+      Pr_t=rans_turbPrandtl()
+      mu_t=rans_mut(ix,iy,iz,e)
+
+      utrans = cpfld(ifield,2)
+      if(ifield.eq.1) then
+        udiff = cpfld(ifield,1)+mu_t
+      elseif(ifield.eq.2) then
+        udiff = cpfld(ifield,1)+mu_t*cpfld(ifield,2)/(Pr_t*cpfld(1,2))
+      elseif(ifield.eq.3) then  !use rho and mu from field 1
+        udiff = cpfld(1,1)+rans_mutsk(ix,iy,iz,e)
+      elseif(ifield.eq.4) then  !use rho and mu from field 1
+        udiff = cpfld(1,1)+rans_mutso(ix,iy,iz,e)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf(ix,iy,iz,eg) ! set acceleration term
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+c
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+c
+      integer ix,iy,iz,e,eg
+
+c     e = gllel(eg)
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,ieg)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      common /rans_usr/ ifld_k, ifld_omega, m_id
+      integer ifld_k,ifld_omega, m_id
+
+      real rans_kSrc,rans_omgSrc
+     $   , rans_kDiag,rans_omgDiag
+
+      integer ie,ix,iy,iz,ieg
+      ie = gllel(ieg)
+
+      if (ifield.eq.2) then
+        qvol = 0.0 
+        avol = 0.0
+      elseif (ifield.eq.ifld_k) then
+        qvol = rans_kSrc  (ix,iy,iz,ie)
+        avol = rans_kDiag (ix,iy,iz,ie)
+      elseif (ifield.eq.ifld_omega) then
+        qvol = rans_omgSrc (ix,iy,iz,ie)
+        avol = rans_omgDiag(ix,iy,iz,ie)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+c
+      integer ix,iy,iz,iside,e,eg
+      e = gllel(eg)
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,eg)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer ix,iy,iz,e,eg
+
+      e = gllel(eg)
+
+      ux   = 1.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      if(ifield.eq.3) temp = 0.01
+      if(ifield.eq.4) temp = 0.2
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk()
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer bIDs(1),iobj_wall
+      save iobj_wall, bIDs
+
+      integer icalld
+      save icalld
+      data icalld /0/
+
+      real tw, u_tau
+      real x0(3)
+      data x0 /0.0, 1.0, 0.0/
+
+      integer n
+      
+      n= lx1*ly1*lz1*nelv
+
+      if (icalld.eq.0) then
+        bIDs(1) = 1
+        call create_obj(iobj_wall,bIDs,1)
+        icalld = 1
+      endif
+      
+      if(mod(istep,100).eq.0)then
+         call torque_calc(1.0,x0,.false.,.false.)
+         tw = dragx(iobj_wall)/(glmax(xm1,n)-glmin(xm1,n))
+         u_tau = sqrt(tw)
+         if (nid.eq.0) write(6,*)'Timestep:',istep,'time:',
+     $        time,'u_tau:', u_tau
+      endif
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat   ! This routine to modify element vertices
+      implicit none
+      include 'SIZE'      ! _before_ mesh is generated, which 
+      include 'TOTAL'     ! guarantees GLL mapping of mesh.
+
+      param(54) =-1
+      param(55) = 1.0
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real wd
+      common /walldist/ wd(lx1,ly1,lz1,lelv)
+
+      common /rans_usr/ ifld_k, ifld_omega, m_id
+      integer ifld_k,ifld_omega, m_id
+
+      integer w_id,imid,i
+      real coeffs(30) !array for passing your own coeffs
+      logical ifcoeffs
+
+      integer iel,ifc
+      
+      ifld_k     = 3 !address of tke equation in t array
+      ifld_omega = 4 !address of omega equation in t array
+      ifcoeffs=.false. !set to true to pass your own coeffs
+
+C     Supported models:
+      m_id = RANSMODELID
+c      m_id = 0 !regularized standard k-omega (no wall functions)
+c      m_id = 1 !regularized low-Re k-omega (no wall functions)
+c      m_id = 2 !regularized standard k-omega SST (no wall functions)
+c      m_id = 3 !non-regularized standard k-omega (wall functions)
+c      m_id = 4                  !non-regularized standard k-tau
+c      m_id = 5 !non-regularized low Re k-tau 
+c      m_id = 6 !non-regularized standard k-tau SST
+
+C     Wall distance function:
+c     use w_id = 2 for wallfunctions      
+c      w_id = 0                  ! user specified
+      w_id = 1 ! cheap_dist (path to wall, may work better for periodic boundaries)
+c      w_id = 2 ! distf (coordinate difference, provides smoother function)
+
+      call rans_init(ifld_k,ifld_omega,ifcoeffs,coeffs,w_id,wd,m_id)
+
+      do iel=1,nelt
+      do ifc=1,2*ndim
+         if (cbc(ifc,iel,1) .eq. 'W  ') boundaryID(ifc,iel) = 1
+      enddo
+      enddo
+      
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3()  ! This routine to modify mesh coordinates
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
