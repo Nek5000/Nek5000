@@ -203,6 +203,9 @@ else
      export CFLAGS="${NEK_CFLAGS}"
      export CFLAGS+=" ${US}"
      export CFLAGS+=" ${BIGMEM}"
+     if [ "$TOOL" == "cgns2nek" ]; then
+        export FFLAGS+=" -fallow-argument-mismatch"
+     fi
      if [ "$TOOL" == "exo2nek" ]; then
         export FFLAGS+=" ${R8}"
      fi

@@ -33,6 +33,7 @@
 #define byte_reverse     FORTRAN_NAME(byte_reverse,     BYTE_REVERSE    )
 #define byte_reverse8    FORTRAN_NAME(byte_reverse8,    BYTE_REVERSE8   )
 #define byte_open        FORTRAN_NAME(byte_open,        BYTE_OPEN       )
+#define byte_seek        FORTRAN_NAME(byte_seek,        BYTE_SEEK       )
 #define byte_close       FORTRAN_NAME(byte_close,       BYTE_CLOSE      )
 #define byte_rewind      FORTRAN_NAME(byte_rewind,      BYTE_REWIND     )
 #define byte_read        FORTRAN_NAME(byte_read,        BYTE_READ       )
@@ -157,6 +158,32 @@ void byte_rewind()
 
   rewind(fp);
 }
+
+void byte_seek(int *n,int *ierr)
+{
+  int flags;
+  mode_t mode;
+
+  if (*n<0)
+    {printf("byte_seek() :: n must be positive\n"); *ierr=1; return;}
+
+  if (!fp)
+  {
+     if (!(fp=fopen(name,"rb")))
+     {
+        printf("%s\n",name);
+        printf("byte_seek() :: fopen failure2!\n");
+        *ierr=1;
+        return;
+     }
+     flag=READ;
+  }
+
+  fseek(fp,(*n)*sizeof(float),SEEK_SET);
+  *ierr=0;
+}
+
+
 
 
 void byte_write(float *buf, int *n,int *ierr)

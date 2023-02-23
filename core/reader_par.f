@@ -10,6 +10,7 @@ C
       INCLUDE 'CTIMER'
 c
       logical ifbswap
+      integer np_io
 
       call setDefaultParam
 
@@ -19,7 +20,7 @@ c
       call bcastParam
 
       call usrdat0
-
+      
       call read_re2_hdr(ifbswap, .true.)
 
       call chkParam
@@ -75,6 +76,8 @@ C
       param(55) = 0    ! meanVelocity if param(55)<0 else meanVolumentricFlow
 
       param(59) = 1    ! No fast operator eval
+ 
+      param(61) = 0    ! default number of aggregators
 
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
