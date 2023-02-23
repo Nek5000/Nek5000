@@ -201,8 +201,8 @@
 
            length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
            ssa(1) = ssa(1) + length
-           ssc(1,1) = fpxyz(1,1)*length
-           ssc(2,1) = fpxyz(2,1)*length
+           ssc(1,1) = ssc(1,1) + fpxyz(1,1)*length
+           ssc(2,1) = ssc(2,1) + fpxyz(2,1)*length
 
          else
            do ifnode = 1,4
@@ -253,8 +253,8 @@
 
            length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
            ssa(2) = ssa(2) + length
-           ssc(1,2) = fpxyz(1,1)*length
-           ssc(2,2) = fpxyz(2,1)*length
+           ssc(1,2) = ssc(1,2) + fpxyz(1,1)*length
+           ssc(2,2) = ssc(2,2) + fpxyz(2,1)*length
     
          else
            do ifnode = 1,4
