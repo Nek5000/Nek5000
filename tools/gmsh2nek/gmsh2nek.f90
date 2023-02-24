@@ -1904,7 +1904,6 @@
       if(num_dim.eq.2) then
       deallocate(node_xyz,node_quad,node_line)
       deallocate(quad_array,line_array)
-      deallocate(r_or_l)
       endif
 
       if(num_dim.eq.3) then
