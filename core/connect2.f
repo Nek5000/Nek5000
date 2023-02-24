@@ -131,6 +131,8 @@ C     End of input data, close read file.
         enddo
       endif 
 
+      if(parfound) call setbcpar
+
       return
       END
 c-----------------------------------------------------------------------
