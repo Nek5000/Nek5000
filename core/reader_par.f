@@ -969,7 +969,7 @@ c read BC map for temperature/scalars
           ifnd = 0
         else if(ifnd.ge.1.and.nbctype.eq.0) then
           nbctype=ifnd
-        else if(ifnd.ne.nbctype) then
+        else if(ifnd.ge.1.and.ifnd.ne.nbctype) then
           write(6,'(3a,2i3)')
      &                          "Number of BCs specified for ",trim(txt)
      &              ," in par does not match other fields!",ifnd,nbctype
@@ -977,47 +977,49 @@ c read BC map for temperature/scalars
           ifnd=0
         endif
 
-        if(ifnd.ge.1) ifbmap(ifld)=.true.
-        do j = 1,nbctype
-          call finiparser_getToken(c_out,j)
-          write(cb3,'(a3)') c_out
-          call capit(c_out,132)
-          if(isvalidcbct(cb3)) then
-            cbc_bmap(j,ifld)=cb3
-          elseif(index(c_out,'AXIS').eq.1) then
-            cbc_bmap(j,ifld)='A  '
-          elseif(index(c_out,'CONVECTION').eq.1) then
-            cbc_bmap(j,ifld)='c  '
-          elseif(index(c_out,'DIRICHLET').eq.1) then
-            cbc_bmap(j,ifld)='t  '
-          elseif(index(c_out,'FLUX').eq.1) then
-            cbc_bmap(j,ifld)='f  '
-          elseif(index(c_out,'INLET').eq.1) then
-            cbc_bmap(j,ifld)='t  '
-          elseif(index(c_out,'INSULATED').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          elseif(index(c_out,'INTERPOLATED').eq.1) then
-            cbc_bmap(j,ifld)='int'
-          elseif(index(c_out,'NEUMANN').eq.1) then
-            cbc_bmap(j,ifld)='f  '
-          elseif(index(c_out,'NONE').eq.1) then
-            cbc_bmap(j,ifld)='   '
-          elseif(index(c_out,'OUTLET').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          elseif(index(c_out,'PERIODIC').eq.1) then
-            cbc_bmap(j,ifld)='P  '
-          elseif(index(c_out,'RADIATION').eq.1) then
-            cbc_bmap(j,ifld)='r  '
-          elseif(index(c_out,'ROBIN').eq.1) then
-            cbc_bmap(j,ifld)='c  '
-          elseif(index(c_out,'SYMMETRY').eq.1) then
-            cbc_bmap(j,ifld)='I  '
-          else
-            write(6,'(a,a,a)')"Invalid ",txt,
+        if(ifnd.ge.1) then
+          ifbmap(ifld)=.true.
+          do j = 1,nbctype
+            call finiparser_getToken(c_out,j)
+            write(cb3,'(a3)') c_out
+            call capit(c_out,132)
+            if(isvalidcbct(cb3)) then
+              cbc_bmap(j,ifld)=cb3
+            elseif(index(c_out,'AXIS').eq.1) then
+              cbc_bmap(j,ifld)='A  '
+            elseif(index(c_out,'CONVECTION').eq.1) then
+              cbc_bmap(j,ifld)='c  '
+            elseif(index(c_out,'DIRICHLET').eq.1) then
+              cbc_bmap(j,ifld)='t  '
+            elseif(index(c_out,'FLUX').eq.1) then
+              cbc_bmap(j,ifld)='f  '
+            elseif(index(c_out,'INLET').eq.1) then
+              cbc_bmap(j,ifld)='t  '
+            elseif(index(c_out,'INSULATED').eq.1) then
+              cbc_bmap(j,ifld)='I  '
+            elseif(index(c_out,'INTERPOLATED').eq.1) then
+              cbc_bmap(j,ifld)='int'
+            elseif(index(c_out,'NEUMANN').eq.1) then
+              cbc_bmap(j,ifld)='f  '
+            elseif(index(c_out,'NONE').eq.1) then
+              cbc_bmap(j,ifld)='   '
+            elseif(index(c_out,'OUTLET').eq.1) then
+              cbc_bmap(j,ifld)='I  '
+            elseif(index(c_out,'PERIODIC').eq.1) then
+              cbc_bmap(j,ifld)='P  '
+            elseif(index(c_out,'RADIATION').eq.1) then
+              cbc_bmap(j,ifld)='r  '
+            elseif(index(c_out,'ROBIN').eq.1) then
+              cbc_bmap(j,ifld)='c  '
+            elseif(index(c_out,'SYMMETRY').eq.1) then
+              cbc_bmap(j,ifld)='I  '
+            else
+              write(6,'(a,a,a)')"Invalid ",txt,
      &                             " boundary type in par: ",trim(c_out)
-            ierr=1
-          endif
-        enddo
+              ierr=1
+            endif
+          enddo
+        endif
       enddo
 
 c set properties
