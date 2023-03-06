@@ -895,8 +895,9 @@ c read BoundaryID map
         ierr = 1
         ifnd = 0
       else if(ifnd.ge.1) then
-        nbctype=ifnd
-        do i = 1,ifnd
+        if(nint(param(32)).eq.0) param(32) = 1.0 ! stop the re2 reader from looking for other fields
+        nbctype=ifnd                             ! nelgt > nelgv forces the re2 reader to read field 2 BCs
+        do i = 1,ifnd                            ! not sure if we should rely on that...
           call finiparser_getToken(c_out,i)
           read(c_out,'(i132)') cbc_imap(i)
         enddo
@@ -919,39 +920,42 @@ c read BC map for velocity
         ifnd = 0
       endif
 
-      if(ifnd.ge.1) ifbmap(1)=.true.
-      do i = 1,nbctype
-        call finiparser_getToken(c_out,i)
-        write(cb3,'(a3)')c_out
-        call capit(c_out,132)
-        if(isvalidcbc(cb3))then
-          cbc_bmap(i,1)=cb3
-        elseif(index(c_out,'AXIS').eq.1) then
-          cbc_bmap(i,1)='A  '
-        elseif(index(c_out,'DIRICHLET').eq.1) then
-          cbc_bmap(i,1)='v  '
-        elseif(index(c_out,'INLET').eq.1) then
-          cbc_bmap(i,1)='v  '
-        elseif(index(c_out,'INTERPOLATED').eq.1) then
-          cbc_bmap(i,1)='int'
-        elseif(index(c_out,'NONE').eq.1) then  !useful for conjugate ht
-          cbc_bmap(i,1)='   '
-        elseif(index(c_out,'OUTLET').eq.1) then
-          cbc_bmap(i,1)='O  '
-        elseif(index(c_out,'PERIODIC').eq.1) then
-          cbc_bmap(i,1)='P  '
-        elseif(index(c_out,'PRESSURE').eq.1) then
-          cbc_bmap(i,1)='o  '
-        elseif(index(c_out,'SYMMETRY').eq.1) then
-          cbc_bmap(i,1)='SYM'
-        elseif(index(c_out,'WALL').eq.1) then
-          cbc_bmap(i,1)='W  '
-        else
-          write(6,'(a,a)') "Invalid velocity boundary type in par: ",
+      if(ifnd.ge.1)then
+        if(nint(param(32)).eq.0) param(32) = 1.0
+        ifbmap(1)=.true.
+        do i = 1,nbctype
+          call finiparser_getToken(c_out,i)
+          write(cb3,'(a3)')c_out
+          call capit(c_out,132)
+          if(isvalidcbc(cb3))then
+            cbc_bmap(i,1)=cb3
+          elseif(index(c_out,'AXIS').eq.1) then
+            cbc_bmap(i,1)='A  '
+          elseif(index(c_out,'DIRICHLET').eq.1) then
+            cbc_bmap(i,1)='v  '
+          elseif(index(c_out,'INLET').eq.1) then
+            cbc_bmap(i,1)='v  '
+          elseif(index(c_out,'INTERPOLATED').eq.1) then
+            cbc_bmap(i,1)='int'
+          elseif(index(c_out,'NONE').eq.1) then  !useful for conjugate ht
+            cbc_bmap(i,1)='   '
+          elseif(index(c_out,'OUTLET').eq.1) then
+            cbc_bmap(i,1)='O  '
+          elseif(index(c_out,'PERIODIC').eq.1) then
+            cbc_bmap(i,1)='P  '
+          elseif(index(c_out,'PRESSURE').eq.1) then
+            cbc_bmap(i,1)='o  '
+          elseif(index(c_out,'SYMMETRY').eq.1) then
+            cbc_bmap(i,1)='SYM'
+          elseif(index(c_out,'WALL').eq.1) then
+            cbc_bmap(i,1)='W  '
+          else
+            write(6,'(a,a)') "Invalid velocity boundary type in par: ",
      &                                                       trim(c_out)
-          ierr=1
-        endif
-      enddo
+            ierr=1
+          endif
+        enddo
+      endif
 
 c read BC map for temperature/scalars
       do i = 1,ldimt
@@ -978,6 +982,7 @@ c read BC map for temperature/scalars
         endif
 
         if(ifnd.ge.1) then
+          if(nint(param(32)).eq.0) param(32) = 1.0
           ifbmap(ifld)=.true.
           do j = 1,nbctype
             call finiparser_getToken(c_out,j)

@@ -3469,6 +3469,7 @@ c     counts the number of faces assigned to each BC
       integer iel,ifc,ifld,icb,icb0,nel
       logical bcfound
       character*3 cb3
+      character*17 line
 
       icb0 = 3                   ! skip printing 'E  ' and '   '
       if(loglevel.gt.2) icb0 = 1 ! unless you want to
@@ -3527,8 +3528,11 @@ c     counts the number of faces assigned to each BC
 
             if(nio.eq.0) then
               if(ifld.eq.2) write(6,'(a17,/)') "for temperature:"
-              if(ifld.gt.2) 
-     &                 write(6,'(a12,i4,a1,/)') "for scalar ",ifld-1,":"
+              if(ifld.gt.2) then
+                write(cb3,'(i3)') ifld-2
+                write(line,'(3a)') "for scalar ",trim(adjustl(cb3)),":"
+                write(6,'(a17,/)') trim(line)
+              endif
               do icb = icb0,nvcbct
                 if(cbctcnt(icb).gt.0) 
      &                             write(6,11) cblistt(icb),cbctcnt(icb)
