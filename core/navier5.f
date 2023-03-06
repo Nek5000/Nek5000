@@ -3452,3 +3452,99 @@ c
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine count_bdry
+
+c     counts the number of faces assigned to each BC
+      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'BCDICT'
+
+      integer cbcvcnt(nvcbcv+1)
+      integer cbctcnt(nvcbct+1)
+      integer iwk(max(nvcbcv,nvcbct)+1) !work array
+
+      integer iel,ifc,ifld,icb,icb0,nel
+      logical bcfound
+      character*3 cb3
+
+      icb0 = 3                   ! skip printing 'E  ' and '   '
+      if(loglevel.gt.2) icb0 = 1 ! unless you want to
+
+      call izero(cbcvcnt,nvcbcv+1)
+
+      do iel = 1,nelv
+      do ifc = 1,2*ldim
+        bcfound = .false.
+        cb3 = cbc(ifc,iel,1)
+        do icb = 1,nvcbcv
+          if(cb3.eq.cblistv(icb)) then 
+            cbcvcnt(icb) = cbcvcnt(icb) + 1
+            bcfound = .true. 
+          endif
+        enddo 
+        if(.not.bcfound) cbcvcnt(nvcbcv+1) = cbcvcnt(nvcbcv+1) + 1
+      enddo
+      enddo
+
+      call igop(cbcvcnt,iwk,'+  ',nvcbcv+1) 
+
+      if(nio.eq.0) then
+        write(6,'(2x,a,/)') "Found the following boundary conditions"
+        write(6,'(a17,/)') "for velocity:"
+        do icb = icb0, nvcbcv
+          if(cbcvcnt(icb).gt.0) write(6,11) cblistv(icb),cbcvcnt(icb)
+        enddo
+        if(cbcvcnt(nvcbcv+1).gt.0) then
+          write(6,12) "UNKNOWN",cbcvcnt(nvcbcv+1)
+        endif
+        write(6,*)
+      endif
+
+      if(ifheat) then
+        do ifld = 2,ldimt+1
+          call izero(cbctcnt,nvcbct+1)
+          if(idpss(ifld-1).ne.-1) then
+            nel = nelv
+            if(iftmsh(ifld)) nel = nelt
+            do iel = 1,nel
+            do ifc = 1,2*ldim
+              bcfound = .false.
+              cb3 = cbc(ifc,iel,ifld)
+              do icb = 1,nvcbct
+                if(cb3.eq.cblistt(icb)) then
+                  cbctcnt(icb) = cbctcnt(icb) + 1
+                  bcfound = .true.
+                endif
+              enddo
+              if(.not.bcfound) cbctcnt(nvcbct+1) = cbctcnt(nvcbct+1) + 1
+            enddo
+            enddo
+
+            call igop(cbctcnt,iwk,'+  ',nvcbct+1)
+
+            if(nio.eq.0) then
+              if(ifld.eq.2) write(6,'(a17,/)') "for temperature:"
+              if(ifld.gt.2) 
+     &                 write(6,'(a12,i4,a1,/)') "for scalar ",ifld-1,":"
+              do icb = icb0,nvcbct
+                if(cbctcnt(icb).gt.0) 
+     &                             write(6,11) cblistt(icb),cbctcnt(icb)
+              enddo
+              if(cbctcnt(nvcbct+1).gt.0) then
+                write(6,12) "UNKNOWN",cbctcnt(nvcbct+1)
+              endif
+            write(6,*)
+            endif
+          endif
+        enddo
+      endif
+      
+  11  format(12x,'"',a3,'"',1x,i12)
+  12  format(10x,a,1x,i12)
+
+      return
+      end
+

@@ -7,9 +7,9 @@ c   list is case-sensitive
 
       character*3 cblistv(nvcbcv),cblistt(nvcbct)
 
-      data cblistv /'   ','A  ','E  ','int','mm ','ms ','msi','mv '
+      data cblistv /'   ','E  ','A  ','int','mm ','ms ','msi','mv '
      & ,'mvn','o  ','O  ','on ','p  ','P  ','s  ','shl','sl ','SYM'
      & ,'v  ','vl ','wsl','W  '/
 
-      data cblistt /'   ','A  ','c  ','E  ','ed ','f  ','I  ','int'
+      data cblistt /'   ','E  ','A  ','c  ','ed ','f  ','I  ','int'
      & ,'kd ','O  ','p  ','P  ','r  ','SYM','t  '/

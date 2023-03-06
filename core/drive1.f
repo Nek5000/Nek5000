@@ -102,6 +102,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
 
+      call count_bdry   ! count the number of faces with assigned BCs
       call fix_geom
 
       call vrdsmsh          ! verify mesh topology
