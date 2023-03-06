@@ -3456,7 +3456,7 @@ c-----------------------------------------------------------------------
       subroutine count_bdry
 
 c     counts the number of faces assigned to each BC
-      implicit none
+c     implicit none
 
       include 'SIZE'
       include 'TOTAL'

@@ -2034,8 +2034,8 @@ class impsrc_scalar(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        l2 = self.get_value_from_log('L1/L2 Error', column=-1)
-        l1 = self.get_value_from_log('L1/L2 Error', column=-2)
+        l2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-1)
+        l1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-1)
         self.assertAlmostEqualDelayed(l1, target_val=0.0, delta=1E-10, label='L1 err')
         self.assertAlmostEqualDelayed(l2, target_val=0.0, delta=1E-12, label='L2 err')
 
