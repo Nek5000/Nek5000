@@ -50,7 +50,7 @@
 !      enddo
 !      write(6,*) '******************************************************'
  
- ! boundary condition summary
+! boundary condition summary
 !      write(6,*) '******************************************************'
 !      write(6,*) 'Boundary info summary'
 !      write(6,*) 'BoundaryName     BoundaryID'
@@ -61,13 +61,13 @@
  
  
       if (f_or_s.eq.1) then ! for fluid 
-      write(6,*) 'For Fluid domain'
-      write(6,*) 'Enter number of periodic boundary surface pairs:'
-      read (5,*) nbc
+        write(6,*) 'For Fluid domain'
+        write(6,*) 'Enter number of periodic boundary surface pairs:'
+        read (5,*) nbc
       elseif(f_or_s.eq.2) then ! for solid 
-      write(6,*) 'For Solid domain'
-      write(6,*) 'Enter number of periodic boundary surface pairs:'
-      read (5,*) nbc
+        write(6,*) 'For Solid domain'
+        write(6,*) 'Enter number of periodic boundary surface pairs:'
+        read (5,*) nbc
       endif
 
        !if(nbc.ne.0) then
@@ -81,7 +81,7 @@
       allocate ( parray (2,2,num_elem))
 
       do ibc = 1,nbc 
-        write(6,*) 'input surface 1 and  surface 2  sideSet ID'
+        write(6,*) 'input surface 1 and  surface 2  Boundary ID'
         read (5,*) ptags(1),ptags(2)
 
 
@@ -121,7 +121,7 @@
           if(nipe(1).ne.nipe(2))  then
             write(6,*)'mapping sideset ',ptags(1),'with',nipe(1),'faces'
             write(6,*)'to sideset ',ptags(2),'with',nipe(2),'faces'
-            write(6,*) 'EORROR, face numbers are not matching'
+            write(6,*) 'ERROR, face numbers are not matching'
             call exitt()
           endif
 
@@ -130,7 +130,7 @@
         !write(6,*) '(1 for general mapping (N^2),2 for advanced mapping (N), 3 for uniform element order offset(N) ):'
         !read (5,*) mappingOption
     
-	    mappingOption = 2  ! only use advanced mapping
+        mappingOption = 2  ! only use advanced mapping
  
         if (mappingOption.eq.1) then
 
@@ -201,8 +201,8 @@
 
            length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
            ssa(1) = ssa(1) + length
-           ssc(1,1) = fpxyz(1,1)*length
-           ssc(2,1) = fpxyz(2,1)*length
+           ssc(1,1) = ssc(1,1) + fpxyz(1,1)*length
+           ssc(2,1) = ssc(2,1) + fpxyz(2,1)*length
 
          else
            do ifnode = 1,4
@@ -253,8 +253,8 @@
 
            length = ((xm1(fnode(1),1,1,ihex)-xm1(fnode(2),1,1,ihex))**2.0+(ym1(fnode(1),1,1,ihex)-ym1(fnode(2),1,1,ihex))**2.0)**0.5 
            ssa(2) = ssa(2) + length
-           ssc(1,2) = fpxyz(1,1)*length
-           ssc(2,2) = fpxyz(2,1)*length
+           ssc(1,2) = ssc(1,2) + fpxyz(1,1)*length
+           ssc(2,2) = ssc(2,2) + fpxyz(2,1)*length
     
          else
            do ifnode = 1,4
