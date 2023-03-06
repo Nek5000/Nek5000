@@ -361,6 +361,25 @@ class NekTestCase(unittest.TestCase):
             cwd=os.path.join(self.examples_root, self.__class__.example_subdir),
         )
 
+    def run_gmsh2nek(self, dim="3", msh_file=None,out_file=None):
+        from lib.nekBinRun import run_meshgen
+
+        if not msh_file:
+           msh_file = self.__class__.case_name
+
+        if not out_file:
+           out_file = self.__class__.case_name
+
+        ifCHT = "0"
+        P_pairs = "0"
+
+        run_meshgen(
+            command=os.path.join(self.tools_bin, "gmsh2nek"),
+            stdin=[dim,msh_file,ifCHT,P_pairs,out_file],
+            cwd=os.path.join(self.examples_root, self.__class__.example_subdir),
+            verbose=self.verbose,
+        )
+
     def build_nek(self, opts=None, usr_file=None):
         from lib.nekBinBuild import build_nek
 

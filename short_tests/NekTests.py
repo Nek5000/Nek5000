@@ -2034,10 +2034,52 @@ class impsrc_scalar(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
-        l2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-1)
-        l1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-1)
+        l2 = self.get_value_from_log('L1/L2 Error', column=-1)
+        l1 = self.get_value_from_log('L1/L2 Error', column=-2)
         self.assertAlmostEqualDelayed(l1, target_val=0.0, delta=1E-10, label='L1 err')
         self.assertAlmostEqualDelayed(l2, target_val=0.0, delta=1E-12, label='L2 err')
+
+        self.assertDelayedFailures()
+
+###############################################################
+
+class bcid_test_3D(NekTestCase):
+    example_subdir = 'bcid_test/3D'
+    case_name = 'bcid_test_3D'
+
+    def setUp(self):
+
+        self.size_params = dict(
+            ldim      = '3',
+            lx1       = '4',
+            lxd       = '6',
+            lx2       = 'lx1-0',
+            lelg      = '960',
+            lx1m      = 'lx1',
+            ldimt     = '4'
+        )
+
+        self.build_tools(['gmsh2nek','genmap'])
+        self.run_gmsh2nek(msh_file='pipe')
+        self.run_genmap()
+             
+    @pn_pn_serial
+    def test_PnPn_serial(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=1)
+
+        nO = self.get_value_from_log('"O  "',column = 2)
+        nv = self.get_value_from_log('"v  "',column = 2)
+        nW = self.get_value_from_log('"W  "',column = 2)
+        nI = self.get_value_from_log('"I  "',column = 2)
+        nt = self.get_value_from_log('"t  "',column = 2)
+
+        self.assertEqual(nO,48)
+        self.assertEqual(nv,48)
+        self.assertEqual(nW,320)
+        self.assertEqual(nI,48)
+        self.assertEqual(nt,368)
 
         self.assertDelayedFailures()
 
