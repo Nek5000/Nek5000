@@ -43,7 +43,9 @@ jobs:
             "chan2d::test_PnPn_Parallel",
             "eddy_mv::test_PnPn_Parallel",
             "lpm_one::test_PnPn_Parallel",
-            "lpm_two::test_PnPn_Parallel" 
+            "lpm_two::test_PnPn_Parallel",
+            "impsrc_scalar::test_PnPn_Parallel",
+            "bcid_test_3D::test_PnPn_Parallel" 
         ]
         include:
           - test_case: "Tools"
