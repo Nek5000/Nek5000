@@ -2063,8 +2063,8 @@ class bcid_test_3D(NekTestCase):
         self.run_gmsh2nek(msh_file='pipe')
         self.run_genmap()
              
-    @pn_pn_serial
-    def test_PnPn_serial(self):
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
         self.config_size()
         self.build_nek()
         self.run_nek(step_limit=1)
