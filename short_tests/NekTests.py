@@ -1886,8 +1886,8 @@ class InclDef(NekTestCase):
         self.build_tools(["genmap"])
         self.run_genmap(tol="0.01")
 
-    @pn_pn_parallel
-    def test_PnPn_Parallel(self):
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
         self.size_params["lx2"] = "lx1"
         self.config_size()
         self.build_nek()
