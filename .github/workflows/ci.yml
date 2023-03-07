@@ -34,7 +34,7 @@ jobs:
             "Ethier::test_PnPn2_Parallel",
             "Ethier::test_PnPn_Parallel",
             "FsHydro::test_PnPn2_Parallel",
-            "InclDef::test_PnPn_Parallel",
+            "InclDef::test_PnPn_Serial",
             "IO_Test::test_PnPn2_Parallel",
             "KovStokes::test_PnPn2_Parallel",
             "KovStokes::test_PnPn_Parallel",
