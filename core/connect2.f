@@ -129,6 +129,8 @@ C     End of input data, close read file.
            boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
         enddo
         enddo
+      else
+        call icopy(boundaryIDt, boundaryID, nelv*2*ndim)
       endif 
 
       return
