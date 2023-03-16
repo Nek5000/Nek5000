@@ -1,11 +1,11 @@
 c   Dictionary of the valid three-character boundary condition codes (cbc array)
 c   list is case-sensitive
 
-      integer nvcbcv,nvcbct
-      parameter(nvcbcv=22)
-      parameter(nvcbct=15)
+      integer ncbcv,ncbct
+      parameter(ncbcv=22)
+      parameter(ncbct=15)
 
-      character*3 cblistv(nvcbcv),cblistt(nvcbct)
+      character*3 cblistv(ncbcv),cblistt(ncbct)
 
       data cblistv /'   ','E  ','A  ','int','mm ','ms ','msi','mv '
      & ,'mvn','o  ','O  ','on ','p  ','P  ','s  ','shl','sl ','SYM'

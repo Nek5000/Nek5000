@@ -1417,7 +1417,7 @@ c-----------------------------------------------------------------------
       character*3 cbin
 
        isvalidcbc=.false.
-       do i=1,nvcbcv
+       do i=1,ncbcv
          if(cbin.eq.cblistv(i)) then
            isvalidcbc=.true.
            goto 256
@@ -1435,7 +1435,7 @@ c-----------------------------------------------------------------------
       character*3 cbin
 
        isvalidcbct=.false.
-       do i=1,nvcbct
+       do i=1,ncbct
          if(cbin.eq.cblistt(i)) then
            isvalidcbct=.true.
            goto 256

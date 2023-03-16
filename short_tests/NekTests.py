@@ -2043,6 +2043,46 @@ class impsrc_scalar(NekTestCase):
 
 ###############################################################
 
+class bcid_test_2D(NekTestCase):
+    example_subdir = 'bcid_test/2D'
+    case_name = 'bcid_test_2D'
+
+    def setUp(self):
+
+        self.size_params = dict(
+            ldim      = '2',
+            lx1       = '8',
+            lxd       = '12',
+            lx2       = 'lx1-0',
+            lelg      = '18',
+            lx1m      = 'lx1',
+            ldimt     = '1'
+        )
+
+        self.build_tools(['gmsh2nek','genmap'])
+        self.run_gmsh2nek(dim='2',fmsh_file='fluid',smsh_file='solid',fP_list=['1 2'],sP_list=['10 20']),
+        self.run_genmap()
+             
+    @pn_pn_serial
+    def test_PnPn_Serial(self):
+        self.config_size()
+        self.build_nek()
+        self.run_nek(step_limit=None)
+
+        vl1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-2)
+        vl2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-2)
+        tl1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-1)
+        tl2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-1)
+        self.assertAlmostEqualDelayed(vl1, target_val=0.0, delta=1E-10, label='VL1 err')
+        self.assertAlmostEqualDelayed(vl2, target_val=0.0, delta=1E-10, label='VL2 err')
+        self.assertAlmostEqualDelayed(tl1, target_val=0.0, delta=1E-7, label='TL1 err')
+        self.assertAlmostEqualDelayed(tl2, target_val=0.0, delta=1E-7, label='TL2 err')
+
+        self.assertDelayedFailures()
+
+
+###############################################################
+
 class bcid_test_3D(NekTestCase):
     example_subdir = 'bcid_test/3D'
     case_name = 'bcid_test_3D'
@@ -2060,7 +2100,7 @@ class bcid_test_3D(NekTestCase):
         )
 
         self.build_tools(['gmsh2nek','genmap'])
-        self.run_gmsh2nek(msh_file='pipe')
+        self.run_gmsh2nek(fmsh_file='pipe')
         self.run_genmap()
              
     @pn_pn_parallel
@@ -2084,7 +2124,6 @@ class bcid_test_3D(NekTestCase):
         self.assertDelayedFailures()
 
 ###############################################################
-
 
 if __name__ == "__main__":
     import unittest

@@ -361,21 +361,43 @@ class NekTestCase(unittest.TestCase):
             cwd=os.path.join(self.examples_root, self.__class__.example_subdir),
         )
 
-    def run_gmsh2nek(self, dim="3", msh_file=None,out_file=None):
+    def run_gmsh2nek(self, dim="3", fmsh_file=None, smsh_file=None, out_file=None, fP_list=None, sP_list=None):
         from lib.nekBinRun import run_meshgen
 
-        if not msh_file:
-           msh_file = self.__class__.case_name
+        if not fmsh_file:
+           fmsh_file = self.__class__.case_name
+
+        stdin = [dim, fmsh_file]
+
+        if not smsh_file:
+           ifCHT = '0'
+           stdin.append(ifCHT)
+        else:
+           ifCHT = '1'
+           stdin.append(ifCHT)
+           stdin.append(smsh_file)
+
+        if not fP_list:
+           P_pairs = '0'
+           stdin.append(P_pairs)
+        else:
+           P_pairs = str(len(fP_list))
+           stdin.append(P_pairs)
+           stdin.extend(fP_list)
+
+        if sP_list:
+           P_pairs = str(len(sP_list))
+           stdin.append(P_pairs)
+           stdin.extend(sP_list)
 
         if not out_file:
            out_file = self.__class__.case_name
 
-        ifCHT = "0"
-        P_pairs = "0"
+        stdin.append(out_file) 
 
         run_meshgen(
             command=os.path.join(self.tools_bin, "gmsh2nek"),
-            stdin=[dim,msh_file,ifCHT,P_pairs,out_file],
+            stdin=stdin,
             cwd=os.path.join(self.examples_root, self.__class__.example_subdir),
             verbose=self.verbose,
         )

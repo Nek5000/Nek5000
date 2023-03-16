@@ -3462,9 +3462,9 @@ c     implicit none
       include 'TOTAL'
       include 'BCDICT'
 
-      integer cbcvcnt(nvcbcv+1)
-      integer cbctcnt(nvcbct+1)
-      integer iwk(max(nvcbcv,nvcbct)+1) !work array
+      integer cbcvcnt(ncbcv+1)
+      integer cbctcnt(ncbct+1)
+      integer iwk(max(ncbcv,ncbct)+1) !work array
 
       integer iel,ifc,ifld,icb,icb0,nel
       logical bcfound
@@ -3474,39 +3474,39 @@ c     implicit none
       icb0 = 3                   ! skip printing 'E  ' and '   '
       if(loglevel.gt.2) icb0 = 1 ! unless you want to
 
-      call izero(cbcvcnt,nvcbcv+1)
+      call izero(cbcvcnt,ncbcv+1)
 
       do iel = 1,nelv
       do ifc = 1,2*ldim
         bcfound = .false.
         cb3 = cbc(ifc,iel,1)
-        do icb = 1,nvcbcv
+        do icb = 1,ncbcv
           if(cb3.eq.cblistv(icb)) then 
             cbcvcnt(icb) = cbcvcnt(icb) + 1
             bcfound = .true. 
           endif
         enddo 
-        if(.not.bcfound) cbcvcnt(nvcbcv+1) = cbcvcnt(nvcbcv+1) + 1
+        if(.not.bcfound) cbcvcnt(ncbcv+1) = cbcvcnt(ncbcv+1) + 1
       enddo
       enddo
 
-      call igop(cbcvcnt,iwk,'+  ',nvcbcv+1) 
+      call igop(cbcvcnt,iwk,'+  ',ncbcv+1) 
 
       if(nio.eq.0) then
         write(6,'(2x,a,/)') "Found the following boundary conditions"
         write(6,'(a17,/)') "for velocity:"
-        do icb = icb0, nvcbcv
+        do icb = icb0, ncbcv
           if(cbcvcnt(icb).gt.0) write(6,11) cblistv(icb),cbcvcnt(icb)
         enddo
-        if(cbcvcnt(nvcbcv+1).gt.0) then
-          write(6,12) "UNKNOWN",cbcvcnt(nvcbcv+1)
+        if(cbcvcnt(ncbcv+1).gt.0) then
+          write(6,12) "UNKNOWN",cbcvcnt(ncbcv+1)
         endif
         write(6,*)
       endif
 
       if(ifheat) then
         do ifld = 2,ldimt+1
-          call izero(cbctcnt,nvcbct+1)
+          call izero(cbctcnt,ncbct+1)
           if(idpss(ifld-1).ne.-1) then
             nel = nelv
             if(iftmsh(ifld)) nel = nelt
@@ -3514,17 +3514,17 @@ c     implicit none
             do ifc = 1,2*ldim
               bcfound = .false.
               cb3 = cbc(ifc,iel,ifld)
-              do icb = 1,nvcbct
+              do icb = 1,ncbct
                 if(cb3.eq.cblistt(icb)) then
                   cbctcnt(icb) = cbctcnt(icb) + 1
                   bcfound = .true.
                 endif
               enddo
-              if(.not.bcfound) cbctcnt(nvcbct+1) = cbctcnt(nvcbct+1) + 1
+              if(.not.bcfound) cbctcnt(ncbct+1) = cbctcnt(ncbct+1) + 1
             enddo
             enddo
 
-            call igop(cbctcnt,iwk,'+  ',nvcbct+1)
+            call igop(cbctcnt,iwk,'+  ',ncbct+1)
 
             if(nio.eq.0) then
               if(ifld.eq.2) write(6,'(a17,/)') "for temperature:"
@@ -3533,12 +3533,12 @@ c     implicit none
                 write(line,'(3a)') "for scalar ",trim(adjustl(cb3)),":"
                 write(6,'(a17,/)') trim(line)
               endif
-              do icb = icb0,nvcbct
+              do icb = icb0,ncbct
                 if(cbctcnt(icb).gt.0) 
      &                             write(6,11) cblistt(icb),cbctcnt(icb)
               enddo
-              if(cbctcnt(nvcbct+1).gt.0) then
-                write(6,12) "UNKNOWN",cbctcnt(nvcbct+1)
+              if(cbctcnt(ncbct+1).gt.0) then
+                write(6,12) "UNKNOWN",cbctcnt(ncbct+1)
               endif
             write(6,*)
             endif

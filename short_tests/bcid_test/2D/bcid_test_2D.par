@@ -1,0 +1,48 @@
+#Nek5000 parameter file
+#
+#  Boundary IDs:
+#
+#  +--30---+
+#  |       |
+# 10 solid 20
+#  |       | 
+#  +--40---+
+#  +---4---+
+#  |       |
+#  |   f   |
+#  |   l   |
+#  1   u   2   ^
+#  |   i   |   |
+#  |   d   |   y
+#  |       |   |
+#  +---3---+   +--x-->
+#
+#  BoundaryID(iface,iel) will contain 1-4
+#  BoundaryIDt(iface,iel) will contain ALL
+#
+[GENERAL]
+numSteps = 10000
+writeInterval = 10000
+dt = 2.0e-3
+constFlowRate = X
+meanVelocity = 1.0
+
+[MESH]
+BoundaryIDMap = 1, 2, 3, 4, 10, 20, 30, 40
+
+[PRESSURE]
+residualTol = 1.0e-10
+residualProj = yes
+
+[VELOCITY]
+boundaryTypeMap = P  ,P  , symmetry, wall, none, none, none, none
+viscosity = -10.0
+density = 1.0
+residualTol = 1.0e-12
+
+[TEMPERATURE]
+conjugateHeatTransfer = yes
+boundaryTypeMap = P  ,P  ,I  ,none,P  ,P  ,I  , none
+conductivity = -10.0
+rhoCp = 1.0
+residualTol = 1.0e-12
