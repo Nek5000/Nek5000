@@ -2069,6 +2069,7 @@ class bcid_test_2D(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=None)
 
+#test for 1D solution to velocity and temperature for CHT problem
         vl1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-2)
         vl2 = self.get_value_from_log('L1/L2 Error', column=-1, row=-2)
         tl1 = self.get_value_from_log('L1/L2 Error', column=-2, row=-1)
@@ -2109,6 +2110,7 @@ class bcid_test_3D(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1)
 
+#just count the boundaries for the 3D problem
         nO = self.get_value_from_log('"O  "',column = 2)
         nv = self.get_value_from_log('"v  "',column = 2)
         nW = self.get_value_from_log('"W  "',column = 2)
