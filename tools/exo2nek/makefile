@@ -16,7 +16,7 @@ clean:
 	@cd ./3rd_party ; rm -rf seacas-exodus netcdf
 
 lib:
-	@cd 3rd_party; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install
+	@cd 3rd_party; env CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" FFLAGS="$(FFLAGS)" ./install
 
 mod_SIZE.o      : mod_SIZE.f90			;  $(FC) -c $(FFLAGS) mod_SIZE.f90
 exo2nek.o	: exo2nek.f90			;  $(FC) -c $(FFLAGS) $(INC) exo2nek.f90
