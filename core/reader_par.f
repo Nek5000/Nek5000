@@ -1018,11 +1018,10 @@ c-----------------------------------------------------------------------
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 c
-      neltmx=np*lelt
-      nelvmx=np*lelv
+      integer*8 neltmx, nelvmx 
 
-      neltmx=min(neltmx,lelg)
-      nelvmx=min(nelvmx,lelg)
+      neltmx=np*int(lelt,8)
+      nelvmx=np*int(lelv,8)
 
       nelgt = iglmax(nelgt,1)
       nelgv = iglmax(nelgv,1)
