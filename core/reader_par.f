@@ -1023,6 +1023,9 @@ c
       neltmx=np*int(lelt,8)
       nelvmx=np*int(lelv,8)
 
+      if(neltmx .gt. lelg) neltmx = lelg
+      if(nelvmx .gt. lelg) nelvmx = lelg
+
       nelgt = iglmax(nelgt,1)
       nelgv = iglmax(nelgv,1)
 
