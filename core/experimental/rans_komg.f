@@ -1601,6 +1601,7 @@ c Compute extra source term of omega
             else
               omgSrc(i,1,1,e) = - Y_w
               omgDiag(i,1,1,e)= G_wp + S_taup - S_w0 + S_tau/tau
+            endif
           else
             omgSrc(i,1,1,e) = S_w - Y_w - S_tau - (G_wp + S_taup) * tau
             omgDiag(i,1,1,e)= 0.0
