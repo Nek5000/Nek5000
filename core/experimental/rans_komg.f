@@ -1595,8 +1595,12 @@ c Compute extra source term of omega
           S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
 
           if(ifrans_diag) then
+            if(tau .lt. tiny)then
               omgSrc(i,1,1,e) = - Y_w - S_tau
               omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
+            else
+              omgSrc(i,1,1,e) = - Y_w
+              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0 + S_tau/tau
           else
             omgSrc(i,1,1,e) = S_w - Y_w - S_tau - (G_wp + S_taup) * tau
             omgDiag(i,1,1,e)= 0.0
