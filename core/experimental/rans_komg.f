@@ -1438,10 +1438,11 @@ c================================
       call sqrt_tau(tausq,t(1,1,1,1,ifld_omega-1),ntot)
 
       mu_min    = edd_frac_free*param(2)
-      iflim_tau =-1 ! limit tau
+      iflim_tau = 0 ! limit tau
 
       if(iflim_tau.eq.0) call limit_ktau
 
+      iflim_tau =-1 ! limit tau
       do e=1,nelv
 
         call copy   (g,   St_mag2(1,e),       lxyz)
@@ -1543,8 +1544,6 @@ c          Rfact= 1.
 c Compute Y_k = dissipation of k
 
           Y_k = 0.
-c          if(tau.gt.tiny) Y_k = rho * betai_str * f_beta_str / tau
-c          if(tau.gt.0) Y_k = rho * betai_str * f_beta_str / tau
           Y_k = rho * betai_str * f_beta_str * Rfact / (tau + tiny)
 
 c Compute G_k = production of  k and limit it to 10*Y_k (the dissipation of k)
@@ -1553,21 +1552,13 @@ c Compute G_k = production of  k and limit it to 10*Y_k (the dissipation of k)
           twoSijSij_bar = g(i) - div(i)*extra_prod
 
           G_k0= mu_t0*g(i) - ( rho + mu_t0*div(i) )*extra_prod
-c          G_k0= min(G_k0, 10.*Y_k)
           G_k = G_k0 ! min(G_k0, 10.*Y_k*k)
-c          if(time.le.0.5) G_k=0.
-c          G_k = mu_t *g(i)
-
-          yw   = ywd  (i,1,1,e)
-          toll = 1.0e-04
-          if(yw.le.toll .and. iapp.eq.1) G_k = Y_k
 
 c Compute Source term for k
 
           if (ifrans_diag) then
             kSrc  (i,1,1,e) = min(G_k*k, 10.*Y_k*k)
-c            kSrc  (i,1,1,e) = G_k*k
-            kDiag (i,1,1,e) = Y_k !- G_k
+            kDiag (i,1,1,e) = Y_k
           else
             kSrc  (i,1,1,e) =(G_k - Y_k)* k
             kDiag (i,1,1,e) = 0.0
@@ -1599,64 +1590,13 @@ c Compute extra source term of omega
           S_w0=-rho * sigd * xk       * Rfact
           S_w =-rho * sigd * xk * tau * Rfact
 
-c          Scoef = 0.0
-c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
-c          S_tau = Scoef*xt
-
-c          Scoef = 8.*(mu+mu_t/sigma_omega)
-c          S_tau = Scoef*xtq
-
-c Compute Source term for omega
-
-c approach based on leading order terms in tau expansion to approximate S_tau
-c          toll  = 1.e-2
-c          sqxt  = sqrt(xt)
-c          Sterm = beta*yw*rho/3./mul(i,1,1,e)
-c          Scons = 1. + 1./sqrt(3.)
-c          Scoef = Scons * Sterm
-c          if(tau.lt.toll) then
-c           S_tau = 0.
-c           if(yw.ne.0. .and. sqrt(xt) .gt. Scoef) then
-c              Aterm = ( sqrt(xt)/Sterm - 1.)
-c              S_tau = 0.5*(4.*beta/3.)*(3.*Aterm - 1./Aterm)
-c           endif
-c          else
-c             S_tau = 2.0 * (mul(i,1,1,e)/rho) * xt * Rfact/tau
-c          endif 
-
-c approach based on known wall tau behavior to approximate S_tau
-          cr_tau  = beta*yw*yw*rho/6./mul(i,1,1,e)
-          cr_edd = 4.4 * mul(i,1,1,e)
-          S_taun= 0.
-          Scoefn = 0.
-          if(mu_t .lt. cr_edd) then
-           Scoefn = 0.
-           if(yw.gt.0.) Scoefn = (12./beta)*(mul(i,1,1,e)/rho/yw)**2
-          else
-           Scoefn = 2.*mul(i,1,1,e)/tau
-          endif 
-          S_taun= min(Scoefn * xt * Rfact, 4.*beta/3.)
-
-          Scoeft = alp_str*k/sigma_omega
-          S_taut = 2.0 * Scoeft* xt * Rfact
-          S_tau = S_taun + S_taut
-          S_taup= 0.
-
-c          S_tau = 8.0*mul(i,1,1,e) *xtq * Rfact
-c          S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
+          S_tau = 8.0*mul(i,1,1,e) *xtq * Rfact
+          S_tau = min(S_tau, 4.*beta/3.)
+          S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
 
           if(ifrans_diag) then
-            if(tau.le.tiny) then
               omgSrc(i,1,1,e) = - Y_w - S_tau
               omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
-c              omgSrc(i,1,1,e) = S_w - Y_w - S_tau
-c              omgDiag(i,1,1,e)= G_wp + S_taup
-            else
-              omgSrc(i,1,1,e) = - Y_w
-              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0 + S_tau/tau !+ Y_w/tau
-c              omgSrc(i,1,1,e) = S_w - Y_w
-c              omgDiag(i,1,1,e)= G_wp + S_taup + S_tau/tau !+ Y_w/tau
-            endif
           else
             omgSrc(i,1,1,e) = S_w - Y_w - S_tau - (G_wp + S_taup) * tau
             omgDiag(i,1,1,e)= 0.0
@@ -1666,14 +1606,6 @@ c              omgDiag(i,1,1,e)= G_wp + S_taup + S_tau/tau !+ Y_w/tau
           mutsk(i,1,1,e)   = mu_t / sigma_k
           mutso(i,1,1,e)   = mu_t / sigma_omega
 
-c$$$          if(xm1(i,1,1,e).lt.1e-8 .and. zm1(i,1,1,e).lt. 1e-8
-c$$$     $         .and. ifield .eq.3)then
-c$$$          write(6,1990)yw,omgSrc(i,1,1,e),omgDiag(i,1,1,e),
-c$$$     $            kSrc(i,1,1,e),kDiag(i,1,1,e),
-c$$$     $            ym1(i,1,1,e),S_taun,Scoefn,cr_tau,tau
-c$$$          
-c$$$ 1990     format (12X,10F12.6)
-c$$$          endif
         enddo
 
       enddo
@@ -1682,9 +1614,7 @@ c$$$          endif
         do e=1,nelv
         do i=1,lxyz
           kDiag  (i,1,1,e) = kDiag(i,1,1,e)
-c     $                     / max(t(i,1,1,e,ifld_k-1),    tiny)
           omgDiag(i,1,1,e) = omgDiag(i,1,1,e)
-c     $                     / max(t(i,1,1,e,ifld_omega-1),tiny)
         enddo
         enddo
       endif
@@ -1918,16 +1848,11 @@ c Compute extra source term of omega
           S_w0=-rho * sigd * xk       * Rfact
           S_w =-rho * sigd * xk * tau * Rfact
 
-c          Scoef = 0.0
-c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t/sigma_omega)/tau
-c          S_tau = Scoef*xt
-
-c          Scoef = 8.*(mu+mu_t/sigma_omega)
-c          S_tau = Scoef*xtq
 
 c Compute Source term for omega
 
           S_tau = 8.0*mul(i,1,1,e) *xtq * Rfact
+          S_tau = min(S_tau, 4.*beta/3.)
           S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
 
           if(ifrans_diag) then
@@ -2198,34 +2123,15 @@ c Compute additional SST term for tau
           S_w0=-2.0 * rho * sigom2 * (1.0 - Fun1)      * tau * Rfact
           S_w =-2.0 * rho * sigom2 * (1.0 - Fun1) * xk * tau * Rfact
 
-c          sigd       = 0.
-c          if (xk.gt.0) sigd = 1./8.
-c          S_w =-rho * sigd * xk * tau * Rfact
-
-c          Scoef = 0.0
-c          if(tau.ne.0.) Scoef = 2.*(mu+mu_t*sigom)/tau
-c          S_tau = Scoef*xt
-
-c          Scoef = 8.*(mu+mu_t*sigom)
-c          S_tau = Scoef*xtq
-
 c Compute Source term for omega
 
           S_tau = 8.0*mu   *xtq * Rfact
+          S_tau = min(S_tau, 4.*beta/3.)
           S_taup= 8.0*rho*k*xtq * Rfact*sigom
 
           if(ifrans_diag) then
-            if(tau.le.tiny) then
-              omgSrc(i,1,1,e) = - Y_w - S_tau
-              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
-c              omgSrc(i,1,1,e) = S_w - Y_w - S_tau
-c              omgDiag(i,1,1,e)= G_wp + S_taup
-            else
-              omgSrc(i,1,1,e) = - Y_w
-              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0 + S_tau/tau !+ Y_w/tau
-c              omgSrc(i,1,1,e) = S_w - Y_w
-c              omgDiag(i,1,1,e)= G_wp + S_taup + S_tau/tau
-            endif
+            omgSrc(i,1,1,e) = - Y_w - S_tau
+            omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
           else
             omgSrc(i,1,1,e) = S_w - Y_w - S_tau - (G_wp + S_taup) * tau
             omgDiag(i,1,1,e)= 0.0
@@ -3421,10 +3327,11 @@ c================================
       call comp_StOm (St_mag2, Om_mag2, OiOjSk, DivQ)
 
       mu_min    = edd_frac_free*param(2)
-      iflim_tau =-1 ! limit tau
+      iflim_tau = 0 ! limit tau
 
       if(iflim_tau.eq.0) call limit_ktau
 
+      iflim_tau =-1 ! limit tau
       do e=1,nelv
 
         call copy   (g,   St_mag2(1,e),       lxyz)
@@ -4414,7 +4321,7 @@ c
       nkey_neg   = 0
       xtau_neg   = 0.
       xkey_neg   = 0.
-      frac       = 1. !0.01
+      frac       = 0.001
 
 c limits for k, omega
 
