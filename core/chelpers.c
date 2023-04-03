@@ -74,12 +74,12 @@ void set_stdout(char *f, int *sid, int flen)
   logfile[i+1] = '\0';
 
   int redirect = 0;
-  char *envvar;
 
   if (logfile[0] != '\0') {
     redirect = 1;
   } 
-  else if (envvar = getenv("NEK_LOGFILE")) {
+  else if (getenv("NEK_LOGFILE")) {
+    char *envvar = getenv("NEK_LOGFILE");
     if (*sid >= 0) sprintf(logfile, "s%05d_", *sid);
     strcat(logfile + strlen(logfile), envvar);
     redirect = 1;
