@@ -2068,7 +2068,7 @@ class RANSChannel(NekTestCase):
         relerr = abs(xerr-dnsval)/dnsval
 
         self.assertAlmostEqualDelayed(
-            relerr, target_val=0.0, delta=2.3e-02, label="u_tau"
+            relerr, target_val=0.0, delta=6e-03, label="u_tau"
         )
 
         self.assertDelayedFailures()
@@ -2086,7 +2086,7 @@ class RANSChannel(NekTestCase):
         relerr = abs(xerr-dnsval)/dnsval
 
         self.assertAlmostEqualDelayed(
-            relerr, target_val=0.0, delta=1e-02, label="u_tau"
+            relerr, target_val=0.0, delta=6e-03, label="u_tau"
         )
 
         self.assertDelayedFailures()

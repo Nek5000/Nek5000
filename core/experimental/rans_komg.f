@@ -1591,7 +1591,7 @@ c Compute extra source term of omega
           S_w =-rho * sigd * xk * tau * Rfact
 
           S_tau = 8.0*mul(i,1,1,e) *xtq * Rfact
-          S_tau = min(S_tau, 4.*beta/3.)
+          S_tau = min(S_tau, 8.*beta/3.)
           S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
 
           if(ifrans_diag) then
@@ -1857,7 +1857,7 @@ c Compute extra source term of omega
 c Compute Source term for omega
 
           S_tau = 8.0*mul(i,1,1,e) *xtq * Rfact
-          S_tau = min(S_tau, 4.*beta/3.)
+          S_tau = min(S_tau, 8.*beta/3.)
           S_taup= 8.0*rho*alp_str*k*xtq * Rfact/sigma_omega
 
           if(ifrans_diag) then
@@ -2131,12 +2131,17 @@ c Compute additional SST term for tau
 c Compute Source term for omega
 
           S_tau = 8.0*mu   *xtq * Rfact
-          S_tau = min(S_tau, 4.*beta/3.)
+          S_tau = min(S_tau, 8.*beta/3.)
           S_taup= 8.0*rho*k*xtq * Rfact*sigom
 
           if(ifrans_diag) then
-            omgSrc(i,1,1,e) = - Y_w - S_tau
-            omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
+            if(tau.le.tiny)then
+              omgSrc(i,1,1,e) = - Y_w - S_tau
+              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0
+            else
+              omgSrc(i,1,1,e) = - Y_w
+              omgDiag(i,1,1,e)= G_wp + S_taup - S_w0 + S_tau/tau
+            endif
           else
             omgSrc(i,1,1,e) = S_w - Y_w - S_tau - (G_wp + S_taup) * tau
             omgDiag(i,1,1,e)= 0.0
