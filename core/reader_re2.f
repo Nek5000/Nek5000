@@ -597,10 +597,14 @@ c-----------------------------------------------------------------------
 
          if(version.eq.'#v003') param(32) = 1
          if(version.eq.'#v004') then
-           if(nBCre2 < 0) then ! boundary IDs 
-             param(32) = abs(nBCre2)
-           else                ! classic
-             param(32) = min(int(param(32)), nBCre2)
+           if(nBCre2 < 0) then
+             param(32) = abs(nBCre2) 
+           else
+             if(param(32).gt.0) then
+               param(32) = min(int(param(32)), nBCre2)
+             else
+               param(32) = nBCre2
+             endif
            endif
          endif
 
