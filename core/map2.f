@@ -186,10 +186,10 @@ c-----------------------------------------------------------------------
       if (ierr.ne.0) then
         ifread_con = .false.
         tol = connectivityTol
-        call find_con(wk,nwk,tol,ierr)
+        call find_con(wk,size(wk),tol,ierr)
         if(ierr.ne.0) then
           tol = tol / 10.0;
-          call find_con(wk,nwk,tol,ierr)
+          call find_con(wk,size(wk),tol,ierr)
         endif
         call err_chk(ierr,'Connectivity calculation failed! '//
      &    'Try tightening mesh::connectivityTol$')
@@ -526,7 +526,7 @@ c-----------------------------------------------------------------------
       enddo
 
       call fparrsb_conn_mesh(vtx8,xyz,nelt,ndim,eid8,npf,tol,nekcomm,
-     $  ierr)
+     $                       ierr)
 
       k=1
       l=1
