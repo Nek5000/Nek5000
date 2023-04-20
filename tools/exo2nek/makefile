@@ -4,7 +4,7 @@ LIBS += ./3rd_party/seacas-exodus/build/packages/seacas/libraries/exoIIv2for32/l
 LIBS += ./3rd_party/seacas-exodus/build/packages/seacas/libraries/exodus/libexodus.a
 LIBS += ./3rd_party/netcdf/install/lib/libnetcdf.a
 
-OBJS = mod_SIZE.o exo2nek.o byte.o speclib.o mxm.o 
+OBJS = mod_SIZE.o exo2nek.o tet2hex.o periodicity.o quadratic.o non_right_hand_check.o  byte.o speclib.o mxm.o 
 
 all: lib exo2nek
 
@@ -16,10 +16,14 @@ clean:
 	@cd ./3rd_party ; rm -rf seacas-exodus netcdf
 
 lib:
-	@cd 3rd_party; env CC="$(CC)" CFLAGS="$(BIGMEM)" FC="$(FC)" FFLAGS="$(BIGMEM)" ./install
+	@cd 3rd_party; env CC="$(CC)" CFLAGS="$(CFLAGS)" FC="$(FC)" FFLAGS="$(FFLAGS)" ./install
 
 mod_SIZE.o      : mod_SIZE.f90			;  $(FC) -c $(FFLAGS) mod_SIZE.f90
 exo2nek.o	: exo2nek.f90			;  $(FC) -c $(FFLAGS) $(INC) exo2nek.f90
+tet2hex.o	: tet2hex.f90			;  $(FC) -c $(FFLAGS) $(INC) tet2hex.f90
+periodicity.o	: periodicity.f90   ;  $(FC) -c $(FFLAGS) $(INC) periodicity.f90
+quadratic.o     : quadratic.f90     ;  $(FC) -c $(FFLAGS) $(INC) quadratic.f90
+non_right_hand_check.o     : non_right_hand_check.f90     ;  $(FC) -c $(FFLAGS) $(INC) non_right_hand_check.f90
 byte.o		: ../../core/byte.c		;  $(CC) -c $(CFLAGS) ../../core/byte.c
 speclib.o	: ../../core/speclib.f		;  $(FC) -c $(FFLAGS) ../../core/speclib.f
 mxm.o		: mxm.f				;  $(FC) -c $(FFLAGS) mxm.f

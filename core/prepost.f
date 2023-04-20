@@ -270,7 +270,8 @@ c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
 
       real*4         test_pattern
 
-      character*3    prefix
+      character prefix*(*)
+
       character*1    fhdfle1(132)
       character*132   fhdfle
       equivalence   (fhdfle,fhdfle1)
@@ -474,7 +475,7 @@ C
       call blank(fldfle,132)
 C
       LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LPP=0 !LTRUNC(PATH,132)
       LSP=LS+LPP
       l = 0
 
@@ -575,33 +576,45 @@ c=======================================================================
 c=======================================================================
       function i_find_prefix(prefix,imax)
 c
-      character*3 prefix
-      character*3 prefixes(99)
-      save        prefixes
-      data        prefixes /99*'...'/
+      character prefix*(*)
+c
+      character*20  prefixes(1000)
+      save          prefixes
+      data          prefixes /1000*'....................'/
 c
       integer nprefix
       save    nprefix
-      data    nprefix /0/
+      data    nprefix /1/
+
+      if (len(prefix) .gt. 20) then
+         write(6,*) 'ERROR i_find_prefix: prefix too long!'
+         call exitt
+      endif
+c
+      if(len(prefix).eq.0) then
+        i_find_prefix = 1
+        return
+      endif
 c
 c     Scan existing list of prefixes for a match to "prefix"
 c
-      do i=1,nprefix
-         if (prefix.eq.prefixes(i)) then
-            i_find_prefix = i
-            return
-         endif
+      do i=2,nprefix
+        if(indx1(prefix,prefixes(i),len(prefix)) .gt. 0) then
+          i_find_prefix = i
+          return
+        endif
       enddo
 c
 c     If we're here, we didn't find a match.. bump list and return
 c
       nprefix                = nprefix + 1
       prefixes(nprefix)      = prefix
+      call chcopy(prefixes(nprefix),prefix,len(prefix))
       i_find_prefix          = nprefix
 c
 c     Array bounds check on prefix list
 c
-      if (nprefix.gt.99.or.nprefix.gt.imax) then
+      if (nprefix.gt.1000.or.nprefix.gt.imax) then
          write(6,*) 'Hey! nprefix too big! ABORT in i_find_prefix'
      $      ,nprefix,imax
          call exitt
@@ -842,7 +855,7 @@ c-----------------------------------------------------------------------
       common /scrcg/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
 
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzo8
-      character*3 prefix
+      character prefix*(*)
       logical ifxyo_s
  
       common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
@@ -1007,12 +1020,12 @@ c     call exitti('this is wdsizo A:$',wdsizo)
 
       dnbyte = glsum(dnbyte,1)
       dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
-      dnbyte = dnbyte/1024/1024
+      dnbyte = dnbyte/1e9
       if(nio.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
      &             nfileo
     7 format(/,i9,1pe12.4,' done :: Write checkpoint',/,
-     &       30X,'file size = ',3pG12.2,'MB',/,
-     &       30X,'avg data-throughput = ',0pf7.1,'MB/s',/,
+     &       30X,'file size = ',3pG12.2,'GB',/,
+     &       30X,'avg data-throughput = ',0pf7.1,'GB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
       ifxyo = ifxyo_s ! restore old value
@@ -1074,8 +1087,14 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
 
-      character*1 prefix(3)
-      character*3 prefx
+      character prefix*(*)
+
+      character*3 prefx3
+      data        prefx3 / "   " /
+
+      character*132  name
+      character*1    nam1(132)
+      equivalence   (nam1,name)
 
       character*132  fname
       character*1    fnam1(132)
@@ -1090,13 +1109,14 @@ c-----------------------------------------------------------------------
       save        slash,dot
       data        slash,dot  / '/' , '.' /
 
-      integer nopen(99,2)
+      integer nopen(1000,2)
       save    nopen
-      data    nopen  / 198*0 /
+      data    nopen  / 2000*0 /
 
-      call blank(fname,132)      !  zero out for byte_open()
+      call blank(fname,132)
+      call blank(name,132)
 
-      iprefix        = i_find_prefix(prefix,99)
+      iprefix = i_find_prefix(prefix,1000)
       if (ifreguo) then
          nopen(iprefix,2) = nopen(iprefix,2)+1
          nfld             = nopen(iprefix,2)
@@ -1105,11 +1125,11 @@ c-----------------------------------------------------------------------
          nfld             = nopen(iprefix,1)
       endif
 
-      call chcopy(prefx,prefix,3)        ! check for full-restart request
-      if (prefx.eq.'rst'.and.max_rst.gt.0) nfld = mod1(nfld,max_rst)
+      call chcopy(prefx3,prefix,min(len(prefix),3))        ! check for full-restart request
+      if (prefx3.eq.'rst'.and.max_rst.gt.0) nfld = mod1(nfld,max_rst)
 
-      call restart_nfld( nfld, prefix ) ! Check for Restart option.
-      if (prefx.eq.'   '.and.nfld.eq.1) ifxyo_ = .true. ! 1st file
+      call restart_nfld(nfld, prefix) ! Check for Restart option.
+      if (prefx3.eq.'   '.and.nfld.eq.1) ifxyo_ = .true. ! 1st file
 
       if(ifmpiio) then
         rfileo = 1
@@ -1118,9 +1138,12 @@ c-----------------------------------------------------------------------
       endif
       ndigit = log10(rfileo) + 1
 
-      lenp = ltrunc(path,132)
+      lenp = 0 !ltrunc(path,132)
       call chcopy(fnam1(1),path,lenp)    
       k = 1 + lenp 
+
+      call blank(name,132)
+      kk = 1
  
       if (ifdiro) then                                  !  Add directory
          call chcopy(fnam1(k),'A',1)
@@ -1131,20 +1154,36 @@ c-----------------------------------------------------------------------
          k = k + 1
       endif
 
-      if (prefix(1).ne.' '.and.prefix(2).ne.' '.and.    !  Add prefix
-     $    prefix(3).ne.' ') then
-         call chcopy(fnam1(k),prefix,3)
-         k = k + 3
+      if (len(prefix) .gt. 0) then !  Add prefix
+         if(prefx3 .ne. '   ') then
+           call chcopy(fnam1(k),prefix,len(prefix))
+           k = k + len(prefix)
+           call chcopy(nam1(kk),prefix,len(prefix))
+           kk = kk + len(prefix) 
+         endif 
       endif
 
-      len=ltrunc(session,132)                           !  Add SESSION
-      call chcopy(fnam1(k),session,len)
-      k = k+len
-     
+      ll=ltrunc(session,132)
+      call chcopy(fnam1(k),session,ll)
+      k = k+ll
+      call chcopy(nam1(kk),session,ll)
+      kk = kk + ll
+
       if (ifreguo) then
-         len=4
-         call chcopy(fnam1(k),'_reg',len)
-         k = k+len
+         ll=4
+         call chcopy(fnam1(k),'_reg',ll)
+         k = k + ll
+         call chcopy(nam1(kk),'_reg',ll)
+         kk = kk + ll
+      endif
+
+      if(nid.eq.0) then
+        call chcopy(nam1(kk),'.nek5000',8)
+        open(unit=101,file=name)
+        write(101,*) "filetemplate: ", trim(fname), "%01d.f%05d"
+        write(101,*) "firsttimestep: 1"
+        write(101,*) "numtimesteps: ", nfld
+        close(101) 
       endif
 
       call chcopy(fnam1(k),six,ndigit)                  !  Add file-id holder
@@ -1645,6 +1684,10 @@ c-----------------------------------------------------------------------
 
       integer e
 
+      umax = glmax(u,nel*mx*my*mz)
+      umin = glmin(u,nel*mx*my*mz)
+      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', umin,umax
+
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
         if(nid.eq.0) write(6,*) 'ABORT: lxo too small'
@@ -1733,6 +1776,15 @@ c-----------------------------------------------------------------------
       equivalence    (u4,u8)
 
       integer e
+
+      umax = glmax(u,nel*mx*my*mz)
+      vmax = glmax(v,nel*mx*my*mz)
+      wmax = glmax(w,nel*mx*my*mz)
+      umin = glmin(u,nel*mx*my*mz)
+      vmin = glmin(v,nel*mx*my*mz)
+      wmin = glmin(w,nel*mx*my*mz)
+      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
+     $             umin,umax, vmin,vmax, wmin,wmax
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then

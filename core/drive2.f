@@ -476,7 +476,7 @@ C
 C     Construct file names containing full path to host:
 C
       LS=LTRUNC(SESSION,132)
-      LPP=LTRUNC(PATH,132)
+      LPP=0 !LTRUNC(PATH,132)
       LSP=LS+LPP
 c
       call chcopy(nam1(    1),path1,lpp)
@@ -1311,8 +1311,8 @@ C
       ntotv = glsc2(tmult,tmask,ntot1)
       ntotp = i8glsum(ntot2,1)
 
-      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1)
-      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1)
+      if (ifflow)  ntotv = glsc2(vmult,v1mask,ntot1) + .1
+      if (ifsplit) ntotp = glsc2(vmult,pmask ,ntot1) + .1
       if (nio.eq.0) write(6,'(A,2i13)') 
      $   'dofs vel/pr:           ',ntotv,ntotp
 

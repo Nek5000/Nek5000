@@ -1,0 +1,13 @@
+#Nek5000 parameter file
+[GENERAL]
+numSteps = 1000
+dt = 1.0e-2
+ 
+[VELOCITY]
+density = 1.0
+viscosity = -1.0
+
+[TEMPERATURE]
+rhoCp = 1.0
+conductivity = -1.0
+residualTol = 1.0e-12

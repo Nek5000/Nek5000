@@ -1,0 +1,32 @@
+[GENERAL]
+stopat = endTime
+endtime = 50.0
+dt = 1e-1
+polynomialorder = 7
+minnumprocesses = 2
+variabledt = no
+targetcfl = 4.0
+extrapolation = OIFS
+loglevel = 3
+
+[PROBLEMTYPE]
+equation = incompNS
+variableproperties = yes
+
+[PRESSURE]
+residualtol = 1e-06
+residualproj = no
+preconditioner = SEMG_XXT #semg_amg
+
+[VELOCITY]
+residualtol = 1e-08
+density = 1
+viscosity = 0.5
+
+[TEMPERATURE]
+conjugateheattransfer = yes
+rhocp = 1.0
+conductivity = 0.5
+residualtol = 1e-08
+residualproj = no #yes
+

@@ -9,7 +9,7 @@ c
       include 'INPUT'
 c
       integer*8 glo_num(1),ngv
-      integer vertex(1),nx
+      integer*8 vertex(1)
       logical ifcenter
 
       if (if3d) then
@@ -23,9 +23,11 @@ c     Check for single-element periodicity 'p' bc
       if (if3d) nz = nx
       call check_p_bc(glo_num,nx,nx,nz,nel)
 
-      if(nio.eq.0) write(6,*) 'call usrsetvert'
+      if(nio.eq.0 .and. loglevel.gt.2) 
+     $  write(6,*) 'call usrsetvert'
       call usrsetvert(glo_num,nel,nx,nx,nz)
-      if(nio.eq.0) write(6,'(A,/)') ' done :: usrsetvert'
+      if(nio.eq.0 .and. loglevel.gt.2) 
+     $  write(6,'(A,/)') ' done :: usrsetvert'
 
       return
       end
@@ -89,7 +91,7 @@ c
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       integer gs_handle
       integer null_space,e
@@ -101,7 +103,6 @@ c
       integer ia,ja
       real z
 
-      integer key(2),aa(2)
       common /scrch/ iwork(2,lx1*ly1*lz1*lelv)
       common /scrns/ w(7*lx1*ly1*lz1*lelv)
       common /vptsol/ a(27*lx1*ly1*lz1*lelv)
@@ -318,9 +319,9 @@ c
 c
       return
       end
-c
+
 c-----------------------------------------------------------------------
-c
+
       subroutine ituple_sort(a,lda,n,key,nkey,ind,aa)
 C
 C     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
@@ -329,7 +330,7 @@ C
       integer ind(1),key(nkey)
       logical iftuple_ialtb
 C
-      dO 10 j=1,n
+      do 10 j=1,n
          ind(j)=j
    10 continue
 C
@@ -373,12 +374,74 @@ c              a(i) = a(j)
             else
                j=ir+1
             endif
-         GOTO 200
+         goto 200
          endif
 c        a(i) = aa
          call icopy(a(1,i),aa,lda)
          ind(i) = ii
-      GOTO 100
+      goto 100
+      end
+
+c-----------------------------------------------------------------------
+
+      subroutine i8tuple_sort(a,lda,n,key,nkey,ind,aa)
+
+c     Use Heap Sort (p 231 Num. Rec., 1st Ed.)
+
+      integer*8 a(lda,n),aa(lda)
+      integer ind(1),key(nkey)
+      logical iftuple_i8altb
+
+      do 10 j=1,n
+         ind(j)=j
+   10 continue
+
+      if (n.le.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         if (l.gt.1) then
+            l=l-1
+c           aa  = a  (l)
+            call i8copy(aa,a(1,l),lda)
+            ii  = ind(l)
+         else
+c           aa =   a(ir)
+            call i8copy(aa,a(1,ir),lda)
+            ii = ind(ir)
+c           a(ir) =   a( 1)
+            call i8copy(a(1,ir),a(1,1),lda)
+            ind(ir) = ind( 1)
+            ir=ir-1
+            if (ir.eq.1) then
+c              a(1) = aa
+               call i8copy(a(1,1),aa,lda)
+               ind(1) = ii
+               return
+            endif
+         endif
+         i=l
+         j=l+l
+  200    continue
+         if (j.le.ir) then
+            if (j.lt.ir) then
+               if (iftuple_i8altb(a(1,j),a(1,j+1),key,nkey)) j=j+1
+            endif
+            if (iftuple_i8altb(aa,a(1,j),key,nkey)) then
+c              a(i) = a(j)
+               call i8copy(a(1,i),a(1,j),lda)
+               ind(i) = ind(j)
+               i=j
+               j=j+j
+            else
+               j=ir+1
+            endif
+         goto 200
+         endif
+c        a(i) = aa
+         call i8copy(a(1,i),aa,lda)
+         ind(i) = ii
+      goto 100
       end
 c
 c-----------------------------------------------------------------------
@@ -391,7 +454,7 @@ C
       integer ind(1),key(nkey)
       logical iftuple_altb
 C
-      dO 10 j=1,n
+      do 10 j=1,n
          ind(j)=j
    10 continue
 C
@@ -437,12 +500,12 @@ c              a(i) = a(j)
             else
                j=ir+1
             endif
-         GOTO 200
+         goto 200
          endif
 c        a(i) = aa
          call copy(a(1,i),aa,lda)
          ind(i) = ii
-      GOTO 100
+      goto 100
       end
 c
 c-----------------------------------------------------------------------
@@ -464,6 +527,26 @@ c
       iftuple_ialtb = .false.
       return
       end
+
+c-----------------------------------------------------------------------
+
+      logical function iftuple_i8altb(a,b,key,nkey)
+      integer*8 a(1),b(1)
+      integer key(nkey)
+
+      do i=1,nkey
+         k=key(i)
+         if (a(k).lt.b(k)) then
+            iftuple_i8altb = .true.
+            return
+         elseif (a(k).gt.b(k)) then
+            iftuple_i8altb = .false.
+            return
+         endif
+      enddo
+      iftuple_i8altb = .false.
+      return
+      end
 c
 c-----------------------------------------------------------------------
 c
@@ -482,6 +565,23 @@ c
          endif
       enddo
       iftuple_altb = .false.
+      return
+      end
+c
+c-----------------------------------------------------------------------
+c
+      logical function iftuple_i8aneb(a,b,key,nkey)
+      integer*8 a(1),b(1)
+      integer key(nkey)
+
+      do i=1,nkey
+         k=key(i)
+         if (a(k).ne.b(k)) then
+            iftuple_i8aneb = .true.
+            return
+         endif
+      enddo
+      iftuple_i8aneb = .false.
       return
       end
 c
@@ -975,17 +1075,68 @@ c
       endif
       return
       end
-c
+
 c-----------------------------------------------------------------------
-c
-      subroutine irank(A,IND,N)
-C
-C     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
-C
-      integer A(1),IND(1)
-C
+      subroutine irank(a,ind,n)
+
+c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+
+      integer a(1),q
+      integer ind(1)
+
       if (n.le.1) return
-      DO 10 J=1,N
+      do 10 J=1,N
+         IND(j)=j
+   10 continue
+
+      if (n.eq.1) return
+      L=n/2+1
+      ir=n
+  100 continue
+         IF (l.gt.1) THEN
+            l=l-1
+            indx=ind(l)
+            q=a(indx)
+         ELSE
+            indx=ind(ir)
+            q=a(indx)
+            ind(ir)=ind(1)
+            ir=ir-1
+            if (ir.eq.1) then
+               ind(1)=indx
+               return
+            endif
+         ENDIF
+         i=l
+         j=l+l
+  200    continue
+         if (j.LE.ir) then
+            if (j.LT.ir) then
+               if ( a(ind(J)).LT.a(ind(J+1)) ) J=J+1
+            endif
+            if (q.lt.a(ind(J))) then
+               ind(i)=ind(j)
+               i=j
+               j=j+j
+            else
+               j=ir+1
+            endif
+         goto 200
+         endif
+         ind(i)=indx
+      goto 100
+      end
+c-----------------------------------------------------------------------
+
+      subroutine i8rank(a,ind,n)
+
+c     Use Heap Sort (p 233 Num. Rec.), 5/26/93 pff.
+
+      integer*8 a(1),q
+      integer ind(1)
+
+      if (n.le.1) return
+      do 10 J=1,N
          IND(j)=j
    10 continue
 C
@@ -1010,23 +1161,24 @@ C
          i=l
          j=l+l
   200    continue
-         IF (J.le.IR) THEN
-            IF (J.lt.IR) THEN
-               IF ( A(IND(j)).lt.A(IND(j+1)) ) j=j+1
-            ENDIF
-            IF (q.lt.A(IND(j))) THEN
-               IND(I)=IND(J)
-               I=J
-               J=J+J
-            ELSE
-               J=IR+1
-            ENDIF
-         GOTO 200
-         ENDIF
-         IND(I)=INDX
-      GOTO 100
-      END
+         if (j.LE.ir) then
+            if (j.LT.ir) then
+               if ( a(ind(J)).LT.a(ind(J+1)) ) J=J+1
+            endif
+            if (q.lt.a(ind(J))) then
+               ind(i)=ind(j)
+               i=j
+               j=j+j
+            else
+               j=ir+1
+            endif
+         goto 200
+         endif
+         ind(i)=indx
+      goto 100
+      end
 c-----------------------------------------------------------------------
+
       subroutine iranku(r,input,n,w,ind)
 c
 c     Return the rank of each input value, and the maximum rank.
@@ -1034,9 +1186,9 @@ c
 c     OUTPUT:    r(k) = rank of each entry,  k=1,..,n
 c                maxr = max( r )
 c                w(i) = sorted & compressed list of input values
-c
-      integer r(1),input(1),ind(1),w(1)
-c
+
+      integer r(1),input(1),ind(1),w(1),rlast
+
       call icopy(r,input,n)
       call isort(r,ind,n)
 c
@@ -1051,7 +1203,7 @@ c        Bump rank only when r_i changes
          r(i) = maxr
       enddo
       call iunswap(r,ind,n,w)
-c
+
       return
       end
 c
@@ -1628,13 +1780,54 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       call get_vert
 
       return
       end
 c-----------------------------------------------------------------------
+      subroutine i8rank_vecn(ind,nn,a,m,n,key,nkey,aa)
+c
+c     Compute rank of each unique entry a(1,i) 
+c
+c     Output:   ind(i)  i=1,...,n    (global) rank of entry a(*,i)
+c               nn  = max(rank)
+c               a(j,i) is permuted
+c
+c     Input:    a(j,i) j=1,...,m;  i=1,...,n  
+c               m      :   leading dim. of v  (ldv must be .ge. m)
+c               key    :   sort key
+c               nkey   :   
+c
+c     Although not mandatory, this ranking procedure is probably
+c     most effectively employed when the keys are pre-sorted. Thus,
+c     the option is provided to sort vi() prior to the ranking.
+c
+c
+      integer*8 a(m,n),aa(m)
+      integer ind(n),key(nkey)
+      logical iftuple_i8aneb,a_ne_b
+
+      nk = min(nkey,m)
+      call i8tuple_sort(a,m,n,key,nk,ind,aa)
+
+c     Find unique a's
+      call i8copy(aa,a,m)
+      nn     = 1
+      ind(1) = nn
+c
+      do i=2,n
+         a_ne_b = iftuple_i8aneb(aa,a(1,i),key,nk)
+         if (a_ne_b) then
+            call i8copy(aa,a(1,i),m)
+            nn = nn+1
+         endif
+         ind(i) = nn ! set ind() to rank
+      enddo
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine irank_vecn(ind,nn,a,m,n,key,nkey,aa)
 c
@@ -1696,7 +1889,7 @@ c
       integer key(mmax),wtuple(mmax)
 
       if (m.gt.mmax) then
-         write(6,*) nid,m,mmax,' gbtuple_rank fail'
+         write(6,*) nid,m,mmax,' gbtuple_rank fail, A'
          call exitt
       endif
 
@@ -1738,6 +1931,76 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      subroutine gbtuple_rank8(tuple,m,n,nmax,cr_h,nid,np,ind)
+c
+c     Return a unique rank for each matched tuple set. Global.  Balanced.
+c
+c     tuple is destroyed.
+c
+c     By "balanced" we mean that none of the tuple entries is likely to
+c     be much more uniquely populated than any other, so that any of
+c     the tuples can serve as an initial (parallel) sort key
+c
+c     First two slots in tuple(:,i) assumed empty
+c
+      integer*8 tuple(m,nmax)
+      integer ind(nmax),cr_h
+
+      parameter (mmax=40)
+      integer key(mmax)
+      integer*8  wtuple(mmax),np8
+
+      integer*8 nu8,nu_prior,nu_tot,i8gl_running_sum
+
+
+      np8 = np
+
+      if (m.gt.mmax) then
+         write(6,*) nid,m,mmax,' gbtuple_rank8 fail, B'
+         call exitt
+      endif
+
+      do i=1,n
+         tuple(1,i) = mod(tuple(3,i),np8) ! destination processor
+         tuple(2,i) = i                   ! return location
+      enddo
+
+      ni= n
+      ky=1  ! Assumes crystal_new already called
+      call fgslib_crystal_ituple_transfer(cr_h, tuple,2*m,ni,nmax, ky)
+
+
+      nimx = iglmax(ni,1)
+      if (ni.gt.nmax)   write(6,*) ni,nmax,n,'cr_xfer problem, B'
+      if (nimx.gt.nmax) call exitt
+
+      nkey = m-2
+      do k=1,nkey
+         key(k) = k+2
+      enddo
+
+
+      call i8rank_vecn(ind,nu,tuple,m,ni,key,nkey,wtuple)! tuple re-ordered,
+                                                         ! but contents same
+      nu8      = nu
+      nu_tot   = i8gl_running_sum(nu8) ! running sum over P processors
+      nu_prior = nu_tot - nu8
+
+      do i=1,ni
+         tuple(3,i) = ind(i) + nu_prior  ! global ranking
+      enddo
+
+c     Use 2*m since tuple = int*8
+      call fgslib_crystal_ituple_transfer(cr_h, tuple,2*m,ni,nmax, ky)
+
+      nk = 1  ! restore to original order, local rank: 2; global: 3
+      ky = 2
+      call i8tuple_sort(tuple,m,n,ky,nk,ind,wtuple)
+
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine setvert3d(glo_num,ngv,nx,nel,vertex,ifcenter)
 c
 c     setup unique ids for dssum  
@@ -1752,47 +2015,44 @@ c
       include 'TOPOL'
       include 'GEOM'
 
-      integer*8 glo_num(1),ngv
-      integer vertex(0:1,0:1,0:1,1),nx
+      integer*8 glo_num(1)
+      integer*8 ngv
+      integer*8 vertex(0:1,0:1,0:1,1)
       logical ifcenter
 
-      integer  edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
+      integer*8 edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
       common  /scrmg/ edge,enum,fnum
 
       parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
-      integer etuple(4,12*lelt*nsafe),ftuple(5,6,lelt*nsafe)
+      integer*8 etuple(4,12*lelt*nsafe),ftuple(5,6,lelt*nsafe)
       integer ind(12*lelt*nsafe)
-      common  /scrns/ ind,etuple
+      common  /scrns/ etuple,ind
       equivalence  (etuple,ftuple)
 
-      integer gvf(4),facet(4),aa(3),key(3),e
       logical ifij
+
+      integer e,eg
+      integer*8 gvf(4),facet(4)
       
-      integer*8 igv,ig0
-      integer*8 ngvv,ngve,ngvs,ngvi,ngvm
-      integer*8 n_on_edge,n_on_face,n_in_interior
-      integer*8 i8glmax
-c
+      integer*8 ngvv,ngve,ngvs,ngvi,ngvm,igv,ig0
+      integer*8 n_on_edge,n_on_face,n_in_interior,n_unique_edges
+      integer*8 i8glmax,kswap
+
       ny   = nx
       nz   = nx
       nxyz = nx*ny*nz
-c
-      key(1)=1
-      key(2)=2
-      key(3)=3
 c
 c     Assign hypercube ordering of vertices
 c     -------------------------------------
 c
 c     Count number of unique vertices
       nlv  = 2**ldim
-      ngvv = iglmax(vertex,nlv*nel)
+      ngvv = i8glmax(vertex,nlv*nel)
 c
-      do e=1,nel
+      do e=1,nel    !  Local to global node number (vertex)
          do k=0,1
          do j=0,1
          do i=0,1
-c           Local to global node number (vertex)
             il  = 1 + (nx-1)*i + nx*(nx-1)*j + nx*nx*(nx-1)*k
             ile = il + nx*ny*nz*(e-1)
             glo_num(ile)   = vertex(i,j,k,e)
@@ -1835,11 +2095,12 @@ c     Assign a number (rank) to each unique edge
       m    = 4
       n    = 12*nel
       nmax = 12*lelt*nsafe  ! nsafe for crystal router factor of safety
-      call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
+      call gbtuple_rank8(etuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,12*nel
          enum(i,1) = etuple(3,i)
       enddo
-      n_unique_edges = iglmax(enum,12*nel)
+      n_unique_edges = i8glmax(enum,12*nel)
+
 c
       n_on_edge = nx-2
       ngve      = n_unique_edges*n_on_edge
@@ -1933,8 +2194,8 @@ c
                i                  = icface(icrn,ifac)-1
                facet(icrn)        = vertex(i,0,0,e)
             enddo
-            call isort(facet,ind,ncrnr)
-            call icopy(ftuple(3,ifac,e),facet,ncrnr-1)
+            call i8sort(facet,ind,ncrnr)
+            call i8copy(ftuple(3,ifac,e),facet,ncrnr-1)
          enddo
       enddo
 
@@ -1942,15 +2203,15 @@ c     Assign a number (rank) to each unique face
       m    = 5
       n    = 6*nel
       nmax = 6*lelt*nsafe  ! nsafe for crystal router factor of safety
-      call gbtuple_rank(ftuple,m,n,nmax,cr_h,nid,np,ind)
+      call gbtuple_rank8(ftuple,m,n,nmax,cr_h,nid,np,ind)
       do i=1,6*nel
          fnum(i,1) = ftuple(3,i,1)
       enddo
-      n_unique_faces = iglmax(fnum,6*nel)
+      n_unique_faces = i8glmax(fnum,6*nel)
 c
       call dsset (nx,ny,nz)
       do e=1,nel
-       do iface=1,nfaces
+      do iface=1,nfaces
          i0 = skpdat(1,iface)
          i1 = skpdat(2,iface)
          is = skpdat(3,iface)
@@ -1972,15 +2233,15 @@ c                    15+--------+62
 c                          
 c        We would count from c-->a, then towards d.
 c
+
          gvf(1) = glo_num(i0+nx*(j0-1)+nxyz*(e-1))
          gvf(2) = glo_num(i1+nx*(j0-1)+nxyz*(e-1))
          gvf(3) = glo_num(i0+nx*(j1-1)+nxyz*(e-1))
          gvf(4) = glo_num(i1+nx*(j1-1)+nxyz*(e-1))
-c
-         call irank(gvf,ind,4)
-c
+         call i8rank(gvf,ind,4)
+
 c        ind(1) tells which element of gvf() is smallest.
-c
+
          ifij = .false.
          if (ind(1).eq.1) then
             idir =  1
@@ -2013,7 +2274,7 @@ c
             j1=jt
             js=-js
          endif
-c
+
          nxx = nx*nx
          n_on_face = (nx-2)*(ny-2)
          ngvs  = n_unique_faces*n_on_face
@@ -2049,13 +2310,13 @@ c                 interior
             enddo
             enddo
          endif
-       enddo
+      enddo
       enddo
       ngv   = ngv + ngvs
-c
+
 c     Finally,  number interiors (only ifcenter=.true.)
 c     -------------------------------------------------
-c
+
       n_in_interior = (nx-2)*(ny-2)*(nz-2)
       ngvi = n_in_interior*nelgt
       if (ifcenter) then
@@ -2085,15 +2346,16 @@ c
             enddo
          enddo
       endif
-c
+
 c     Quick check on maximum #dofs:
       m    = nxyz*nelt
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve + ngvs  ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
-      if (nio.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
-    1 format('   setvert3d:',i4,4i12)
-c
+      if (nio.eq.0 .and. loglevel.gt.1) 
+     $  write(6,1) nx,ngvv,ngvi,ngv,ngvm
+    1 format('   setvert3d:',i4,4i16)
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2107,41 +2369,38 @@ c
       include 'TOPOL'
       include 'GEOM'
 
-      integer*8 glo_num(1),ngv
-      integer vertex(0:1,0:1,1),nx
+      integer*8 glo_num(1)
+      integer*8 ngv
+      integer*8 vertex(0:1,0:1,1)
       logical ifcenter
 
-      integer  edge(0:1,0:1,2,lelt),enum(4,lelt)
+      integer*8  edge(0:1,0:1,2,lelt),enum(4,lelt)
       common  /scrmg/ edge,enum
 
       parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
-      integer etuple(4,4*lelt*nsafe),ind(4*lelt*nsafe)
-      common  /scrns/ ind,etuple
+      integer*8 etuple(4,4*lelt*nsafe)
+      integer   ind(4*lelt*nsafe)
+      common  /scrns/ etuple,ind
 
-      integer gvf(4),aa(3),key(3),e,eg
+      integer e,eg
       logical ifij
 
-      integer*8 igv,ig0
-      integer*8 ngvv,ngve,ngvs,ngvi,ngvm
-      integer*8 n_on_edge,n_on_face,n_in_interior
-      integer*8 i8glmax
-c
-c
+      integer*8 ngvv,ngve,ngvs,ngvi,ngvm,igv,ig0
+      integer*8 n_on_edge,n_on_face,n_in_interior,n_unique_edges
+      integer*8 i8glmax,kswap
+
 c     memory check...
-c
+
       ny   = nx
       nz   = 1
       nxyz = nx*ny*nz
-c
-      key(1)=1
-      key(2)=2
-      key(3)=3
-c
+
 c     Count number of unique vertices
       nlv  = 2**ldim
-      ngvv = iglmax(vertex,nlv*nel)
+      ngvv = i8glmax(vertex,nlv*nel)
       ngv  = ngvv
-c
+
+
 c     Assign hypercube ordering of vertices.
       do e=1,nel
          do j=0,1
@@ -2181,7 +2440,8 @@ c     Assign a number (rank) to each unique edge
       n    = 4*nel
       nmax = 4*lelt*nsafe  ! nsafe for crystal router factor of safety
 
-      call gbtuple_rank(etuple,m,n,nmax,cr_h,nid,np,ind)
+      call gbtuple_rank8(etuple,m,n,nmax,cr_h,nid,np,ind)
+
       do i=1,4*nel
          enum(i,1) = etuple(3,i)
       enddo
@@ -2260,7 +2520,6 @@ c
          enddo
       endif
 
-c
 c     Quick check on maximum #dofs:
       m    = nxyz*nelt
       ngvm = i8glmax(glo_num,m)
@@ -2268,7 +2527,7 @@ c     Quick check on maximum #dofs:
       ngvi = ngvi + ngvv         ! total number of unique ids 
       if (nio.eq.0) write(6,1) nx,ngvv,ngvi,ngv,ngvm
     1 format('   setvert2d:',i4,4i12)
-c
+
       return
       end
 c-----------------------------------------------------------------------

@@ -31,7 +31,7 @@ c
       nc  = cs(0)            ! number of stored convecting fields
 
       ln  = lx1*ly1*lz1*lelt
-      n   = lx1*ly1*lz1*nelfld(ifield)
+      n   = lx1*ly1*lz1*nelc
       m   = lxd*lyd*lzd*nelc*ldim
 
 c      if(nid.eq.0) write(*,*) 'going into char_conv1 '
@@ -457,7 +457,8 @@ c-----------------------------------------------------------------------
 
       if (n.gt.m) then
          write(6,1) nid,n,m,avar5,lvar5,sub_name10
-    1    format(i8,' ERROR: :',2i12,2(1x,a5),1x,a10)
+    1    format(i8,' ERROR buffer too small: ','req ',
+     $          i12,' alloc ',i12,2(1x,a5),1x,a10)
          call exitti('lim_chk problem. $',n)
       endif
 
@@ -1247,7 +1248,8 @@ c     Global-to-local mapping for gs
       include 'SIZE'
       include 'TOTAL'
 
-      integer   dgh,vertex(1)
+      integer   dgh
+      integer*8 vertex(1)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
       common /c_is1/ glo_num_face(lf)

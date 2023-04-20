@@ -49,7 +49,6 @@ c-------------------------------------------------------------
       if (icalld.eq.0) then
          ! just in case we call setup from usrdat2 
          call fix_geom
-         call geom_reset(1)
 
          call set_intflag
          call neknekmv
@@ -793,17 +792,22 @@ c
       COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
       common /cvflow_i/ icvflow,iavflow
 
+      common /cbplan_vol_ms/  vxcp, dvxc, vycp,
+     $                        dvyc, vzcp, dvzc,
+     $                        resbc 
+      REAL vxcp   (LX1,LY1,LZ1,LELV)
+      REAL dvxc   (LX1,LY1,LZ1,LELV)
+      REAL vycp   (LX1,LY1,LZ1,LELV)
+      REAL dvyc   (LX1,LY1,LZ1,LELV)
+      REAL vzcp   (LX1,LY1,LZ1,LELV)
+      REAL dvzc   (LX1,LY1,LZ1,LELV)
+      real resbc(lx1*ly1*lz1*lelv,ldim+1)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      real vxcp (lx1,ly1,lz1,lelv)
-      real vycp (lx1,ly1,lz1,lelv)
-      real vzcp (lx1,ly1,lz1,lelv)
-      real resbc(lx1*ly1*lz1*lelv,ldim)
 
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc,vxcp,vycp,vzcp,resbc
- 
- 
 c     Compute velocity, 1st part 
       n  = lx1*ly1*lz1*nelv
       ntot1  = lx1*ly1*lz1*nelv
@@ -923,22 +927,28 @@ c     (Tombo splitting scheme).
 
       common /cvflow_i/ icvflow,iavflow
 
+      common /cbplan_vol_ms/  vxcp, dvxc, vycp,
+     $                        dvyc, vzcp, dvzc,
+     $                        resbc 
+      REAL vxcp   (LX1,LY1,LZ1,LELV)
+      REAL dvxc   (LX1,LY1,LZ1,LELV)
+      REAL vycp   (LX1,LY1,LZ1,LELV)
+      REAL dvyc   (LX1,LY1,LZ1,LELV)
+      REAL vzcp   (LX1,LY1,LZ1,LELV)
+      REAL dvzc   (LX1,LY1,LZ1,LELV)
+      real resbc(lx1*ly1*lz1*lelv,ldim+1)
+
+      common /cvflow_nn/ vxcbc,vycbc,vzcbc
       real vxcbc(lx1,ly1,lz1,lelv)
       real vycbc(lx1,ly1,lz1,lelv)
       real vzcbc(lx1,ly1,lz1,lelv)
-      real vxcp (lx1,ly1,lz1,lelv)
-      real vycp (lx1,ly1,lz1,lelv)
-      real vzcp (lx1,ly1,lz1,lelv)
-      real resbc(lx1*ly1*lz1*lelv,ldim)
-
-      common /cvflow_nn/ vxcbc,vycbc,vzcbc,vxcp,vycp,vzcp,resbc
 
       CHARACTER CB*3
 
-
-      ntot1  = lx1*ly1*lz1*nelv
+      n = lx1*ly1*lz1*nelv
+      NXYZ1  = lx1*ly1*lz1
+      NTOT1  = NXYZ1*NELV
       ntot2  = lx2*ly2*lz2*nelv
-      nxyz1  = lx1*ly1*lz1
 
       ngeompv = 20
       do ictr = 1,ngeompv

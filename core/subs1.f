@@ -1724,7 +1724,7 @@ c     a new array of global pointers for an nx^ldim set of elements.
       include 'INPUT'
 
       integer*8 glo_num(1),ngv
-      integer vertex(1),nx
+      integer*8 vertex(1)
       logical ifcenter
 
       common /ctmp0/ gnum(lx1*ly1*lz1*lelt)
@@ -1957,7 +1957,7 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      integer vertex
+      integer*8 vertex
 
       integer null_space,e
 

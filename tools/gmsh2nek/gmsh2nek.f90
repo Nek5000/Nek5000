@@ -4,33 +4,158 @@
       use SIZE
 
       integer option
+	  
       write(6,'(A)', ADVANCE = "NO") 'Enter mesh dimension: '
       read (5,'(I1)') option
+      num_dim = option
  
+      call read_input_name
+
+      preread = 1
+      readfluid = 1 ! force read to read fluid .msh file
+! pre-read fluid
       if (option.eq.2) then
-         call read_input_name
 		 if(aorb.eq.0) then
          call gmsh_read_2d_ascii
          elseif(aorb.eq.1) then
          call gmsh_read_2d_binary
          endif
-         call convert_2d
-         call setbc_2d
       elseif(option.eq.3) then
-         call read_input_name
          if(aorb.eq.0) then
          call gmsh_read_3d_ascii
          elseif(aorb.eq.1) then
          call gmsh_read_3d_binary
          endif
-         call convert_3d
-         call setbc_3d
       else
         write(6,*) 'Unknown input option'
         STOP
       endif
 
-      call deallocate_all_msh_arrays  ! deallocate_all_msh_arrays to save memory
+      call deallocate_all_msh_arrays  ! deallocate all msh arrays
+
+      eftot = num_elem
+
+      if (option.eq.2) then
+        write(6,*) 'total fluid quad number: ', eftot
+      elseif(option.eq.3) then
+        write(6,*) 'total fluid hex number: ', eftot
+      endif
+
+!pre-read solid
+      ifsolid = 0
+      write(6,'(A)', ADVANCE = "NO") 'Do you have solid mesh ? (0 for no, 1 for yes) '
+      read (5,'(I1)') ifsolid
+
+      if (ifsolid.eq.1) then
+
+      readfluid = 0   ! force read to read solid .msh file
+      call read_input_name_solid
+
+      if (option.eq.2) then
+		 if(aorb_solid.eq.0) then
+         call gmsh_read_2d_ascii
+         elseif(aorb_solid.eq.1) then
+         call gmsh_read_2d_binary
+         endif
+      elseif(option.eq.3) then
+         if(aorb_solid.eq.0) then
+         call gmsh_read_3d_ascii
+         elseif(aorb_solid.eq.1) then
+         call gmsh_read_3d_binary
+         endif
+      else
+        write(6,*) 'Unknown input option'
+        STOP
+      endif
+
+      call deallocate_all_msh_arrays  ! deallocate all msh arrays
+
+      num_elem  = eftot + num_elem
+
+      if (option.eq.2) then
+        write(6,*) 'total quad number: ', num_elem
+      elseif(option.eq.3) then
+        write(6,*) 'total hex number: ', num_elem
+      endif
+
+      endif
+
+      call allocate_all_re2_arrays(option)
+
+      preread = 0
+
+      readfluid = 1 ! force read to read fluid .msh file
+      if (option.eq.2) then
+         ! call read_input_name
+		 if(aorb.eq.0) then
+         call gmsh_read_2d_ascii
+         elseif(aorb.eq.1) then
+         call gmsh_read_2d_binary
+         endif
+		 startQuad = 0
+         call convert_2d
+         !call setbc_2d
+      elseif(option.eq.3) then
+         ! call read_input_name
+         if(aorb.eq.0) then
+         call gmsh_read_3d_ascii
+         elseif(aorb.eq.1) then
+         call gmsh_read_3d_binary
+         endif    
+         startHex = 0
+         call convert_3d
+         !call setbc_3d
+      else
+        write(6,*) 'Unknown input option'
+        STOP
+      endif
+
+      eftot = num_elem
+
+      call print_boundary_info()
+
+      call deallocate_all_msh_arrays  ! deallocate all msh arrays
+
+
+      if (ifsolid.eq.1) then
+
+      readfluid = 0   ! force read to read solid .msh file
+      if (option.eq.2) then
+		 if(aorb_solid.eq.0) then
+         call gmsh_read_2d_ascii
+         elseif(aorb_solid.eq.1) then
+         call gmsh_read_2d_binary
+         endif
+		 startQuad = eftot
+         call convert_2d
+         !call setbc_2d
+      elseif(option.eq.3) then
+         if(aorb_solid.eq.0) then
+         call gmsh_read_3d_ascii
+         elseif(aorb_solid.eq.1) then
+         call gmsh_read_3d_binary
+         endif
+		 startHex = eftot
+         call convert_3d
+         !call setbc_3d
+      else
+        write(6,*) 'Unknown input option'
+        STOP
+      endif
+
+      num_elem  = eftot + num_elem
+
+      call print_boundary_info()
+ 
+      call deallocate_all_msh_arrays  ! deallocate all msh arrays
+
+      endif
+
+      call set_periodicity(1)
+      if (eftot.ne.num_elem)  call set_periodicity(2)
+	  
+      write(6,*) 'please give re2 file name:'
+      call read_re2_name
       call gen_re2                    ! write nek mesh re2 file 
 
       end 
@@ -42,26 +167,20 @@
       real A
       integer B
 	  
-      character(1) re2nam1(80)
       character(1) mshnam1(32)
       character(32) fname
 
-      write(6,'(A)', ADVANCE = "NO") 'Input .msh file name: '
+      write(6,'(A)', ADVANCE = "NO") 'Input fluid .msh file name: '
       read (5,'(a32)') fname
       len = ltrunc(fname,32)
 
       call blank  (mshnam1, 32)
-      call blank  (re2nam1, 80)
       call chcopy (mshnam1,fname,32)
-      call chcopy (re2nam1,fname,80)
 	  
       call chcopy(mshnam1(len+1) ,'.msh' , 4)
-      call chcopy(re2nam1(len+1) ,'.re2' , 4)
 	  
       call blank (mshname, 32)
-      call blank (re2name, 80)
       call chcopy (mshname,mshnam1,len+4)
-      call chcopy (re2name,re2nam1,len+4)
 
       open(301,file=mshname)
       read(301,*) charline
@@ -70,6 +189,7 @@
 	  
       if ((A.ge.3.0).or.(A.lt.2.0)) then
       write(6,*) 'ERROR: invalid msh file format!'  
+      write(6,*) 'only Gmsh version 2 mesh is accepted'  
       STOP
       endif
 	  
@@ -77,6 +197,139 @@
 	  
       return 
       end
+!-----------------------------------------------------------------------
+     subroutine read_input_name_solid
+
+      use SIZE
+      character*80 charline
+      real A
+      integer B
+	  
+      character(1) mshnam1(32)
+      character(32) fname
+
+      write(6,'(A)', ADVANCE = "NO") 'Input solid .msh file name: '
+      read (5,'(a32)') fname
+      len = ltrunc(fname,32)
+
+      call blank  (mshnam1, 32)
+      call chcopy (mshnam1,fname,32)
+	  
+      call chcopy(mshnam1(len+1) ,'.msh' , 4)
+	  
+      call blank (mshname_solid, 32)
+      call chcopy (mshname_solid,mshnam1,len+4)
+
+      open(301,file=mshname_solid)
+      read(301,*) charline
+      read(301,*) A,aorb_solid,B
+      close(301)
+	  
+      if ((A.ge.3.0).or.(A.lt.2.0)) then
+      write(6,*) 'ERROR: invalid msh file format!'  
+      write(6,*) 'only Gmsh version 2 mesh is accepted'  
+      STOP
+      endif
+	  
+! aorb indicates ascii or binary file
+	  
+      return 
+      end
+!-----------------------------------------------------------------------
+      subroutine read_re2_name
+
+      use SIZE
+
+      character(1)  re2nam1(80)
+      character(32) fname
+
+      read (5,'(A32)') fname
+      len = ltrunc(fname,32)
+      
+      call blank  (re2nam1, 80)
+      call chcopy (re2nam1,fname,80)
+      call chcopy (re2nam1(len+1) ,'.re2',4)
+
+      call blank  (re2name, 80)
+      call chcopy (re2name,re2nam1,len+4)
+ 
+      return 
+      end
+!-----------------------------------------------------------------------
+      subroutine print_boundary_info
+
+      use SIZE
+	  
+	  
+ ! boundary condition summary
+      write(6,*) '******************************************************'
+      if (readfluid.eq.1) then
+	  write(6,*) 'Fluid mesh boundary info summary'
+      else
+	  write(6,*) 'Solid mesh boundary info summary'
+      endif
+	  
+      write(6,*) 'BoundaryName     BoundaryID'
+      do ibc= 1,bcNumber
+      write(6,*) trim(bcChar(ibc)),bcID(1,ibc)
+      enddo
+      write(6,*) '******************************************************'
+ 
+      return 
+      end
+!-----------------------------------------------------------------------
+      subroutine allocate_all_re2_arrays(option)
+      use SIZE
+      integer option
+
+       if (option.eq.2) then
+
+       allocate ( xm1              (3,3,3,num_elem))
+       allocate ( ym1              (3,3,3,num_elem))
+       allocate ( zm1              (3,3,3,num_elem))
+
+       allocate ( quad_line_array   (4,num_elem))
+       call rzero_int(quad_line_array,  4*num_elem)
+       
+       allocate (r_or_l(num_elem))
+	   call rzero_int(r_or_l,num_elem)
+	    
+       allocate   (ccurve (4+8*(num_dim-2),num_elem) )
+       allocate   (curve  (2*num_dim,12,   num_elem) )
+       call rzero (curve,2*num_dim*12*num_elem)
+       call blank (ccurve,(4+8*(num_dim-2))*num_elem)
+       
+       allocate   (cbc    (2*num_dim,      num_elem) )
+       allocate   (bc     (5,2*num_dim,    num_elem) ) 
+       call rzero (bc,5*2*num_dim*num_elem)
+       call blank (cbc,3*2*num_dim*num_elem)
+	   
+       elseif(option.eq.3) then
+
+       allocate ( xm1              (3,3,3,num_elem))
+       allocate ( ym1              (3,3,3,num_elem))
+       allocate ( zm1              (3,3,3,num_elem))
+
+       allocate ( hex_face_array   (6,num_elem))
+       call rzero_int(hex_face_array,  6*num_elem)
+	
+       allocate   (ccurve (4+8*(num_dim-2),num_elem) )
+       allocate   (curve  (2*num_dim,12,   num_elem) )
+       call rzero (curve,2*num_dim*12*num_elem)
+       call blank (ccurve,(4+8*(num_dim-2))*num_elem)
+
+       allocate   (cbc    (2*num_dim,      num_elem) )
+       allocate   (bc     (5,2*num_dim,    num_elem) ) 
+       call rzero (bc,5*2*num_dim*num_elem)
+       call blank (cbc,3*2*num_dim*num_elem)
+
+       else
+         write(6,*) 'Unknown input option'
+         STOP
+       endif
+	  
+      end
+
 !-----------------------------------------------------------------------
       subroutine gmsh_read_2d_ascii
 ! read .msh file (version 2, ascii format)
@@ -91,6 +344,11 @@
 
       equivalence(mshnam2,mshnam3)
       equivalence(charline,charlin1) 	  
+
+
+      if (readfluid.eq.1) then ! read fluid .msh file
+
+      write(6,*) 'reading meshing file ',mshname
 
       call chcopy(mshnam2,mshname,32)	  
       len = ltrunc(mshnam2,32)
@@ -115,6 +373,36 @@
 
       open(299,file=mshname)
       open(300,file=mshnam2)
+	  
+      else  ! read solid .msh file
+	  
+      write(6,*) 'reading meshing file ',mshname_solid	  
+	
+      call chcopy(mshnam2,mshname_solid,32)	  
+      len = ltrunc(mshnam2,32)
+      call chcopy(mshnam3(len+1) ,'_1' , 2)
+
+
+      call blank (charline,80)
+      call chcopy(charlin1(1),'cp ',3)
+	
+      len = ltrunc(mshname_solid,32)
+      call chcopy(charlin1(4),mshname_solid,len)
+	
+      len = ltrunc(charline,80)
+      call chcopy(charlin1(len+1),' ',1)
+
+      len2 = ltrunc(mshnam2,32)
+      call chcopy(charlin1(len+2),mshnam2,len2)
+
+      call system(charline)	  
+
+      call blank (charline,80)
+
+      open(299,file=mshname_solid)
+      open(300,file=mshnam2)
+
+      endif 
 
 ! loop to find $PhysicalNames
       do while (.true.) 
@@ -247,9 +535,11 @@
 
       enddo
 
+      if (preread.eq.1) then
       write (6,*) 'total node number is ', totalNode
       write (6,*) 'total line element number is ', totalLine
       write (6,*) 'total quad element number is ', totalQuad
+      endif
 
       close(299)
       close(300)
@@ -283,9 +573,15 @@
 	 
       fileid = 302
 	  
+      if (readfluid.eq.1) then
 	  ! read msh file in binary format.
+      write(6,*) 'reading mesh file ',mshname
       open(unit=fileid,file=mshname,access="stream",form="unformatted",status="old")
-	  
+      else
+      write(6,*) 'reading mesh file ',mshname_solid
+      open(unit=fileid,file=mshname_solid,access="stream",form="unformatted",status="old")
+      endif
+
       ! read two lines.
 ! ------------------------------------------------------------------
       call bread_line(fileid,singlechar,nlength)
@@ -477,9 +773,11 @@
 ! close file
 1180  close(fileid)
 
+      if (preread.eq.1) then
       write (6,*) 'total node number is ', totalNode
       write (6,*) 'total line element number is ', totalLine
       write (6,*) 'total quad element number is ', totalQuad
+      endif
 
       num_dim = 2
       num_elem = totalQuad
@@ -498,8 +796,14 @@
       character*1  charlin1(80)
       integer A,B,C,elemType
 
+
       equivalence(mshnam2,mshnam3)
       equivalence(charline,charlin1) 	  
+
+
+      if (readfluid.eq.1) then
+	  
+      write(6,*) 'reading mesh file ',mshname
 
       call chcopy(mshnam2,mshname,32)	  
       len = ltrunc(mshnam2,32)
@@ -524,6 +828,37 @@
 
       open(299,file=mshname)
       open(300,file=mshnam2)
+
+      else
+
+      write(6,*) 'reading mesh file ',mshname_solid
+
+      call chcopy(mshnam2,mshname_solid,32)	  
+      len = ltrunc(mshnam2,32)
+      call chcopy(mshnam3(len+1) ,'_1' , 2)
+
+
+      call blank (charline,80)
+      call chcopy(charlin1(1),'cp ',3)
+	
+      len = ltrunc(mshname_solid,32)
+      call chcopy(charlin1(4),mshname_solid,len)
+	
+      len = ltrunc(charline,80)
+      call chcopy(charlin1(len+1),' ',1)
+
+      len2 = ltrunc(mshnam2,32)
+      call chcopy(charlin1(len+2),mshnam2,len2)
+
+      call system(charline)	  
+
+      call blank (charline,80)
+
+      open(299,file=mshname_solid)
+      open(300,file=mshnam2)
+  
+	  endif
+
 
 ! loop to find $PhysicalNames
       do while (.true.) 
@@ -693,9 +1028,11 @@
 
       enddo
 
+      if (preread.eq.1) then
       write (6,*) 'total node number is ', totalNode
       write (6,*) 'total quad element number is ', totalQuad
       write (6,*) 'total hex element number is ', totalHex
+      endif
 
       close(299)
       close(300)
@@ -731,8 +1068,14 @@
 	 
       fileid = 302
 	  
-	  ! read msh file in binary format.
+      if (readfluid.eq.1) then
+	  ! read msh file in binary format. 
+      write(6,*) 'reading mesh file ',mshname
       open(unit=fileid,file=mshname,access="stream",form="unformatted",status="old")
+      else 
+      write(6,*) 'reading mesh file ',mshname_solid
+      open(unit=fileid,file=mshname_solid,access="stream",form="unformatted",status="old")
+      endif
 	  
       ! read two lines.
 ! ------------------------------------------------------------------
@@ -973,16 +1316,18 @@
 ! close file
 1180  close(fileid)
 
+      if (preread.eq.1) then
       write (6,*) 'total node number is ', totalNode
       write (6,*) 'total quad element number is ', totalQuad
       write (6,*) 'total hex element number is ', totalHex
+      endif
 
       num_dim = 3
       num_elem = totalHex
 
       return
       end
-!-----------------------------------------------------------------------
+!!!-----------------------------------------------------------------------
       subroutine convert_2d
 !  Subroutine to convert gmsh quad8/quad9 to nek  quad8/quad9 elements.
       use SIZE
@@ -1004,45 +1349,24 @@
       integer iaddhex,addhex
       logical ifnew
  
-      allocate ( xm1              (3,3,3,num_elem))
-      allocate ( ym1              (3,3,3,num_elem))
-      allocate ( zm1              (3,3,3,num_elem))
-      allocate ( quad_line_array   (4,num_elem))
-      call rzero_int(quad_line_array,  4*num_elem)
-
-      allocate (r_or_l(num_elem))
-	  call rzero_int(r_or_l,num_elem)
-
 ! need a test to figure out if element is right-hand or left-hand.
       do iQuad = 1, totalQuad
 ! detect right or left hand elements
-      call r_or_l_detect(iQuad,r_or_l(iQuad))
-      if(r_or_l(iQuad).eq.0) then !  for right hand element in gmsh mesh
+      call r_or_l_detect(iQuad,r_or_l(iQuad+startQuad))
+      if(r_or_l(iQuad+startQuad).eq.0) then !  for right hand element in gmsh mesh
         do imshvert = 1,9 
           inekvert = msh_to_nek_right(imshvert)
-          xm1(inekvert,1,1,iQuad)= node_xyz(1,quad_array(imshvert+2,iQuad))
-          ym1(inekvert,1,1,iQuad)= node_xyz(2,quad_array(imshvert+2,iQuad))
+          xm1(inekvert,1,1,iQuad+startQuad)= node_xyz(1,quad_array(imshvert+2,iQuad))
+          ym1(inekvert,1,1,iQuad+startQuad)= node_xyz(2,quad_array(imshvert+2,iQuad))
         enddo
-      elseif(r_or_l(iQuad).eq.1) then !  for left hand element in gmsh mesh
+      elseif(r_or_l(iQuad+startQuad).eq.1) then !  for left hand element in gmsh mesh
         do imshvert = 1,9
           inekvert = msh_to_nek_left(imshvert)
-          xm1(inekvert,1,1,iQuad)= node_xyz(1,quad_array(imshvert+2,iQuad))
-          ym1(inekvert,1,1,iQuad)= node_xyz(2,quad_array(imshvert+2,iQuad))
+          xm1(inekvert,1,1,iQuad+startQuad)= node_xyz(1,quad_array(imshvert+2,iQuad))
+          ym1(inekvert,1,1,iQuad+startQuad)= node_xyz(2,quad_array(imshvert+2,iQuad))
         enddo
       endif
       enddo
-
-! zero-out bc and curve sides arrays
-
-      allocate   (ccurve (4+8*(num_dim-2),num_elem) )
-      allocate   (curve  (2*num_dim,12,   num_elem) )
-      call rzero (curve,2*num_dim*12*num_elem)
-      call blank (ccurve,(4+8*(num_dim-2))*num_elem)
-
-      allocate   (cbc    (2*num_dim,      num_elem) )
-      allocate   (bc     (5,2*num_dim,    num_elem) ) 
-      call rzero (bc,5*2*num_dim*num_elem)
-      call blank (cbc,3*2*num_dim*num_elem)
 
 !---- search for boundaries, based on physical tags of line elements
 !---- use old scheme
@@ -1051,11 +1375,11 @@
       do iQuad = 1,totalQuad
         do iline = 1,4
             ! obtain node id for this line on this quad.
-            if(r_or_l(iQuad).eq.0) then
+            if(r_or_l(iQuad+startQuad).eq.0) then
               do ilnode = 1,2
               lnode(ilnode)=quad_array(quad_face_node_right(ilnode,iline)+2,iQuad)
               enddo
-            elseif(r_or_l(iQuad).eq.1) then
+            elseif(r_or_l(iQuad+startQuad).eq.1) then
               do ilnode = 1,2
               lnode(ilnode)=quad_array(quad_face_node_left(ilnode,iline)+2,iQuad)
               enddo
@@ -1064,7 +1388,7 @@
             call findline(lnode,ifoundline)   ! ifoundline is the matching line number
                                               ! ifoundline is 0 if no line element find
             if(ifoundline.ne.0) then
-            quad_line_array(iline,iQuad) = line_array(1,ifoundline) ! physical tag
+            quad_line_array(iline,iQuad+startQuad) = line_array(1,ifoundline) ! physical tag
             endif
         enddo
       enddo
@@ -1072,9 +1396,9 @@
 ! assign dummy boundary condition and id to bc array	  
       do iQuad= 1,totalQuad
         do iline = 1,4
-         if((quad_line_array(iline,iQuad)).ne.0) then       ! if on boundary, with physical tag
-          cbc(iline,iQuad) = 'MSH'                         ! dummy boundary condition
-          bc(5,iline,iQuad) = quad_line_array(iline,iQuad) ! assign tag 
+         if((quad_line_array(iline,iQuad+startQuad)).ne.0) then       ! if on boundary, with physical tag
+          cbc(iline,iQuad+startQuad) = 'MSH'                         ! dummy boundary condition
+          bc(5,iline,iQuad+startQuad) = quad_line_array(iline,iQuad+startQuad) ! + bcID_offset ! assign tag 
          endif
         enddo
       enddo
@@ -1105,32 +1429,14 @@
       integer iaddhex,addhex,iaddhex_nd,iaddhex1,iaddhex2
       logical ifnew
 
-      allocate ( xm1              (3,3,3,num_elem))
-      allocate ( ym1              (3,3,3,num_elem))
-      allocate ( zm1              (3,3,3,num_elem))
-      allocate ( hex_face_array   (6,num_elem))
-      call rzero_int(hex_face_array,  6*num_elem)
-
       do ihex = 1, totalHex
         do imshvert = 1,27 ! 20
           inekvert = msh_to_nek(imshvert)
-          xm1(inekvert,1,1,ihex)= node_xyz(1,hex_array(imshvert+2,ihex))
-          ym1(inekvert,1,1,ihex)= node_xyz(2,hex_array(imshvert+2,ihex))
-          zm1(inekvert,1,1,ihex)= node_xyz(3,hex_array(imshvert+2,ihex))
+          xm1(inekvert,1,1,ihex+startHex)= node_xyz(1,hex_array(imshvert+2,ihex))
+          ym1(inekvert,1,1,ihex+startHex)= node_xyz(2,hex_array(imshvert+2,ihex))
+          zm1(inekvert,1,1,ihex+startHex)= node_xyz(3,hex_array(imshvert+2,ihex))
         enddo
       enddo
-
-! zero-out bc and curve sides arrays
-
-      allocate   (ccurve (4+8*(num_dim-2),num_elem) )
-      allocate   (curve  (2*num_dim,12,   num_elem) )
-      call rzero (curve,2*num_dim*12*num_elem)
-      call blank (ccurve,(4+8*(num_dim-2))*num_elem)
-
-      allocate   (cbc    (2*num_dim,      num_elem) )
-      allocate   (bc     (5,2*num_dim,    num_elem) ) 
-      call rzero (bc,5*2*num_dim*num_elem)
-      call blank (cbc,3*2*num_dim*num_elem)
 
 ! currently, does consider converting boundary condition now.
 ! only need to associate quad4 to hex8 faces.
@@ -1147,7 +1453,6 @@
 	     do inode = 1,4
           quadnode(inode) = quad_array(inode+2,iquad) ! first 4 nodes of quad
          enddo
-
 !find all hexes that share the same nodes of this quad
          call rzero_int(fhex,32)
          call rzero_int(fhex_nd,32)
@@ -1162,7 +1467,6 @@
                endif
             enddo
          enddo
-
 ! fhex(32) contains all hexes that share the same nodes of this quad.
 ! now, only need to loop over this fhex(32) to find which hex face correspond to this quad.
 ! however, there are duplicated hex id in fhex(32)
@@ -1197,13 +1501,14 @@
            imatch = 0 
            call ifquadmatch(imatch,fnode,quadnode)
            if(imatch.eq.1) then
-             hex_face_array(iface,ihex) = physicalTag
-             if(hex_face_array(iface,ihex).eq.1) flag1 = flag1 +1
+             hex_face_array(iface,ihex+startHex) = physicalTag
+             !if(hex_face_array(iface,ihex+startHex).eq.1) flag1 = flag1 +1
 		     goto 1100
            endif
          enddo
        enddo
-!
+      
+
 ! if no hex face is found for this quad, report error
       write(6,*) 'ERROR: cannot find hex face for quad id ',iquad
       write(6,*) 'ERROR: this should not happen, please check your mesh'
@@ -1231,11 +1536,12 @@
 !      enddo
 
 ! assign dummy boundary condition and id to bc array
+
       do ihex = 1, totalHex
         do iface = 1,6
-         if(hex_face_array(iface,ihex).ne.0) then       ! if on boundary, with physical tag
-          cbc(iface,ihex) = 'MSH'                       ! dummy boundary condition
-          bc(5,iface,ihex) = hex_face_array(iface,ihex) ! assign tag 
+         if(hex_face_array(iface,ihex+startHex).ne.0) then       ! if on boundary, with physical tag
+          cbc(iface,ihex+startHex) = 'MSH'                       ! dummy boundary condition
+          bc(5,iface,ihex+startHex) = hex_face_array(iface,ihex+startHex) !+ bcID_offset  ! assign tag 
          endif
         enddo
       enddo
@@ -1593,16 +1899,16 @@
 ! deallocate msh file related arrays
       use SIZE
 
+      deallocate(bcID,bcChar)
 
       if(num_dim.eq.2) then
       deallocate(node_xyz,node_quad,node_line)
-      deallocate(quad_array,line_array,quad_line_array)
-      deallocate(r_or_l)
+      deallocate(quad_array,line_array)
       endif
 
       if(num_dim.eq.3) then
       deallocate(node_xyz,node_quad,node_hex)
-      deallocate(quad_array,hex_array,hex_face_array)
+      deallocate(quad_array,hex_array)
       endif
 
       return 
@@ -1637,8 +1943,8 @@
             
 !  Write the header
       call blank     (hdr,80)    
-      write(hdr,1) num_elem, num_dim, num_elem
-    1 format('#v003',i9,i3,i9,' this is the hdr')
+      write(hdr,1) num_elem, num_dim, eftot
+    1 format('#v002',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 
@@ -1763,7 +2069,7 @@
       nface = 2*num_dim
       nbc   = 0
 
-      do iel=1,num_elem
+      do iel=1,eftot
         do ifc=1,nface
           if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
         enddo
@@ -1772,7 +2078,9 @@
       rbc = nbc
       call byte_write (rbc,2, ierr)
 
-      do iel = 1,num_elem
+      write(6,*) 'velocity boundary faces: ',nbc
+
+      do iel = 1,eftot
         do ifc = 1,nface
           ch3 = cbc(ifc,iel)
 !          if (ch3.eq.'MSH') then
@@ -1782,7 +2090,7 @@
             call copy   (buf2(3),bc(1,ifc,iel),5)
             call blank  (buf2(8),8)
             call chcopy (buf2(8),ch3,3)
-            if (num_elem.ge.1000000) then
+            if (eftot.ge.1000000) then
               ibc     = bc(1,ifc,iel)
               buf2(3) = ibc
             endif
@@ -1790,6 +2098,41 @@
           endif
         enddo
       enddo
+
+
+     if(num_elem.ne.eftot) then
+
+! writing thermal bc to all elements
+      nbc   = 0
+      nface = 2*num_dim
+      do iel=1,num_elem
+        do ifc=1,nface
+          if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+        enddo
+      enddo
+      rbc = nbc
+      call byte_write (rbc,2, ierr)
+      write(6,*) 'thermal boundary faces: ',nbc
+
+      do iel = 1,num_elem
+        do ifc = 1,2*num_dim
+          ch3 = cbc(ifc,iel)
+          if (ch3.ne.'   ') then
+            buf2(1)=iel
+            buf2(2)=ifc
+            call copy   (buf2(3),bc(1,ifc,iel),5)
+            call blank  (buf2(8),8)
+            call chcopy (buf2(8),ch3,3)
+            if (num_elem.ge.1000000) then
+              ibc     = bc(1,ifc,iel)
+              buf2(3) = ibc
+            endif
+            call byte_write (buf2,16,ierr)
+          endif
+        enddo
+      enddo
+
+      endif
 
       return
       end 
@@ -2366,3 +2709,11 @@
       return
       end
 !-----------------------------------------------------------------
+!-----------------------------------------------------------------------
+      subroutine rzero_int2(A,N)
+      integer N,I
+      integer A(1)
+      DO 100 I = 1, N
+ 100     A(I) = 0
+      return
+      END

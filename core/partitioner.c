@@ -5,8 +5,12 @@
 #endif
 
 #define MAXNV 8 /* maximum number of vertices per element */
-typedef struct {long long vtx[MAXNV]; long long eid; int proc;} edata;
-
+typedef struct{
+  long long vtx[MAXNV];
+  long long eid;
+  int proc;
+  uint seq;
+} edata;
 
 #ifdef PARMETIS
 
@@ -25,7 +29,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   int ibuf;
 
   struct crystal cr;
-  struct array A; 
+  struct array A;
   edata *row;
 
   long long nell;
@@ -73,7 +77,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
     goto end;
 
   comm_init(&comm,comms);
-  if (comm.id == 0) 
+  if (comm.id == 0)
     printf("Running parMETIS ... "), fflush(stdout);
 
   nelarray = (long long*) malloc(comm.np*sizeof(long long));
@@ -82,11 +86,11 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   elmdist[0] = 0;
   for (i=0; i<comm.np; ++i)
     elmdist[i+1] = elmdist[i] + (idx_t)nelarray[i];
-  free(nelarray); 
+  free(nelarray);
 
   evlptr = (idx_t*) malloc((nel+1)*sizeof(idx_t));
   evlptr[0] = 0;
-  for (i=0; i<nel; ++i) 
+  for (i=0; i<nel; ++i)
     evlptr[i+1] = evlptr[i] + nv;
   nelsm = elmdist[comm.id+1] - elmdist[comm.id];
   evlptr[nelsm]--;
@@ -98,25 +102,25 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   options[PMV3_OPTION_DBGLVL] = 0;
   options[PMV3_OPTION_SEED]   = 0;
   if (opt[0] != 0) {
-    options[PMV3_OPTION_DBGLVL] = opt[1]; 
+    options[PMV3_OPTION_DBGLVL] = opt[1];
     if (opt[2] != 0) {
       options[3] = PARMETIS_PSR_UNCOUPLED;
       nparts = opt[2];
     }
-  }  
+  }
 
   tpwgts = (real_t*) malloc(ncon*nparts*sizeof(real_t));
   for (i=0; i<ncon*nparts; ++i)
     tpwgts[i] = 1./(real_t)nparts;
 
   if (options[3] == PARMETIS_PSR_UNCOUPLED)
-    for (i=0; i<nel; ++i) 
+    for (i=0; i<nel; ++i)
       part_[i] = comm.id;
 
-  comm_barrier(&comm); 
+  comm_barrier(&comm);
   time0 = comm_time();
   ierrm = ParMETIS_V3_PartMeshKway(elmdist,
-                                   evlptr, 
+                                   evlptr,
                                    (idx_t*)vl,
                                    elmwgt,
                                    &wgtflag,
@@ -132,10 +136,10 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
                                    &comm.c);
 
   time = comm_time() - time0;
-  if (comm.id == 0) 
+  if (comm.id == 0)
     printf("%lf sec\n", time), fflush(stdout);
 
-  for (i=0; i<nel; ++i) 
+  for (i=0; i<nel; ++i)
     part[i] = part_[i];
 
   free(elmdist);
@@ -144,102 +148,16 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt, comm_
   MPI_Comm_free(&comms);
   comm_free(&comm);
 
-end: 
+end:
   comm_init(&comm,ce);
-  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf); 
+  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf);
   if (ierrm != METIS_OK) goto err;
   return 0;
-                                 
+
 err:
   return 1;
 }
 #endif
-
-#define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
-void fpartMesh(long long *el, long long *vl, const int *lelt, int *nell, 
-               const int *nve, int *fcomm, int *rtval) 
-{
-  struct comm comm;
-  struct crystal cr;
-  struct array eList;
-  edata *data;
-
-  int nel, nv;
-  int e, n; 
-  int count, ierr, ibuf;
-  int *part;
-  int opt[3];
-
-  nel  = *nell;
-  nv   = *nve;
-
-#if defined(MPI)
-  comm_ext cext = MPI_Comm_f2c(*fcomm);
-#else
-  comm_ext cext = 0;
-#endif
-  comm_init(&comm, cext);
-
-  part = (int*) malloc(nel * sizeof(int));
-
-  ierr = 1;
-#if defined(PARRSB)
-  opt[0] = 1;
-  opt[1] = 2; /* verbosity */
-  opt[2] = 0;
-  ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c);
-#elif defined(PARMETIS)
-  opt[0] = 1;
-  opt[1] = 0; /* verbosity */
-  opt[2] = comm.np;
-  ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
-#endif
-  if (ierr != 0) goto err; 
-
-  /* redistribute data */
-  array_init(edata, &eList, nel), eList.n = nel;
-  for(data = eList.ptr, e = 0; e < nel; ++e) {
-    data[e].proc = part[e];
-    data[e].eid  = el[e];
-    for(n = 0; n < nv; ++n) {
-      data[e].vtx[n] = vl[e*nv + n];
-    }
-  }
-  free(part);
-
-  crystal_init(&cr, &comm);
-  sarray_transfer(edata, &eList, proc, 0, &cr);
-  crystal_free(&cr);
-
-  nel = eList.n;
-
-  count = 0;
-  if (nel > *lelt) count = 1;
-  comm_allreduce(&comm, gs_int, gs_add, &count, 1, &ibuf);
-  if (count > 0) {
-    if (comm.id == 0)
-      printf("ERROR: resulting parition requires lelt=%d!\n", nel);
-    goto err;
-  }
-
-  for(data = eList.ptr, e = 0; e < nel; ++e) {
-    el[e] = data[e].eid;
-    for(n = 0; n < nv; ++n) {
-      vl[e*nv + n] = data[e].vtx[n];
-    }
-  }
-  
-  array_free(&eList);
-  comm_free(&comm);
-
-  *nell = nel;
-  *rtval = 0;
-  return;
-
-err:
-  fflush(stdout);
-  *rtval = 1;
-}
 
 void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 {
@@ -254,10 +172,12 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   int nelMin, nelMax;
   int ncMin, ncMax, ncSum;
   int nsMin, nsMax, nsSum;
-  int nssMin, nssMax, nssSum;
+  int nssMin, nssMax;
+  long long nssSum;
 
   struct gs_data *gsh;
   int b;
+  long long b_long_long;
 
   int numPoints;
   long long *data;
@@ -304,9 +224,9 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
   nssSum = nsSum;
   comm_allreduce(&comm, gs_int, gs_max, &nssMax , 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nssMin , 1, &b);
-  comm_allreduce(&comm, gs_int, gs_add, &nssSum , 1, &b);
+  comm_allreduce(&comm, gs_long_long, gs_add, &nssSum , 1, &b_long_long);
 
-  nsSum = nsSum/Nmsg;   
+  nsSum = nsSum/Nmsg;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
 
   nelMax = nel;
@@ -316,21 +236,182 @@ void printPartStat(long long *vtx, int nel, int nv, comm_ext ce)
 
   if (id == 0) {
     printf(
-      " Max neighbors: %d | Min neighbors: %d | Avg neighbors: %lf\n",
+      " nElements   max/min/bal: %d %d %.2f\n",
+      nelMax, nelMin, (double)nelMax/nelMin);
+    printf(
+      " nMessages   max/min/avg: %d %d %.2f\n",
       ncMax, ncMin, (double)ncSum/np);
-   printf(
-      " Max nvolume: %d | Min nvolume: %d | Avg nvolume: %lf\n",
+    printf(
+      " msgSize     max/min/avg: %d %d %.2f\n",
       nsMax, nsMin, (double)nsSum/np);
     printf(
-      " Max volume: %d | Min volume: %d | Avg volume: %lf\n",
+      " msgSizeSum  max/min/avg: %d %d %.2f\n",
       nssMax, nssMin, (double)nssSum/np);
-    printf(
-      " Max elements: %d | Min elements: %d | Balance: %lf\n",
-      nelMax, nelMin, (double)nelMax/nelMin);
     fflush(stdout);
   }
 
   comm_free(&comm);
+}
+
+int redistributeData(int *nel_, long long *vl, long long *el, int *part, int *seq, int nv, int lelt,
+                     struct comm *comm) {
+  int nel=*nel_;
+
+  struct crystal cr;
+  struct array eList;
+  edata *data;
+
+  int count,e,n,ibuf;
+
+  /* redistribute data */
+  array_init(edata, &eList, nel), eList.n = nel;
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    data[e].proc= part[e];
+    data[e].eid = el[e];
+    for(n = 0; n < nv; ++n) {
+      data[e].vtx[n] = vl[e*nv + n];
+    }
+  }
+
+  if(seq!=NULL){
+    for(data=eList.ptr, e=0; e<nel; ++e)
+      data[e].seq=seq[e];
+  }
+
+  crystal_init(&cr,comm);
+  sarray_transfer(edata, &eList, proc, 0, &cr);
+  crystal_free(&cr);
+
+  *nel_=nel=eList.n;
+
+  count = 0;
+  if (nel > lelt) count = 1;
+  comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
+  if (count > 0) {
+    count = nel;
+    comm_allreduce(comm, gs_int, gs_max, &count, 1, &ibuf);
+    if (comm->id == 0)
+      printf("ERROR: resulting parition requires lelt=%d!\n", count);
+    return 1;
+  }
+
+  //TODO: sort by seq
+  if(seq!=NULL){
+    buffer bfr; buffer_init(&bfr,1024);
+    sarray_sort(edata,eList.ptr,eList.n,seq,0,&bfr);
+    buffer_free(&bfr);
+  }
+
+  for(data = eList.ptr, e = 0; e < nel; ++e) {
+    el[e] = data[e].eid;
+    for(n = 0; n < nv; ++n) {
+      vl[e*nv + n] = data[e].vtx[n];
+    }
+  }
+
+  array_free(&eList);
+
+  return 0;
+}
+
+#define fpartMesh FORTRAN_UNPREFIXED(fpartmesh,FPARTMESH)
+void fpartMesh(long long *el, long long *vl, double *xyz, const int *lelt, int *nell, const int *nve,
+               int *fcomm, int *fpartitioner, int *falgo, int *loglevel, int *rtval)
+{
+  struct comm comm;
+
+  int nel, nv, partitioner, algo;
+  int e, n;
+  int count, ierr, ibuf;
+  int *part,*seq;
+  int opt[3];
+
+  nel  = *nell;
+  nv   = *nve;
+  partitioner = *fpartitioner;
+  algo = *falgo; // 0 - Lanczos, 1 - MG (Used only when partitioner = 1)
+
+#if defined(MPI)
+  comm_ext cext = MPI_Comm_f2c(*fcomm);
+#else
+  comm_ext cext = 0;
+#endif
+  comm_init(&comm, cext);
+
+  part = (int *)malloc(*lelt * sizeof(int));
+  seq  = (int *)malloc(*lelt * sizeof(int));
+
+  ierr = 1;
+#if defined(PARRSB)
+  // General options
+  //   partitioner: Partition algo: 0 - RSB, 1 - RCB, 2 - RIB (Default: 0)
+  //   verbose_level: Verbose level: 0, 1, 2, .. etc (Default: 1)
+  //   profile_level: Profile level: 0, 1, 2, .. etc (Default: 1)
+  //   two_level: Use two level partitioning algo (Default: 0)
+  //   repair: Repair disconnected components: 0 - No, 1 - Yes (Default: 0)
+  // RSB specific
+  //   rsb_algo: RSB algo: 0 - Lanczos, 1 - RQI (Default: 0)
+  //   rsb_pre: RSB pre-partition algo: 0 - None, 1 - RCB , 2 - RIB (Default: 1)
+  //   rsb_max_iter: Maximum iterations in Lanczos or RQI (Default: 50)
+  //   rsb_tol: Tolerance for Lanczos or RQI (Default: 1e-3)
+  // RSB-MG specific
+  //   rsb_mg_grammian: MG Grammian: 0 or 1 (Default: 0)
+  //   rsb_mg_factor: MG Coarsening factor (Default: 2, should be > 1)
+  // RSB-Lanczos specific
+  //   rsb_lanczos_max_restarts: Maximum restarts in Lanczos (Default: 50)
+
+  parrsb_options options = parrsb_default_options;
+  if (partitioner & 1)
+    options.partitioner = 0;
+  else if (partitioner & 2)
+    options.partitioner = 1;
+
+  if (partitioner & 1)
+    options.rsb_algo = algo;
+
+  if (*loglevel > 2)
+    printPartStat(vl, nel, nv, cext);
+
+  ierr = parrsb_part_mesh(part, seq, vl, xyz, nel, nv, options, comm.c);
+  if (ierr != 0)
+    goto err;
+
+  ierr = redistributeData(&nel, vl, el, part, seq, nv, *lelt, &comm);
+  if (ierr != 0)
+    goto err;
+
+  if (*loglevel > 2)
+    printPartStat(vl, nel, nv, cext);
+
+#elif defined(PARMETIS)
+  int metis;
+  metis = partitioner & 4;
+
+  if (metis) {
+    opt[0] = 1;
+    opt[1] = 0; /* verbosity */
+    opt[2] = comm.np;
+
+    ierr = parMETIS_partMesh(part,vl,nel,nv,opt,comm.c);
+
+    ierr = redistributeData(&nel,vl,el,part,NULL,nv,*lelt,&comm);
+    if (ierr != 0)
+      goto err;
+  }
+#endif
+
+  free(part);
+  free(seq);
+
+  *nell = nel;
+  *rtval = 0;
+  if (comm.id == 0) printf("\n");
+  fflush(stdout);
+  return;
+
+err:
+  fflush(stdout);
+  *rtval = 1;
 }
 
 #define fprintPartStat FORTRAN_UNPREFIXED(printpartstat,PRINTPARTSTAT)

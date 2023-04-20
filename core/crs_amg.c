@@ -563,7 +563,10 @@ struct crs_data *crs_setup(
     amg_dump(n,id,nz,Ai,Aj,A,data,datafname);
     gs_free(data->gs_top);
 
-    if(data->comm.id==0) printf("AMG dump successful\n"), fflush(stdout);
+    if(data->comm.id==0) { 
+      printf("AMG dump successful. Run AMG setup tool to continue.\n");
+      fflush(stdout);
+    }
     comm_barrier(&data->comm);
     comm_free(&data->comm);
     free(data);

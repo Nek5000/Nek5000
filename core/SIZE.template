@@ -25,7 +25,6 @@ c
       parameter (lhis=1)               ! max history/monitoring points
       parameter (maxobj=1)             ! max number of objects
       parameter (lpert=1)              ! max number of perturbations
-      parameter (toteq=1)              ! max number of conserved scalars in CMT
       parameter (nsessmax=1)           ! max sessions to NEKNEK
       parameter (lxo=lx1)              ! max GLL points on output (lxo>=lx1)
       parameter (mxprev=20)            ! max dim of projection space

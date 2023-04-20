@@ -1,11 +1,16 @@
-      parameter (ncoeffs = 21)
+      integer ncoeffs,ifld_k,ifld_omega
+      parameter (ncoeffs = 30)
       common /rans_komg_i/ ifld_k, ifld_omega
       common /rans_komg_r/ kSrc  (lx1,ly1,lz1,lelv)
      $                   , omgSrc(lx1,ly1,lz1,lelv)
+     $                   , kDiag  (lx1,ly1,lz1,lelv)
+     $                   , omgDiag(lx1,ly1,lz1,lelv)
      $                   , mut   (lx1,ly1,lz1,lelv)
      $                   , mutsk (lx1,ly1,lz1,lelv)
      $                   , mutso (lx1,ly1,lz1,lelv)
      $                   , coeffs(ncoeffs)
+
+      real kSrc, omgSrc, kDiag, omgDiag, mut, mutsk, mutso, coeffs
 
       common /rans_komg_omegab/ f_omegb     (lx1,ly1,lz1,lelv)
      $                        , dfdx_omegb  (lx1,ly1,lz1,lelv)
@@ -16,12 +21,22 @@
      $                        , ywd         (lx1,ly1,lz1,lelv)
      $                        , ywdm1       (lx1,ly1,lz1,lelv)
 
-      real kSrc, omgSrc, mut, mutsk, mutso
+      real f_omegb, dfdx_omegb, dfdy_omegb, dfdz_omegb
+      real delfsq_omegb, delsqf_omegb, ywd, ywdm1
+      real k,mu_t,nu_t,mu,mu_k,mu_tp,nu, kv_min,omeg_max, mu_min
 
       common/ifrans/ifrans_komg_stndrd, ifrans_komg_lowRe
-     $             ,ifrans_komgSST_stndrd, ifrans_komgSST_lowRe
-     $             ,ifrans_komg_stndrd_noreg
+     $             ,ifrans_komgSST_stndrd
+     $             ,ifrans_komg_stndrd_noreg, ifrans_ktau_stndrd
+     $             ,ifrans_ktau_lowRe, ifrans_ktauSST_stndrd
+     $             ,ifrans_diag
       logical       ifrans_komg_stndrd, ifrans_komg_lowRe
-     $             ,ifrans_komgSST_stndrd, ifrans_komgSST_lowRe
-     $             ,ifrans_komg_stndrd_noreg
+     $             ,ifrans_komgSST_stndrd
+     $             ,ifrans_komg_stndrd_noreg, ifrans_ktau_stndrd
+     $             ,ifrans_ktau_lowRe, ifrans_ktauSST_stndrd
+     $             ,ifrans_diag
+
+      common /viscmol/mul   (lx1,ly1,lz1,lelv), mul_dx(lx1,ly1,lz1,lelv)
+     $               ,mul_dy(lx1,ly1,lz1,lelv), mul_dz(lx1,ly1,lz1,lelv)
+      real mul, mul_dx, mul_dy, mul_dz
 

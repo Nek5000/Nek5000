@@ -360,7 +360,7 @@ c     opening the lyp file in unit=79
       call blank(lypsch,132)
 
       ls  = ltrunc(session,132)
-      lpp = ltrunc(path,132)
+      lpp = 0 !ltrunc(path,132)
 
       call chcopy(nam1(    1),path1,lpp)
       call chcopy(nam1(lpp+1),sess1,ls )

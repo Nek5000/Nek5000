@@ -12,11 +12,12 @@ C
       INCLUDE 'CTIMER'
 
       character*132 string(100)
+      integer np_io
 
       VNEKTON = 3 ! dummy not really used anymore
 
       optlevel = 1! fixed for now
-      loglevel = 1! fixed for now
+      loglevel = 2! fixed for now
       
       IF(NID.EQ.0) THEN
         READ(9,*,ERR=400)
@@ -44,6 +45,10 @@ C
          endif
          call exitt
       ENDIF
+
+c     Set default values for parCon and parRSB
+      connectivityTol=0.2
+      meshPartitioner=3 ! HYBRID (RSB+RCB)
 
 c     Use same tolerances for all fields 
       restol(0) = param(22) ! mesh
@@ -346,7 +351,7 @@ C
       endif
 
       if (lgmres.lt.5 .and. param(42).eq.0) then
-         if(nid.eq.0) write(6,*)
+         if(nid.eq.0 .and. loglevel .gt. 1) write(6,*)
      $   'WARNING: lgmres might be too low!'
       endif
 
@@ -409,9 +414,6 @@ c      endif
 
       if (ifneknekc.and.(nelgv.ne.nelgt)) call exitti(
      $ 'ABORT: nek-nek not supported w/ conj. ht transfer$',1)
-
-      if (ifchar.and.(nelgv.ne.nelgt)) call exitti(
-     $ 'ABORT: IFCHAR curr. not supported w/ conj. ht transfer$',nelgv)
 
       if (ifmhd .and. lbx1.ne.lx1) then
          if(nid.eq.0) write(6,*) 
@@ -478,6 +480,18 @@ c     SET PRESSURE SOLVER DEFAULTS, ADJUSTED IN USR FILE ONLY
                 ! 1 use original 2 level scheme
       param(44) = 0 ! base top-level additive Schwarz on restrictions of E
                 ! 1 base top-level additive Schwarz on restrictions of A
+
+c     SET DEFAULT NUMBER OF AGGREGATOR
+
+!
+!     NOTE: When using .par file, p61 can be redefined only by 
+!           calling usrdat0() from the .usr file.  usrdat0() is
+!           not native to the .usr file - you must add it.
+!
+ 
+      np_io = 0 
+      if (param(61).gt.0) np_io = param(61)
+      param(61) = np_io
 
 c     SET DEFAULT TO 6, ADJUSTED IN USR FILE ONLY
       param(66) = 6
@@ -1163,5 +1177,5 @@ C
       NOBJ=0
  
       return
-      END
-
+      end
+c-----------------------------------------------------------------------

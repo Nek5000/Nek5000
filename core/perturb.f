@@ -102,6 +102,7 @@ c
       include 'ADJOINT'
  
                                               call makeufp
+      if (filterType.eq.2)                    call make_hpf
       if (ifnav.and.(.not.ifchar).and.(.not.ifadj))call advabp
       if (ifnav.and.(.not.ifchar).and.(     ifadj))call advabp_adjoint
       if (iftran)                              call makextp
@@ -515,6 +516,8 @@ c     Also, subtract off best estimate of grad p
 c
       include 'SIZE'
       include 'TOTAL'
+      include 'ADJOINT'
+
       real           resv1 (lx1,ly1,lz1,1)
       real           resv2 (lx1,ly1,lz1,1)
       real           resv3 (lx1,ly1,lz1,1)
@@ -527,6 +530,10 @@ c
 c
       ntot1 = lx1*ly1*lz1*nelv
       ntot2 = lx2*ly2*lz2*nelv
+c
+c     add a diagonal term to the operator for the ON/on/O/o boundary conditions
+c     for the adjoint equations are solved
+      if (ifadj) call bc_out_adj(h2)
 c
       call bcdirvc (vxp(1,jp),vyp(1,jp),vzp(1,jp)
      $             ,v1mask,v2mask,v3mask)
@@ -628,6 +635,7 @@ C
          CALL SETHLM  (H1,H2,INTYPE)
          CALL BCNEUSC (TA,-1)
          CALL ADD2    (H2,TA,NTOT)
+         call add2    (h2,adqp(1,ifield-1,jp),ntot)
          CALL BCDIRSC (TP(1,IFIELD-1,jp))
          CALL AXHELM  (TA,TP (1,IFIELD-1,jp),H1,H2,IMESH,1)
          CALL SUB3    (TB,BQP(1,IFIELD-1,jp),TA,NTOT)
@@ -663,6 +671,7 @@ C----------------------------------------------------------------------
       INCLUDE 'TSTEP'
       include 'SOLN'
                                                        CALL MAKEUQP
+      IF (FILTERTYPE.EQ.2)                             CALL MAKE_HPF
       IF (IFADVC(IFIELD).AND.(.NOT.IFCHAR))            CALL CONVABP
       IF (IFTRAN)                                      CALL MAKEABQP
       IF ((IFTRAN.AND..NOT.IFCHAR).OR.
@@ -691,7 +700,7 @@ C
       time = time-dt                           ! time is tn
 c
       call rzero   ( bqp(1,ifield-1,jp) ,    ntot)
-      call setqvol ( bqp(1,ifield-1,jp)          )
+      call setqvol ( bqp(1,ifield-1,jp) , adqp(1,ifield-1,jp))
       call col2    ( bqp(1,ifield-1,jp) ,bm1,ntot)
 c
       time = time+dt                           ! restore time
@@ -1353,6 +1362,56 @@ c-----------------------------------------------------------------------
       if (nio.eq.0) write(6,1) istep,pertnorm,pertinvnorm,jpp,'PNORM'
   1   format(i4,1p2e12.4,i4,a5)
       pertnorm = pertnorm*pertinvnorm
+
+      return
+      end
+c-----------------------------------------------------------------------
+c     Add diagonal terms to the matrix for adjoint O/o and ON/on
+c     boundary conditions.
+      subroutine bc_out_adj(h2)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'MASS'
+      include 'GEOM'
+      include 'SOLN'
+
+      real h2(lx1,ly1,lz1,1)
+      character*3 cb
+      integer nfaces,iel,iface
+      integer kx1,kx2,ky1,ky2,kz1,kz2,ix,iy,iz,ia
+
+      nfaces = 2*ldim
+c
+c     check which faces have O/o/ON/on conditions and modify the h2 matrix
+c     matrix accordingly. The equations must include a Robin term related
+c     to the base flow velocity normal to the wall.
+      do iel=1,nelv
+        do iface=1,nfaces
+          cb = cbc(iface,iel,ifield)
+          if (cb.eq.'O  '.or.cb.eq.'o  '
+     &      .or.cb.eq.'ON '.or.cb.eq.'on ') then
+            ia = 0
+c
+c     Loop on the points of the face
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
+            do iz=kz1,kz2
+              do iy=ky1,ky2
+                do ix=kx1,kx2
+                  ia = ia + 1
+c     add an U_n coefficient to H2
+                  h2(ix,iy,iz,iel) = h2(ix,iy,iz,iel) +
+     &                    area(ia,1,iface,iel)/bm1(ix,iy,iz,iel) *
+     &                   (unx(ia,1,iface,iel)*vx(ix,iy,iz,iel) +
+     &                    uny(ia,1,iface,iel)*vy(ix,iy,iz,iel) +
+     &                    unz(ia,1,iface,iel)*vz(ix,iy,iz,iel))
+                end do
+              end do
+            end do
+          end if
+        end do
+      end do
 
       return
       end

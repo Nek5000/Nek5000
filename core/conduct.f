@@ -64,6 +64,7 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          call sethlm  (h1,h2,intype)
          call bcneusc (ta,-1)
          call add2    (h2,ta,n)
+         call add2    (h2,adq(1,1,1,1,ifield-1),n)
          call bcdirsc (t(1,1,1,1,ifield-1))
          call axhelm  (ta,t(1,1,1,1,ifield-1),h1,h2,imesh,ISD)
          call sub3    (tb,bq(1,1,1,1,ifield-1),ta,n)
@@ -119,7 +120,7 @@ c     mass matrix on the Gauss-Lobatto mesh.
 
       if (nio.eq.0.and.loglevel.gt.2) 
      $   write(6,*) 'makeuq', ifield, time
-      call setqvol(bq(1,1,1,1,ifield-1))
+      call setqvol(bq(1,1,1,1,ifield-1),adq(1,1,1,1,ifield-1))
       call col2   (bq(1,1,1,1,ifield-1) ,bm1,n)
 
       if (.not.ifcvfld(ifield)) time = time+dt ! Restore time
@@ -127,7 +128,7 @@ c     mass matrix on the Gauss-Lobatto mesh.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine setqvol(bql)
+      subroutine setqvol(bql,aql)
 
 c     Set user specified volumetric forcing function (e.g. heat source).
 
@@ -137,7 +138,7 @@ c     Set user specified volumetric forcing function (e.g. heat source).
       include 'TSTEP'
       include 'CTIMER'
 
-      real bql(lx1*ly1*lz1,lelt)
+      real bql(lx1*ly1*lz1,lelt),aql(lx1*ly1*lz1,lelt)
 
 #ifdef TIMER
       etime1=dnekclock()
@@ -149,7 +150,7 @@ c     Set user specified volumetric forcing function (e.g. heat source).
 
       do iel=1,nel
 
-         call nekuq (bql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
+         call nekuq (bql,aql,iel) ! ONLY SUPPORT USERQ - pff, 3/08/16
 
 c        igrp = igroup(iel)
 c        if (matype(igrp,ifield).eq.1) then ! constant source within a group
@@ -172,7 +173,7 @@ C
       return
       end
 C
-      subroutine nekuq (bql,iel)
+      subroutine nekuq (bql,aql,iel)
 C------------------------------------------------------------------
 C
 C     Generate user-specified volumetric source term (temp./p.s.)
@@ -186,7 +187,7 @@ C------------------------------------------------------------------
       include 'NEKUSE'
       include 'INPUT'
 c
-      real bql(lx1,ly1,lz1,lelt)
+      real bql(lx1,ly1,lz1,lelt),aql(lx1,ly1,lz1,lelt)
 c
       ielg = lglel(iel)
       do 10 k=1,lz1
@@ -194,8 +195,10 @@ c
       do 10 i=1,lx1
          if (optlevel.le.2) call nekasgn (i,j,k,iel)
          qvol = 0.0
+         avol = 0.0
          call userq   (i,j,k,ielg)
          bql(i,j,k,iel) = qvol
+         aql(i,j,k,iel) = avol
  10   continue
 
       return
@@ -287,6 +290,50 @@ C-----------------------------------------------------------------------
       enddo
 
       call addcol3 (bq(1,1,1,1,ifield-1),tb,h2,n)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine makebdq_solid
+C-----------------------------------------------------------------------
+C
+C     Add contributions to F from lagged BD terms.
+C
+C-----------------------------------------------------------------------
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter (lt=lx1*ly1*lz1*lelt)
+      common /scrns/ tb(lt),h2(lt)
+
+      nel   = nelfld(ifield)
+      n     = lx1*ly1*lz1*nelv
+      ndif=lx1*ly1*lz1*(nel-nelv)
+
+      if(ndif.eq.0) return
+
+      const = 1./dt
+      do i=1,ndif
+         h2(n+i)=const*vtrans(n+i,1,1,1,ifield)
+         tb(n+i)=bd(2)*bm1(n+i,1,1,1)*t(n+i,1,1,1,ifield-1)
+      enddo
+
+      do ilag=2,nbd
+         if (ifgeom) then
+            do i=1,ndif
+               ta=bm1lag(n+i,1,1,1,ilag-1)
+     $             *tlag(n+i,1,1,1,ilag-1,ifield-1)
+               tb(n+i)=tb(n+i)+ta*bd(ilag+1)
+            enddo
+         else
+            do i=1,ndif
+               ta=bm1(n+i,1,1,1)*tlag(n+i,1,1,1,ilag-1,ifield-1)
+               tb(n+i)=tb(n+i)+ta*bd(ilag+1)
+            enddo
+         endif
+      enddo
+
+      call addcol3 (bq(n+1,1,1,1,ifield-1),tb(n+1),h2(n+1),ndif)
 
       return
       end
@@ -548,7 +595,7 @@ c-----------------------------------------------------------------------
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
       common /ctmp1/ qs(lx1*ly1*lz1*lelt)
-      integer vertex
+      integer*8 vertex
 
       logical ifany
       save    ifany

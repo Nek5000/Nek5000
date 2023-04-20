@@ -6,3 +6,14 @@
 
       integer dProcmapWin 
       common /cbpmwd/ dProcmapWin(2*lelt)
+
+      parameter (lur = 80)              ! unsorted size
+      parameter (lcu = 8*((lur+8)/8))   ! multiple of 8
+      parameter (ls1 = 8*lelt + 2*lcu)  ! larger than unsorted
+      parameter (ls2 = lelg   + 2*lcu)  ! larger than unsorted
+      parameter (lcs = min(ls1,ls2))    ! not much bigger than lelg
+      integer   ucache,cache            ! unsorted and sorted cache
+      common /cbpmca/ ucache(lcu,3),cache(lcs,3)
+
+
+

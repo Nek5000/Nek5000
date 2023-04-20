@@ -13,7 +13,8 @@ c-----------------------------------------------------------------------
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
  
       integer nid_global_root(0:nsessmax-1)
-      character*132 session_mult(0:nsessmax-1), path_mult(0:nsessmax-1)
+      character*132  session_mult(0:nsessmax-1)
+      character*1024 path_mult(0:nsessmax-1)
 
       logical ifhigh
       logical mpi_is_initialized
@@ -31,7 +32,7 @@ c-----------------------------------------------------------------------
       call mpi_comm_rank(nekcomm,nid_global,ierr)
 
       ! check upper tag size limit
-      call mpi_comm_get_attr(nekcomm,MPI_TAG_UB,ntags,flag,ierr)
+      call mpi_comm_get_attr(MPI_COMM_WORLD,MPI_TAG_UB,ntags,flag,ierr)
       if (ntags .lt. np_global) then
          if(nid_global.eq.0) write(6,*) 'ABORT: MPI_TAG_UB too small!'
          call exitt
@@ -48,11 +49,11 @@ c-----------------------------------------------------------------------
       if (nid .eq. 0) then
          l = ltrunc(session_in,len(session_in))
          if (l .gt. 0) then
-            call blank(session_mult(0),132)
-            call chcopy(session_mult(0), session_in, l)
+            call blank(session_mult(0),len(session_mult(0)))
+            call chcopy(session_mult(0),session_in,l)
             l = ltrunc(path_in,len(path_in))
-            call blank(path_mult(0)   ,132)
-            call chcopy(path_mult(0), path_in, l)
+            call blank(path_mult(0),len(path_mult(0)))
+            call chcopy(path_mult(0),path_in,l)
          else
            !write(6,*) 'Reading session file ...'
            open (unit=8,file='SESSION.NAME',status='old',err=24)
@@ -60,16 +61,20 @@ c-----------------------------------------------------------------------
            nlin = nlin + 1 
            goto 21
  22        rewind(8)
-           if (nlin.gt.2) read(8,*,err=24) nsessions
+           if (nlin.gt.2) then 
+             read(8,*,err=24) nsessions
+             write(6,*) 'ERROR: nsessmax in SIZE too low!'
+             if(nsessions.gt.nsessmax) goto 24
+           endif
            if (nsessions.gt.1) read(8,*,err=24) ifneknekc
            do n=0,nsessions-1
-              call blank(session_mult(n),132)
-              call blank(path_mult(n)   ,132)
+              call blank(session_mult(n),len(session_mult(n)))
+              call blank(path_mult(n),len(path_mult(n)))
               read(8,11,err=24) session_mult(n)
               read(8,11,err=24) path_mult(n)
               if (nsessions.gt.1) read(8,*,err=24)  npsess(n)
            enddo
- 11        format(a132)
+ 11        format(A)
            close(8)
          endif
          if (nsessions.gt.1) 
@@ -88,42 +93,42 @@ c-----------------------------------------------------------------------
       call bcast(ifneknekc,LSIZE)
       do n = 0,nsessions-1
          call bcast(npsess(n),ISIZE)
-         call bcast(session_mult(n),132*CSIZE)
-         call bcast(path_mult(n),132*CSIZE)
+         call bcast(session_mult(n),len(session_mult(n))*CSIZE)
+         call bcast(path_mult(n),len(path_mult(n))*CSIZE)
       enddo
 
       ! single session run
       if (.not.ifneknek) then
          ifneknekc = .false.
-         session   = session_mult(0)
-         path      = path_mult(0)
-         amgfile  = session
-         return
+         idsess = 0 
+      else 
+         ! Check if specified number of ranks in each session is consistent 
+         ! with the total number of ranks
+         npall=0
+         do n=0,nsessions-1
+            npall=npall+npsess(n)
+         enddo
+         if (npall.ne.np_global) 
+     &      call exitti('Number of ranks does not match!$',npall)
+  
+         ! Assign key for splitting into multiple groups
+         nid_global_root_next=0
+         do n=0,nsessions-1
+            nid_global_root(n)=nid_global_root_next
+            nid_global_root_next=nid_global_root(n)+npsess(n)
+            if (nid_global.ge.nid_global_root(n).and.
+     &         nid_global.lt.nid_global_root_next) idsess = n
+         enddo
+         call mpi_comm_split(comm,idsess,nid,newcomm,ierr)
       endif
  
-c     Check if specified number of ranks in each session is consistent 
-c     with the total number of ranks
-      npall=0
-      do n=0,nsessions-1
-         npall=npall+npsess(n)
-      enddo
-      if (npall.ne.np_global) 
-     &   call exitti('Number of ranks does not match!$',npall)
-
-c     Assign key for splitting into multiple groups
-      nid_global_root_next=0
-      do n=0,nsessions-1
-         nid_global_root(n)=nid_global_root_next
-         nid_global_root_next=nid_global_root(n)+npsess(n)
-         if (nid_global.ge.nid_global_root(n).and.
-     &       nid_global.lt.nid_global_root_next) idsess = n
-      enddo
-      call mpi_comm_split(comm,idsess,nid,newcomm,ierr)
- 
       session = session_mult(idsess)
-      path    = path_mult   (idsess)
 
-      amgfile  = session
+      call fchdir(path_mult(idsess))
+      !path = path_mult(idsess)
+      call blank(path,len(path))
+
+      amgfile = session
 
       return
       end
@@ -137,6 +142,7 @@ c---------------------------------------------------------------------
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
       logical flag
+      integer*8 isize_mpi, lb
 
       nid  = mynode()
       nid_ = nid
@@ -157,17 +163,17 @@ c---------------------------------------------------------------------
       if (wdsize .eq. 4)
      $   call exitti('Single precision mode not supported!',wdsize)
 
-      call MPI_Type_Extent(MPI_DOUBLE_PRECISION,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_DOUBLE_PRECISION,lb,isize_mpi,ierr)
       if (isize_mpi .ne. wdsize) then
          call exitti('MPI real size does not match$',isize_mpi)
       endif
 
-      call MPI_Type_Extent(MPI_INTEGER,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_INTEGER,lb,isize_mpi,ierr)
        if (isize_mpi .ne. isize) then
          call exitti('MPI integer size does not match$',isize_mpi)
       endif
 
-      call MPI_Type_Extent(MPI_INTEGER8,isize_mpi,ierr)
+      call MPI_Type_Get_Extent(MPI_INTEGER8,lb,isize_mpi,ierr)
        if (isize_mpi .ne. isize8) then
          call exitti('MPI integer8 size does not match$',isize_mpi)
       endif

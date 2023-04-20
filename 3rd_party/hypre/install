@@ -2,7 +2,6 @@
 set -e
 
 VER=2.15.1
-CHKSUM=655cbb848f5805512bf24b8ca5d7e923a70151fa
 
 if [ "$1" == "clean" ]; then
   rm -rf hypre lib include 2>/dev/null
@@ -14,13 +13,7 @@ if [ -f ./lib/libHYPRE.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/hypre/archive/v$VER.tar.gz 
-  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
-  if [ $SUM != $CHKSUM ] ; then
-    echo 'Invalid checksum!'
-    rm -rf v$VER.tar.gz
-    exit 1
-  fi
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/hypre-space/hypre/archive/v$VER.tar.gz 
 fi
 
 rm -rf hypre 2>/dev/null

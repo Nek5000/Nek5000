@@ -5,8 +5,8 @@ c     Allocate MHD memory only if lbx1==lx1
 c
       integer lmg_mhd,lmgs,lmgn,lmgx,lxm,lym,lzm,lmg_rwt,lmg_fasts,
      $        lmg_fastd,lmg_swt,lmg_g,lmg_solve
-      parameter (lmg_mhd=1-(lx1-lbx1)/(lx1-1))!1 if MHD is true, 0 otherwise
 
+      parameter (lmg_mhd=1-(lx1-lbx1)/(lx1-1))!1 if MHD is true, 0 otherwise
       parameter (lmgs=1 + lmg_mhd)         ! max number of multigrid solvers
       parameter (lmgn=3)                   ! max number of multigrid levels
       parameter (lmgx=lmgn+1)              ! max number of mg index levels
