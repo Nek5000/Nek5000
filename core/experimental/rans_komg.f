@@ -1813,12 +1813,12 @@ c Compute G_k = production of  k and limit it to 10*Y_k (the dissipation of k)
           twoSijSij_bar = g(i) - div(i)*extra_prod
 
           G_k0= mu_t0*g(i) - ( rho + mu_t0*div(i) )*extra_prod
-          G_k = G_k0 ! min(G_k0, 10.*Y_k*k)
+          G_k = G_k0 !min(G_k0, 10.*Y_k*k)
 
 c Compute Source term for k
 
           if (ifrans_diag) then
-            kSrc  (i,1,1,e) = G_k*k
+            kSrc  (i,1,1,e) = min(G_k*k, 10.0*Y_k*k)
             kDiag (i,1,1,e) = Y_k !- G_k
           else
             kSrc  (i,1,1,e) =(G_k - Y_k)* k
@@ -2092,7 +2092,7 @@ c Compute G_k = production of  k and limit it to 10*Y_k (the dissipation of k)
           twoSijSij_bar = g(i) - div(i)*extra_prod
 
           G_k0= mu_t*g(i) - ( rho*k + mu_t*div(i) )*extra_prod
-          G_k = G_k0 ! min(G_k0, 10.*Y_k*k)
+          G_k = min(G_k0, 10.*Y_k*k)
 
 c Compute Source term for k
 
