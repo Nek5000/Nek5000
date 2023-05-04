@@ -129,6 +129,8 @@ C     End of input data, close read file.
            boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
         enddo
         enddo
+      else
+        call icopy(boundaryIDt, boundaryID, nelv*2*ndim)
       endif 
 
       return
@@ -934,11 +936,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      neltmx=np*lelt
-      nelvmx=np*lelv
+      integer*8 neltmx, nelvmx
 
-      neltmx=min(neltmx,lelg)
-      nelvmx=min(nelvmx,lelg)
+      neltmx=np*int(lelt,8)
+      nelvmx=np*int(lelv,8)
+
+      if(neltmx .gt. lelg) neltmx = lelg
+      if(nelvmx .gt. lelg) nelvmx = lelg
 
       nelgt = iglmax(nelgt,1)
       nelgv = iglmax(nelgv,1)
