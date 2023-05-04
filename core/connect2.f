@@ -133,6 +133,8 @@ C     End of input data, close read file.
         call icopy(boundaryIDt, boundaryID, nelv*2*ndim)
       endif 
 
+      if(parfound) call setbcpar
+
       return
       END
 c-----------------------------------------------------------------------
