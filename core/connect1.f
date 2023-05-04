@@ -82,7 +82,7 @@ C
          gsh_fld(2)=gsh_fld(1)
 
          if(nid.eq.0) write(6,*) ''
-         call printPartStat(glo_num,nelt,lx1*ly1*lz1,nekcomm)
+         call printPartStat(glo_num,nelv,lx1*ly1*lz1,nekcomm)
          if(nid.eq.0) write(6,*) ''
 
 c        call gs_counter(glo_num,gsh_fld(1))
@@ -102,7 +102,7 @@ c        call outmati(vertex,4,nelv,'vrtx V')
          call setupds(gsh_fld(1),lx1,ly1,lz1,nelv,nelgv,vertex,glo_num)
 
          if(nid.eq.0) write(6,*) ''
-         call printPartStat(glo_num,nelt,lx1*ly1*lz1,nekcomm)
+         call printPartStat(glo_num,nelv,lx1*ly1*lz1,nekcomm)
          if(nid.eq.0) write(6,*) ''
 
 c        call get_vert  (vertex, ncrnr, nelgt, '.mp2')  !  LATER !
