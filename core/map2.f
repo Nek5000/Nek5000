@@ -122,16 +122,178 @@ c
       include 'SIZE'
       include 'TOTAL'
 
-      integer icalld
-      save    icalld
-      data    icalld  /0/
-
-      if(icalld.gt.0) return
+      if(get_vert_called.gt.0) return
 
       nv = 2**ldim
       call get_vert_map(nv)
 
-      icalld = 1
+      get_vert_called = 1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vert_v2(vertex, loc_to_glo_nid)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer*8 vertex(2**ldim,lelt)
+      integer loc_to_glo_nid(lelt)
+
+      if(get_vert_called.gt.0) return
+
+      nv = 2**ndim
+      call get_vert_map_v2(nv, vertex, loc_to_glo_nid)
+
+      get_vert_called = 1
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_vert_map_v2(nlv, vertex, loc_to_glo_nid)
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer nlv,loc_to_glo_nid(lelt)
+      integer*8 vertex(2**ldim,lelt)
+
+      parameter(mdw=2+2**ldim)
+      parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
+      common /scrns/ wk(mdw*ndw)
+      integer*8 wk
+
+      integer     wk4(2*mdw*ndw)
+      equivalence (wk4,wk)
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      integer*8 eid8(lelt), vtx8(lelt*2**ldim), itmp
+      integer iwork(lelt), dest(lelt)
+      common /ctmp0/ eid8, vtx8, iwork, dest
+
+      common /scrcg/ xyz(ldim*lelt*2**ldim)
+
+      integer cnt, ii, j, nelti, ierr
+      logical ifreadcon
+      real tol
+
+#if !defined(PARRSB) && !defined(PARMETIS)
+#if defined(DPROCMAP)
+      call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
+#else
+      call read_map_v2(nlv,vertex,loc_to_glo_nid,wk4,mdw,ndw)
+      return
+#endif
+#endif
+
+      ierr = 0
+#if defined(PARRSB) || defined(PARMETIS)
+      ifreadcon = .true.
+      call read_con(wk4,size(wk),nelt,nlv,ierr)
+      if (ierr.ne.0) then
+        ifreadcon = .false.
+        tol = connectivityTol
+        call find_con(wk,size(wk),tol,ierr)
+        if(ierr.ne.0) then
+          tol = tol / 10.0;
+          call find_con(wk,size(wk),tol,ierr)
+        endif
+        call err_chk(ierr,' find_con failed!$')
+      endif
+
+c fluid elements
+      j  = 0
+      ii = 0
+      cnt= 0
+      do i = 1, nelt
+         itmp = wk(ii+1)
+         if (ifreadcon) itmp = wk4(ii+1)
+
+         if (itmp .le. nelgv) then
+            j = j + 1
+            eid8(j) = wk(ii+1)
+            call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+            if (ifreadcon) then
+              eid8(j) = wk4(ii+1)
+              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+            endif
+
+            do iv = 1, nlv
+              xyz(cnt+1) = xc(iv,i)
+              xyz(cnt+2) = yc(iv,i)
+              if (ldim.eq.3) then
+                xyz(cnt+3) = zc(iv,i)
+                cnt = cnt + 3
+              else
+                cnt = cnt + 2
+              endif
+            enddo
+         endif
+         ii = ii + (nlv + 1)
+      enddo
+      nelv = j
+
+      call fpartMeshV2(dest, vtx8, xyz, nelv, nlv, nekcomm,
+     $  meshPartitioner, 0, loglevel, ierr)
+      call err_chk(ierr,'partMesh fluid failed!$')
+
+      do i = 1, nelv
+         lglel(i) = eid8(i)
+      enddo
+      call isort(lglel, iwork, nelv)
+
+      do i = 1, nelv
+         call i8copy(vertex(1,i),vtx8((iwork(i)-1)*nlv+1),nlv)
+         loc_to_glo_nid(i) = dest(iwork(i))
+      enddo
+
+c solid elements
+      if (nelgt.ne.nelgv) then
+         j  = 0
+         ii = 0
+         cnt= 0
+         do i = 1, nelt
+            itmp = wk(ii+1)
+            if (ifreadcon) itmp = wk4(ii+1)
+
+            if (itmp .gt. nelgv) then
+               j = j + 1
+               eid8(j) = wk(ii+1)
+               call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
+               if (ifreadcon) then
+                 eid8(j) = wk4(ii+1)
+                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+               endif
+
+               do iv = 1, nlv
+                 xyz(cnt+1) = xc(iv, i)
+                 xyz(cnt+2) = yc(iv, i)
+                 if (ldim.eq.3) then
+                   xyz(cnt+3) = zc(iv, i)
+                   cnt = cnt + 3
+                 else
+                   cnt = cnt + 2
+                 endif
+               enddo
+            endif
+            ii = ii + (nlv + 1)
+         enddo
+         nelti = j
+
+         call fpartMeshV2(dest, vtx8, xyz, nelti, nlv, nekcomm,
+     $                  2, 0, loglevel, ierr)
+         call err_chk(ierr,'partMesh solid failed!$')
+
+         do i = 1, nelti
+            lglel(nelv + i) = eid8(i)
+         enddo
+         call isort(lglel(nelv + 1), iwork, nelti)
+
+         do i = 1, nelti
+            call i8copy(vertex(1,nelv+i),vtx8((iwork(i)-1)*nlv+1),nlv)
+            loc_to_glo_nid(nelv + i) = dest(iwork(i))
+         enddo
+      endif
+#endif
 
       return
       end
@@ -165,7 +327,7 @@ c-----------------------------------------------------------------------
       integer cnt, algo
       integer opt_parrsb(3), opt_parmetis(10)
 
-      logical ifbswap, ifread_con
+      logical ifread_con
 
       real tol
 
@@ -701,7 +863,6 @@ c     (i.e. returns global element number given local index and proc id)
       return
       end
 c-----------------------------------------------------------------------
-
 #ifndef DPROCMAP
 
 c-----------------------------------------------------------------------
@@ -922,6 +1083,210 @@ c     NOW: crystal route vertex by processor id
          call nekgsync
          call exitt
       endif
+
+      return
+
+ 100  continue
+      call err_chk(ierr,'Error opening or reading map header$')
+
+ 200  continue
+      call err_chk(ierr,'Error while reading map file$')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_map_v2(nlv,vertex,loc_to_glo_nid,wk,mdw,ndw)
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+
+      integer nlv,loc_to_glo_nid(lelt)
+      integer*8 vertex(nlv,1)
+      integer wk(mdw,ndw)
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      logical ifbswap,if_byte_swap_test
+
+      character*132 mapfle
+      character*1   mapfle1(132)
+      equivalence  (mapfle,mapfle1)
+
+      character*132 hdr
+      character*5   version
+      real*4        test
+
+      logical ifma2,ifmap
+      integer e,eg,eg0,eg1
+      integer itmp20(20)
+
+      ierr = 0
+      ifma2 = .false.
+
+      if (nid.eq.0) then
+         lfname = ltrunc(reafle,132) - 4
+         call blank (mapfle,132)
+         call chcopy(mapfle,reafle,lfname)
+         call chcopy(mapfle1(lfname+1),'.map',4)
+         inquire(file=mapfle, exist=ifmap)
+
+         if (.not.ifmap) then
+            call chcopy(mapfle1(lfname+1),'.ma2',4)
+            inquire(file=mapfle, exist=ifma2)
+         endif
+
+        if(.not.ifmap .and. .not.ifma2) ierr = 1 
+      endif
+      if(nid.eq.0) write(6,'(A,A)') ' Reading ', mapfle
+      call err_chk(ierr,' Cannot find map file!$')
+      call bcast(ifma2,lsize)
+      ierr = 0
+
+      if (nid.eq.0) then
+         if (ifma2) then         
+            call byte_open(mapfle,ierr)
+            if(ierr.ne.0) goto 100
+
+            call blank(hdr,132)
+            call byte_read(hdr,132/4,ierr)
+            if(ierr.ne.0) goto 100
+
+            read (hdr,1) version,neli,nnzi
+    1       format(a5,2i12)
+
+            call byte_read(test,1,ierr)
+            if(ierr.ne.0) goto 100
+            ifbswap = if_byte_swap_test(test,ierr)
+            if(ierr.ne.0) goto 100
+         else
+            open(unit=80,file=mapfle,status='old',err=100)
+            read(80,*,err=100) neli,nnzi
+         endif
+      endif
+ 
+      call bcast(neli, ISIZE)
+
+      npass = 1 + (neli/ndw)
+      if (npass.gt.np) then
+        if (nid.eq.0) write(6,*) npass,np,neli,ndw,
+     $    'Error get_vert_map_v2 !'
+        call exitt
+      endif 
+
+      len = 4*mdw*ndw
+      if (nid.gt.0.and.nid.lt.npass) msg_id=irecv(nid,wk,len)
+      call nekgsync
+
+      if (nid.eq.0) then
+         eg0 = 0
+         do ipass=1,npass
+            eg1 = min(eg0+ndw,neli)
+
+            if (ifma2) then
+               nwds = (eg1 - eg0)*(mdw-1)
+               call byte_read(wk,nwds,ierr)
+               if (ierr.ne.0) goto 200
+               if (ifbswap) call byte_reverse(wk,nwds,ierr)
+
+               m = eg1 - eg0
+               do eg=eg1,eg0+1,-1 ! reshuffle array
+                  jj = (m-1)*(mdw-1) + 1
+                  call icopy(itmp20,wk(jj,1),mdw-1)
+                  call icopy(wk(1,m),itmp20 ,mdw-1)
+                  m = m - 1
+               enddo
+            else
+               m = 0
+               do eg=eg0+1,eg1
+                  m = m + 1
+                  read(80,*,err=200) (wk(k,m),k=1,mdw-1)
+               enddo
+            endif
+            
+            m = 0
+            do eg=eg0+1,eg1
+               m = m + 1
+               gllnid(eg) = wk(1,m)  ! must still be divided
+               wk(mdw,m) = eg
+            enddo
+    
+            if (ipass.lt.npass) call csend(ipass,wk,len,ipass,0) !send to ipass
+            eg0 = eg1
+         enddo
+
+         ntuple = m
+
+         if (ifma2) then
+            call byte_close(ierr)
+         else
+            close(80)
+         endif
+      elseif (nid.lt.npass) then
+         call msgwait(msg_id)
+         ntuple = ndw
+      else
+         ntuple = 0
+      endif
+
+      lng = isize*neli
+      call bcast(gllnid,lng)
+      call assign_gllnid(gllnid,gllel,nelgt,nelgv,np) !gllel is used as scratch
+
+c     nelt=0 !     Count number of elements on this processor
+c     nelv=0
+c     do eg=1,neli
+c        if (gllnid(eg).eq.nid) then
+c           if (eg.le.nelgv) nelv=nelv+1
+c           if (eg.le.nelgt) nelt=nelt+1
+c        endif
+c     enddo
+c      if (np.le.64) write(6,*) nid,nelv,nelt,nelgv,nelgt,' NELV'
+
+c     NOW: crystal route vertex by processor id
+
+      ntuple_sum = iglsum(ntuple,1)
+      if (ntuple_sum .ne. nelgt) then
+         if (nid.eq.0) write(6,*) 'Error invalid tuple sum!'
+         call exitt
+      endif
+
+      do i=1,ntuple
+         eg=wk(mdw,i)
+         call get_dest_proc(wk(1,i),eg,npp,nelgt)
+      enddo
+
+      key = 1  ! processor id is in wk(1,:)
+      call fgslib_crystal_ituple_transfer(cr_h,wk,mdw,ntuple,ndw,key)
+
+      iflag = 0
+      if (ntuple.ne.nelt) then
+        write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FAIL'
+        write(6,*) 'Check that .map file and .rea file agree'
+        iflag=1
+      endif
+
+      iflag = iglmax(iflag,1)
+      if (iflag.gt.0) then
+         do mid=0,np-1
+            call nekgsync
+            if (mid.eq.nid)
+     $      write(6,*) nid,ntuple,nelv,nelt,nelgt,' NELT FB'
+            call nekgsync
+         enddo
+         call nekgsync
+         call exitt
+      endif
+
+      key = mdw  ! Sort tuple list by eg
+      nkey = 1
+      call fgslib_crystal_ituple_sort(cr_h,wk,mdw,nelt,key,nkey)
+
+      do e=1,nelt
+        call icopy48(vertex(1,e),wk(2,e),nlv)
+        eg=wk(mdw,e)
+        loc_to_glo_nid(e)=gllnid(eg) ! processor id for element eg
+      enddo
 
       return
 

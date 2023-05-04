@@ -50,7 +50,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
-     $               ,ifmpiio,ifrich,ifvvisp
+     $               ,ifmpiio,ifrich,ifvvisp,ifnewre2reader
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
@@ -66,7 +66,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
-     $               ,ifmpiio,ifrich,ifvvisp
+     $               ,ifmpiio,ifrich,ifvvisp,ifnewre2reader
 
       logical         ifnav
       equivalence    (ifnav, ifadvc(1))
@@ -132,3 +132,6 @@ c
 
       character*3 bctyps(numsts)
       common /inputmc/ bctyps
+
+      integer get_vert_called
+      common /get_vert_block/ get_vert_called

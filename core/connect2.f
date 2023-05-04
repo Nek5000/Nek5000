@@ -1,13 +1,192 @@
 c-----------------------------------------------------------------------
       subroutine readat
+
+c     Read data from preprocessor input files (rea,par,re2,co2,ma2,etc.)
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+      include 'RESTART'
+
+      logical parfound
+
+      call flush_io
+
+      ! parfle is in 'INPUT'
+      if (nid.eq.0) inquire(file=parfle, exist=parfound)
+      call bcast(parfound,lsize) ! check for par file
+
+      get_vert_called = 0
+
+      if (parfound) then
+        if(nio.eq.0) write(6,'(a,a)') ' Reading ', parfle
+
+        call setDefaultParam
+
+        if (nid.eq.0) call par_read(ierr)
+        call bcast(ierr, isize)
+        if (ierr.ne.0) call exitt
+        call bcastParam
+
+        call usrdat0
+
+#ifdef NOMPIIO
+        call readat_par
+#else
+        if (ifnewre2reader) then
+          if(nio.eq.0) write(6,'(a)') ' Using new re2 reader ...'
+          call readat_v2
+        else
+          call readat_par
+        endif
+#endif
+      else
+        if(nio.eq.0) write(6,'(a,a)') ' Reading .rea file '
+        call readat_std
+      endif
+
+      call set_boundary_ids
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readat_std
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CTIMER'
+      include 'RESTART'
+
+      logical ifbswap,ifre2
+      character*132 string
+      integer idum(3*numsts+3)
+
+      etime0 = dnekclock_sync()
+
+      ierr = 0
+      if(nid.eq.0) then
+        write(6,'(A,A)') ' Reading ', reafle
+        open (unit=9,file=reafle,status='old', iostat=ierr)
+      endif
+
+      call bcast(ierr,isize)
+      if (ierr .gt. 0) call exitti('Cannot open rea file!$',1)
+
+C     Read parameters and logical flags
+      call rdparam
+
+C     Read Mesh Info 
+      if(nid.eq.0) then
+        read(9,*)    ! xfac,yfac,xzero,yzero
+        read(9,*)    ! dummy
+        read(9,*)  nelgs,ldimr,nelgv
+        nelgt = abs(nelgs)
+      endif
+      call bcast(ldimr,ISIZE)
+      call bcast(nelgs,ISIZE)
+      call bcast(nelgv,ISIZE)
+      call bcast(nelgt,ISIZE)
+      ifre2 = .false.
+      if (nelgs.lt.0) ifre2 = .true.
+
+      call usrdat0
+
+      if (nelgt.gt.350000 .and. .not.ifre2) 
+     $   call exitti('Problem size requires .re2!$',1)
+
+      if (ifre2) call read_re2_hdr(ifbswap, .true.) ! rank0 will open and read
+      call chk_nel  ! make certain sufficient array sizes
+
+      call mapelpr
+
+      if (ifre2) then
+        call read_re2_data(ifbswap, .true., .true., .true.)
+      else
+        maxrd = 32               ! max # procs to read at once
+        mread = (np-1)/maxrd+1   ! mod param
+        iread = 0                ! mod param
+        x     = 0
+        do i=0,np-1,maxrd
+           call nekgsync()
+           if (mod(nid,mread).eq.iread) then
+              if (nid.ne.0) then
+                open(UNIT=9,FILE=REAFLE,STATUS='OLD')
+                call cscan(string,'MESH DATA',9)
+                read(9,*) string
+              endif 
+              call rdmesh
+              call rdcurve !  Curved side data
+              call rdbdry  !  Boundary Conditions
+              if (nid.ne.0) close(unit=9)
+           endif
+           iread = iread + 1
+        enddo
+      endif
+
+C     Read Restart options / Initial Conditions / Drive Force
+      CALL RDICDF
+C     Read materials property data
+      CALL RDMATP
+C     Read history data
+      CALL RDHIST
+C     Read output specs
+      CALL RDOUT
+C     Read objects
+      CALL RDOBJ
+
+      call nekgsync()
+
+C     End of input data, close read file.
+      if(nid.eq.0) then
+        close(unit=9)
+        call echopar
+        write(6,'(A,g13.5,A,/)')  ' done :: read .rea file ',
+     $                             dnekclock()-etime0,' sec'
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_boundary_ids
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      call izero(boundaryID,  size(boundaryID))
+      call izero(boundaryIDt, size(boundaryIDt))
+
+      ifld = 2 
+      if(ifflow) ifld = 1
+      do iel = 1,nelv
+      do ifc = 1,2*ldim   
+         boundaryID(ifc,iel) = bc(5,ifc,iel,ifld)
+      enddo
+      enddo
+
+      ntmsh = 0
+      do i=1,ldimt
+         if(iftmsh(1+i)) ntmsh = ntmsh + 1 
+      enddo
+
+      if (ntmsh.gt.0) then
+        do iel = 1,nelt
+        do ifc = 1,2*ldim   
+           boundaryIDt(ifc,iel) = bc(5,ifc,iel,2)
+        enddo
+        enddo
+      endif 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine readat_old
 C
 C     Read in data from preprocessor input file (.rea)
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'GEOM'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'CTIMER'
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'PARALLEL'
+      include 'CTIMER'
  
       logical ifbswap,ifre2,parfound
       character*132 string
@@ -134,7 +313,7 @@ C     End of input data, close read file.
       endif 
 
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine vrdsmsh
 C
@@ -144,8 +323,8 @@ C        a direct stiffness operation on the X,Y and Z coordinates.
 C     Note that periodic faces are not checked here.
 C=====================================================================
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
       COMMON /SCRNS/ TA(LX1,LY1,LZ1,LELT),TB(LX1,LY1,LZ1,LELT)
      $           ,QMASK(LX1,LY1,LZ1,LELT),tmp(2)
       CHARACTER*3 CB
@@ -374,8 +553,8 @@ C        a direct stiffness operation on the X,Y and Z coordinates.
 C     Note that periodic faces are not checked here.
 C=====================================================================
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'TOTAL'
+      include 'SIZE'
+      include 'TOTAL'
       common /scrns/ tc(lx1,ly1,lz1,lelt),td(lx1,ly1,lz1,lelt)
      $             , ta(lx1,ly1,lz1,lelt),tb(lx1,ly1,lz1,lelt)
      $             , qmask(lx1,ly1,lz1,lelt)
@@ -556,8 +735,8 @@ c-----------------------------------------------------------------------
 C
 C     Rotate NPTS through ANGLE (in two directions IF3D).
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZ(3,1)
       COMMON /CTMP0/ RMTRX(3,3),RX(3,3),RZ(3,3),XYZN(3,10)
 C
@@ -597,14 +776,14 @@ C     Strip mine mxms in chunks of 10:
       ENDIF
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine scale(xyzl,nl)
 C
 C     Rescale XYZL such that the mean value of IXX=IYY=IZZ for each element.
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZL(3,8,LELT)
       COMMON /CTMP0/ VO(LELT),XYZI(3,LELT),CG(3,LELT)
      $              ,TI(6),WORK(6)
@@ -644,7 +823,7 @@ C
   200 CONTINUE
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine inrtia(xyzi,cg,xyzl,n,itype)
 C
@@ -693,11 +872,11 @@ C        std. def'n of inertia.
       ENDIF
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine volume2(vol,xyz,n)
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
+      include 'SIZE'
+      include 'INPUT'
       DIMENSION XYZ(3,2,2,2,1)
       DIMENSION VOL(1)
 C
@@ -744,13 +923,13 @@ C     2-D:
  1000 CONTINUE
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine findcg(cg,xyz,n)
 C
 C     Compute cg for N elements.
 C
-      INCLUDE 'SIZE'
+      include 'SIZE'
       DIMENSION CG(3,1),XYZ(3,8,1)
 C
       NCRNR=2**ldim
@@ -764,7 +943,7 @@ C
       TMP=1.0/(NCRNR)
       CALL CMULT(CG,TMP,3*N)
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine divide(list1,list2,nl1,nl2,ifok,list,nl,xyzi,cg,WGT)
 C
@@ -772,10 +951,10 @@ C     Divide the elements associated with this subdomain according to
 C     the direction having the smallest moment of inertia (the "long"
 C     direction).
 C
-      INCLUDE 'SIZE'
-      INCLUDE 'INPUT'
-      INCLUDE 'PARALLEL'
-      INCLUDE 'TSTEP'
+      include 'SIZE'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'TSTEP'
 C
       DIMENSION LIST(LELT),LIST1(LELT),LIST2(LELT)
       DIMENSION XYZI(3),CG(3,LELT),wgt(1)
@@ -907,7 +1086,7 @@ C
       IF (ABS(WORK(1)-WORK(2)).GT.1) IFOK=.FALSE.
 C
       return
-      END
+      end
 c-----------------------------------------------------------------------
       subroutine bufchk(buf,n)
       integer n
@@ -1003,5 +1182,568 @@ c
    80 format(a132)
       return
 
+      end
+c-----------------------------------------------------------------------
+      subroutine find_lglel_ind(e, eg, nl)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl
+        call find_lglel_ind_binary(e, eg, nl)
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_lglel_ind_binary(e, eg, nl)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl
+        integer i, j, mid, ierr
+
+        ierr = 1
+        if (nl.eq.0) then
+          goto 100
+        endif
+        if ((eg.lt.lglel(1)).or.(eg.gt.lglel(nl))) then
+          goto 100
+        endif
+
+        i = 1
+        j = nl
+        do while (i.lt.j)
+          mid = (i + j)/2
+          if (eg.gt.lglel(mid)) then
+            i = mid + 1
+          else
+            j = mid
+          endif
+          if (eg.eq.lglel(mid)) then
+            e = mid
+            return
+          endif
+        enddo
+
+        if (eg.eq.lglel(i)) then
+          e = i
+          return
+        endif
+        if (eg.eq.lglel(j)) then
+          e = j
+          return
+        endif
+
+ 100    call err_chk(ierr, 'Error finding index in lglel binary$')
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_sorted_ind(e, eg, nl, sorted)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl, sorted(1)
+        call find_sorted_ind_binary(e, eg, nl, sorted)
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine find_sorted_ind_binary(e, eg, nl, sorted)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer e, eg, nl, sorted(lelt)
+        integer i, j, mid, ierr
+
+        ierr = 1
+        if (nl.eq.0) then
+          goto 100
+        endif
+        if ((eg.lt.sorted(1)).or.(eg.gt.sorted(nl))) then
+          goto 100
+        endif
+
+        i = 1
+        j = nl
+        do while (i.lt.j)
+          mid = (i + j)/2
+          if (eg.gt.sorted(mid)) then
+            i = mid + 1
+          else
+            j = mid
+          endif
+          if (eg.eq.sorted(mid)) then
+            e = mid
+            return
+          endif
+        enddo
+
+        if (eg.eq.sorted(i)) then
+          e = i
+          return
+        endif
+        if (eg.eq.sorted(j)) then
+          e = j
+          return
+        endif
+
+ 100    call err_chk(ierr, 'Error finding index in sorted$')
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_curve_loc(e,buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  ( curve(1,f,e),buf(5) ,5) !5--14
+        call chcopy(ccurve(  f,e),buf(15),1)!15
+      else
+        eg = buf(1)
+        f  = buf(2)
+
+        call copy4r( curve(1,f,e),buf(3),5)
+        call chcopy(ccurve(f,e)  ,buf(8),1)
+      endif
+
+c     write(6,1) eg,e,f,(curve(k,f,e),k=1,5),ccurve(f,e)
+c   1 format(2i7,i3,5f10.3,1x,a1,'ccurve')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc_loc(e,cbl,bl,buf)    ! version 1 of binary reader
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(6,lelt)
+      real         bl(5,6,lelt)
+
+      integer e,eg,f,buf(30)
+
+      if(wdsizi.eq.8) then
+        call copyi4(eg,buf(1),1) !1-2
+
+        call copyi4(f,buf(3),1) !3-4
+
+        call copy  (bl(1,f,e),buf(5),5) !5--14
+        call chcopy(cbl( f,e),buf(15),3)!15-16
+
+        if(nelgt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $   call copyi4(bl(1,f,e),buf(5),1) !Integer assign connecting P element
+
+      else
+        eg = buf(1)
+        f  = buf(2)
+
+        call copy4r ( bl(1,f,e),buf(3),5)
+        call chcopy (cbl(  f,e),buf(8),3)
+
+        if (nelgt.ge.1000000.and.cbl(f,e).eq.'P  ')
+     $     bl(1,f,e) = buf(3) ! Integer assign of connecting periodic element
+      endif
+
+c      write(6,1) eg,e,f,cbl(f,e),' CBC',nid
+c  1   format(2i8,i4,2x,a3,a4,i8)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_vertices_v2(vertex, loc_to_glo_nid)
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)    ! maximum number of records
+      parameter(lrs   = 2**ldim) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer*8 vertex(2**ldim, lelt)
+      integer loc_to_glo_nid(lelt)
+
+      integer         bufr(li - 2, nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li    , nrmax)
+      common /ctmp1/  vi
+
+      integer e, eg, ind(nrmax), nr, key
+
+      lrs4 = lrs*wdsizi/4
+
+      do e = 1, nelt
+        vi(1, e) = loc_to_glo_nid(e)
+        vi(2, e) = lglel(e)
+        call vtx_to_buf(vi(3, e), vertex(1, e))
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nr = nelt
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     &  vl, 0, vr, 0, key)
+
+      ! unpack buffer
+      ierr = 0
+      if (nr.gt.nrmax) then
+        ierr = 1
+        goto 100
+      endif
+
+      ! List of global element numbers in v(2,:)
+      nelt = 0
+      nelv = 0
+      do i = 1, nr
+        lglel(i) = vi(2, i)
+        if (lglel(i).le.nelgv) then
+          nelv = nelv + 1
+        else
+          nelt = nelt + 1
+        endif
+      enddo
+      nelt = nelv + nelt
+      call isort(lglel, ind, nelt)
+
+      do e = 1, nelt
+         i = ind(e)
+         call buf_to_vtx(vertex(1, e), vi(3, i))
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring vertices$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine vtx_to_buf(buf, vtx)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer*8 buf(2**ldim), vtx(2**ldim)
+        integer e
+
+        do e = 1, 2**ndim
+          buf(e) = vtx(e)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_vtx(vtx, buf)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer*8 vtx(2**ldim), buf(2**ldim)
+        integer i
+
+        do i = 1, 2**ldim
+          vtx(i) = buf(i)
+        enddo
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_mesh_v2(loc_to_glo_nid, lglelo, nelto)
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = lelt)             ! maximum number of records
+      parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
+      parameter(li    = 2*lrs+2)
+
+      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto
+      integer e, sorted(nrmax), ind(nrmax), nr, key
+
+      integer         bufr(li - 2, nrmax)
+      common /scrns/  bufr
+
+      integer         vi  (li    , nrmax)
+      common /ctmp1/  vi
+
+      lrs4 = lrs*wdsizi/4
+
+      do e = 1, nelto
+        vi(1, e) = loc_to_glo_nid(e)
+        vi(2, e) = lglelo(e)
+        call xyz_to_buf(vi(3, e), e)
+      enddo
+
+      ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+      nr = nelto
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     &  vl, 0, vr, 0, key)
+
+      ! unpack buffer
+      ierr = 0
+      if (nr.gt.nrmax .or. nr.ne.nelt) then
+        ierr = 1
+        goto 100
+      endif
+
+      ! List of global element numbers in v(2,:)
+      do e = 1, nr
+         sorted(e) = vi(2, e)
+      enddo
+      call isort(sorted, ind, nr)
+
+      do e = 1, nr
+         call icopy(bufr, vi(3, ind(e)), lrs4)
+         call buf_to_xyz(bufr, e, .false., ierr)
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring .re2 mesh$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xyz_to_buf(buf, e)
+        include 'SIZE'
+        include 'TOTAL'
+
+        integer buf(0:49), e
+
+        if (wdsizi.eq.8) then
+          call icopy48(buf(0), igroup(e), 1)
+          if (ndim.eq.3) then
+            call copy(buf( 2), xc(1, e), 8)
+            call copy(buf(18), yc(1, e), 8)
+            call copy(buf(34), zc(1, e), 8)
+          else
+            call copy(buf( 2), xc(1, e), 4)
+            call copy(buf(10), yc(1, e), 4)
+          endif
+        else
+          buf(0) = igroup(e)
+          if (ndim.eq.3) then
+            call copyX4(buf( 1), xc(1, e), 8)
+            call copyX4(buf( 9), yc(1, e), 8)
+            call copyX4(buf(17), zc(1, e), 8)
+          else
+            call copyX4(buf( 1), xc(1, e), 4)
+            call copyX4(buf( 5), yc(1, e), 4)
+          endif
+        endif
+
+        return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_bc_v2(cbl,bl,loc_to_glob_nid,lglelo,
+     $  nelto)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      parameter(nrmax = 6*lelt)
+      parameter(lrs = 8)
+      parameter(li = 2*lrs + 1)
+
+      character*3 cbl(6,lelt)
+      real bl(5,6,lelt)
+      integer loc_to_glob_nid(lelt), lglelo(lelt), nelto
+
+      integer e, eg, f, cnt, nr, key, ierr, nf
+
+      integer         vi(li, nrmax)
+      common /ctmp1/  vi
+
+      cnt = 0
+      nf = 2*ndim
+      do e = 1, nelto
+        eg = lglelo(e)
+        do f = 1, nf
+          cnt = cnt + 1
+          vi(1, cnt) = loc_to_glob_nid(e)
+          call bc_to_buf(vi(2, cnt), cbl(f, e), bl(1, f, e), eg, f)
+        enddo
+      enddo
+
+      nr = cnt
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      ierr = 0
+      if (nr.gt.nrmax) then
+        ierr = 1
+        goto 100
+      endif
+
+      ! fill up with default
+      do e=1,nelto
+      do k=1,6
+         cbl(k,e) = 'E  '
+      enddo
+      enddo
+
+      do i = 1,nr
+         call buf_to_bc_v2(cbl, bl, vi(2, i))
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring .re2 boundary data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine buf_to_bc_v2(cbl, bl, buf)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      character*3 cbl(6, lelt)
+      real bl(5, 6, lelt)
+
+      integer e, f, eg, buf(30)
+
+      if (wdsizi.eq.8) then
+        call icopy84(eg, buf(1) ,1) ! 1 - 2
+        call icopy84(f , buf(3), 1) ! 3 - 4
+        call find_lglel_ind(e, eg, nelt)
+        call copy  (bl(1, f, e), buf(5) , 5) ! 5 -14
+        call chcopy(cbl(f, e)  , buf(15), 3) !15
+
+        ! Integer assign connecting P element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $   call copyi4(bl(1, f, e), buf(5), 1)
+
+      else
+        eg = buf(1)
+        f  = buf(2)
+        call find_lglel_ind(e, eg, nelt)
+        call copy4r(bl(1, f, e), buf(3), 5)
+        call chcopy(cbl(f, e)  , buf(8), 3)
+
+        ! Integer assign of connecting periodic element
+        if (nelgt.ge.1000000.and.cbl(f, e).eq.'P  ')
+     $     bl(1, f, e) = buf(3)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bc_to_buf(buf, cbl, bl, eg, f)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer buf(30), eg, f
+      character*3 cbl
+      real bl(5)
+
+      if (wdsizi.eq.8) then
+        call icopy48(buf(1) , eg, 1) ! 1 - 2
+        call icopy48(buf(3) ,  f, 1) ! 3 - 4
+        call copy   (buf(5) , bl, 5) ! 5 -14
+        call chcopy (buf(15),cbl, 3) !15
+      else
+        call icopy (buf(1), eg, 1) ! 1
+        call icopy (buf(2),  f, 1) ! 2
+        call copyX4(buf(3), bl, 5) ! 3 - 7
+        call chcopy(buf(8),cbl, 3) ! 8
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine transfer_re2_curve_v2(nvi, vi, loc_to_glo_nid, lglelo,
+     $  nelto)
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
+
+      parameter(nrmax = 12*lelt)
+      parameter(lrs = 8)
+      parameter(li = 2*lrs + 1)
+
+      integer nvi, vi(li, nrmax)
+      integer loc_to_glo_nid(lelt), lglelo(lelt), nelto
+
+      integer i, e, nr, key, ierr
+      integer eg(nrmax)
+
+      if (wdsizi.eq.8) then
+        do i = 1, nvi
+          call copyi4(eg(i), vi(2, i), 1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1, nvi
+          eg(i) = vi(2, i)
+        enddo
+      endif
+
+      do i = 1, nvi
+        call find_sorted_ind(e, eg(i), nelto, lglelo)
+        vi(1, i) = loc_to_glo_nid(e)
+      enddo
+
+      nr  = nvi
+      key = 1
+      call fgslib_crystal_tuple_transfer(cr_re2, nr, nrmax, vi, li,
+     $  vl, 0, vr, 0, key)
+
+      ierr = 0
+      if (nr.gt.nrmax) then
+        ierr = 1
+        goto 100
+      endif
+
+      if (wdsizi.eq.8) then
+        do i = 1, nr
+          call copyi4(eg(i), vi(2, i), 1)
+        enddo
+      else if (wdsizi.eq.4) then
+        do i = 1, nr
+          eg(i) = vi(2, i)
+        enddo
+      endif
+
+      do i = 1, nr
+         call find_lglel_ind(e, eg(i), nelt)
+         call buf_to_curve_loc(e, vi(2, i))
+      enddo
+
+ 100  call err_chk(ierr, 'Error transferring .re2 curve data$')
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine curve_to_buf(buf, cv, ccv, eg, f)
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer buf(30), eg, f
+      real cv(6)
+      character*1 ccv
+
+      if (wdsizi.eq.8) then
+        call icopy48(buf(1) , eg, 1) ! 1 - 2
+        call icopy48(buf(3) ,  f, 1) ! 3 - 4
+        call copy   (buf(5) , cv, 5) ! 5 -14
+        call chcopy (buf(15),ccv, 1) !15
+      else
+        call icopy (buf(1), eg, 1) ! 1
+        call icopy (buf(2),  f, 1) ! 2
+        call copyX4(buf(3), cv, 5) ! 3 - 7
+        call chcopy(buf(8),ccv, 1) ! 8
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine get_dest_proc(p, eg, np, nelgt)
+        integer p, eg, np, nelgt
+        integer nlt, nr, nstar
+
+        nlt = nelgt / np
+        nr = nelgt - nlt * np
+        nstar = nlt * (np - nr)
+
+        if (eg.le.nstar) then
+          p = (eg - 1) / nlt
+        else
+          p = (eg - nstar - 1) / (nlt + 1) + np - nr
+        endif
+        return
       end
 c-----------------------------------------------------------------------
