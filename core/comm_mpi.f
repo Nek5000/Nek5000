@@ -128,12 +128,6 @@ c-----------------------------------------------------------------------
       !path = path_mult(idsess)
       call blank(path,len(path))
 
-      if (ifneknekc) then
-         if (nsessions.gt.2) call exitti(
-     &     'More than 2 coupled sessions are currently not supported!$',
-     $     nsessions)
-      endif 
-
       amgfile = session
 
       return

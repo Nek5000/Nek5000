@@ -125,16 +125,32 @@ c-----------------------------------------------------------------------
       include 'NEKNEK'
 c
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
+      common /exacp/ pe(lx2,ly2,lz2,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
+     $              ,pd(lx2,ly2,lz2,lelt)
 
+      n = lx1*ly1*lz1*nelt
+      ! test global integeration
+      if (nsessions.ge.2 .and. ifneknekc) then
+         totalvolexact = (2.*pi)**2
+         totalvolnum   = glsum_ms(bm1ms,n)
+         totalvolerr   = abs(totalvolexact-totalvolnum)
+         if (istep.eq.0.and.nid.eq.0) write(6,'(i3,1x,1p1e13.4,A)')
+     $         idsess,totalvolerr,' Error in total volume'
+        if (totalvolerr.lt.1.e-2) then
+           if (nid_global.eq.0) write(6,*) 'global integeration test 
+     $                                      PASSED'
+        else
+           if (nid_global.eq.0) write(6,*) 'global integeration test 
+     $                                      FAILED'
+           call exitt0
+        endif
+      endif
 
-      ifxyo = .true.
-      ntot = lx1*ly1*lz1*nelv
-      xmx = glmax(xm1,ntot)
-      xmxg = glmax_ms(xm1,ntot)
-      if (abs(xmx-xmxg).gt.1.e-5) then
+      if (IFMVBD) then
+       ifxyo = .true.
        ifusermv = .true.
-       do i=1,nx1*ny1*nz1*nelv
+       do i=1,n
         xv = xm1(i,1,1,1)
         yv = ym1(i,1,1,1)
         zv = 0.
@@ -146,15 +162,18 @@ c
       ifield = 1  ! for outpost
 
       n    = nx1*ny1*nz1*nelv
+      n2    = nx2*ny2*nz2*nelv
       visc = param(2)
       u0   = param(96)
       v0   = param(97)
       call exact  (ue,ve,xm1,ym1,n,time,visc,u0,v0)
+      call exactp (pe,xm2,ym2,n2,time,visc,u0,v0)
       if (istep.eq.0     ) call outpost(ue,ve,vx,pr,t,'   ')
 
       call sub3   (ud,ue,vx,n)
       call sub3   (vd,ve,vy,n)
-      if (istep.eq.nsteps) call outpost(ud,vd,vx,pr,t,'   ')
+      call sub3   (pd,pe,pr,n2)
+      if (istep.eq.nsteps) call outpost(ud,vd,vx,pd,t,'   ')
 
       umx = glamax(vx,n)
       vmx = glamax(vy,n)
@@ -162,6 +181,7 @@ c
       vex = glamax(ve,n)
       udx = glamax(ud,n)
       vdx = glamax(vd,n)
+      pdx = glamax(pd,n2)
 
 c    Global error calculation
       if (IFNEKNEK) then 
@@ -171,12 +191,14 @@ c    Global error calculation
       vex_gl = glamax_ms(ve,n)
       udx_gl = glamax_ms(ud,n)
       vdx_gl = glamax_ms(vd,n)
+      pdx_gl = glamax_ms(pd,n2)
       end if  
 
 
       if (nid.eq.0) then
           write(6,11) istep,time,udx,umx,uex,u0,'  X err', session
           write(6,11) istep,time,vdx,vmx,vex,v0,'  Y err', session
+          write(6,11) istep,time,pdx,vmx,vex,v0,'  P err', session
       end if
       call nekgsync
       if (nid_global.eq.0) then	  
@@ -184,7 +206,17 @@ c    Global error calculation
      & 'global'
           write(6,11) istep,time,vdx_gl,vmx_gl,vex_gl,v0,'  Y err',
      & 'global'
-   11     format(i5,1p5e14.6,a7,2x,a9)
+          write(6,11) istep,time,pdx_gl,vmx_gl,vex_gl,v0,'  P err',
+     & 'global'
+   11     format(i5,1p5e14.6,a7,2x,a7)
+      endif
+
+      if (istep.eq.nsteps) then
+       if (nid_global.eq.0) then 
+          write(6,12) istep,time,udx_gl,vdx_gl,pdx_gl,'  XYP err',
+     & 'global'
+   12     format(i5,1p4e14.6,a9,2x,a7)
+       endif
       endif
 
 
@@ -209,10 +241,10 @@ c     NOTE ::: This subroutine MAY NOT be called by every process
       if (imask(ix,iy,iz,ie).eq.0) then
        if (ifusermv) call u_meshv(ux,uy,uz,x,y,z)
       else      
-         ux = valint(ix,iy,iz,ie,1)
-         uy = valint(ix,iy,iz,ie,2)
-         uz = valint(ix,iy,iz,ie,3)
-         if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
+        ux = valint(ix,iy,iz,ie,1)
+        uy = valint(ix,iy,iz,ie,2)
+        uz = valint(ix,iy,iz,ie,3)
+        if (nfld_neknek.gt.3) temp = valint(ix,iy,iz,ie,ldim+2)
       end if
       return
       end
@@ -223,7 +255,9 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
 
       common /exacu/ ue(lx1,ly1,lz1,lelt),ve(lx1,ly1,lz1,lelt)
+      common /exacp/ pe(lx2,ly2,lz2,lelt)
       common /exacd/ ud(lx1,ly1,lz1,lelt),vd(lx1,ly1,lz1,lelt)
+     $              ,pd(lx2,ly2,lz2,lelt)
 
       integer icalld
       save    icalld
@@ -252,7 +286,10 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
     
-      ngeom = 3
+c     ngeom - parameter controlling the number of iterations,
+c     set to ngeom=2 by default (no iterations) 
+c     One could change the number of iterations as
+      ngeom =  3
       ninter = 3
 
       return
@@ -277,14 +314,44 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
+      subroutine exactp(pe,x2,y2,n2,time,visc,u0,v0)
+
+c     This routine, complementary to the exact routine above, returns
+c     the exact pressure, given the pressure counterpart to the
+c     arguments for the exact routine i.e., xx -> x2, yy -> y2, n -> n2
+c
+c     Brandon E. Merrill, Yulia T. Peet, Paul F. Fischer, and
+c     James W. Lottes. "A Spectrally Accurate Method for Overlapping
+c     Grid Solution of Incompressible Navier-Stokes Equations." Journal
+c     of Computational Physics 307 (2016), 60--93.
+
+      real x2(n2),y2(n2),pe(n2)
+
+      e = exp(-50*time*visc)
+
+      do i=1,n2
+         x = x2(i) - u0*time
+         y = y2(i) - v0*time
+
+         pe(i) = (1.0/64.0)*e*(16*cos(6*x) + 8*cos(8*x-4*y)
+     $         - 32*cos(2*(x-2*y)) + 9*cos(8*y) - 8*cos(4*(2*x+y))
+     $         + 32*cos(2*(x+2*y)) - 4*sin(3*(x-3*y)) + 32*sin(5*(x-y))
+     $         + 36*sin(3*x-y) - 32*sin(5*(x+y)) + 36*sin(3*x+y)
+     $         - 4*sin(3*(x+3*y)))
+      enddo
+      call ortho(pe)
+
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine u_meshv(ux,uy,uz,x,y,z)
 
       pi = 4.*atan(1.)
-      xc = (x-pi)
+      xc = (x-0.8*pi)
       yc = (y-pi)
       rc = sqrt(xc**2+yc**2)
       thv = atan2(yc,xc)
-      omega = 2.*pi*1.
+      omega = 2.*pi*0.5
       ux = omega*rc*sin(thv)
       uy = -omega*rc*cos(thv)
 

@@ -1,6 +1,6 @@
 if [ $# -eq 0 ]; then
   echo ""
-  echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknek case1 case2 ... casex np1 np2 ... npx [uncoupled]"
   echo ""
   exit 1
 fi
@@ -14,16 +14,9 @@ fi
 
 if [ $(($NT%2)) -eq 1 ]; then
   echo "please provide NP for each case"
-  echo "usage: neknek case1 case2 np1 np2 [uncoupled] "
+  echo "usage: neknek case1 case2 ... casex np1 np2 ... npx"
   echo ""
   exit 1
-fi
-
-if [ $(($NT/2)) -ne 2 ]; then
-   echo ""
-   echo "only 2 sessions permitted right now"
-   echo ""
-   exit 1
 fi
 
 rm -rf SESSION.NAME  2>/dev/null

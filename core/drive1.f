@@ -257,14 +257,15 @@ c-----------------------------------------------------------------------
       call setsolv
       call comment
 
+
+      if (ifneknekc) then
+        call bcopy
+        call chk_outflow
+      endif
+
       if (ifsplit) then   ! PN/PN formulation
 
          do igeom=1,ngeom
-
-         if (ifneknekc .and. igeom.gt.2) then
-            if (ifneknekm.and.igeom.eq.3) call neknek_setup
-            call neknek_exchange
-         endif
 
          ! call here before we overwrite wx 
          if (ifheat .and. ifcvode) call heat_cvode (igeom)   
@@ -272,6 +273,11 @@ c-----------------------------------------------------------------------
          if (ifgeom) then
             call gengeom (igeom)
             call geneig  (igeom)
+         endif
+
+         if (ifneknekc) then
+            if (ifneknekm.and.igeom.eq.2) call neknek_setup
+            if (igeom.gt.2) call neknek_exchange
          endif
 
          if (ifheat) call heat (igeom)
@@ -293,17 +299,17 @@ c-----------------------------------------------------------------------
          call setprop
          do igeom=1,ngeom
 
-            if (ifneknekc .and. igeom.gt.2) then
-              if (ifneknekm.and.igeom.eq.3) call neknek_setup
-              call neknek_exchange
-            endif
-
             ! call here before we overwrite wx 
             if (ifheat .and. ifcvode) call heat_cvode (igeom)   
 
             if (ifgeom) then
                if (.not.ifrich) call gengeom (igeom)
                call geneig  (igeom)
+            endif
+
+            if (ifneknekc) then
+               if (ifneknekm.and.igeom.eq.2) call neknek_setup
+               if (igeom.gt.2) call neknek_exchange
             endif
 
             if (ifmhd) then
@@ -361,12 +367,7 @@ c-----------------------------------------------------------------------
       do i=1,msteps
          istep = istep+i
          call nek_advance
-
-         if (ifneknekc) then 
-            call neknek_exchange
-            call bcopy
-            call chk_outflow
-         endif
+         if (ifneknekc) call neknek_exchange
       enddo
 
       return

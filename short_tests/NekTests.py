@@ -894,244 +894,139 @@ class Eddy_Neknek_mv(NekTestCase):
     def setUp(self):
 
         self.size_params = dict(
-            ldim="2",
-            lx1="8",
-            lxd="12",
-            lx2="lx1-2",
-            lx1m="lx1",
-            lelg="1000",
-            nsessmax="2",
+            ldim='2',
+            lx1='8',
+            lxd='12',
+            lx2='lx1-0',
+            lx1m='lx1',
+            lelg='1000',
+            nsessmax='3',
         )
 
         self.build_tools(["genmap"])
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
-        from lib.nekBinRun import run_neknek
+        from lib.nekBinRun import run_neknekn
         from re import sub
 
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
         # Tweak the .rea files and run genmap
-        for rea_file in ("insidemv", "outside"):
-            rea_path = os.path.join(cwd, rea_file + ".rea")
-            with open(rea_path, "r") as f:
-                lines = [
-                    sub(
-                        r"^.*DIVERGENCE$",
-                        "      1.0000000E-06     p21 DIVERGENCE",
-                        l,
-                    )
-                    for l in f
-                ]
-            with open(rea_path, "w") as f:
-                f.writelines(lines)
-            self.run_genmap(os.path.join(cwd, rea_file), tol="0.2")
+        for rea_file in ('in1', 'in2', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params["lx2"] = "lx1"
         self.config_size()
         self.build_nek()
-        run_neknek(
-            cwd=cwd,
-            inside="insidemv",
-            outside="outside",
-            np_inside=1,
-            np_outside=1,
-            step_limit=500,
-            coupled=True,
-            log_suffix=self.log_suffix,
-            verbose=self.verbose,
+        run_neknekn(
+            cwd = cwd,
+            in1 = 'in1',
+            in2 = 'in2',
+            outside = 'outside',
+            np_in1 = 1,
+            np_in2 = 1,
+            np_outside = 2,
+            step_limit = 500,
+            coupled = True,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
         )
 
-        logfile = os.path.join(
-            cwd,
-            "{inside}{np_in}.{outside}{np_out}.log{sfx}".format(
-                inside="insidemv",
-                outside="outside",
-                np_in=1,
-                np_out=1,
-                sfx=self.log_suffix,
-            ),
-        )
+        logfile  = os.path.join(cwd, '{in1}{np_in1}.{in2}{np_in2}.{outside}{np_out}.log{sfx}'.format(
+            in1 = 'in1',
+            in2 = 'in2',
+            outside = 'outside',
+            np_in1 = 1,
+            np_in2 = 1,
+            np_out = 2,
+            sfx = self.log_suffix
+        ))
 
-        xerr_inside = self.get_value_from_log(
-            "X err  insidemv", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_inside,
-            target_val=4.361961e-07,
-            delta=1e-05,
-            label="X err  insidemv",
-        )
+        xerr_in1 = self.get_value_from_log('X err  in1', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_in1, target_val=5.572926E-07, delta=1E-05, label='X err  in1')
 
-        xerr_global = self.get_value_from_log(
-            "X err     global", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_global,
-            target_val=7.394986e-07,
-            delta=1e-05,
-            label="X err     global",
-        )
+        xerr_in2 = self.get_value_from_log('X err  in2', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_in2, target_val=7.491564E-07, delta=1E-05, label='X err  in2')
 
-        xerr_outside = self.get_value_from_log(
-            "X err  outside", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_outside,
-            target_val=7.394986e-07,
-            delta=1e-05,
-            label="X err  outside",
-        )
+        xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=7.742886E-07, delta=1E-05, label='X err  outside')
 
-        yerr_inside = self.get_value_from_log(
-            "Y err  insidemv", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_inside,
-            target_val=4.339314e-07,
-            delta=1e-05,
-            label="Y err  insidemv",
-        )
+        yerr_in1 = self.get_value_from_log('Y err  in1', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_in1, target_val=9.280564E-07, delta=1E-05, label='Y err  in1')
 
-        yerr_global = self.get_value_from_log(
-            "Y err     global", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_global,
-            target_val=5.719364e-07,
-            delta=1e-05,
-            label="Y err     global",
-        )
+        yerr_in2 = self.get_value_from_log('Y err  in2', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_in2, target_val=1.267098E-06, delta=1E-05, label='Y err  in2')
 
-        yerr_outside = self.get_value_from_log(
-            "Y err  outside", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_outside,
-            target_val=5.719364e-07,
-            delta=1e-05,
-            label="Y err  outside",
-        )
+        yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=5.739992E-07, delta=1E-05, label='Y err  outside')
 
         self.assertDelayedFailures()
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
-        from lib.nekBinRun import run_neknek
+        from lib.nekBinRun import run_neknekn
         from re import sub
 
         cls = self.__class__
         cwd = os.path.join(self.examples_root, cls.example_subdir)
 
         # Tweak the .rea files and run genmap
-        for rea_file in ("insidemv", "outside"):
-            rea_path = os.path.join(cwd, rea_file + ".rea")
-            with open(rea_path, "r") as f:
-                lines = [
-                    sub(
-                        r"^.*DIVERGENCE$",
-                        "      1.0000000E-11     p21 DIVERGENCE",
-                        l,
-                    )
-                    for l in f
-                ]
-            with open(rea_path, "w") as f:
-                f.writelines(lines)
-            self.run_genmap(os.path.join(cwd, rea_file), tol="0.2")
+        for rea_file in ('in1', 'in2', 'outside'):
+            rea_path = os.path.join(cwd, rea_file + '.rea')
+            self.run_genmap(os.path.join(cwd, rea_file),tol='0.2')
 
         self.size_params["lx2"] = "lx1-2"
         self.config_size()
         self.build_nek()
-        run_neknek(
-            cwd=cwd,
-            inside="insidemv",
-            outside="outside",
-            np_inside=1,
-            np_outside=1,
-            step_limit=1000,
-            coupled=True,
-            log_suffix=self.log_suffix,
-            verbose=self.verbose,
+        run_neknekn(
+            cwd = cwd,
+            in1 = 'in1',
+            in2 = 'in2',
+            outside = 'outside',
+            np_in1 = 1,
+            np_in2 = 1,
+            np_outside = 2,
+            step_limit = 500,
+            coupled = True,
+            log_suffix = self.log_suffix,
+            verbose = self.verbose,
         )
 
-        logfile = os.path.join(
-            cwd,
-            "{inside}{np_in}.{outside}{np_out}.log{sfx}".format(
-                inside="insidemv",
-                outside="outside",
-                np_in=1,
-                np_out=1,
-                sfx=self.log_suffix,
-            ),
-        )
+        logfile  = os.path.join(cwd, '{in1}{np_in1}.{in2}{np_in2}.{outside}{np_out}.log{sfx}'.format(
+            in1 = 'in1',
+            in2 = 'in2',
+            outside = 'outside',
+            np_in1 = 1,
+            np_in2 = 1,
+            np_out = 2,
+            sfx = self.log_suffix
+        ))
 
-        xerr_inside = self.get_value_from_log(
-            "X err  insidemv", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_inside,
-            target_val=6.750845e-05,
-            delta=1e-05,
-            label="X err  insidemv",
-        )
+        xerr_in1 = self.get_value_from_log('X err  in1', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_in1, target_val=1.164788E-04, delta=1E-05, label='X err  in1')
 
-        xerr_global = self.get_value_from_log(
-            "X err     global", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_global,
-            target_val=8.105174e-05,
-            delta=1e-05,
-            label="X err     global",
-        )
+        xerr_in2 = self.get_value_from_log('X err  in2', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_in2, target_val=6.152744E-05, delta=1E-05, label='X err  in2')
 
-        xerr_outside = self.get_value_from_log(
-            "X err  outside", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            xerr_outside,
-            target_val=8.105174e-05,
-            delta=1e-05,
-            label="X err  outside",
-        )
+        xerr_outside = self.get_value_from_log('X err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(xerr_outside, target_val=8.225846E-05, delta=1E-05, label='X err  outside')
 
-        yerr_inside = self.get_value_from_log(
-            "Y err  inside", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_inside,
-            target_val=6.742920e-05,
-            delta=1e-05,
-            label="Y err  insidemv",
-        )
+        yerr_in1 = self.get_value_from_log('Y err  in1', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_in1, target_val=1.194416E-04, delta=1E-05, label='Y err  in1')
 
-        yerr_global = self.get_value_from_log(
-            "Y err     global", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_global,
-            target_val=7.705630e-05,
-            delta=1e-05,
-            label="Y err     global",
-        )
+        yerr_in2 = self.get_value_from_log('Y err  in2', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_in2, target_val=8.346061E-05, delta=1E-05, label='Y err  in2')
 
-        yerr_outside = self.get_value_from_log(
-            "Y err  outside", logfile=logfile, column=-7, row=-1
-        )
-        self.assertAlmostEqualDelayed(
-            yerr_outside,
-            target_val=7.705630e-05,
-            delta=1e-05,
-            label="Y err  outside",
-        )
+        yerr_outside = self.get_value_from_log('Y err  outside', logfile=logfile, column=-7, row=-1)
+        self.assertAlmostEqualDelayed(yerr_outside, target_val=7.777543E-05, delta=1E-05, label='Y err  outside')
 
         self.assertDelayedFailures()
 
 
 ####################################################################
-
 
 class KovStokes(NekTestCase):
     # Note: Legacy Analysis.py script only checked Pn-Pn-2 test cases
@@ -2088,6 +1983,32 @@ if __name__ == "__main__":
         ut_verbose = 1
 
     testList = (
+<<<<<<< HEAD
+               Tools,
+               FsHydro,
+               Axi, 
+               Eddy_NeknekU,
+               Eddy_Neknek,
+               Eddy_Neknek_mv,
+               Eddy_EddyUv,
+               Eddy_LegacySize,
+               eddy_mv, 
+               Benard_Ray9, 
+               KovStokes, 
+               LowMachTest, 
+               MvCylCvode, 
+               CmtInviscidVortex,
+               DoubleShear,
+               Ethier,
+               LinCav_Dir,
+               LinCav_Adj,
+               IO_Test,
+               InclDef,
+               lpm_one,  
+               lpm_two,
+               chan2d
+               ) 
+=======
         Tools,
         FsHydro,
         Axi,
@@ -2111,6 +2032,7 @@ if __name__ == "__main__":
         lpm_two,
         chan2d,
     )
+>>>>>>> f9e30ad0962ae16d8be10a0e7902654f5daaa263
 
     suite = unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in testList]

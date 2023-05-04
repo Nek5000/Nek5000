@@ -49,6 +49,7 @@ c     Set default logicals
       ifcvode   = .false.
       ifexplvis = .false.
       ifvvisp   = .true.
+      iffxdt    = .false.
 
       ifsplit = .false.
       if (lx1.eq.lx2) ifsplit=.true.

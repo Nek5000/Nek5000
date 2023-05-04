@@ -199,9 +199,6 @@ c
       REAL     DTOpf
       SAVE     DTOpf
       DATA     DTOpf /0.0/
-      logical iffxdt
-      save    iffxdt
-      data    iffxdt /.false./
 C
 
       if (param(12).lt.0.or.iffxdt) then

@@ -23,8 +23,11 @@ c
       common /multipts_r/ rst
 
       integer rcode(nmaxl_nn),elid(nmaxl_nn)
-     $    ,proc(nmaxl_nn),ilist(1,nmaxl_nn),npoints_nn
+     $       ,proc(nmaxl_nn),ilist(nmaxl_nn),npoints_nn
       common /multipts_i/ rcode,elid,proc,ilist,npoints_nn
 
-      integer inth_multi2
-      common /intp_h_nn/ inth_multi2
+      integer fpth_ms
+      common /intp_h_nn/ fpth_ms
+
+      real distfint(lx1,ly1,lz1,lelt)
+      common /rfpt_ms/ distfint
