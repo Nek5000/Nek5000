@@ -82,6 +82,7 @@ C
       param(65) = 1    ! just one i/o node
       param(66) = 6    ! write in binary
       param(67) = 6    ! read in binary
+      param(84) = 0.0  ! initial time step size
       param(93) = mxprev ! number of vectors for projection
 
       param(94) = 5    ! projection for helmholz solves (controled by ifprojfld) 
@@ -302,6 +303,16 @@ c set parameters
                write(6,*) 'is required for general:variableDt!'
                goto 999
             endif
+         endif
+      endif
+      call finiparser_getDbl(d_out,'general:initialDt',ifnd)
+      if (ifnd.eq.1) then
+         if(param(12).lt.0.0) then
+            write(6,*) 'general:variableDt'
+            write(6,*) 'is required for general:initialDt!'
+            goto 999
+         else 
+            param(84) = d_out
          endif
       endif
 
@@ -1174,11 +1185,13 @@ c-----------------------------------------------------------------------
       INCLUDE 'PARALLEL'
       INCLUDE 'CTIMER'
 c
-      neltmx=np*lelt
-      nelvmx=np*lelv
+      integer*8 neltmx, nelvmx 
 
-      neltmx=min(neltmx,lelg)
-      nelvmx=min(nelvmx,lelg)
+      neltmx=np*int(lelt,8)
+      nelvmx=np*int(lelv,8)
+
+      if(neltmx .gt. lelg) neltmx = lelg
+      if(nelvmx .gt. lelg) nelvmx = lelg
 
       nelgt = iglmax(nelgt,1)
       nelgv = iglmax(nelgv,1)
