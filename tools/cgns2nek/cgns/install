@@ -2,6 +2,7 @@
 set -e
 
 VER=3.3.1
+CHKSUM=831b151cdd1ec7e5a1141f37f40330b37f065a00
 
 if [ "$1" == "clean" ]; then
   rm -rf cgns bin lib include 2>/dev/null
@@ -14,14 +15,22 @@ fi
 
 if [ ! -f v$VER.tar.gz ]; then
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/CGNS/CGNS/archive/v$VER.tar.gz
+  SUM=`openssl dgst -sha1 v$VER.tar.gz | sed 's/^.* //'`
+  if [ $SUM != $CHKSUM ] ; then
+    echo 'Invalid checksum!'
+    rm -rf v$VER.tar.gz
+    exit 1
+  fi
 fi
 
 rm -rf cgns 2>/dev/null
 mkdir cgns
+
 tar -zxvf v$VER.tar.gz -C ./cgns --strip-components=1
 cd cgns
 mkdir -p build
 cd build
+
 set -x
 cmake \
 -DCMAKE_C_COMPILER=`which $CC` \
