@@ -1,0 +1,285 @@
+c-----------------------------------------------------------------------
+c  nek5000 user-file template
+c
+c  user specified routines:
+c     - uservp  : variable properties
+c     - userf   : local acceleration term for fluid
+c     - userq   : local source term for scalars
+c     - userbc  : boundary conditions
+c     - useric  : initial conditions
+c     - userchk : general purpose routine for checking errors etc.
+c     - userqtl : thermal divergence for lowMach number flows 
+c     - usrdat  : modify element vertices 
+c     - usrdat2 : modify mesh coordinates
+c     - usrdat3 : general purpose routine for initialization
+c     
+c-----------------------------------------------------------------------
+      subroutine uservp(ix,iy,iz,eg) ! set variable properties
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+     
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+c     e = gllel(eg)
+
+      udiff  = cpfld(ifield,1)
+      utrans = cpfld(ifield,2)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf(ix,iy,iz,eg) ! set acceleration term
+c
+c     Note: this is an acceleration term, NOT a force!
+c     Thus, ffx will subsequently be multiplied by rho(x,t).
+c
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+c     e = gllel(eg)
+
+      ffx = 0.0
+      ffy = 0.0
+      ffz = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq(ix,iy,iz,eg) ! set source term
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      integer e
+      e = gllel(eg)
+
+      th   = 0.1 !thickness of solid region
+      qppp = 1.0 !volumetric heat source in solid
+      qpp  = qppp*th !effective heat flux
+
+      qvol   = q_vol_per(ix,iy,iz,e,qpp,'W  ',1)
+      if(eg.gt.nelgv) qvol = qppp
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc(ix,iy,iz,iside,eg) ! set up boundary conditions
+c
+c     NOTE ::: This subroutine MAY NOT be called by every process
+c
+c      implicit none
+
+      integer ix,iy,iz,iside,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+c      if (cbc(iside,gllel(eg),ifield).eq.'v01')
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric(ix,iy,iz,eg) ! set up initial conditions
+
+c      implicit none
+
+      integer ix,iy,iz,eg
+
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      ux   = 1.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = 0.0
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userchk()
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      th   = 0.1  !solid region thickness
+      qppp = 1.0  !volumetric heating rate
+      H    = 2.0  !channel full height
+      qpp  = qppp*th 
+      rlam = cpfld(2,1)
+      rlams= rlam*1.0 !solid conductivity
+
+      yw   = H/2.0
+      yo   = yw + th
+      Tw   = qpp*H/(2.0*rlam)*(3.*(yw/H)**2-2.*(yw/H)**4-39./280.)
+      c3   = qpp/(2.0*rlams*(yw-yo))
+      c2   = -2.0*c3*yo
+      c1   = Tw-c2*(yw)-c3*(yw)**2
+
+      n1 = lx1*ly1*lz1*nelv
+      nt = lx1*ly1*lz1*nelt
+
+      e1u = 0.0
+      e2u = 0.0
+      e1t = 0.0
+      e2t = 0.0
+
+      do i=1,n1
+        y    = ym1(i,1,1,1)
+        u    = vx(i,1,1,1)
+        tt   = t(i,1,1,1,1)
+        sol  = 3./2.*(1.-y**2)
+        solt = qpp*H/(2.0*rlam)*(3.*(y/H)**2-2.*(y/H)**4-39./280.)
+        e1u  = e1u + abs(sol - u)
+        e2u  = e2u + (sol - u)**2
+        e1t  = e1t + abs(solt - tt)
+        e2t  = e2t + (solt - tt)**2
+      enddo 
+
+      do i=n1+1,nt
+        y    = ym1(i,1,1,1)
+        tt   = t(i,1,1,1,1)
+        solt = c1+c2*y+c3*y**2
+        e1t  = e1t + abs(solt - tt)
+        e2t  = e2t + (solt - tt)**2
+      enddo
+
+      e1u = e1u/n1       !mae
+      e2u = sqrt(e2u/n1) !rms error
+      e1t = e1t/nt       !mae
+      e2t = sqrt(e2t/nt) !rms error
+
+      if(nio.eq.0) write(*,*) "velocity L1/L2 Error: ",e1u,e2u
+      if(nio.eq.0) write(*,*) "temperature L1/L2 Error: ",e1t,e2t
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userqtl ! Set thermal divergence
+
+      call userqtl_scig 
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat()   ! This routine to modify element vertices
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2()  ! This routine to modify mesh coordinates
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3()
+
+c      implicit none
+
+      include 'SIZE'
+      include 'TOTAL'
+
+      return
+      end
+c------------------------------------------------------------------------
+      real function q_vol_per(ix,iy,iz,ie,flux,bc3,BCfld)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ix,iy,iz,ie,BCfld,n,e,f,dir,nt
+
+      character*3 bc3
+
+      logical ifdid
+
+      real dummy,sarea,tarea,time0,tcorr,flux
+      real f_gm,vel_avg,glsum,glsc2,glsc3
+
+      data ifdid /.false./
+      data time0 /-1.0/
+
+      save ifdid,time0,vel_avg,f_gm,dir
+
+      n=nx1*ny1*nz1*nelv !only work in fluid
+      nt=nx1*ny1*nz1*nelt
+
+      if(.not.ifdid) then
+        dir=nint(abs(param(54))) !make sure this is an int, for my own sanity
+        ifdid = .true.
+        tarea = 0.0
+        do e=1,nelv
+          do f=1,2*ndim
+            if(cbc(f,e,BCfld).eq.bc3) then
+              call surface_int(dummy,sarea,xm1,e,f)
+              tarea=tarea+sarea
+            endif
+          enddo
+        enddo
+        tarea=glsum(tarea,1)
+        f_gm=abs(tarea)*flux 
+      endif
+
+      e=lglel(ie) !do nothing in solid region
+      if(e.gt.nelgv) then
+        q_vol_per = 0.0
+        return
+      endif
+
+      if(time.ne.time0) then
+        time0=time
+        if(dir.eq.1) then
+          vel_avg=glsc2(vx,bm1,n)
+          tcorr = -1.0*glsc3(t,vx,bm1,n)
+        elseif(dir.eq.2) then
+          vel_avg=glsc2(vy,bm1,n)
+          tcorr = -1.0*glsc3(t,vy,bm1,n)
+        elseif(dir.eq.3) then
+          vel_avg=glsc2(vz,bm1,n)
+          tcorr = -1.0*glsc3(t,vz,bm1,n)
+        endif
+        vel_avg = max(vel_avg,1.0e-10)
+        tcorr=tcorr/vel_avg
+        call cadd (t,tcorr,nt) !force mean T to zero
+      endif
+
+      if(dir.eq.1) q_vol_per=-f_gm*vx(ix,iy,iz,ie)/vel_avg
+      if(dir.eq.2) q_vol_per=-f_gm*vy(ix,iy,iz,ie)/vel_avg
+      if(dir.eq.3) q_vol_per=-f_gm*vz(ix,iy,iz,ie)/vel_avg
+
+      return
+      end

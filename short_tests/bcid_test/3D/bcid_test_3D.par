@@ -1,0 +1,23 @@
+#Nek5000 parameter file
+[GENERAL]
+#startFrom = restart.f00000
+numSteps = 1
+dt = 1.0e-4
+
+[VELOCITY]
+boundaryTypeMap = inlet, outlet, wall
+viscosity = -100.0
+density = 1.0
+
+[SCALAR01]
+boundaryTypeMap = inlet, outlet, dirichlet
+diffusivity = -100.0
+density = 1.0
+
+[SCALAR02]
+boundaryTypeMap = t  ,I  ,t  
+diffusivity = -100.0
+density = 1.0
+
+[SCALAR03]
+solver = none
