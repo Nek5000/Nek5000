@@ -1496,7 +1496,7 @@ c-----------------------------------------------------------------------
       do ie = 1,nelt
          ddmin = min(ddmin,dxmin_e(ie)) 
          ddmax = max(ddmax,dxmax_e(ie))
-         dtmp  = vlsum(JACM1(1,1,1,ie),nxyz)**1./ldim
+         dtmp  = vlsum(bm1(1,1,1,ie),nxyz)**1./ldim
          ddavg = ddavg + dtmp/(lx1-1) 
       enddo 
       dxmin = glmin(ddmin,1)
