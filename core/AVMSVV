@@ -1,4 +1,16 @@
 c
+c     AVM Parameters
+c
+      real avm_c1(ldimt)
+      common /avm_r/ avm_c1
+
+      logical ifcont(ldimt)
+      common /avm_l/ ifcont
+      
+      integer avm_ncut(ldimt)
+      common /avm_i/ avm_ncut
+
+c
 c     SVV Arrays
 c
       real svvf(lx1,ly1,lz1,lelt)
@@ -18,5 +30,5 @@ c
       real svv_c0,svv_k0,svv_k1,svvcut
       common /svvparam/ svv_c0,svvcut,svv_k0,svv_k1
 
-      logical ifnlsvv, ifsvv
-      common /svvl/ ifnlsvv, ifsvv
+      logical ifnlsvv
+      common /svvl/ ifnlsvv

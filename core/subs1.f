@@ -1070,6 +1070,10 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
          CALL USERVP  (I,J,K,IELG)
          VDIFF (I,J,K,IEL,IFIELD) = UDIFF
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
+         if(ifavm(ifield-1))then
+           VDIFF(I,J,K,IEL,IFIELD) = VDIFF(I,J,K,IEL,IFIELD)+
+     $                               avm_vdiff(I,J,K,IEL)             
+         endif
  10   CONTINUE
       return
       end

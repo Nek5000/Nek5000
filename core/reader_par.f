@@ -151,6 +151,12 @@ C
          idpss(i) = -1
       enddo 
 
+      do i=1,ldimt
+        ifavm(i) = .false.
+        ifsvv(i) = .false.
+      enddo
+      call setdefault_avm
+
       meshPartitioner=3 ! HYBRID (RSB+RCB)
       connectivityTol=0.2
 
@@ -878,7 +884,34 @@ c set connectivity tolerance
       if(ifnd .eq. 1) connectivityTol = d_out
 
 100   if(ierr.eq.0) call finiparser_dump()
+
+
+c scalar regularization
+      is = 2
+      if (ifheat) is = 1
+      n = param(23)
+      do i = is,n+1
+        if(i.eq.1)then
+          txt = 'temperature'
+        else
+          write(txt,"('scalar',i2.2)") i-1
+        endif
+        call finiparser_getString
+     $    (c_out,trim(txt)//':regularization',ifnd)
+        call capit(c_out,132)
+        if(ifnd .eq. 1)then
+          if(index(c_out,'AVM') .eq. 1) then
+            ifavm(i) = .true.
+          elseif(index(c_out,'SVV') .eq. 1)then
+            ifsvv(i) = .true.
+          elseif(index(c_out,'NONE') .eq. 1)then
+            continue
+          endif
+        endif
+      enddo
+
       return
+
 
 c error handling
  999  continue
@@ -954,6 +987,9 @@ C
       call bcast(initc, 15*132*csize) 
 
       call bcast(timeioe,sizeof(timeioe))
+
+      call bcast(ifavm, ldimt*lsize)
+      call bcast(ifsvv, ldimt*lsize)
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.

@@ -1,4 +1,18 @@
-      real function avm_vdiff(ix,iy,iz,e,c1,ncut)
+c---------------------------------------------------------------
+      subroutine setdefault_avm
+      include 'SIZE'
+      include 'AVMSVV'
+
+      do i=1,ldimt
+        avm_ncut(i) = 1
+        avm_c1(i) = 1.0
+        ifcont(i) = .false.
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------
+      real function avm_vdiff(ix,iy,iz,e)
 c
 c c1 and ncut a user tuneable control parameters. 
 c Set c1 = 1.0 and reduce/increase as much possible/required,
@@ -8,13 +22,11 @@ c Note, avoid using lx1 < 6!
 c
       include 'SIZE'
       include 'TOTAL'
+      include 'AVMSVV'
 
       integer ix, iy, iz, e
       real c1, c2
       integer ncut
- 
-      logical ifcont
-      parameter (ifcont=.false.)
 
       real visc(lx1,ly1,lz1,lelt)
       save visc
@@ -40,7 +52,7 @@ c
       real viscc(8,lelt)
 
       if (ix*iy*iz*e .ne. 1) then ! use cache
-         avm_vdiff = visc(ix,iy,iz,e)
+         avm_vdiff = max(1e-10,visc(ix,iy,iz,e))
          return
       endif
 
@@ -62,7 +74,15 @@ c
          call exitt
       else
          if (ibuild(ifield).eq.0) then
-           call hpf_trns_fcn(hpf_filter,ncut)
+           if(nid.eq.0)then
+             write(6,*)'AVM Parameters for ifield:',ifield
+             write(6,*)'ncut:',avm_ncut(ifield-1)
+             write(6,*)'c1:',avm_c1(ifield-1)
+             write(6,*)'C0 continuous:', ifcont(ifield-1)
+             write(6,*)
+           endif
+
+           call hpf_trns_fcn(hpf_filter,avm_ncut(ifield-1))
            call build_hpf_mat(hpf_op(1,ifield),hpf_filter,.false.)
            ibuild(ifield) = ibuild(ifield) + 1
          endif
@@ -92,7 +112,8 @@ c
          vmax = sqrt(vx(i,1,1,ie)**2 + vy(i,1,1,ie)**2 
      $               + vz(i,1,1,ie)**2)
          vismax = c2 * h0max * vmax
-         visc(i,1,1,ie) = min(vismax, c1*h0**2 * abs(r(i,ie))*uinf)
+         visc(i,1,1,ie) = min(vismax, 
+     $        avm_c1(ifield-1)*h0**2 * abs(r(i,ie))*uinf)
       enddo
       enddo
 
@@ -103,7 +124,7 @@ c
       enddo
 
       ! make it P1 continuous
-      if (ifcont) then
+      if (ifcont(ifield-1)) then
          call dsop (visc,'max',lx1,ly1,lz1)
          do ie = 1,nelv 
            viscc(1,ie) = visc(1  ,1  ,1  ,ie)
@@ -127,7 +148,7 @@ c
  10     format(1p4e12.4,' AVM',i6)
       endif
 
-      avm_vdiff = visc(ix,iy,iz,e)
+      avm_vdiff = max(1e-10,visc(ix,iy,iz,e))
 
       return
       end

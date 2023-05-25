@@ -295,8 +295,8 @@ C
            else
 C
 C
-           call mxm  (dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-           call mxm  (u(1,1,1,e),lx1,dytm1,ly1,duds,ly1)
+           call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+           call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
            call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
            if (ifdfrm(e)) then
@@ -305,8 +305,8 @@ C
            endif
            call col2 (tmp1,helm1(1,1,1,e),nxyz)
            call col2 (tmp2,helm1(1,1,1,e),nxyz)
-           call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
-           call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
+           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
            call add2 (au(1,1,1,e),tm1,nxyz)
            call add2 (au(1,1,1,e),tm2,nxyz)
 
@@ -336,11 +336,11 @@ C
            else
 C
 C
-           call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+           call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            do 10 iz=1,lz1
-              call mxm(u(1,1,iz,e),lx1,dytm1,ly1,duds(1,1,iz),ly1)
+              call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
    10      continue
-           call mxm     (u(1,1,1,e),nxy,dztm1,lz1,dudt,lz1)
+           call mxm     (u(1,1,1,e),nxy,cdztm1,lz1,dudt,lz1)
            call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
@@ -355,11 +355,11 @@ C
            call col2 (tmp1,helm1(1,1,1,e),nxyz)
            call col2 (tmp2,helm1(1,1,1,e),nxyz)
            call col2 (tmp3,helm1(1,1,1,e),nxyz)
-           call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
            do 20 iz=1,lz1
-              call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
+              call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
    20      continue
-           call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
+           call mxm  (tmp3,nxy,cdzm1,lz1,tm3,lz1)
            call add2 (au(1,1,1,e),tm1,nxyz)
            call add2 (au(1,1,1,e),tm2,nxyz)
            call add2 (au(1,1,1,e),tm3,nxyz)
