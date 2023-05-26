@@ -69,7 +69,7 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
       END
 C
 c=======================================================================
-      subroutine axhelm (au,u,helm1,helm2,imesh,isd)
+      subroutine axhelm (au,u,helm1,helm2,imsh,isd)
 C------------------------------------------------------------------
 C
 C     Compute the (Helmholtz) matrix-vector product,
@@ -84,6 +84,8 @@ C------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
       include 'CTIMER'
+      include 'TSTEP'
+      include 'SVV'
 C
       COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
@@ -113,7 +115,7 @@ C
       etime1 = dnekclock()
 
       nel=nelt
-      if (imesh.eq.1) nel=nelv
+      if (imsh.eq.1) nel=nelv
 
       NXY=lx1*ly1
       NYZ=ly1*lz1
@@ -121,7 +123,7 @@ C
       NXYZ=lx1*ly1*lz1
       NTOT=NXYZ*NEL
 
-      IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMESH)
+      IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMSH)
       CALL RZERO (AU,NTOT)
 
       do 100 e=1,nel
@@ -222,6 +224,8 @@ c
 C
  100  continue
 C
+      if(ifield.gt.1)call col2(au,svvmu,ntot)
+         
       if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 C
 C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
@@ -697,7 +701,6 @@ C
       call rzero(p,n)
 
       fmax = glamax(f,n)
-      if (fmax.eq.0.0) ifsolv=.false.
       if (fmax.eq.0.0) return
 
 c     Check for non-trivial null-space
