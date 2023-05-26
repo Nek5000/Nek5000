@@ -156,6 +156,7 @@ C
         ifsvv(i) = .false.
       enddo
       call setdefault_avm
+      call setdefault_svv
 
       meshPartitioner=3 ! HYBRID (RSB+RCB)
       connectivityTol=0.2

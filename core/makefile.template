@@ -53,7 +53,7 @@ finiparser.o iniparser.o dictionary.o \
 hpf.o \
 fcrs.o crs_xxt.o crs_amg.o \
 fem_amg_preco.o crs_hypre.o \
-partitioner.o avm.o
+partitioner.o avm.o svv.o
 ################################################################################
 # MXM 
 MXM =  
@@ -214,6 +214,7 @@ $(OBJDIR)/reader_par.o	:$S/core/reader_par.f $S/core/PARDICT;	$(FC) -c $(FL2) $<
 $(OBJDIR)/reader_re2.o	:$S/core/reader_re2.f;		        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hpf.o	       	:$S/core/hpf.f;         		$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/avm.o	       	:$S/core/avm.f;         		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/svv.o	       	:$S/core/svv.f;         		$(FC) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/core/mxm_wrapper.f;	$(FC) -c $(FL2) $< -o $@ 
