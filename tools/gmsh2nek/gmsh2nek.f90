@@ -151,6 +151,12 @@
 
       endif
 
+      if (num_dim.eq.3) then
+      call fix_left_hand_elements_3d
+      endif
+
+      call right_hand_check ! check non-right-hand element here
+
       call set_periodicity(1)
       if (eftot.ne.num_elem)  call set_periodicity(2)
 	  

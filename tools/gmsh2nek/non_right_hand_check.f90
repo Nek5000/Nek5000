@@ -23,36 +23,7 @@
       return
       end
 !--------------------------------------------------------------------
-      subroutine r_or_l_detect_for_quad(iel,rfflag)
-! detect if iquad is right-hand or left-hand, elements
-! borrowed from gmsh2nek
-      use SIZE
-      include 'exodusII.inc'
-
-      integer iel, rfflag
-      integer node(4)
-      real vec12(3),vec14(3),cz
-	  
-      nvert = num_nodes_per_elem(1)
-	  
-      do inode = 1,4
-         node(inode) = connect(nvert*(iel-1)+inode)
-      enddo
-
-      vec12(1) = x_exo(node(2)) - x_exo(node(1))
-      vec12(2) = y_exo(node(2)) - y_exo(node(1))
-
-      vec14(1) = x_exo(node(4)) - x_exo(node(1))
-      vec14(2) = y_exo(node(4)) - y_exo(node(1))
-	  
-      cz = vec12(1)*vec14(2) - vec12(2)*vec14(1)
-
-      if(cz.gt.0.0) rfflag = 0 ! right hand element
-      if(cz.lt.0.0) rfflag = 1 ! left hand element
-
-      return
-      end
-!--------------------------------------------------------------------
+!----------------------------------------------------------
       subroutine right_hand_check
 ! check if there is non-right hand elements (3D)
 ! because if mesh is from ICEM, and mirror operation is made in ICEM,

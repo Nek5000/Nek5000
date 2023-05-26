@@ -182,7 +182,12 @@
       etot = eacc
       num_elem = etot
 
+      if (num_dim.eq.3) then
+      call fix_left_hand_elements_3d
+      endif
+
       call right_hand_check ! check non-right-hand element here
+
       call gather_bc_info
 
       call set_periodicity(1)
