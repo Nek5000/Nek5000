@@ -1,3 +1,32 @@
+      subroutine r_or_l_detect_for_quad(iel,rfflag)
+! detect if iquad is right-hand or left-hand, elements
+! borrowed from gmsh2nek
+      use SIZE
+      include 'exodusII.inc'
+
+      integer iel, rfflag
+      integer node(4)
+      real vec12(3),vec14(3),cz
+	  
+      nvert = num_nodes_per_elem(1)
+	  
+      do inode = 1,4
+         node(inode) = connect(nvert*(iel-1)+inode)
+      enddo
+
+      vec12(1) = x_exo(node(2)) - x_exo(node(1))
+      vec12(2) = y_exo(node(2)) - y_exo(node(1))
+
+      vec14(1) = x_exo(node(4)) - x_exo(node(1))
+      vec14(2) = y_exo(node(4)) - y_exo(node(1))
+	  
+      cz = vec12(1)*vec14(2) - vec12(2)*vec14(1)
+
+      if(cz.gt.0.0) rfflag = 0 ! right hand element
+      if(cz.lt.0.0) rfflag = 1 ! left hand element
+
+      return
+      end
 !--------------------------------------------------------------------
       subroutine right_hand_check
 ! check if there is non-right hand elements (3D)
@@ -26,13 +55,48 @@
  
       if (nek_check.eq.'y') then
         do iel=1,num_elem
+          if (num_dim.eq.2) then
+          call nek_check_non_right_hand_2d(iel)
+          else 
           call nek_check_non_right_hand(iel)
+          endif
        enddo
       endif
 	  
       return
       end
 !--------------------------------------------------------------------
+      subroutine nek_check_non_right_hand_2d(iel)
+      use SIZE
+      logical ifnonrighthand
+      integer iel
+      integer quad4_to_nek_quad9_vertex(4)
+      data quad4_to_nek_quad9_vertex /1,3,7,9/ ! for nek non-right-hand element check
+      real XYZ(2,4)
+      real C1,C2,C3,C4
+
+      do iver = 1,4
+       XYZ(1,iver) = xm1(quad4_to_nek_quad9_vertex(iver),1,1,iel)
+       XYZ(2,iver) = ym1(quad4_to_nek_quad9_vertex(iver),1,1,iel)
+      enddo
+
+!
+!        CRSS2D(A,B,O) = (A-O) X (B-O)
+!
+         C1=CRSS2D(XYZ(1,2),XYZ(1,3),XYZ(1,1))
+         C2=CRSS2D(XYZ(1,4),XYZ(1,1),XYZ(1,2))
+         C3=CRSS2D(XYZ(1,1),XYZ(1,4),XYZ(1,3))
+         C4=CRSS2D(XYZ(1,3),XYZ(1,2),XYZ(1,4))
+!
+      IF (C1.LE.0.0.OR.C2.LE.0.0.OR. &
+            C3.LE.0.0.OR.C4.LE.0.0 ) THEN
+       write(6,*) 'WARNINGb: Detected non-right-handed element.'
+       write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1)
+      ENDIF
+
+      return
+      end
+!!--------------------------------------------------------------------
       subroutine nek_check_non_right_hand(iel)
       use SIZE
       logical ifnonrighthand
@@ -240,5 +304,17 @@
 
          VOLUM0  = W1*CROSS1 + W2*CROSS2 + W3*CROSS3
          
+      RETURN
+      END	  
+!-----------------------------------------------------------------------
+      FUNCTION CRSS2D(XY1,XY2,XY0)
+      REAL XY1(2),XY2(2),XY0(2)
+
+         V1X=XY1(1)-XY0(1)
+         V2X=XY2(1)-XY0(1)
+         V1Y=XY1(2)-XY0(2)
+         V2Y=XY2(2)-XY0(2)
+         CRSS2D = V1X*V2Y - V1Y*V2X
+
       RETURN
       END

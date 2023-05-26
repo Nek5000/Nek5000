@@ -69,6 +69,10 @@
       call rzero (bc,5*2*num_dim*etot_est)
       call blank (cbc,3*2*num_dim*etot_est)
 
+      allocate (r_or_l(num_elem))
+	  call rzero_int(r_or_l,num_elem)
+
+
       eacc = 0
       eacc_old = 0
       do iexo = 1,fnexo
@@ -733,11 +737,16 @@
       integer exo_to_nek_vert2D(9)                     ! quad9 to nek numbering
       data    exo_to_nek_vert2D   / 1, 3, 9, 7, 2, 6, 8, 4, 5  / 
 
+      integer exo_to_nek_left(9)
+      data    exo_to_nek_left /3,1,7,9,2,4,8,6,5/  ! LEFT HAND SIDE ELEMENT
+ 
       integer exo_to_nek_face3D(6)
       data    exo_to_nek_face3D  / 1, 5, 3, 6, 4, 2 /  ! symmetric face numbering
 
       integer exo_to_nek_face2D(4)
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /        ! symmetric face numbering
+      integer exo_to_nek_face2D_left(4)
+      data    exo_to_nek_face2D_left  / 1,4,3,2 /        ! symmetric face numbering
 
       eacc_old = eacc
       nvert = num_nodes_per_elem(1)
@@ -746,14 +755,28 @@
       do iel=1,num_elem
         eacc = eacc + 1
 
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+        !if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
 
-        do ivert =1,nvert
-          if (num_dim.eq.2) then
+        if (num_dim.eq.2) then
+                      
+          call r_or_l_detect_for_quad(iel,r_or_l(eacc))
+	  
+		  do ivert =1,nvert
+            if (r_or_l(eacc).eq.0) then
             jvert = exo_to_nek_vert2D(ivert)
-            xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
+			xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
             ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
-          else
+            else
+            jvert = exo_to_nek_left(ivert)
+			xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
+            ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
+            endif
+          enddo
+			
+ 
+        else 
+
+          do ivert =1,nvert
             jvert = exo_to_nek_vert3D(ivert)
             xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
             ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
@@ -762,8 +785,11 @@
             xm1(jvert,1,1,eacc)=xm1(jvert,1,1,eacc) + shiftvector(1)
             ym1(jvert,1,1,eacc)=ym1(jvert,1,1,eacc) + shiftvector(2)
             zm1(jvert,1,1,eacc)=zm1(jvert,1,1,eacc) + shiftvector(3)
-          endif
-        enddo
+
+          enddo
+
+       endif
+
       enddo
 
       write(6,'(A)') 'done :: Converting elements '
@@ -797,7 +823,11 @@
           iel = elem_list(i,iss)
           ifc = side_list(i,iss)
           if (num_dim.eq.2) then 
+            if (r_or_l(iel+eacc_old).eq.0) then
             jfc = exo_to_nek_face2D(ifc)
+            else
+            jfc = exo_to_nek_face2D_left(ifc)
+            endif
           else
             jfc = exo_to_nek_face3D(ifc)
           endif
