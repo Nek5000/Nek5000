@@ -8,7 +8,7 @@
 ! 2. fix if not
       use SIZE
       integer iel
-      logical ifnonrighthand
+      logical lefthand
       character nek_check
 	  
       write(6,*) 'do you want to fix left-hand element (y/n)'
@@ -16,7 +16,9 @@
  
       if (nek_check.eq.'y') then
         do iel=1,num_elem
-          call fix_left_hand(iel)
+          lefthand = .FALSE.
+          call check_if_left_hand(lefthand,iel)
+		  if (lefthand) call fix_left_hand(iel)
         enddo
       endif
 	  
@@ -185,9 +187,9 @@
       return
       end
 !--------------------------------------------------------------------
-      subroutine check_if_non_right(ifnonrighthand,iel)
+      subroutine check_if_left_hand(lefthand,iel)
       use SIZE
-      logical ifnonrighthand
+      logical lefthand
       integer iel
       integer hex8_to_hex27_vertex(8)
       data hex8_to_hex27_vertex /1,3,9,7,19,21,27,25/
@@ -216,9 +218,9 @@
       dot_prod = vec1(1)*vec15(1) + vec1(2)*vec15(2) + vec1(3)*vec15(3)
   
       if(dot_prod.gt.0.0) then
-       ifnonrighthand = .FALSE.
+       lefthand = .FALSE.
       else
-       ifnonrighthand = .TRUE.
+       lefthand = .TRUE.
        !write(6,*) 'non-right hand element detected'
       endif  
 
