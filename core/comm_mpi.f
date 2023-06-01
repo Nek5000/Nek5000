@@ -63,7 +63,6 @@ c-----------------------------------------------------------------------
  22        rewind(8)
            if (nlin.gt.2) then 
              read(8,*,err=24) nsessions
-             write(6,*) 'ERROR: nsessmax in SIZE too low!'
              if(nsessions.gt.nsessmax) goto 24
            endif
            if (nsessions.gt.1) read(8,*,err=24) ifneknekc
