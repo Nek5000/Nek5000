@@ -455,7 +455,6 @@ C
            call col2  (tm1,g4m1(1,1,1,e),nxyz)
            call col2  (tm2,g5m1(1,1,1,e),nxyz)
            call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-           call cmult (au(1,1,1,e),h1,nxyz)
 C
            else
 C
@@ -468,8 +467,6 @@ C
               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
               call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
            endif
-           call col2 (tmp1,helm1(1,1,1,e),nxyz)
-           call col2 (tmp2,helm1(1,1,1,e),nxyz)
            call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
            call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
            call add2 (au(1,1,1,e),tm1,nxyz)
@@ -517,9 +514,6 @@ C
               call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
               call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
            endif
-           call col2 (tmp1,helm1(1,1,1,e),nxyz)
-           call col2 (tmp2,helm1(1,1,1,e),nxyz)
-           call col2 (tmp3,helm1(1,1,1,e),nxyz)
            call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
            do 20 iz=1,lz1
               call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
@@ -563,7 +557,7 @@ C               if (ym1(i,j,1,e).ne.0.) then
                      term2 = 0.
                   endif
                   au(i,j,1,e) = au(i,j,1,e)
-     $                          + helm1(i,j,1,e)*(term1+term2)
+     $                          + (term1+term2)
 C               endif
   190       continue
   200    continue

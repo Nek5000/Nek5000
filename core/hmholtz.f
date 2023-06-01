@@ -224,8 +224,6 @@ c
 C
  100  continue
 C
-      if(ifield.gt.1)call col2(au,svvmu,ntot)
-         
       if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 C
 C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
