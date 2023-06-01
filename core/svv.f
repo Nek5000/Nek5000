@@ -380,7 +380,7 @@ c
       return
       end
 c---------------------------------------------------------------------
-      subroutine axhelm_svv (au,u,helm1,helm2,imsh,isd)
+      subroutine axhelm_svv (au,u,imsh,isd)
 C------------------------------------------------------------------
 C
 C     Compute the (Helmholtz) matrix-vector product,
@@ -422,6 +422,9 @@ C
 
       integer e
 
+      common /svvtemp/ svvau(lx1,ly1,lz1,lelt)
+      real svvau
+
       naxhm = naxhm + 1
       etime1 = dnekclock()
 
@@ -434,31 +437,10 @@ C
       NXYZ=lx1*ly1*lz1
       NTOT=NXYZ*NEL
 
-      IF (.NOT.IFSOLV) CALL SETFAST(HELM1,HELM2,IMSH)
-      CALL RZERO (AU,NTOT)
+      CALL RZERO (SVVAU,NTOT)
 
       do 100 e=1,nel
-C
-        if (ifaxis) call setaxdy ( ifrzer(e) )
-C
         IF (ldim.EQ.2) THEN
-C
-C       2-d case ...............
-C
-           if (iffast(e)) then
-C
-C          Fast 2-d mode: constant properties and undeformed element
-C
-           h1 = helm1(1,1,1,e)
-           call mxm   (wddx,lx1,u(1,1,1,e),lx1,tm1,nyz)
-           call mxm   (u(1,1,1,e),lx1,wddyt,ly1,tm2,ly1)
-           call col2  (tm1,g4m1(1,1,1,e),nxyz)
-           call col2  (tm2,g5m1(1,1,1,e),nxyz)
-           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-C
-           else
-C
-C
            call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
            call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
@@ -469,35 +451,9 @@ C
            endif
            call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
            call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
-
-        endif
-C
+           call add2 (svvau(1,1,1,e),tm1,nxyz)
+           call add2 (svvau(1,1,1,e),tm2,nxyz)
         else
-C
-C       3-d case ...............
-C
-           if (iffast(e)) then
-C
-C          Fast 3-d mode: constant properties and undeformed element
-C
-           h1 = helm1(1,1,1,e)
-           call mxm   (wddx,lx1,u(1,1,1,e),lx1,tm1,nyz)
-           do 5 iz=1,lz1
-           call mxm   (u(1,1,iz,e),lx1,wddyt,ly1,tm2(1,1,iz),ly1)
- 5         continue
-           call mxm   (u(1,1,1,e),nxy,wddzt,lz1,tm3,lz1)
-           call col2  (tm1,g4m1(1,1,1,e),nxyz)
-           call col2  (tm2,g5m1(1,1,1,e),nxyz)
-           call col2  (tm3,g6m1(1,1,1,e),nxyz)
-           call add3  (au(1,1,1,e),tm1,tm2,nxyz)
-           call add2  (au(1,1,1,e),tm3,nxyz)
-           call cmult (au(1,1,1,e),h1,nxyz)
-C
-           else
-C
-C
            call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            do 10 iz=1,lz1
               call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
@@ -519,50 +475,15 @@ C
               call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
    20      continue
            call mxm  (tmp3,nxy,cdzm1,lz1,tm3,lz1)
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
-           call add2 (au(1,1,1,e),tm3,nxyz)
-C
-           endif
-c
+           call add2 (svvau(1,1,1,e),tm1,nxyz)
+           call add2 (svvau(1,1,1,e),tm2,nxyz)
+           call add2 (svvau(1,1,1,e),tm3,nxyz)
         endif
-C
  100  continue
-C
-      if(ifield.gt.1)call col2(au,svvmu,ntot)
-         
-      if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
-C
-C     If axisymmetric, add a diagonal term in the radial direction (ISD=2)
-C
-      if (ifaxis.and.(isd.eq.2)) then
-         do 200 e=1,nel
-C
-            if (ifrzer(e)) then
-               call mxm(u  (1,1,1,e),lx1,datm1,ly1,duax,1)
-               call mxm(ym1(1,1,1,e),lx1,datm1,ly1,ysm1,1)
-            endif
-c
-            do 190 j=1,ly1
-            do 190 i=1,lx1
-C               if (ym1(i,j,1,e).ne.0.) then
-                  if (ifrzer(e)) then
-                     term1 = 0.0
-                     if(j.ne.1) 
-     $             term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
-                     term2 =  wxm1(i)*wam1(1)*dam1(1,j)*duax(i)
-     $                       *jacm1(i,1,1,e)/ysm1(i)
-                  else
-                   term1 = bm1(i,j,1,e)*u(i,j,1,e)/ym1(i,j,1,e)**2
-                     term2 = 0.
-                  endif
-                  au(i,j,1,e) = au(i,j,1,e)
-     $                          + (term1+term2)
-C               endif
-  190       continue
-  200    continue
-      endif
 
+      call col2(svvau,svvmu,ntot)
+
+      call add2(au,svvau,ntot)
       taxhm=taxhm+(dnekclock()-etime1)
       return
       end
