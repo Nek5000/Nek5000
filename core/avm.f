@@ -148,7 +148,7 @@ c
  10     format(1p4e12.4,' AVM',i6)
       endif
 
-      avm_vdiff = max(1e-10,visc(ix,iy,iz,e))
+      avm_vdiff = visc(ix,iy,iz,e)
 
       return
       end
