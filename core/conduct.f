@@ -57,8 +57,6 @@ C
          isd = 1
          if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
 c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
-
-         if(ifsvv(ifield-1))call modifyDer(1)
          
          do 1000 iter=1,nmxnl ! iterate for nonlin. prob. (e.g. radiation b.c.)
 
@@ -69,7 +67,6 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          call add2    (h2,ta,n)
          call add2    (h2,adq(1,1,1,1,ifield-1),n)
          call bcdirsc (t(1,1,1,1,ifield-1))
-         if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1))
          call axhelm  (ta,t(1,1,1,1,ifield-1),h1,h2,imesh,ISD)
          call sub3    (tb,bq(1,1,1,1,ifield-1),ta,n)
          call bcneusc (ta,1)
@@ -101,7 +98,6 @@ C        Radiation case, smooth convergence, avoid flip-flop (ER).
  1000    continue
  2000    continue
 
-         if(ifsvv(ifield-1))call modifyDer(-1)
       endif
 
       return

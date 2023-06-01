@@ -258,6 +258,7 @@ C               endif
   200    continue
       endif
 
+      if(ifsvv(ifield-1))call axhelm_svv(au,u,helm1,helm2,imsh,isd)
       taxhm=taxhm+(dnekclock()-etime1)
       return
       end
