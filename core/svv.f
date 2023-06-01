@@ -56,6 +56,7 @@ c     Scale with advection velocity
       enddo
       
       call col2(svvmu,svvf,ntot)
+      call copy(svvprec,svvmu,ntot)
       if(ifnlsvv(ifield-1))then
          call getnlsvvsf(phi,csf)
          call col2(svvmu,csf,ntot)
@@ -381,12 +382,6 @@ c
       end
 c---------------------------------------------------------------------
       subroutine axhelm_svv (au,u,imsh,isd)
-C------------------------------------------------------------------
-C
-C     Compute the (Helmholtz) matrix-vector product,
-C     AU = helm1*[A]u + helm2*[B]u, for NEL elements.
-C
-C------------------------------------------------------------------
       include 'SIZE'
       include 'WZ'
       include 'DXYZ'
@@ -487,3 +482,112 @@ C
       taxhm=taxhm+(dnekclock()-etime1)
       return
       end
+c---------------------------------------------------------------------
+      subroutine setprec_svv(dpcm1,imsh,isd)
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'MASS'
+      include 'SVV'
+
+      REAL            DPCM1 (LX1,LY1,LZ1,1)
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+      REAL            HELM1(lx1,ly1,lz1,1), HELM2(lx1,ly1,lz1,1)
+      REAL YSM1(LY1)
+
+      common /svvdp/ sdpcm1(lx1,ly1,lz1,lelt)
+      real sdpcm1
+
+      nel=nelt
+      if (imsh.eq.1) nel=nelv
+
+      ntot = nel*lx1*ly1*lz1
+      
+      CALL RZERO(SDPCM1,NTOT)
+      DO 1000 IE=1,NEL
+        DO 320 IQ=1,lx1
+        DO 320 IZ=1,lz1
+        DO 320 IY=1,ly1
+        DO 320 IX=1,lx1
+           SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
+     $                          G1M1(IQ,IY,IZ,IE) * CDXTM1(IX,IQ)**2
+  320   CONTINUE
+        DO 340 IQ=1,ly1
+        DO 340 IZ=1,lz1
+        DO 340 IY=1,ly1
+        DO 340 IX=1,lx1
+           SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
+     $                          G2M1(IX,IQ,IZ,IE) * CDYTM1(IY,IQ)**2
+  340   CONTINUE
+        IF (LDIM.EQ.3) THEN
+           DO 360 IQ=1,lz1
+           DO 360 IZ=1,lz1
+           DO 360 IY=1,ly1
+           DO 360 IX=1,lx1
+              SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
+     $                             G3M1(IX,IY,IQ,IE) * CDZTM1(IZ,IQ)**2
+  360      CONTINUE
+C
+C          Add cross terms if element is deformed.
+C
+           IF (IFDFRM(IE)) THEN
+              DO 600 IY=1,ly1,ly1-1
+              DO 600 IZ=1,lz1,max(1,lz1-1)
+              SDPCM1(1,IY,IZ,IE) = SDPCM1(1,IY,IZ,IE)
+     $            + G4M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDYTM1(IY,IY)
+     $            + G5M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDZTM1(IZ,IZ)
+              SDPCM1(lx1,IY,IZ,IE) = SDPCM1(lx1,IY,IZ,IE)
+     $            + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDYTM1(IY,IY)
+     $            + G5M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDZTM1(IZ,IZ)
+  600         CONTINUE
+              DO 700 IX=1,lx1,lx1-1
+              DO 700 IZ=1,lz1,max(1,lz1-1)
+                 SDPCM1(IX,1,IZ,IE) = SDPCM1(IX,1,IZ,IE)
+     $            + G4M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDXTM1(IX,IX)
+     $            + G6M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDZTM1(IZ,IZ)
+                 SDPCM1(IX,ly1,IZ,IE) = SDPCM1(IX,ly1,IZ,IE)
+     $            + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDXTM1(IX,IX)
+     $            + G6M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDZTM1(IZ,IZ)
+  700         CONTINUE
+              DO 800 IX=1,lx1,lx1-1
+              DO 800 IY=1,ly1,ly1-1
+                 SDPCM1(IX,IY,1,IE) = SDPCM1(IX,IY,1,IE)
+     $                + G5M1(IX,IY,1,IE) * CDZTM1(1,1)*CDXTM1(IX,IX)
+     $                + G6M1(IX,IY,1,IE) * CDZTM1(1,1)*CDYTM1(IY,IY)
+                 SDPCM1(IX,IY,lz1,IE) = SDPCM1(IX,IY,lz1,IE)
+     $              + G5M1(IX,IY,lz1,IE)*CDZTM1(lz1,lz1)*CDXTM1(IX,IX)
+     $              + G6M1(IX,IY,lz1,IE)*CDZTM1(lz1,lz1)*CDYTM1(IY,IY)
+  800         CONTINUE
+           ENDIF
+
+        ELSE  ! 2D
+
+           IZ=1
+           IF (IFDFRM(IE)) THEN
+              DO 602 IY=1,ly1,ly1-1
+                 SDPCM1(1,IY,IZ,IE) = SDPCM1(1,IY,IZ,IE)
+     $                + G4M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDYTM1(IY,IY)
+                 SDPCM1(lx1,IY,IZ,IE) = SDPCM1(lx1,IY,IZ,IE)
+     $          + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDYTM1(IY,IY)
+  602         CONTINUE
+              DO 702 IX=1,lx1,lx1-1
+                 SDPCM1(IX,1,IZ,IE) = SDPCM1(IX,1,IZ,IE)
+     $                + G4M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDXTM1(IX,IX)
+                 SDPCM1(IX,ly1,IZ,IE) = SDPCM1(IX,ly1,IZ,IE)
+     $          + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDXTM1(IX,IX)
+  702         CONTINUE
+           ENDIF
+
+        ENDIF
+ 1000 CONTINUE
+
+      call col2(SDPCM1,svvprec,ntot)
+      call dssum(SDPCM1,lx1,ly1,lz1)
+      call add2(DPCM1,SDPCM1,ntot)
+C
+      return
+      END

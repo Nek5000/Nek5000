@@ -521,6 +521,7 @@ C
       ENDIF
 C
       CALL DSSUM (DPCM1,lx1,ly1,lz1)
+      if(ifsvv(ifield-1))call setprec_svv(DPCM1,imsh,isd)
       CALL INVCOL1 (DPCM1,NTOT)
 C
       return
