@@ -85,7 +85,6 @@ C------------------------------------------------------------------
       include 'PARALLEL'
       include 'CTIMER'
       include 'TSTEP'
-      include 'SVV'
 C
       COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
