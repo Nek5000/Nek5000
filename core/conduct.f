@@ -20,7 +20,6 @@ C
      $              ,H2(LX1,LY1,LZ1,LELT)
 
       include 'ORTHOT'
-      include 'SVV'
 
       if (ifdgfld(ifield)) then
          call cdscal_dg(igeom)
