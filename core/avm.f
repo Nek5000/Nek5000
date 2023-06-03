@@ -1,7 +1,7 @@
 c---------------------------------------------------------------
       subroutine setdefault_avm
       include 'SIZE'
-      include 'AVMSVV'
+      include 'AVM'
 
       do i=1,ldimt
         avm_ncut(i) = 1
@@ -22,7 +22,7 @@ c Note, avoid using lx1 < 6!
 c
       include 'SIZE'
       include 'TOTAL'
-      include 'AVMSVV'
+      include 'AVM'
 
       integer ix, iy, iz, e
       real c1, c2
