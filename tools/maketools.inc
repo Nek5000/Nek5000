@@ -147,29 +147,52 @@ export R8
 export CPPF
 export BIGMEM
 export LDFLAGS
-
-if ! which openssl >/dev/null; then
-  echo "FATAL ERROR: Cannot find openssl!"
-  exit 11
-fi
-if ! which wget >/dev/null; then
-  echo "FATAL ERROR: Cannot find wget!"
-  exit 11
-fi
-if ! which tar >/dev/null; then
-  echo "FATAL ERROR: Cannot find tar!"
-  exit 11
-fi
+function chk_web() {
+   if ! which openssl >/dev/null; then
+     echo "FATAL ERROR: Cannot find openssl, which is required by "$1
+     exit 11
+   fi
+   if ! which wget >/dev/null; then
+     echo "FATAL ERROR: Cannot find wget, which is required by "$1
+     exit 11
+   fi
+   if ! which tar >/dev/null; then
+     echo "FATAL ERROR: Cannot find tar, which is required by "$1
+     exit 11
+   fi
+}
 if ! which make >/dev/null; then
   echo "FATAL ERROR: Cannot find make!"
   exit 11
 fi
-if ! which cmake >/dev/null; then
-  echo "WARNING: Cannot find cmake, which is required by some tools!"
-fi
-if ! which X >/dev/null; then
-  echo "WARNING: Cannot find X11, which is required by some tools!"
-fi
+function chk_cmake() {
+   if ! which cmake >/dev/null; then
+     echo "FATEL ERROR: Cannot find cmake, which is required by "$1
+     exit 11
+   fi
+}
+function chk_x11() {
+   if ! which X >/dev/null; then
+     echo "FATEL ERROR: Cannot find X11, which is required by "$1
+     exit 11
+   fi
+}
+function chk_list() {
+   list=$1
+   tool=$2
+
+   ichk=0
+   for l in $list; do
+      if [ "$tool" == "$l" ]; then
+         ichk=$((ichk+1))
+      fi
+   done
+   if [[ $ichk -ne 1 ]]; then
+      echo "FATEL ERROR: \"$tool\" is not a tool"
+      echo "(avaliable list) $list"
+      exit 12
+   fi
+}
 
 #LIST=`ls -Cd */ | sed 's:\/::g'`
 LIST="genmap gencon genbox n2to3 reatore2 nekmerge prenek postnek nekamg_setup gmsh2nek exo2nek cgns2nek n2to3co2"
@@ -188,7 +211,11 @@ else
       export DOALL=1
    fi
    if [ "$1" != "all" ]; then
-      LIST=`echo $* | sed 's:\/::g'`
+      LISTin=`echo $* | sed 's:\/::g'`
+      for TOOL in $LISTin; do
+         chk_list "$LIST" "$TOOL"
+      done
+      LIST=$LISTin
    fi
    set -o pipefail
    for TOOL in $LIST ; do
@@ -205,10 +232,18 @@ else
      export CFLAGS+=" ${BIGMEM}"
      if [ "$TOOL" == "cgns2nek" ]; then
         export FFLAGS+=" -fallow-argument-mismatch"
+        chk_web $TOOL
+        chk_cmake $TOOL
      fi
      if [ "$TOOL" == "exo2nek" ]; then
         export FFLAGS+=" ${R8}"
+        chk_web $TOOL
+        chk_cmake $TOOL
      fi
+     if [ "$TOOL" == "nekamg_setup" ]; then
+        chk_web $TOOL
+        chk_cmake $TOOL
+     fi 
      if [ "$TOOL" == "gmsh2nek" ]; then
         export FFLAGS+=" ${R8}"
      fi	 
@@ -226,6 +261,7 @@ else
      fi
      if [ "$TOOL" == "prenek" ]; then
         export CFLAGS+=" -Dr8"
+        chk_x11 $TOOL
      fi
      if [ "$TOOL" == "n2to3co2" ]; then 
         export FFLAGS+=" ${R8}"
