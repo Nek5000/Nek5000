@@ -9,7 +9,7 @@ fi
 rm -f $CASENAME.f
 cp -p $CASENAME.usr $CASENAME.f
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*uservp" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*uservp" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -20,7 +20,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*userf" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userf" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -31,7 +31,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*userq" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userq" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -42,7 +42,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*useric" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*useric" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -53,7 +53,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*userbc" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userbc" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -64,7 +64,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*userchk" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userchk" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -75,7 +75,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*usrdat0" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat0" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -86,7 +86,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*usrdat" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -97,7 +97,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*usrdat2" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat2" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -108,7 +108,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*usrdat3" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat3" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -119,7 +119,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*usrsetvert" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*usrsetvert" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
@@ -131,7 +131,7 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "^      .*.subroutine.*userqtl" ; then
+if ! cat $CASENAME.f | grep -qi "subroutine.*userqtl" ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
