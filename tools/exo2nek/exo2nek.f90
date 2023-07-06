@@ -1684,7 +1684,7 @@
 !  Write the header
       call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, eftot, nBCre2
-    1 format('#v004',i9,i3,i9,i3,' this is the hdr')
+    1 format('#v004',i16,i3,i16,i4,' hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 
