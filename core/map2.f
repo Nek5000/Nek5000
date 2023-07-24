@@ -283,7 +283,7 @@ c solid elements
 
          nel = nelit
          call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  1,0,loglevel,ierr)
+     $                  0,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
