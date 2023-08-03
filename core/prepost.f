@@ -61,8 +61,8 @@ c     Check for io request in file 'ioinfo'
       ioinfodmp=0
       if (nid.eq.0 .and. (mod(istep,10).eq.0 .or. istep.lt.200)) then
          call blank(fname1,size(fname1))
-         len = ltrunc(path,132)
-         call chcopy(fname1,path,len)
+c        len = ltrunc(path,132)
+c        call chcopy(fname1,path,len)
          call chcopy(fname1(len+1),'ioinfo',6)
          open(unit=87,file=fname,status='old',err=88)
          read(87,*,end=87,err=87) idummy
