@@ -62,7 +62,7 @@
 ! 1. check right-hand
 ! 2. fix if not
       use SIZE
-      integer iel
+      integer iel,ne_nrh
       logical ifnonrighthand
       character nek_check
 
@@ -76,26 +76,40 @@
 
 !      write(6,*) 'done: non-right-hand check'
 	  
-      write(6,*) 'using nek-method to do non-right-hand check? (y/n)'
-      read (5,*) nek_check
+!      write(6,*) 'using nek-method to do non-right-hand check? (y/n)'
+!      read (5,*) nek_check
  
-      if (nek_check.eq.'y') then
+!      if (nek_check.eq.'y') then
+!        do iel=1,num_elem
+!          if (num_dim.eq.2) then
+!          call nek_check_non_right_hand_2d(iel)
+!          else 
+!          call nek_check_non_right_hand(iel)
+!          endif
+!       enddo
+!      endif
+
+       ne_nrh = 0
         do iel=1,num_elem
           if (num_dim.eq.2) then
-          call nek_check_non_right_hand_2d(iel)
+          call nek_check_non_right_hand_2d(iel,ne_nrh)
           else 
-          call nek_check_non_right_hand(iel)
+          call nek_check_non_right_hand(iel,ne_nrh)
           endif
        enddo
+	  
+      if (ne_nrh.gt.0) then
+      write(6,*) 'WARNING: non-right-hand elements detected!'
+      write(6,*) 'number of non-right-hand elements: ', ne_nrh
       endif
 	  
       return
       end
 !--------------------------------------------------------------------
-      subroutine nek_check_non_right_hand_2d(iel)
+      subroutine nek_check_non_right_hand_2d(iel,ne_nrh)
       use SIZE
       logical ifnonrighthand
-      integer iel
+      integer iel,ne_nrh
       integer quad4_to_nek_quad9_vertex(4)
       data quad4_to_nek_quad9_vertex /1,3,7,9/ ! for nek non-right-hand element check
       real XYZ(2,4)
@@ -116,17 +130,18 @@
 !
       IF (C1.LE.0.0.OR.C2.LE.0.0.OR. &
             C3.LE.0.0.OR.C4.LE.0.0 ) THEN
-       write(6,*) 'WARNINGb: Detected non-right-handed element.'
-       write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1)
+       !write(6,*) 'WARNINGb: Detected non-right-handed element.'
+       !write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1)
+        ne_nrh = ne_nrh + 1
       ENDIF
 
       return
       end
 !!--------------------------------------------------------------------
-      subroutine nek_check_non_right_hand(iel)
+      subroutine nek_check_non_right_hand(iel,ne_nrh)
       use SIZE
       logical ifnonrighthand
-      integer iel
+      integer iel,ne_nrh
       integer hex8_to_hex27_vertex(8)
       data hex8_to_hex27_vertex /1,3,7,9,19,21,25,27/ ! for nek non-right-hand element check
       real XYZ(3,8)
@@ -152,8 +167,9 @@
        (V5.LE.0.0).OR.(V6.LE.0.0).OR. &
        (V7.LE.0.0).OR.(V8.LE.0.0)) then
    
-      write(6,*) 'WARNINGb: Detected non-right-handed element.'
-      write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1),',',XYZ(3,1)
+      !write(6,*) 'WARNINGb: Detected non-right-handed element.'
+      !write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1),',',XYZ(3,1)
+       ne_nrh = ne_nrh + 1
       endif
 
       return

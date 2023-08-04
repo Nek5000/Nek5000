@@ -182,11 +182,11 @@
       etot = eacc
       num_elem = etot
 
+      call right_hand_check ! check non-right-hand element here
+
       if (num_dim.eq.3) then
       call fix_left_hand_elements_3d
       endif
-
-      call right_hand_check ! check non-right-hand element here
 
       call gather_bc_info
 
@@ -1668,7 +1668,7 @@
       use SIZE
 
       character(80) hdr
-      integer nBCre2
+
 
       real*4 test
       data   test  / 6.54321 /
@@ -1678,13 +1678,10 @@
       num_elem = etot
       !num_dim = 3
 
-      nBCre2 = 1
-      if (num_elem.ne.eftot)  nBCre2  = 2
-
 !  Write the header
       call blank   (hdr,80)    
-      write(hdr,1) num_elem, num_dim, eftot, nBCre2
-    1 format('#v004',i16,i3,i16,i4,' hdr')
+      write(hdr,1) num_elem, num_dim, eftot
+    1 format('#v002',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 
