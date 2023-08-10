@@ -244,6 +244,7 @@
       character(1)  exonam1(32)
       character(32) fname
       integer flag
+      logical e_file_exist,exo_file_exist
 	  
       read (5,'(A32)') fname
       len = ltrunc(fname,32)
@@ -254,6 +255,23 @@
 
       call blank  (exoname, 32)
       call chcopy (exoname,exonam1,len+4)
+ 
+      inquire(FILE=exoname, EXIST=exo_file_exist)
+
+      if ( .not. exo_file_exist) then
+
+	  call blank  (exonam1, 32)
+      call chcopy (exonam1,fname,32)
+      call chcopy (exonam1(len+1) ,'.e',2)
+
+      call blank  (exoname, 32)
+      call chcopy (exoname,exonam1,len+4)
+      inquire(FILE=exoname, EXIST=e_file_exist)
+
+      if ( .not. e_file_exist) then
+       write(6,*) "ERROR: input exodus file does not exist"	  
+      endif
+      endif
  
       if (flag.eq.1) then
       call blank  (fluidexo(1,iexo), 32)
