@@ -306,7 +306,7 @@ C     Laplacian formulation only
      $ or Z axis detected for'
 
  9999 WRITE (6,*) ' Element',ieg,'   side',IFC
-      WRITE (6,*) ' Requires PN/PN-2 STRESS FORMULATION'
+      WRITE (6,*) ' Requires STRESS FORMULATION'
 
       ierr = err + 1
 
