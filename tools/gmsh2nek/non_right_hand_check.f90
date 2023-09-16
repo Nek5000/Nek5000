@@ -26,7 +26,7 @@
       end
 !--------------------------------------------------------------------
 !----------------------------------------------------------
-      subroutine right_hand_check
+      subroutine right_hand_check(ne_nrh)
 ! check if there is non-right hand elements (3D)
 ! because if mesh is from ICEM, and mirror operation is made in ICEM,
 ! the exported exo file will contain non-right hand elements.
@@ -76,7 +76,7 @@
       write(6,*) 'number of non-right-hand elements: ', ne_nrh
       endif
 
-      return
+      return 
       end
 !--------------------------------------------------------------------
       subroutine nek_check_non_right_hand_2d(iel,ne_nrh)

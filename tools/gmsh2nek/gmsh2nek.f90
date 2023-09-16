@@ -3,7 +3,7 @@
 
       use SIZE
 
-      integer option
+      integer option,ne_nrh
 	  
       write(6,'(A)', ADVANCE = "NO") 'Enter mesh dimension: '
       read (5,'(I1)') option
@@ -151,9 +151,10 @@
 
       endif
 
-      call right_hand_check ! check non-right-hand element here
+      ne_nrh = 0
+      call right_hand_check(ne_nrh) ! check non-right-hand element here
 
-      if (num_dim.eq.3) then
+      if ((num_dim.eq.3).and.(ne_nrh.gt.0)) then
       call fix_left_hand_elements_3d
       endif
 
