@@ -38,7 +38,7 @@ SUBROUTINE write_re2_file ()
   !
   WRITE(hdr,1) max_elem, 3, max_elem, 1
 ! 1 FORMAT('#v002',i9,i3,i9,' this is the hdr')
-1 FORMAT('#v004',i9,i3,i9,i3,' this is the hdr')
+1 FORMAT('#v004',i16,i3,i16,i4,' hdr')
 
   CALL byte_write(hdr,20,ierr)
   CALL byte_write(test,1,ierr)     ! write the endian discriminator
