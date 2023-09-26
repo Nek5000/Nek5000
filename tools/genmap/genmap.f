@@ -3298,7 +3298,8 @@ c   80 format(a80)
 
       read (hdr,1) version
 
-      if ((version.eq.'#v002').or.(version.eq.'#v003')) then 	  
+      if ((version.eq.'#v001').or.(version.eq.'#v002')
+     $ .or.(version.eq.'#v003')) then 	    
       read (hdr,2) version,nelgt,ndim,nelgv
       else if(version.eq.'#v004') then
       read (hdr,3) version,nelgt,ndim,nelgv
