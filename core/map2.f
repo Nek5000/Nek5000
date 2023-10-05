@@ -229,7 +229,7 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+      call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
      $  fluid_partitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
@@ -282,7 +282,7 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
+         call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
      $                  solid_partitioner,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
