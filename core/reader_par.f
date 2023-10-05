@@ -152,7 +152,8 @@ C
          idpss(i) = -1
       enddo 
 
-      meshPartitioner=3 ! HYBRID (RSB+RCB)
+      fluid_partitioner=0 ! RSB
+      solid_partitioner=1 ! RCB
       connectivityTol=0.2
 
       ifprojfld(0) = .false. 
@@ -885,13 +886,35 @@ c set partitioner options
       call finiparser_getString(c_out,'mesh:partitioner',ifnd)
       call capit(c_out,132)
       if(index(c_out,'RSB').eq.1) then
-         meshPartitioner=1
-      else if (index(c_out,'RCBRSB').eq.1) then
-         meshPartitioner=3
-      else if(index(c_out,'RCB').eq.1) then
-         meshPartitioner=2
+         fluid_partitioner=0
+         solid_partitioner=0
+      else if (index(c_out,'RCB').eq.1) then
+         fluid_partitioner=1
+         solid_partitioner=1
       else if (index(c_out,'METIS').eq.1) then
-         meshPartitioner=4
+         fluid_partitioner=8
+      endif
+
+c set partitioner options
+      call finiparser_getString(c_out,'mesh:fluidpartitioner',ifnd)
+      call capit(c_out,132)
+      if(index(c_out,'RSB').eq.1) then
+         fluid_partitioner=0
+      else if (index(c_out,'RCB').eq.1) then
+         fluid_partitioner=1
+      else if (index(c_out,'METIS').eq.1) then
+         fluid_partitioner=8
+      endif
+
+c set partitioner options
+      call finiparser_getString(c_out,'mesh:solidpartitioner',ifnd)
+      call capit(c_out,132)
+      if(index(c_out,'RSB').eq.1) then
+         solid_partitioner=0
+      else if (index(c_out,'RCB').eq.1) then
+         solid_partitioner=1
+      else if (index(c_out,'METIS').eq.1) then
+         solid_partitioner=8
       endif
 
 c set connectivity tolerance
@@ -1099,7 +1122,8 @@ C
 
       call bcast(idpss    ,  ldimt*isize)
 
-      call bcast(meshPartitioner,isize)
+      call bcast(fluid_partitioner,isize)
+      call bcast(solid_partitioner,isize)
       call bcast(connectivityTol,wdsize)
 
       call bcast(iftmsh   , (ldimt1+1)*lsize)
