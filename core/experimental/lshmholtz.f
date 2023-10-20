@@ -130,9 +130,9 @@ c     $    write(6,*) param(22),' p22 ',istep,imsh
 
       if (tli.lt.0) tol=tli ! caller-specified relative tolerance
 
-      if (imsh.eq.1) call cggo
+      if (imsh.eq.1) call cggo_cls
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,binvm1,name)
-      if (imsh.eq.2) call cggo
+      if (imsh.eq.2) call cggo_cls
      $   (u,rhs,h1,h2,mask,mult,imsh,tol,maxit,isd,bintm1,name)
 
 #ifdef TIMER
@@ -183,7 +183,7 @@ c     if (name.eq.'VELZ') kfldfdm =  3
       if (ifdg) then
          call cggo_dg (u,r,h1,h2,bi,mask,name,tol,maxit)
       else
-         call cggo
+         call cggo_cls
      $      (u,r,h1,h2,mask,mult,imesh,tol,maxit,isd,bi,name)
       endif
       thmhz=thmhz+(dnekclock()-etime1)
@@ -192,7 +192,8 @@ c
       return
       end
 c-----------------------------------------------------------------------
-      subroutine cgg(x,f,h1,h2,mask,mult,imsh,tin,maxit,isd,binv,name)
+      subroutine cggo_cls(x,f,h1,h2,mask,mult,imsh,
+     $  tin,maxit,isd,binv,name)
       include 'SIZE'
       include 'TOTAL'
       include 'FDMH1'

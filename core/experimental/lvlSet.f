@@ -1,14 +1,14 @@
 C----------------------------------------------------------------------     
       include "experimental/lshmholtz.f"
 C----------------------------------------------------------------------     
-      subroutine ls_init(nsteps_in,eps_in,
+      subroutine ls_init(nsteps_in,eps_in,dt_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in)
       implicit none
       include 'SIZE'
       include 'LVLSET'
 
-      real eps_in
+      real eps_in,dt_in
       integer nsteps_in
       integer ifld_cls_in, ifld_tls_in
       integer ifld_clsr_in, ifld_tlsr_in
@@ -23,18 +23,22 @@ C----------------------------------------------------------------------
       ifld_tls = ifld_tls_in
       ifld_tlsr = ifld_tlsr_in
 
+      dt_cls = dt_in
+
+      ifls_debug = .true.
+
       return
       end
 C----------------------------------------------------------------------     
       subroutine ls_drive
       implicit none
       include 'SIZE'
-      include 'TSTEP'
+      include 'TOTAL'
       include 'LVLSET'
 
       integer istep_save, ifld_save
       real dt_save, time_save
-      integer i
+      integer i,ntot
 
       !replace internal istep
       istep_save = ISTEP
@@ -47,10 +51,31 @@ C----------------------------------------------------------------------
       time = 0.0
       ifield = ifld_clsr
 
+      if(ifls_debug .and. nio.eq.0)then
+        write(*,*) "Field", ifield
+        write(*,*) "istep", istep
+        write(*,*) "time step", dt_cls
+        write(*,*) "Max iteration count", nsteps_cls
+      endif
+
+      if(ifls_debug)call lsmonitor(t(1,1,1,1,ifld_tls-1),'TLS  ')
+
+      if(ifls_debug)call lsmonitor(t(1,1,1,1,ifld_clsr-1),'CLSr ')
+
       !Convert normal vector to rst space
       !Note that normals do not change over re-dist steps
+      call cls_normals(clsnx,clsny,clsnz,ifld_tls)
       call vector_to_rst(clsnx,clsny,clsnz,
      $                   clsnr,clsns,clsnt)
+
+      if(ifls_debug)then
+        ntot = lx1*ly1*lz1*nelv
+        call copy(vx,clsnr,ntot)
+        call copy(vy,clsns,ntot)
+        if(if3d)call copy(vz,clsnt,ntot)
+      endif
+      if(ifls_debug)call lsmonitor(clsnx,'xnorm')
+      if(ifls_debug)call lsmonitor(clsnr,'rnorm')
 
       do i=1,nsteps_cls
         istep = istep + 1
@@ -76,10 +101,16 @@ C----------------------------------------------------------------------
 
       call nekgsync()
 
-      !reuse vxd,vyd,vzd 
-      call set_convect_cons(vxd,vyd,vzd,clsnx,clsny,clsnz) 
-
       call settime_cls
+
+      call setprop_cls
+
+      if(ifls_debug .and. nio.eq.0)then 
+        write(*,*)"ngeom: ",ngeom
+      endif
+
+      if (.not.iftmsh(ifield)) imesh = 1
+      if (     iftmsh(ifield)) imesh = 2
 
       do igeom = 1,ngeom
         call unorm
@@ -97,6 +128,7 @@ C----------------------------------------------------------------------
       include 'SIZE'
       include 'INPUT'
       include 'TSTEP'
+      include 'LVLSET'
 
       integer irst, ilag
 
@@ -125,6 +157,10 @@ C----------------------------------------------------------------------
       IF (ISTEP.lt.NAB.and.irst.le.0) NAB = ISTEP
       CALL RZERO   (AB,10)
       CALL SETABBD (AB,DTLAG,NAB,NBD)
+
+      if(ifls_debug .and. nio.eq.0)then
+        write(*,*)"BDF/EXT order",nbd,nab
+      endif
 
       return
       end
@@ -161,11 +197,14 @@ C----------------------------------------------------------------------
 
       integer igeom,n,iter
       logical ifconv
-      integer ifld1
+      integer ifld1,isd,intype
 
       n = lx1*ly1*lz1*nelv
 
       ifld1 = ifield-1
+      napproxt(1,ifld1) = laxtt
+
+      if(ifls_debug.and.nio.eq.0)write(*,*)"in cdcls",igeom
 
       if(igeom.eq.1)then
         call makeq_cls
@@ -173,11 +212,15 @@ C----------------------------------------------------------------------
       else
         write(name4t,'(A4)')"CLSR"
 
-        call sethlm_cls(h1,h2)
-
+        isd = 1
         do iter=1,nmxnl
-          call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2) 
+          intype = 0
+          if(iftran) intype = -1
+          call sethlm(h1,h2,intype)
+          call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
+          
+          call lsmonitor(tb,'rhs  ')
 
           call hsolve_cls(name4t,ta,tb,h1,h2,
      $                tmask(1,1,1,1,ifield-1),
@@ -185,6 +228,7 @@ C----------------------------------------------------------------------
      $                imesh,tolht(ifield),nmxt(ifield-1),1,
      $                approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
 
+          call lsmonitor(ta,'phidt')
           call add2(t(1,1,1,1,ifield-1),ta,n)
           call cvgnlps (ifconv)
           if (ifconv) exit
@@ -194,7 +238,7 @@ C----------------------------------------------------------------------
       return
       end
 C----------------------------------------------------------------------     
-      subroutine axhelm_cls(au,u,helm1,helm2)
+      subroutine axhelm_cls(au,u,helm1,helm2,imsh,isd)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -204,6 +248,8 @@ C----------------------------------------------------------------------
       real u(lx1,ly1,lz1,1)
       real helm1(lx1,ly1,lz1,1)
       real helm2(lx1,ly1,lz1,1)
+
+      integer imsh,isd
 
       COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
      $  ,             DUDS  (LX1,LY1,LZ1)
@@ -297,24 +343,37 @@ C----------------------------------------------------------------------
 
       if(ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 
+      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
       !lets worry about axisymmetry later
+
+      if(ifls_debug.and.nio.eq.0)
+     $ write(*,*)"SVV status",ifsvv(ifield-1)
+      if(ifls_debug)call lsmonitor(au,'Diff ')
 
       return
       end
 C----------------------------------------------------------------------     
-      subroutine sethlm_cls(h1,h2)
+      subroutine setprop_cls
       implicit none
       include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
 
-      real h1(lx1,ly1,lz1,lelt)
-      real h2(lx1,ly1,lz1,lelt)
-      integer n
+      integer n,i
+      real deltael
 
-      n = lx1*ly1*lz1*nelv
+      n = lx1*ly1*lz1*lelv
 
-      call rone (h1,n)
+      call cfill(VTRANS(1,1,1,1,ifield-1),1.0,n)
 
-      call rone (h2,n)
+      do i=1,n
+        VDIFF(i,1,1,1,ifield-1) = deltael(i,1,1,1) * eps_cls
+      enddo
+
+      if(ifls_debug)then
+        call lsmonitor(vtrans(1,1,1,1,ifield-1),'rho  ')
+        call lsmonitor(vdiff(1,1,1,1,ifield-1),'diff ')
+      endif
 
       return
       end
@@ -371,12 +430,14 @@ C----------------------------------------------------------------------
           ut(i) = xt*ux(i) + yt*uy(i) + zt*uz(i)
         enddo
       else
-        xr = xrm1(i,1,1,1)
-        yr = yrm1(i,1,1,1)
-        xs = xsm1(i,1,1,1)
-        ys = ysm1(i,1,1,1)
-        ur(i) = xr*ux(i) + yr*uy(i)
-        us(i) = xs*ux(i) + ys*uy(i)
+        do i=1,ntot
+          xr = xrm1(i,1,1,1)
+          yr = yrm1(i,1,1,1)
+          xs = xsm1(i,1,1,1)
+          ys = ysm1(i,1,1,1)
+          ur(i) = xr*ux(i) + yr*uy(i)
+          us(i) = xs*ux(i) + ys*uy(i)
+        enddo
       endif
 
       return
@@ -406,15 +467,21 @@ C----------------------------------------------------------------------
       call cadd(tb,1.0,ntot)
       call col2(tb,t(1,1,1,1,ifield-1),ntot)
 
+      if(ifls_debug) call lsmonitor(tb,'convp')
+
       !convop
       call rzero(ta,ntot)
       call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
       call invcol2(ta,bm1,ntot)
 
+      if(ifls_debug) call lsmonitor(ta,'advec')
+
       !convab
       do i=1,ntot
         bq(i,1,1,1,ifield-1) = -bm1(i,1,1,1)*ta(i,1,1,1)
       enddo
+
+      if(ifls_debug) call lsmonitor(ta,'bqarr')
 
       call makeabq
 
@@ -473,3 +540,70 @@ c---------------------------------------------------------------
       return
       end
 c---------------------------------------------------------------
+      subroutine cls_normals(cnx,cny,cnz,ifld)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real cnx(lx1,ly1,lz1,1)
+      real cny(lx1,ly1,lz1,1)
+      real cnz(lx1,ly1,lz1,1)
+
+      real cmag(lx1,ly1,lz1,lelv)
+
+      integer ntot,ifld,i
+
+      ntot = lx1*ly1*lz1*nelv
+
+      !must be calc from TLS field
+      call gradm1(cnx,cny,cnz,t(1,1,1,1,ifld-1))
+      call opcolv(cnx,cny,cnz,bm1)
+      call opdssum(cnx,cny,cnz)
+      call opcolv(cnx,cny,cnz,binvm1)
+
+      call col3(cmag,cnx,cnx,ntot)
+      call addcol3(cmag,cny,cny,ntot)
+      if(if3d) call addcol3(cmag,cnz,cnz,ntot)
+      call vsqrt(cmag,ntot)
+
+      do i=1,ntot
+        if(cmag(i,1,1,1).gt.0.)then
+          cnx(i,1,1,1) = cnx(i,1,1,1)/cmag(i,1,1,1)
+          cny(i,1,1,1) = cny(i,1,1,1)/cmag(i,1,1,1)
+          if(if3d)cnx(i,1,1,1) = cnx(i,1,1,1)/cmag(i,1,1,1)
+        endif
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------
+      subroutine lsmonitor(u,aname)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real u(1)
+      character*5 aname
+      
+      integer n
+
+      real norm, amin, amax
+      real gl2norm, glmax, glmin
+
+      n = lx1*ly1*lz1*nelv
+
+      norm = gl2norm(u,n)
+      
+      amin = glmin(u,n)
+
+      amax = glmax(u,n)
+
+      if(nio.eq.0)then
+        write(6,1000)aname," norm, min, max:",
+     $   norm,amin,amax
+      endif
+
+1000  format(a,10x,a,1p3E13.4)
+
+      return
+      end

@@ -16,3 +16,6 @@
 
       real dt_cls, eps_cls
       common /lvlset_r/ dt_cls, eps_cls
+
+      logical ifls_debug
+      common /lvlset_b/ ifls_debug
