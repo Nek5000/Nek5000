@@ -1,9 +1,9 @@
       integer ifld_cls,ifld_clsr,ifld_tls,ifld_tlsr
 
-      integer nsteps_cls
+      integer nsteps_cls, ifls_debug
       
       common /lvlset_i/ ifld_cls, ifld_clsr, ifld_tls,
-     $                  ifld_tlsr, nsteps_cls 
+     $                  ifld_tlsr, nsteps_cls, ifls_debug
 
       common /lvlset_a/ clsnx(lx1,ly1,lz1,lelv),
      $                  clsny(lx1,ly1,lz1,lelv),
@@ -16,6 +16,3 @@
 
       real dt_cls, eps_cls
       common /lvlset_r/ dt_cls, eps_cls
-
-      logical ifls_debug
-      common /lvlset_b/ ifls_debug

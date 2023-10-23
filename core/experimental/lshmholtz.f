@@ -7,6 +7,7 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'CTIMER'
+      include 'LVLSET'
 c
       CHARACTER*4    NAME
       REAL           U    (LX1,LY1,LZ1,1)
@@ -46,6 +47,11 @@ c
       if (p945.eq.0)              ifstdh = .true.
       if (istep.lt.p945)          ifstdh = .true.
 
+      if(ifls_debug.eq.1 .and. nio.eq.0)write(*,*)
+     $   "In hmholtz_cls",ifstdh
+
+      if(ifls_debug.eq.1)call lsmonitor(r,'rhslv')
+
       if (ifstdh) then
          call hmholtz_cls(name,u,r,h1,h2,vmk,vml,imsh,tol,maxit,isd)
       else
@@ -79,6 +85,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'FDMH1'
       include 'CTIMER'
+      include 'LVLSET'
 
       CHARACTER      NAME*4
       REAL           U    (LX1,LY1,LZ1,1)
@@ -105,9 +112,14 @@ c-----------------------------------------------------------------------
       endif
 #endif
 
+
       ntot = lx1*ly1*lz1*nelfld(ifield)
       if (imsh.eq.1) ntot = lx1*ly1*lz1*nelv
       if (imsh.eq.2) ntot = lx1*ly1*lz1*nelt
+      
+      if(ifls_debug.eq.1 .and. nio.eq.0)then
+        write(*,*)"In hmholtz_cls ",name,imsh
+      endif
 
 c
       call chcopy(nam3,name,3)
@@ -122,6 +134,11 @@ c     if (name.eq.'VELZ') kfldfdm =  3
 c     if (.not.iffdm) kfldfdm=-1
 C
       call dssum   (rhs,lx1,ly1,lz1)
+
+      if(ifls_debug.eq.1)call lsmonitor(rhs,'rhmlz')
+      if(ifls_debug.eq.1)call lsmonitor(mask,'mhmlz')
+      if(ifls_debug.eq.1)call lsmonitor(mult,'multz')
+
       call col2    (rhs,mask,ntot)
 c      if (nio.eq.0.and.istep.le.10) 
 c     $    write(6,*) param(22),' p22 ',istep,imsh
@@ -197,6 +214,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'FDMH1'
+      include 'LVLSET'
  
       COMMON  /CPRINT/ IFPRINT, IFHZPC
       LOGICAL          IFPRINT, IFHZPC
@@ -233,6 +251,12 @@ c
            return
          endif
       endif
+
+      if(ifls_debug.eq.1 .and. nio.eq.0)then
+        write(*,*)"in cggo_cls"
+      endif
+
+      if(ifls_debug.eq.1)call lsmonitor(f,'fcggo')
 
       call rzero(diagt,maxcg)
       call rzero(upper,maxcg)
@@ -338,14 +362,13 @@ C
      &                    iter,rbn2,h1(1),tol,h2(1),ifmcor
 
 
-         iter_max = param(150)
-         if (name.eq.'PRES') iter_max = param(151)
-         if (iter.gt.iter_max) then
+
+         IF (rbn2.LE.TOL.and.(iter.gt.1 .or. istep.le.5)) THEN
             NITER = ITER-1
             if (nio.eq.0)
      &         write(6,3000) istep,'  Hmholtz ' // name,
      &                       niter,rbn2,rbn0,tol
-            exit
+            goto 9999
          ENDIF
 c
          beta = rtz1/rtz2
@@ -381,6 +404,7 @@ c
 3000  format(i11,a,1x,I7,1p4E13.4)
 3001  format(i11,a,1x,I7,1p4E13.4)
 3002  format(i11,a,1x,I7,1p4E13.4,l4)
+9999  continue
       niterhm = niter
       ifsolv = .false.
       return

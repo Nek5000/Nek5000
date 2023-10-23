@@ -3,15 +3,18 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------     
       subroutine ls_init(nsteps_in,eps_in,dt_in,
      $                   ifld_cls_in,ifld_clsr_in,
-     $                   ifld_tls_in,ifld_tlsr_in)
+     $                   ifld_tls_in,ifld_tlsr_in,
+     $                    ifdebug)
       implicit none
       include 'SIZE'
+      include 'TOTAL'
       include 'LVLSET'
 
       real eps_in,dt_in
       integer nsteps_in
       integer ifld_cls_in, ifld_tls_in
       integer ifld_clsr_in, ifld_tlsr_in
+      integer ntot, ifdebug
       
       ! multiple of element length
       eps_cls = eps_in
@@ -25,7 +28,32 @@ C----------------------------------------------------------------------
 
       dt_cls = dt_in
 
-      ifls_debug = .true.
+      ifls_debug = ifdebug
+
+      ntot = lx1*ly1*lz1*nelv
+      !no natural BCs for LS fields
+      !need to set tmasks to one
+      !also turn off internal solvers
+      if(ifld_cls_in.ne.0)then 
+        call rone(tmask(1,1,1,1,ifld_cls_in-1),ntot)
+        idpss(ifld_cls_in-1) = -1
+      endif
+      if(ifld_clsr_in.ne.0)then 
+        call rone(tmask(1,1,1,1,ifld_clsr_in-1),ntot)
+        idpss(ifld_clsr_in-1) = -1
+      endif
+      if(ifld_tls_in.ne.0)then 
+        call rone(tmask(1,1,1,1,ifld_tls_in-1),ntot)
+        idpss(ifld_tls_in-1) = -1
+      endif
+      if(ifld_tlsr_in.ne.0)then 
+        call rone(tmask(1,1,1,1,ifld_tlsr_in-1),ntot)
+        idpss(ifld_tlsr_in-1) = -1
+      endif
+
+      if(nio.eq.0)write(*,*)"Initialized Level-Set"
+      
+      if(nio.eq.0)write(*,*)"Debug mode",ifls_debug
 
       return
       end
@@ -51,16 +79,18 @@ C----------------------------------------------------------------------
       time = 0.0
       ifield = ifld_clsr
 
-      if(ifls_debug .and. nio.eq.0)then
+      if(ifls_debug.eq.1 .and. nio.eq.0)then
         write(*,*) "Field", ifield
         write(*,*) "istep", istep
         write(*,*) "time step", dt_cls
         write(*,*) "Max iteration count", nsteps_cls
       endif
 
-      if(ifls_debug)call lsmonitor(t(1,1,1,1,ifld_tls-1),'TLS  ')
+      if(ifls_debug.eq.1)
+     $ call lsmonitor(t(1,1,1,1,ifld_tls-1),'TLS  ')
 
-      if(ifls_debug)call lsmonitor(t(1,1,1,1,ifld_clsr-1),'CLSr ')
+      if(ifls_debug.eq.1)
+     $ call lsmonitor(t(1,1,1,1,ifld_clsr-1),'CLSr ')
 
       !Convert normal vector to rst space
       !Note that normals do not change over re-dist steps
@@ -68,14 +98,14 @@ C----------------------------------------------------------------------
       call vector_to_rst(clsnx,clsny,clsnz,
      $                   clsnr,clsns,clsnt)
 
-      if(ifls_debug)then
+      if(ifls_debug.eq.1)then
         ntot = lx1*ly1*lz1*nelv
         call copy(vx,clsnr,ntot)
         call copy(vy,clsns,ntot)
         if(if3d)call copy(vz,clsnt,ntot)
       endif
-      if(ifls_debug)call lsmonitor(clsnx,'xnorm')
-      if(ifls_debug)call lsmonitor(clsnr,'rnorm')
+      if(ifls_debug.eq.1)call lsmonitor(clsnx,'xnorm')
+      if(ifls_debug.eq.1)call lsmonitor(clsnr,'rnorm')
 
       do i=1,nsteps_cls
         istep = istep + 1
@@ -105,7 +135,7 @@ C----------------------------------------------------------------------
 
       call setprop_cls
 
-      if(ifls_debug .and. nio.eq.0)then 
+      if(ifls_debug.eq.1 .and. nio.eq.0)then 
         write(*,*)"ngeom: ",ngeom
       endif
 
@@ -158,7 +188,7 @@ C----------------------------------------------------------------------
       CALL RZERO   (AB,10)
       CALL SETABBD (AB,DTLAG,NAB,NBD)
 
-      if(ifls_debug .and. nio.eq.0)then
+      if(ifls_debug.eq.1 .and. nio.eq.0)then
         write(*,*)"BDF/EXT order",nbd,nab
       endif
 
@@ -204,7 +234,9 @@ C----------------------------------------------------------------------
       ifld1 = ifield-1
       napproxt(1,ifld1) = laxtt
 
-      if(ifls_debug.and.nio.eq.0)write(*,*)"in cdcls",igeom
+
+      if(ifls_debug.eq.1 .and. nio.eq.0)
+     $  write(*,*)"in cdcls",igeom,ifls_debug
 
       if(igeom.eq.1)then
         call makeq_cls
@@ -212,15 +244,24 @@ C----------------------------------------------------------------------
       else
         write(name4t,'(A4)')"CLSR"
 
+        if(ifls_debug.eq.1)call lsmonitor(bq(1,1,1,1,ifield-1),'bq   ')
+
         isd = 1
         do iter=1,nmxnl
           intype = 0
           if(iftran) intype = -1
           call sethlm(h1,h2,intype)
+          ! call bcneusc (ta,-1)
+          ! call add2 (h2,ta,n)
+          !following is divergence term
+          call add2 (h2,adq(1,1,1,1,ifield-1),n)
+          ! call bcdirsc (t(1,1,1,1,ifield-1))
           call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
+          ! call bcneusc (ta,1)
+          ! call add2(tb,ta,n)
           
-          call lsmonitor(tb,'rhs  ')
+          if(ifls_debug.eq.1)call lsmonitor(tb,'tbrhs')
 
           call hsolve_cls(name4t,ta,tb,h1,h2,
      $                tmask(1,1,1,1,ifield-1),
@@ -228,7 +269,7 @@ C----------------------------------------------------------------------
      $                imesh,tolht(ifield),nmxt(ifield-1),1,
      $                approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
 
-          call lsmonitor(ta,'phidt')
+          if(ifls_debug.eq.1) call lsmonitor(ta,'phidt')
           call add2(t(1,1,1,1,ifield-1),ta,n)
           call cvgnlps (ifconv)
           if (ifconv) exit
@@ -341,14 +382,14 @@ C----------------------------------------------------------------------
       enddo
 
 
-      if(ifh2) call addcol4 (au,helm2,bm1,u,ntot)
+      call addcol4 (au,helm2,bm1,u,ntot)
 
       if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
       !lets worry about axisymmetry later
 
-      if(ifls_debug.and.nio.eq.0)
+      if(ifls_debug.eq.1 .and. nio.eq.0)
      $ write(*,*)"SVV status",ifsvv(ifield-1)
-      if(ifls_debug)call lsmonitor(au,'Diff ')
+      if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
 
       return
       end
@@ -364,15 +405,15 @@ C----------------------------------------------------------------------
 
       n = lx1*ly1*lz1*lelv
 
-      call cfill(VTRANS(1,1,1,1,ifield-1),1.0,n)
+      call cfill(VTRANS(1,1,1,1,ifield),1.0,n)
 
       do i=1,n
-        VDIFF(i,1,1,1,ifield-1) = deltael(i,1,1,1) * eps_cls
+        VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1) * eps_cls
       enddo
 
-      if(ifls_debug)then
-        call lsmonitor(vtrans(1,1,1,1,ifield-1),'rho  ')
-        call lsmonitor(vdiff(1,1,1,1,ifield-1),'diff ')
+      if(ifls_debug.eq.1)then
+        call lsmonitor(vtrans(1,1,1,1,ifield),'rho  ')
+        call lsmonitor(vdiff(1,1,1,1,ifield),'diff ')
       endif
 
       return
@@ -459,7 +500,8 @@ C----------------------------------------------------------------------
 
       ntot = lx1*ly1*lz1*nelv
 
-      call rzero(bq(1,1,1,1,ifield-1),ntot)
+      !this is to add divergence. Currently acts as dummy
+      call makeq_aux
 
       !(1-psi)*psi
       call copy(tb,t(1,1,1,1,ifield-1),ntot)
@@ -467,25 +509,29 @@ C----------------------------------------------------------------------
       call cadd(tb,1.0,ntot)
       call col2(tb,t(1,1,1,1,ifield-1),ntot)
 
-      if(ifls_debug) call lsmonitor(tb,'convp')
+      if(ifls_debug.eq.1) call lsmonitor(tb,'convp')
 
       !convop
       call rzero(ta,ntot)
       call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
       call invcol2(ta,bm1,ntot)
 
-      if(ifls_debug) call lsmonitor(ta,'advec')
+      if(ifls_debug.eq.1) call lsmonitor(ta,'advec')
 
       !convab
       do i=1,ntot
         bq(i,1,1,1,ifield-1) = -bm1(i,1,1,1)*ta(i,1,1,1)
       enddo
 
-      if(ifls_debug) call lsmonitor(ta,'bqarr')
+      if(ifls_debug.eq.1) call lsmonitor(bq(1,1,1,1,ifield-1),'bqarr')
 
       call makeabq
 
+      if(ifls_debug.eq.1) call lsmonitor(bq(1,1,1,1,ifield-1),'bqabq')
+
       call makebdq
+
+      if(ifls_debug.eq.1)call lsmonitor(bq(1,1,1,1,ifield-1),'bqmke')
 
       return
       end
