@@ -256,7 +256,7 @@ C----------------------------------------------------------------------
           !following is divergence term
           call add2 (h2,adq(1,1,1,1,ifield-1),n)
           ! call bcdirsc (t(1,1,1,1,ifield-1))
-          call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
+          call axhelm_cls2(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
           ! call bcneusc (ta,1)
           ! call add2(tb,ta,n)
@@ -650,6 +650,101 @@ c---------------------------------------------------------------
       endif
 
 1000  format(a,10x,a,1p3E13.4)
+
+      return
+      end
+c---------------------------------------------------------------
+      subroutine axhelm_cls2(au,u,helm1,helm2,imsh,isd)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      real au(lx1,ly1,lz1,1)
+      real u(lx1,ly1,lz1,1)
+      real helm1(lx1,ly1,lz1,1)
+      real helm2(lx1,ly1,lz1,1)
+
+      integer imsh,isd
+
+      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
+     $  ,             DUDS  (LX1,LY1,LZ1)
+     $  ,             DUDT  (LX1,LY1,LZ1)
+     $  ,             TMP1  (LX1,LY1,LZ1)
+     $  ,             TMP2  (LX1,LY1,LZ1)
+     $  ,             TMP3  (LX1,LY1,LZ1)
+      real dudr,duds,dudt,tmp1,tmp2,tmp3
+
+      real tm1(lx1,ly1,lz1)
+      real tm2(lx1,ly1,lz1)
+      real tm3(lx1,ly1,lz1)
+      equivalence (dudr,tm1),(duds,tm2),(dudt,tm3)
+
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+
+      integer ntot,nxy,nyz,nxz,nxyz
+      integer ie,iz
+
+      common /ltmp/ ur(lx1,ly1,lz1),
+     $              us(lx1,ly1,lz1),
+     $              ut(lx1,ly1,lz1)
+      real ur,us,ut
+
+      real tmp(lx1,ly1,lz1,lelt)
+      real tmpx(lx1,ly1,lz1,lelt)
+      real tmpy(lx1,ly1,lz1,lelt)
+      real tmpz(lx1,ly1,lz1,lelt)
+
+      NXY=lx1*ly1
+      NYZ=ly1*lz1
+      NXZ=lx1*lz1
+      NXYZ=lx1*ly1*lz1
+      NTOT=NXYZ*NELV
+
+      call rzero(au,ntot)
+
+      call gradm1(tmpx,tmpy,tmpz,u)
+      call opcolv(tmpx,tmpy,tmpz,bm1)
+      call opdssum(tmpx,tmpy,tmpz)
+      call opcolv(tmpx,tmpy,tmpz,binvm1)
+
+      if(if3d)then
+         call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
+      else
+         call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
+      endif
+
+      do ie = 1,nelv
+        call vdot2(tmp1,rxm1(1,1,1,ie),rym1(1,1,1,ie),
+     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
+        call vdot2(tmp2,sxm1(1,1,1,ie),sym1(1,1,1,ie),
+     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
+        call col2(tmp1,w3m1,nxyz)
+        call col2(tmp2,w3m1,nxyz)
+
+        call col2(tmp1,tmp(1,1,1,ie),nxyz)
+        call col2(tmp2,tmp(1,1,1,ie),nxyz)
+
+        call col2(tmp1,helm1(1,1,1,ie),nxyz)
+        call col2(tmp2,helm1(1,1,1,ie),nxyz)
+
+        call mxm(dxtm1,lx1,tmp1,lx1,tm1,nyz)
+        call mxm(tmp2,lx1,dym1,ly1,tm2,ly1)
+
+        call add2(au(1,1,1,ie),tm1,nxyz)
+        call add2(au(1,1,1,ie),tm2,nxyz)
+      enddo
+
+
+      call addcol4 (au,helm2,bm1,u,ntot)
+
+      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
+      !lets worry about axisymmetry later
+
+      if(ifls_debug.eq.1 .and. nio.eq.0)
+     $ write(*,*)"SVV status",ifsvv(ifield-1)
+      if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
 
       return
       end
