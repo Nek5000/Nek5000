@@ -251,15 +251,11 @@ C----------------------------------------------------------------------
           intype = 0
           if(iftran) intype = -1
           call sethlm(h1,h2,intype)
-          ! call bcneusc (ta,-1)
-          ! call add2 (h2,ta,n)
           !following is divergence term
           call add2 (h2,adq(1,1,1,1,ifield-1),n)
-          ! call bcdirsc (t(1,1,1,1,ifield-1))
-          call axhelm_cls2(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
+          call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
+          ! call axhelm_cls2(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
-          ! call bcneusc (ta,1)
-          ! call add2(tb,ta,n)
           
           if(ifls_debug.eq.1)call lsmonitor(tb,'tbrhs')
 
@@ -275,121 +271,6 @@ C----------------------------------------------------------------------
           if (ifconv) exit
         enddo
       endif
-
-      return
-      end
-C----------------------------------------------------------------------     
-      subroutine axhelm_cls(au,u,helm1,helm2,imsh,isd)
-      implicit none
-      include 'SIZE'
-      include 'TOTAL'
-      include 'LVLSET'
-
-      real au(lx1,ly1,lz1,1)
-      real u(lx1,ly1,lz1,1)
-      real helm1(lx1,ly1,lz1,1)
-      real helm2(lx1,ly1,lz1,1)
-
-      integer imsh,isd
-
-      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
-     $  ,             DUDS  (LX1,LY1,LZ1)
-     $  ,             DUDT  (LX1,LY1,LZ1)
-     $  ,             TMP1  (LX1,LY1,LZ1)
-     $  ,             TMP2  (LX1,LY1,LZ1)
-     $  ,             TMP3  (LX1,LY1,LZ1)
-      real dudr,duds,dudt,tmp1,tmp2,tmp3
-
-      real tm1(lx1,ly1,lz1)
-      real tm2(lx1,ly1,lz1)
-      real tm3(lx1,ly1,lz1)
-      equivalence (dudr,tm1),(duds,tm2),(dudt,tm3)
-
-      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
-      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
-
-      integer ntot,nxy,nyz,nxz,nxyz
-      integer e,iz
-
-      common /ltmp/ ur(lx1,ly1,lz1),
-     $              us(lx1,ly1,lz1),
-     $              ut(lx1,ly1,lz1)
-      real ur,us,ut
-
-      NXY=lx1*ly1
-      NYZ=ly1*lz1
-      NXZ=lx1*lz1
-      NXYZ=lx1*ly1*lz1
-      NTOT=NXYZ*NELV
-
-      call rzero(au,ntot)
-
-      do e = 1,nelv
-        if(.not.if3d)then
-          call col3(ur,clsnr(1,1,1,e),u(1,1,1,e),NXYZ)
-          call col3(us,clsns(1,1,1,e),u(1,1,1,e),NXYZ)
-          call mxm  (dxm1,lx1,ur,lx1,dudr,nyz)
-          call mxm  (us,lx1,dytm1,ly1,duds,ly1)
-          call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
-          call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
-          if (ifdfrm(e)) then
-            call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
-          endif
-          call col2 (tmp1,helm1(1,1,1,e),nxyz)
-          call col2 (tmp2,helm1(1,1,1,e),nxyz)
-          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
-          call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
-          call col2(tm1,clsnr(1,1,1,e),NXYZ)
-          call col2(tm2,clsns(1,1,1,e),NXYZ)
-          call add2 (au(1,1,1,e),tm1,nxyz)
-          call add2 (au(1,1,1,e),tm2,nxyz)
-        else
-          call col3(ur,clsnr(1,1,1,e),u(1,1,1,e),NXYZ)
-          call col3(us,clsns(1,1,1,e),u(1,1,1,e),NXYZ)
-          call col3(ut,clsnt(1,1,1,e),u(1,1,1,e),NXYZ)
-          call mxm(dxm1,lx1,ur,lx1,dudr,nyz)
-          do iz=1,lz1
-            call mxm(us,lx1,dytm1,ly1,duds(1,1,iz),ly1)
-          enddo
-          call mxm     (ut,nxy,dztm1,lz1,dudt,lz1)
-          call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
-          call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
-          call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
-          if (ifdfrm(e)) then
-            call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp1,dudt,g5m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,dudt,g6m1(1,1,1,e),nxyz)
-            call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
-            call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
-          endif
-          call col2 (tmp1,helm1(1,1,1,e),nxyz)
-          call col2 (tmp2,helm1(1,1,1,e),nxyz)
-          call col2 (tmp3,helm1(1,1,1,e),nxyz)
-          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
-          do iz=1,lz1
-            call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
-          enddo
-          call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
-          call col2(tm1,clsnr(1,1,1,e),NXYZ)
-          call col2(tm2,clsns(1,1,1,e),NXYZ)
-          call col2(tm3,clsnt(1,1,1,e),NXYZ)
-          call add2 (au(1,1,1,e),tm1,nxyz)
-          call add2 (au(1,1,1,e),tm2,nxyz)
-          call add2 (au(1,1,1,e),tm3,nxyz)
-        endif
-      enddo
-
-
-      call addcol4 (au,helm2,bm1,u,ntot)
-
-      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
-      !lets worry about axisymmetry later
-
-      if(ifls_debug.eq.1 .and. nio.eq.0)
-     $ write(*,*)"SVV status",ifsvv(ifield-1)
-      if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
 
       return
       end
@@ -736,6 +617,118 @@ c---------------------------------------------------------------
         call add2(au(1,1,1,ie),tm2,nxyz)
       enddo
 
+
+      call addcol4 (au,helm2,bm1,u,ntot)
+
+      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
+      !lets worry about axisymmetry later
+
+      if(ifls_debug.eq.1 .and. nio.eq.0)
+     $ write(*,*)"SVV status",ifsvv(ifield-1)
+      if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
+
+      return
+      end
+c---------------------------------------------------------------
+      subroutine axhelm_cls(au,u,helm1,helm2,imsh,isd)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      real au(lx1,ly1,lz1,1)
+      real u(lx1,ly1,lz1,1)
+      real helm1(lx1,ly1,lz1,1)
+      real helm2(lx1,ly1,lz1,1)
+
+      integer imsh,isd
+
+      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
+     $  ,             DUDS  (LX1,LY1,LZ1)
+     $  ,             DUDT  (LX1,LY1,LZ1)
+     $  ,             TMP1  (LX1,LY1,LZ1)
+     $  ,             TMP2  (LX1,LY1,LZ1)
+     $  ,             TMP3  (LX1,LY1,LZ1)
+      real dudr,duds,dudt,tmp1,tmp2,tmp3
+
+      real tm1(lx1,ly1,lz1)
+      real tm2(lx1,ly1,lz1)
+      real tm3(lx1,ly1,lz1)
+      equivalence (dudr,tm1),(duds,tm2),(dudt,tm3)
+
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+
+      integer ntot,nxy,nyz,nxz,nxyz
+      integer e,iz
+
+      common /lsaxhelm/ tmpx(lx1,ly1,lz1,lelv),
+     $                  tmpy(lx1,ly1,lz1,lelv), 
+     $                  tmpz(lx1,ly1,lz1,lelv),
+     $                  tmp(lx1,ly1,lz1,lelv)
+
+      real tmpx, tmpy, tmpz, tmp
+
+      NXY=lx1*ly1
+      NYZ=ly1*lz1
+      NXZ=lx1*lz1
+      NXYZ=lx1*ly1*lz1
+      NTOT=NXYZ*NELV
+
+      call gradm1(tmpx,tmpy,tmpz,u)
+      call opcolv(tmpx,tmpy,tmpz,bm1)
+      call opdssum(tmpx,tmpy,tmpz)
+      call opcolv(tmpx,tmpy,tmpz,binvm1)
+
+      if(if3d)then
+         call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
+      else
+         call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
+      endif
+
+      call col2(tmp,helm1,ntot)
+
+      call rzero(au,ntot)
+
+      do e=1,nelv
+        if(.not.if3d)then
+          call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
+          call col3(tmp2,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
+          if (ifdfrm(e)) then
+            call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
+            call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
+          endif
+          call col2 (tmp1,tmp(1,1,1,e),nxyz)
+          call col2 (tmp2,tmp(1,1,1,e),nxyz)
+          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+          call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
+          call add2 (au(1,1,1,e),tm1,nxyz)
+          call add2 (au(1,1,1,e),tm2,nxyz)
+        else
+          call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
+          call col3(tmp1,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
+          call col3(tmp1,g3m1(1,1,1,e),clsnt(1,1,1,e),nxyz)
+          if (ifdfrm(e)) then
+            call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
+            call addcol3 (tmp1,clsnt(1,1,1,e),g5m1(1,1,1,e),nxyz)
+            call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
+            call addcol3 (tmp2,clsnt(1,1,1,e),g6m1(1,1,1,e),nxyz)
+            call addcol3 (tmp3,clsnr(1,1,1,e),g5m1(1,1,1,e),nxyz)
+            call addcol3 (tmp3,clsns(1,1,1,e),g6m1(1,1,1,e),nxyz)
+          endif
+          call col2 (tmp1,tmp(1,1,1,e),nxyz)
+          call col2 (tmp2,tmp(1,1,1,e),nxyz)
+          call col2 (tmp3,tmp(1,1,1,e),nxyz)
+          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+          do iz=1,lz1
+            call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
+          enddo
+          call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
+          call add2 (au(1,1,1,e),tm1,nxyz)
+          call add2 (au(1,1,1,e),tm2,nxyz)
+          call add2 (au(1,1,1,e),tm3,nxyz)
+        endif
+      enddo
 
       call addcol4 (au,helm2,bm1,u,ntot)
 

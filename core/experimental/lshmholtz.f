@@ -374,7 +374,7 @@ c
          beta = rtz1/rtz2
          if (iter.eq.1) beta=0.0
          call add2s1 (p,z,beta,n)
-         call axhelm_cls2 (w,p,h1,h2,imsh,isd)
+         call axhelm_cls (w,p,h1,h2,imsh,isd)
          call dssum  (w,lx1,ly1,lz1)
          call col2   (w,mask,n)
 c
