@@ -283,6 +283,7 @@ C----------------------------------------------------------------------
 
       integer n,i
       real deltael
+      real avm_vdiff
 
       n = lx1*ly1*lz1*lelv
 
@@ -295,6 +296,13 @@ C----------------------------------------------------------------------
       if(ifls_debug.eq.1)then
         call lsmonitor(vtrans(1,1,1,1,ifield),'rho  ')
         call lsmonitor(vdiff(1,1,1,1,ifield),'diff ')
+      endif
+
+      if(ifavm(ifield-1))then
+        do i=1,n
+        vdiff(i,1,1,1,ifield) = vdiff(i,1,1,1,ifield)+
+     $                          avm_vdiff(i,1,1,1)   
+        enddo
       endif
 
       return
