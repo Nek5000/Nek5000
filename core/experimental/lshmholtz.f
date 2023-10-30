@@ -355,7 +355,7 @@ C
 
          ifprint_hmh = .false.
          if (nio.eq.0.and.ifprint.and.param(74).ne.0) ifprint_hmh=.true.
-         if (nio.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
+         ! if (nio.eq.0.and.istep.eq.1)                 ifprint_hmh=.true.
 
          if (ifprint_hmh)
      &      write(6,3002) istep,'  Hmholtz ' // name,

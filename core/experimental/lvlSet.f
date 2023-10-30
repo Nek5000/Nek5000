@@ -86,27 +86,6 @@ C----------------------------------------------------------------------
         write(*,*) "Max iteration count", nsteps_cls
       endif
 
-      if(ifls_debug.eq.1)
-     $ call lsmonitor(t(1,1,1,1,ifld_tls-1),'TLS  ')
-
-      if(ifls_debug.eq.1)
-     $ call lsmonitor(t(1,1,1,1,ifld_clsr-1),'CLSr ')
-
-      !Convert normal vector to rst space
-      !Note that normals do not change over re-dist steps
-      call cls_normals(clsnx,clsny,clsnz,ifld_tls)
-      call vector_to_rst(clsnx,clsny,clsnz,
-     $                   clsnr,clsns,clsnt)
-
-      if(ifls_debug.eq.1)then
-        ntot = lx1*ly1*lz1*nelv
-        call copy(vx,clsnr,ntot)
-        call copy(vy,clsns,ntot)
-        if(if3d)call copy(vz,clsnt,ntot)
-      endif
-      if(ifls_debug.eq.1)call lsmonitor(clsnx,'xnorm')
-      if(ifls_debug.eq.1)call lsmonitor(clsnr,'rnorm')
-
       do i=1,nsteps_cls
         istep = istep + 1
         call ls_advance
@@ -382,34 +361,54 @@ C----------------------------------------------------------------------
       integer ntot
 
       common /lsscratch/ ta(lx1,ly1,lz1,lelt),
-     $                   tb(lx1,ly1,lz1,lelt) 
+     $                   tb(lx1,ly1,lz1,lelt)
       real ta,tb
 
       integer i
+      real signls
 
       ntot = lx1*ly1*lz1*nelv
 
-      !this is to add divergence. Currently acts as dummy
+      !this is to add divergence and forcing term
       call makeq_aux
 
-      !(1-psi)*psi
-      call copy(tb,t(1,1,1,1,ifield-1),ntot)
-      call cmult(tb,-1.0,ntot)
-      call cadd(tb,1.0,ntot)
-      call col2(tb,t(1,1,1,1,ifield-1),ntot)
-
-      if(ifls_debug.eq.1) call lsmonitor(tb,'convp')
-
       !convop
-      call rzero(ta,ntot)
-      call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
+      if(ifield.eq.ifld_clsr)then
+        if(istep.eq.1)then
+          !Convert normal vector to rst space
+          !Note that normals do not change over re-dist steps
+          call cls_normals(clsnx,clsny,clsnz,ifld_tls)
+          call vector_to_rst(clsnx,clsny,clsnz,
+     $                   clsnr,clsns,clsnt)
+        endif
+
+        !(1-psi)*psi
+        call copy(tb,t(1,1,1,1,ifield-1),ntot)
+        call cmult(tb,-1.0,ntot)
+        call cadd(tb,1.0,ntot)
+        call col2(tb,t(1,1,1,1,ifield-1),ntot)
+
+        call rzero(ta,ntot)
+        call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
+      elseif(ifield.eq.ifld_tlsr)then
+        call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
+        do i=1,ntot
+          tb(i,1,1,1) = signls(i,1,1,1)
+        enddo
+        call col2(clsnx,tb,ntot)
+        call col2(clsny,tb,ntot)
+        if(if3d)call col2(clsnz,tb,ntot)
+
+        call convect_new(ta,t(1,1,1,1,ifld_tlsr),.false.,
+     $                    clsnx,clsny,clsnz,.false.)  
+      endif
       call invcol2(ta,bm1,ntot)
 
       if(ifls_debug.eq.1) call lsmonitor(ta,'advec')
 
-      !convab
       do i=1,ntot
-        bq(i,1,1,1,ifield-1) = -bm1(i,1,1,1)*ta(i,1,1,1)
+        bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
+     $                         -bm1(i,1,1,1)*ta(i,1,1,1)
       enddo
 
       if(ifls_debug.eq.1) call lsmonitor(bq(1,1,1,1,ifield-1),'bqarr')
@@ -469,7 +468,7 @@ c---------------------------------------------------------------
 
       real eps, deltael, phi
 
-      eps = deltael(ix,iy,iz,iel)*eps_cls
+      eps = deltael(ix,iy,iz,iel)*eps_cls*5.0
       heaviside = 0.5*(tanh(phi/(2.0*eps))+1.0)
 
       return
@@ -683,60 +682,62 @@ c---------------------------------------------------------------
       NXYZ=lx1*ly1*lz1
       NTOT=NXYZ*NELV
 
-      call gradm1(tmpx,tmpy,tmpz,u)
-      call opcolv(tmpx,tmpy,tmpz,bm1)
-      call opdssum(tmpx,tmpy,tmpz)
-      call opcolv(tmpx,tmpy,tmpz,binvm1)
-
-      if(if3d)then
-         call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
-      else
-         call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
-      endif
-
-      call col2(tmp,helm1,ntot)
-
       call rzero(au,ntot)
 
-      do e=1,nelv
-        if(.not.if3d)then
-          call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
-          call col3(tmp2,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
-          if (ifdfrm(e)) then
-            call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
-          endif
-          call col2 (tmp1,tmp(1,1,1,e),nxyz)
-          call col2 (tmp2,tmp(1,1,1,e),nxyz)
-          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
-          call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
-          call add2 (au(1,1,1,e),tm1,nxyz)
-          call add2 (au(1,1,1,e),tm2,nxyz)
+      if(ifield.eq.ifld_clsr)then
+        call gradm1(tmpx,tmpy,tmpz,u)
+        call opcolv(tmpx,tmpy,tmpz,bm1)
+        call opdssum(tmpx,tmpy,tmpz)
+        call opcolv(tmpx,tmpy,tmpz,binvm1)
+
+        if(if3d)then
+          call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
         else
-          call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
-          call col3(tmp1,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
-          call col3(tmp1,g3m1(1,1,1,e),clsnt(1,1,1,e),nxyz)
-          if (ifdfrm(e)) then
-            call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp1,clsnt(1,1,1,e),g5m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
-            call addcol3 (tmp2,clsnt(1,1,1,e),g6m1(1,1,1,e),nxyz)
-            call addcol3 (tmp3,clsnr(1,1,1,e),g5m1(1,1,1,e),nxyz)
-            call addcol3 (tmp3,clsns(1,1,1,e),g6m1(1,1,1,e),nxyz)
-          endif
-          call col2 (tmp1,tmp(1,1,1,e),nxyz)
-          call col2 (tmp2,tmp(1,1,1,e),nxyz)
-          call col2 (tmp3,tmp(1,1,1,e),nxyz)
-          call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
-          do iz=1,lz1
-            call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
-          enddo
-          call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
-          call add2 (au(1,1,1,e),tm1,nxyz)
-          call add2 (au(1,1,1,e),tm2,nxyz)
-          call add2 (au(1,1,1,e),tm3,nxyz)
+          call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
         endif
-      enddo
+
+        call col2(tmp,helm1,ntot)
+
+        do e=1,nelv
+          if(.not.if3d)then
+            call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
+            call col3(tmp2,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
+            if (ifdfrm(e)) then
+              call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
+            endif
+            call col2 (tmp1,tmp(1,1,1,e),nxyz)
+            call col2 (tmp2,tmp(1,1,1,e),nxyz)
+            call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+            call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
+            call add2 (au(1,1,1,e),tm1,nxyz)
+            call add2 (au(1,1,1,e),tm2,nxyz)
+          else
+            call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
+            call col3(tmp1,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
+            call col3(tmp1,g3m1(1,1,1,e),clsnt(1,1,1,e),nxyz)
+            if (ifdfrm(e)) then
+              call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp1,clsnt(1,1,1,e),g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,clsnr(1,1,1,e),g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,clsnt(1,1,1,e),g6m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,clsnr(1,1,1,e),g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,clsns(1,1,1,e),g6m1(1,1,1,e),nxyz)
+            endif
+            call col2 (tmp1,tmp(1,1,1,e),nxyz)
+            call col2 (tmp2,tmp(1,1,1,e),nxyz)
+            call col2 (tmp3,tmp(1,1,1,e),nxyz)
+            call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+            do iz=1,lz1
+              call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
+            enddo
+            call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
+            call add2 (au(1,1,1,e),tm1,nxyz)
+            call add2 (au(1,1,1,e),tm2,nxyz)
+            call add2 (au(1,1,1,e),tm3,nxyz)
+          endif
+        enddo
+      endif
 
       call addcol4 (au,helm2,bm1,u,ntot)
 
@@ -749,3 +750,21 @@ c---------------------------------------------------------------
 
       return
       end
+c---------------------------------------------------------------
+      real function signls(ix,iy,iz,ie)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ix,iy,iz,ie
+      real deltael,phi,eps
+
+      phi = t(ix,iy,iz,ie,ifld_tls-1)
+      eps = deltael(ix,iy,iz,ie) * eps_cls
+
+      signls = tanh(phi/(2.0 * eps))
+
+      return
+      end
+      
