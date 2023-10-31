@@ -1046,7 +1046,7 @@ c        endif
          CALL RZERO (H2,NTOT1)
       endif
 
-      if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1))
+      if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
       return
       end
 c-----------------------------------------------------------------------

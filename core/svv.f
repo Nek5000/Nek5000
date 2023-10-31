@@ -14,7 +14,7 @@ c---------------------------------------------------------------------
       return
       end
 c---------------------------------------------------------------------
-      subroutine setmu_svv(phi)
+      subroutine setmu_svv(phi,cx,cy,cz)
 c      
       include 'SIZE'
       include 'TOTAL'
@@ -26,6 +26,8 @@ c
       integer icalld
       save icalld
       data icalld /0/
+
+      real cx(1),cy(1),cz(1)
 c
       nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv
@@ -43,19 +45,20 @@ c
          call cmult(svvf,2.0,ntot)
          
 c     Scale with mu_0/N
-         call cmult(svvf,svv_c0(ifield-1)/(lx1-1.0),ntot)
+         call cmult(svvf,1.0/(lx1-1.0),ntot)
          icalld = 1
       endif
 
 c     Scale with advection velocity
-      call col3(svvmu,vx,vx,ntot)
-      call addcol3(svvmu,vy,vy,ntot)
-      if(if3d) call addcol3(svvmu,vz,vz,ntot)
+      call col3(svvmu,cx,cx,ntot)
+      call addcol3(svvmu,cy,cy,ntot)
+      if(if3d) call addcol3(svvmu,cz,cz,ntot)
       do i=1,ntot
          svvmu(i,1,1,1) = svvmu(i,1,1,1)**0.5
       enddo
       
       call col2(svvmu,svvf,ntot)
+      call cmult(svvmu,svv_c0(ifield-1),ntot)
       call copy(svvprec,svvmu,ntot)
       if(ifnlsvv(ifield-1))then
          call getnlsvvsf(phi,csf)
