@@ -459,7 +459,7 @@ c---------------------------------------------------------------
 
       real eps, deltael, phi
 
-      eps = deltael(ix,iy,iz,iel)*eps_cls*5.0
+      eps = deltael(ix,iy,iz,iel)*eps_cls
       heaviside = 0.5*(tanh(phi/(2.0*eps))+1.0)
 
       return
