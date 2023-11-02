@@ -389,6 +389,7 @@ C----------------------------------------------------------------------
         !Need to change this to ifld_tlsr later
         !there might exist a novel better solution for this
         !maybe narrow band?
+        !the local divergence should give a max of what this should be
         call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
         do i=1,ntot
           tb(i,1,1,1) = signls(i,1,1,1)
