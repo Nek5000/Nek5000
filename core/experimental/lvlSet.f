@@ -58,7 +58,7 @@ C----------------------------------------------------------------------
       return
       end
 C----------------------------------------------------------------------     
-      subroutine ls_drive
+      subroutine ls_drive(ifld)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -66,7 +66,7 @@ C----------------------------------------------------------------------
 
       integer istep_save, ifld_save
       real dt_save, time_save
-      integer i,ntot
+      integer i,ntot,ifld
 
       !replace internal istep
       istep_save = ISTEP
@@ -77,7 +77,7 @@ C----------------------------------------------------------------------
       ISTEP = 0
       dt = dt_cls
       time = 0.0
-      ifield = ifld_clsr
+      ifield = ifld
 
       if(ifls_debug.eq.1 .and. nio.eq.0)then
         write(*,*) "Field", ifield
@@ -214,29 +214,26 @@ C----------------------------------------------------------------------
       napproxt(1,ifld1) = laxtt
 
 
-      if(ifls_debug.eq.1 .and. nio.eq.0)
-     $  write(*,*)"in cdcls",igeom,ifls_debug
-
       if(igeom.eq.1)then
         call makeq_cls
         call lagscal
       else
-        write(name4t,'(A4)')"CLSR"
-
-        if(ifls_debug.eq.1)call lsmonitor(bq(1,1,1,1,ifield-1),'bq   ')
+        if(ifield.eq.ifld_clsr)then
+          write(name4t,'(A4)')"CLSR"
+        elseif(ifield.eq.ifld_tlsr)then
+          write(name4t,'(A4)')"TLSR"
+        endif
 
         isd = 1
         do iter=1,nmxnl
           intype = 0
           if(iftran) intype = -1
-          call sethlm(h1,h2,intype)
+          call sethlm_ls(h1,h2,intype)
           !following is divergence term
           call add2 (h2,adq(1,1,1,1,ifield-1),n)
           call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           ! call axhelm_cls2(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
-          
-          if(ifls_debug.eq.1)call lsmonitor(tb,'tbrhs')
 
           call hsolve_cls(name4t,ta,tb,h1,h2,
      $                tmask(1,1,1,1,ifield-1),
@@ -244,7 +241,6 @@ C----------------------------------------------------------------------
      $                imesh,tolht(ifield),nmxt(ifield-1),1,
      $                approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
 
-          if(ifls_debug.eq.1) call lsmonitor(ta,'phidt')
           call add2(t(1,1,1,1,ifield-1),ta,n)
           call cvgnlps (ifconv)
           if (ifconv) exit
@@ -268,13 +264,12 @@ C----------------------------------------------------------------------
 
       call cfill(VTRANS(1,1,1,1,ifield),1.0,n)
 
-      do i=1,n
-        VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1) * eps_cls
-      enddo
-
-      if(ifls_debug.eq.1)then
-        call lsmonitor(vtrans(1,1,1,1,ifield),'rho  ')
-        call lsmonitor(vdiff(1,1,1,1,ifield),'diff ')
+      if(ifield.eq.ifld_clsr)then
+        do i=1,n
+          VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1) * eps_cls
+        enddo
+      elseif(ifield.eq.ifld_tlsr)then
+        call cfill(vdiff(1,1,1,1,ifield),1e-10,n)
       endif
 
       if(ifavm(ifield-1))then
@@ -391,6 +386,9 @@ C----------------------------------------------------------------------
         call rzero(ta,ntot)
         call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
       elseif(ifield.eq.ifld_tlsr)then
+        !Need to change this to ifld_tlsr later
+        !there might exist a novel better solution for this
+        !maybe narrow band?
         call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
         do i=1,ntot
           tb(i,1,1,1) = signls(i,1,1,1)
@@ -399,27 +397,19 @@ C----------------------------------------------------------------------
         call col2(clsny,tb,ntot)
         if(if3d)call col2(clsnz,tb,ntot)
 
-        call convect_new(ta,t(1,1,1,1,ifld_tlsr),.false.,
+        call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
      $                    clsnx,clsny,clsnz,.false.)  
       endif
       call invcol2(ta,bm1,ntot)
 
-      if(ifls_debug.eq.1) call lsmonitor(ta,'advec')
-
       do i=1,ntot
         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
-     $                         -bm1(i,1,1,1)*ta(i,1,1,1)
+     $          -bm1(i,1,1,1)*ta(i,1,1,1)*vtrans(i,1,1,1,ifield)
       enddo
-
-      if(ifls_debug.eq.1) call lsmonitor(bq(1,1,1,1,ifield-1),'bqarr')
 
       call makeabq
 
-      if(ifls_debug.eq.1) call lsmonitor(bq(1,1,1,1,ifield-1),'bqabq')
-
       call makebdq
-
-      if(ifls_debug.eq.1)call lsmonitor(bq(1,1,1,1,ifield-1),'bqmke')
 
       return
       end
@@ -764,6 +754,50 @@ c---------------------------------------------------------------
       eps = deltael(ix,iy,iz,ie) * eps_cls
 
       signls = tanh(phi/(2.0 * eps))
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sethlm_ls (h1,h2,intloc)
+ 
+c     Set the variable property arrays H1 and H2
+c     in the Helmholtz equation.
+c     (associated with variable IFIELD)
+c     INTLOC =      integration type
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'SOLN'
+      include 'TSTEP'
+      include 'LVLSET'
+
+      real h1(1),h2(1)
+
+      nel   = nelfld(ifield)
+      ntot1 = lx1*ly1*lz1*nel
+
+      if (iftran) then
+         dtbd = bd(1)/dt
+         call copy  (h1,vdiff (1,1,1,1,ifield),ntot1)
+         if (intloc.eq.0) then
+            call rzero (h2,ntot1)
+         else
+            call cmult2 (h2,vtrans(1,1,1,1,ifield),dtbd,ntot1)
+         endif
+
+c        if (ifield.eq.1 .and. ifanls) then   ! this should be replaced
+c           const = 2.                        ! with a correct stress
+c           call cmult (h1,const,ntot1)       ! formulation
+c        endif
+
+      ELSE
+         CALL COPY  (H1,VDIFF (1,1,1,1,IFIELD),NTOT1)
+         CALL RZERO (H2,NTOT1)
+      endif
+
+      if(ifsvv(ifield-1))then 
+        call setmu_svv(t(1,1,1,1,ifield-1),clsnx,clsny,clsnz)
+      endif
 
       return
       end
