@@ -12,7 +12,7 @@ c---------------------------------------------------------------
       return
       end
 c---------------------------------------------------------------
-      real function avm_vdiff(ix,iy,iz,e)
+      real function avm_vdiff(ix,iy,iz,e,cx,cy,cz)
 c
 c c1 and ncut a user tuneable control parameters. 
 c Set c1 = 1.0 and reduce/increase as much possible/required,
@@ -23,6 +23,7 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'AVM'
+      include 'LVLSET'
 
       integer ix, iy, iz, e
       real c1, c2
@@ -50,6 +51,9 @@ c
 
       real h0,h0max
       real viscc(8,lelt)
+      real cx(lx1,ly1,lz1,1) 
+      real cy(lx1,ly1,lz1,1) 
+      real cz(lx1,ly1,lz1,1)
 
       if (ix*iy*iz*e .ne. 1) then ! use cache
          avm_vdiff = max(1e-10,visc(ix,iy,iz,e))
@@ -92,7 +96,13 @@ c
          psave = param(99)
          param(99) = 0
          call copy(tx,r,n)
-         call convop(r,tx)
+         if(ifield.eq.ifld_clsr)then
+           call conv_clsr(r,tx)
+         elseif(ifield.eq.ifld_tlsr)then
+           call conv_tlsr(r,tx)
+         else
+           call convop(r,tx)
+         endif
          param(99) = psave
 
          ! normalize
@@ -104,13 +114,21 @@ c
       endif
 
       ! evaluate arificial viscosity
+      h0max = 1e-10
+      do ie=1,nelv
+        h0max = max(h0max,deltaf(1,1,1,ie))
+      enddo
+
       uinf = 1./uinf
       do ie = 1,nelv
-         h0max = vlmax(deltaf(1,1,1,ie),nxyz) 
       do i = 1,nxyz
          h0 = deltaf(i,1,1,ie)
-         vmax = sqrt(vx(i,1,1,ie)**2 + vy(i,1,1,ie)**2 
-     $               + vz(i,1,1,ie)**2)
+         if(if3d)then
+           vmax = sqrt(cx(i,1,1,ie)**2 + cy(i,1,1,ie)**2 
+     $               + cz(i,1,1,ie)**2)
+         else
+           vmax = sqrt(cx(i,1,1,ie)**2 + cy(i,1,1,ie)**2)
+         endif
          vismax = c2 * h0max * vmax
          visc(i,1,1,ie) = min(vismax, 
      $        avm_c1(ifield-1)*h0**2 * abs(r(i,ie))*uinf)

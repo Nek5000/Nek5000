@@ -1,18 +1,21 @@
       integer ifld_cls,ifld_clsr,ifld_tls,ifld_tlsr
 
-      integer nsteps_cls, ifls_debug
+      integer nsteps_cls, ifls_debug, icls_mid
       
       common /lvlset_i/ ifld_cls, ifld_clsr, ifld_tls,
-     $                  ifld_tlsr, nsteps_cls, ifls_debug
+     $                  ifld_tlsr, nsteps_cls,
+     $                  ifls_debug, icls_mid
 
       common /lvlset_a/ clsnx(lx1,ly1,lz1,lelv),
      $                  clsny(lx1,ly1,lz1,lelv),
      $                  clsnz(lx1,ly1,lz1,lelv),
      $                  clsnr(lx1,ly1,lz1,lelv),
      $                  clsns(lx1,ly1,lz1,lelv),
-     $                  clsnt(lx1,ly1,lz1,lelv)
+     $                  clsnt(lx1,ly1,lz1,lelv),
+     $                  avmls(lx1,ly1,lz1,lelv)  
 
       real clsnx,clsny,clsnz,clsnr,clsns,clsnt
+      real avmls
 
       real dt_cls, eps_cls
       common /lvlset_r/ dt_cls, eps_cls

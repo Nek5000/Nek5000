@@ -1073,7 +1073,7 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
          if(ifavm(ifield-1))then
            VDIFF(I,J,K,IEL,IFIELD) = VDIFF(I,J,K,IEL,IFIELD)+
-     $                               avm_vdiff(I,J,K,IEL)             
+     $                               avm_vdiff(I,J,K,IEL,vx,vy,vz)             
          endif
  10   CONTINUE
       return
