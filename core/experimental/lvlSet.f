@@ -36,7 +36,6 @@ C----------------------------------------------------------------------
       !also turn off internal solvers
       if(ifld_cls_in.ne.0)then 
         call rone(tmask(1,1,1,1,ifld_cls_in-1),ntot)
-        idpss(ifld_cls_in-1) = -1
       endif
       if(ifld_clsr_in.ne.0)then 
         call rone(tmask(1,1,1,1,ifld_clsr_in-1),ntot)
@@ -44,7 +43,6 @@ C----------------------------------------------------------------------
       endif
       if(ifld_tls_in.ne.0)then 
         call rone(tmask(1,1,1,1,ifld_tls_in-1),ntot)
-        idpss(ifld_tls_in-1) = -1
       endif
       if(ifld_tlsr_in.ne.0)then 
         call rone(tmask(1,1,1,1,ifld_tlsr_in-1),ntot)
@@ -67,6 +65,15 @@ C----------------------------------------------------------------------
       integer istep_save, ifld_save
       real dt_save, time_save
       integer i,ntot,ifld
+
+      if(ifld.ne.ifld_clsr .and. ifld.ne.ifld_tlsr)then
+        if(nio.eq.0)then 
+          write(*,*)"Solvers only for re-distancing fields"
+        endif
+        call exit(1)
+      endif
+
+      ntot = lx1*ly1*lz1*nelv
 
       !replace internal istep
       istep_save = ISTEP
@@ -177,12 +184,37 @@ C----------------------------------------------------------------------
       subroutine setdt_cls
       implicit none
       include 'SIZE'
+      include 'TOTAL'
       include 'LVLSET'
 
-      real umax
+      real cfl
+      common /lsscratch/ ta(lx1,ly1,lz1,lelt),
+     $                   tb(lx1,ly1,lz1,lelt)
+      real ta,tb
 
-      call compute_cfl(umax,clsnx,clsny,clsnz,1)
+      integer i,ntot
+      real signls
 
+      ntot = lx1*ly1*lz1*nelv
+
+      !This is redundant
+      if(ifield.eq.ifld_clsr)then
+        if(istep.eq.1)call cls_normals(clsnx,clsny,clsnz,ifld_tls)
+      elseif(ifield.eq.ifld_tlsr)then
+        call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
+        do i=1,ntot
+          tb(i,1,1,1) = signls(i,1,1,1)
+        enddo
+        call col2(clsnx,tb,ntot)
+        call col2(clsny,tb,ntot)
+        if(if3d)call col2(clsnz,tb,ntot)
+      endif
+
+      call compute_cfl(cfl,clsnx,clsny,clsnz,dt)
+
+      if(nio.eq.0 .and. istep.eq.1)then
+        write(*,*)"CFL: ",cfl
+      endif
       ! worry about adjust dt based on CFL later
 
       return
@@ -355,9 +387,8 @@ C----------------------------------------------------------------------
 
       integer ntot
 
-      common /lsscratch/ ta(lx1,ly1,lz1,lelt),
-     $                   tb(lx1,ly1,lz1,lelt)
-      real ta,tb
+      common /lsscratch2/ du (lx1,ly1,lz1,lelt)
+      real du
 
       integer i
       real signls
@@ -369,43 +400,14 @@ C----------------------------------------------------------------------
 
       !convop
       if(ifield.eq.ifld_clsr)then
-        if(istep.eq.1)then
-          !Convert normal vector to rst space
-          !Note that normals do not change over re-dist steps
-          call cls_normals(clsnx,clsny,clsnz,ifld_tls)
-          call vector_to_rst(clsnx,clsny,clsnz,
-     $                   clsnr,clsns,clsnt)
-        endif
-
-        !(1-psi)*psi
-        call copy(tb,t(1,1,1,1,ifield-1),ntot)
-        call cmult(tb,-1.0,ntot)
-        call cadd(tb,1.0,ntot)
-        call col2(tb,t(1,1,1,1,ifield-1),ntot)
-
-        call rzero(ta,ntot)
-        call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
+        call conv_clsr(du,t(1,1,1,1,ifield-1))
       elseif(ifield.eq.ifld_tlsr)then
-        !Need to change this to ifld_tlsr later
-        !there might exist a novel better solution for this
-        !maybe narrow band?
-        !the local divergence should give a max of what this should be
-        call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
-        do i=1,ntot
-          tb(i,1,1,1) = signls(i,1,1,1)
-        enddo
-        call col2(clsnx,tb,ntot)
-        call col2(clsny,tb,ntot)
-        if(if3d)call col2(clsnz,tb,ntot)
-
-        call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
-     $                    clsnx,clsny,clsnz,.false.)  
+        call conv_tlsr(du,t(1,1,1,1,ifield-1))
       endif
-      call invcol2(ta,bm1,ntot)
 
       do i=1,ntot
         bq(i,1,1,1,ifield-1) = bq(i,1,1,1,ifield-1)
-     $          -bm1(i,1,1,1)*ta(i,1,1,1)*vtrans(i,1,1,1,ifield)
+     $          -bm1(i,1,1,1)*du(i,1,1,1)*vtrans(i,1,1,1,ifield)
       enddo
 
       call makeabq
@@ -583,38 +585,39 @@ c---------------------------------------------------------------
 
       call rzero(au,ntot)
 
-      call gradm1(tmpx,tmpy,tmpz,u)
-      call opcolv(tmpx,tmpy,tmpz,bm1)
-      call opdssum(tmpx,tmpy,tmpz)
-      call opcolv(tmpx,tmpy,tmpz,binvm1)
+      if(ifield.eq.ifld_clsr)then
+        call gradm1(tmpx,tmpy,tmpz,u)
+        call opcolv(tmpx,tmpy,tmpz,bm1)
+        call opdssum(tmpx,tmpy,tmpz)
+        call opcolv(tmpx,tmpy,tmpz,binvm1)
 
-      if(if3d)then
-         call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
-      else
-         call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
+        if(if3d)then
+          call vdot3(tmp,tmpx,tmpy,tmpz,clsnx,clsny,clsnz,ntot)
+        else
+          call vdot2(tmp,tmpx,tmpy,clsnx,clsny,ntot)
+        endif
+
+        do ie = 1,nelv
+          call vdot2(tmp1,rxm1(1,1,1,ie),rym1(1,1,1,ie),
+     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
+          call vdot2(tmp2,sxm1(1,1,1,ie),sym1(1,1,1,ie),
+     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
+          call col2(tmp1,w3m1,nxyz)
+          call col2(tmp2,w3m1,nxyz)
+
+          call col2(tmp1,tmp(1,1,1,ie),nxyz)
+          call col2(tmp2,tmp(1,1,1,ie),nxyz)
+
+          call col2(tmp1,helm1(1,1,1,ie),nxyz)
+          call col2(tmp2,helm1(1,1,1,ie),nxyz)
+
+          call mxm(dxtm1,lx1,tmp1,lx1,tm1,nyz)
+          call mxm(tmp2,lx1,dym1,ly1,tm2,ly1)
+
+          call add2(au(1,1,1,ie),tm1,nxyz)
+          call add2(au(1,1,1,ie),tm2,nxyz)
+        enddo
       endif
-
-      do ie = 1,nelv
-        call vdot2(tmp1,rxm1(1,1,1,ie),rym1(1,1,1,ie),
-     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
-        call vdot2(tmp2,sxm1(1,1,1,ie),sym1(1,1,1,ie),
-     $           clsnx(1,1,1,ie),clsny(1,1,1,ie),nxyz)
-        call col2(tmp1,w3m1,nxyz)
-        call col2(tmp2,w3m1,nxyz)
-
-        call col2(tmp1,tmp(1,1,1,ie),nxyz)
-        call col2(tmp2,tmp(1,1,1,ie),nxyz)
-
-        call col2(tmp1,helm1(1,1,1,ie),nxyz)
-        call col2(tmp2,helm1(1,1,1,ie),nxyz)
-
-        call mxm(dxtm1,lx1,tmp1,lx1,tm1,nyz)
-        call mxm(tmp2,lx1,dym1,ly1,tm2,ly1)
-
-        call add2(au(1,1,1,ie),tm1,nxyz)
-        call add2(au(1,1,1,ie),tm2,nxyz)
-      enddo
-
 
       call addcol4 (au,helm2,bm1,u,ntot)
 
@@ -802,4 +805,77 @@ c        endif
 
       return
       end
-      
+c-----------------------------------------------------------------------
+      subroutine conv_clsr(du,u)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      common /lsscratch/ ta(lx1,ly1,lz1,lelt),
+     $                   tb(lx1,ly1,lz1,lelt)
+      real ta,tb
+
+      real u(1),du(1)
+      integer ntot
+
+      ntot = lx1*ly1*lz1*nelv
+
+      if(istep.eq.1)then
+        !Convert normal vector to rst space
+        !Note that normals do not change over re-dist steps
+        call cls_normals(clsnx,clsny,clsnz,ifld_tls)
+        call vector_to_rst(clsnx,clsny,clsnz,
+     $                   clsnr,clsns,clsnt)
+      endif
+
+      !(1-psi)*psi
+      call copy(tb,u,ntot)
+      call cmult(tb,-1.0,ntot)
+      call cadd(tb,1.0,ntot)
+      call col2(tb,u,ntot)
+
+      call rzero(ta,ntot)
+      call convect_cons(ta,tb,.false.,clsnx,clsny,clsnz,.false.)
+
+      call invcol3(du,ta,bm1,ntot)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine conv_tlsr(du,u)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      common /lsscratch/ ta(lx1,ly1,lz1,lelt),
+     $                   tb(lx1,ly1,lz1,lelt)
+      real ta,tb
+
+      real u(1),du(1)
+      integer ntot,i 
+      real signls
+
+      ntot = lx1*ly1*lz1*nelv
+
+      !Need to change this to ifld_tlsr later
+      !there might exist a novel better solution for this
+      !maybe narrow band?
+      !the local divergence should give a max of what this should be
+      call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
+      do i=1,ntot
+        tb(i,1,1,1) = signls(i,1,1,1)
+      enddo
+      call col2(clsnx,tb,ntot)
+      call col2(clsny,tb,ntot)
+      if(if3d)call col2(clsnz,tb,ntot)
+
+      call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
+     $                    clsnx,clsny,clsnz,.false.)  
+
+      call invcol3(du,ta,bm1,ntot)
+
+      return
+      end
+c-----------------------------------------------------------------------
