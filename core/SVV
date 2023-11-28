@@ -10,15 +10,25 @@ c
       real odym1(lx1,lx1), odytm1(lx1,lx1)
       real cdzm1(lx1,lx1), cdztm1(lx1,lx1)
       real odzm1(lx1,lx1), odztm1(lx1,lx1)
+      real svvnx(lx1,ly1,lz1,lelt)
+      real svvny(lx1,ly1,lz1,lelt)
+      real svvnz(lx1,ly1,lz1,lelt)
+      real svvnr(lx1,ly1,lz1,lelt)
+      real svvns(lx1,ly1,lz1,lelt)
+      real svvnt(lx1,ly1,lz1,lelt)
+      real svvmask(lx1,ly1,lz1,lelt)
       
       common /svv/ svvf,svvmu,svvprec,
      $     cdxm1,cdxtm1,odxm1,odxtm1,
      $     cdym1,cdytm1,odym1,odytm1,
-     $     cdzm1,cdztm1,odzm1,odztm1
+     $     cdzm1,cdztm1,odzm1,odztm1,
+     $     svvnx,svvny,svvnz,
+     $     svvnr,svvns,svvnt,
+     $     svvmask
 
       real svv_c0(ldimt),svv_k0(ldimt),
      $     svv_k1(ldimt),svvcut(ldimt)
       common /svvparam/ svv_c0,svvcut,svv_k0,svv_k1
 
-      logical ifnlsvv(ldimt)
-      common /svvl/ ifnlsvv
+      logical ifnlsvv(ldimt),ifupwindsvv(ldimt)
+      common /svvl/ ifnlsvv,ifupwindsvv

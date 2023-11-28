@@ -1,12 +1,16 @@
 c---------------------------------------------------------------------
       subroutine setdefault_svv
+      implicit none
       include 'SIZE'
       include 'SVV'
+
+      integer i
 
       do i=1,ldimt
         svv_c0(i) = 0.1
         svvcut(i) = (lx1-1.0)/2.0
         ifnlsvv(i) = .false.
+        ifupwindsvv(i) = .false.
 
         svv_k0(i) = 1.5
         svv_k1(i) = 1.5
@@ -395,6 +399,7 @@ c---------------------------------------------------------------------
       include 'CTIMER'
       include 'TSTEP'
       include 'SVV'
+      include 'SOLN'
 C
       COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
@@ -423,6 +428,11 @@ C
       common /svvtemp/ svvau(lx1,ly1,lz1,lelt)
       real svvau
 
+      common /svvtemp2/ gux(lx1,ly1,lz1,lelt),
+     $                  guy(lx1,ly1,lz1,lelt),
+     $                  guz(lx1,ly1,lz1,lelt),
+     $                  gdot(lx1,ly1,lz1,lelt)
+
       naxhm = naxhm + 1
       etime1 = dnekclock()
 
@@ -437,11 +447,33 @@ C
 
       CALL RZERO (SVVAU,NTOT)
 
+      if(ifupwindsvv(ifield-1))then
+        call gradsvv(gux,guy,guz,u)
+        call svvbdryfix
+
+        if(if3d)then
+          call vdot3(gdot,gux,guy,guz,svvnx,svvny,svvnz,ntot)
+        else
+          call vdot2(gdot,gux,guy,svvnx,svvny,ntot)
+        endif
+      endif
+
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
-           call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-           call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
-           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+          if(ifupwindsvv(ifield-1))then
+            svmin = vlmin(svvmask(1,1,1,e),nxyz)
+            if(svmin.eq.1.0)then
+              call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(duds,svvns(1,1,1,e),gdot(1,1,1,e),nxyz)
+            else
+              goto 1990
+            endif
+            goto 1991
+          endif
+1990      call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+          call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
+
+1991       call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
            if (ifdfrm(e)) then
               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
@@ -452,12 +484,24 @@ C
            call add2 (svvau(1,1,1,e),tm1,nxyz)
            call add2 (svvau(1,1,1,e),tm2,nxyz)
         else
-           call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+          if(ifupwindsvv(ifield-1))then
+            svmin = vlmin(svvmask(1,1,1,e),nxyz)
+            if(svmin.eq.1.0)then
+              call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(duds,svvns(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(dudt,svvnt(1,1,1,e),gdot(1,1,1,e),nxyz)
+            else
+              goto 1992
+            endif
+            goto 1993
+          endif
+1992       call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            do 10 iz=1,lz1
               call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
    10      continue
            call mxm     (u(1,1,1,e),nxy,cdztm1,lz1,dudt,lz1)
-           call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+
+1993       call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
            if (ifdfrm(e)) then
@@ -594,3 +638,134 @@ C
 C
       return
       END
+c---------------------------------------------------------------------
+      subroutine gradsvv(ux,uy,uz,u)
+c
+c     Compute gradient of T -- mesh 1 to mesh 1 (vel. to vel.)
+c
+      include 'SIZE'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'SVV'
+c
+      parameter (lxyz=lx1*ly1*lz1)
+      real ux(lxyz,1),uy(lxyz,1),uz(lxyz,1),u(lxyz,1)
+
+      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+
+      integer e
+
+      nxyz = lx1*ly1*lz1
+      ntot = nxyz*nelt
+
+      N = lx1-1
+      do e=1,nelt
+         if (if3d) then
+            call local_grad3(ur,us,ut,u,N,e,cdxm1,cdxtm1)
+            do i=1,lxyz
+               ux(i,e) = jacmi(i,e)*(ur(i)*rxm1(i,1,1,e)
+     $                             + us(i)*sxm1(i,1,1,e)
+     $                             + ut(i)*txm1(i,1,1,e) )
+               uy(i,e) = jacmi(i,e)*(ur(i)*rym1(i,1,1,e)
+     $                             + us(i)*sym1(i,1,1,e)
+     $                             + ut(i)*tym1(i,1,1,e) )
+               uz(i,e) = jacmi(i,e)*(ur(i)*rzm1(i,1,1,e)
+     $                             + us(i)*szm1(i,1,1,e)
+     $                             + ut(i)*tzm1(i,1,1,e) )
+            enddo
+         else
+            if (ifaxis) call setaxdy (ifrzer(e))
+            call local_grad2(ur,us,u,N,e,cdxm1,cdytm1)
+            do i=1,lxyz
+               ux(i,e) =jacmi(i,e)*(ur(i)*rxm1(i,1,1,e)
+     $                            + us(i)*sxm1(i,1,1,e) )
+               uy(i,e) =jacmi(i,e)*(ur(i)*rym1(i,1,1,e)
+     $                            + us(i)*sym1(i,1,1,e) )
+            enddo
+         endif
+      enddo
+c
+      return
+      end
+C----------------------------------------------------------------------     
+      subroutine svvbdryfix
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'SVV'
+
+      integer ie,ifc,i
+      integer kx1,kx2,ky1,ky2,kz1,kz2
+      integer ix,iy,iz
+      integer ntot,nxyz
+      integer icalld
+      save icalld
+      data icalld /0/
+
+      real w1,w2,w3,w4,w5
+      common /SCRNS/
+     & w1(lx1*ly1*lz1*lelv)
+     &,w2(lx1*ly1*lz1*lelv)
+     &,w3(lx1*ly1*lz1*lelv)
+     &,w4(lx1*ly1*lz1*lelv)
+     &,w5(lx1*ly1*lz1*lelv)
+
+      real ywd(lx1,ly1,lz1,lelt)
+      real dxmax_e
+      real dmax
+
+      if(icalld.eq.0)then
+        call distf(ywd,1,'O  ',w1,w2,w3,w4,w5)
+
+        ntot = lx1*ly1*lz1*nelt
+        nxyz = lx1*ly1*lz1
+
+        dmax = dxmax_e(1)
+        do i=1,ntot
+          svvmask(i,1,1,1) = tanh(ywd(i,1,1,1)/(dmax))
+        enddo
+
+        icalld = 1
+      endif
+
+      return
+      end
+C----------------------------------------------------------------------     
+      subroutine setUpwindSVV(cx,cy,cz)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'SVV'
+
+      real cx(1),cy(1),cz(1)
+
+      common /svvtemp3/ cmag(lx1*ly1*lz1*lelt)
+      real cmag
+
+      integer ntot,i
+
+      ntot = lx1*ly1*lz1*nelt
+
+      call col3(cmag,cx,cx,ntot)
+      call addcol3(cmag,cy,cy,ntot)
+      if(if3d) call addcol3(cmag,cz,cz,ntot)
+      call vsqrt(cmag,ntot)
+
+      do i=1,ntot
+        if(cmag(i).gt.0.0)then
+          svvnx(i,1,1,1) = cx(i)/cmag(i)
+          svvny(i,1,1,1) = cy(i)/cmag(i)
+          if(if3d)svvnz(i,1,1,1) = cz(i)/cmag(i)
+        else
+          svvnx(i,1,1,1) = 0.0
+          svvny(i,1,1,1) = 0.0
+          svvnz(i,1,1,1) = 0.0
+        endif
+      enddo
+
+      call vector_to_rst(svvnx,svvny,svvnz,svvnr,svvns,svvnt)
+
+      return
+      end
