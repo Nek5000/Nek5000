@@ -4,8 +4,8 @@
 !
       use SIZE
 
-      integer option
-      integer iexo1,flag
+      integer option 
+      integer iexo1,flag, ne_nrh
       logical if_pre
 !-----------------------------------------------------------
 
@@ -68,6 +68,10 @@
       allocate   (bc     (5,2*num_dim,    etot_est) )
       call rzero (bc,5*2*num_dim*etot_est)
       call blank (cbc,3*2*num_dim*etot_est)
+
+      allocate (r_or_l(num_elem))
+	  call rzero_int(r_or_l,num_elem)
+
 
       eacc = 0
       eacc_old = 0
@@ -178,7 +182,13 @@
       etot = eacc
       num_elem = etot
 
-      call right_hand_check ! check non-right-hand element here
+      ne_nrh = 0
+      call right_hand_check(ne_nrh) ! check non-right-hand element here
+
+      if ((num_dim.eq.3).and.(ne_nrh.gt.0)) then
+      call fix_left_hand_elements_3d
+      endif
+
       call gather_bc_info
 
       call set_periodicity(1)
@@ -235,6 +245,7 @@
       character(1)  exonam1(32)
       character(32) fname
       integer flag
+      logical e_file_exist,exo_file_exist
 	  
       read (5,'(A32)') fname
       len = ltrunc(fname,32)
@@ -245,6 +256,23 @@
 
       call blank  (exoname, 32)
       call chcopy (exoname,exonam1,len+4)
+ 
+      inquire(FILE=exoname, EXIST=exo_file_exist)
+
+      if ( .not. exo_file_exist) then
+
+	  call blank  (exonam1, 32)
+      call chcopy (exonam1,fname,32)
+      call chcopy (exonam1(len+1) ,'.e',2)
+
+      call blank  (exoname, 32)
+      call chcopy (exoname,exonam1,len+4)
+      inquire(FILE=exoname, EXIST=e_file_exist)
+
+      if ( .not. e_file_exist) then
+       write(6,*) "ERROR: input exodus file does not exist"	  
+      endif
+      endif
  
       if (flag.eq.1) then
       call blank  (fluidexo(1,iexo), 32)
@@ -733,11 +761,16 @@
       integer exo_to_nek_vert2D(9)                     ! quad9 to nek numbering
       data    exo_to_nek_vert2D   / 1, 3, 9, 7, 2, 6, 8, 4, 5  / 
 
+      integer exo_to_nek_left(9)
+      data    exo_to_nek_left /3,1,7,9,2,4,8,6,5/  ! LEFT HAND SIDE ELEMENT
+ 
       integer exo_to_nek_face3D(6)
       data    exo_to_nek_face3D  / 1, 5, 3, 6, 4, 2 /  ! symmetric face numbering
 
       integer exo_to_nek_face2D(4)
       data    exo_to_nek_face2D  / 1, 2, 3, 4 /        ! symmetric face numbering
+      integer exo_to_nek_face2D_left(4)
+      data    exo_to_nek_face2D_left  / 1,4,3,2 /        ! symmetric face numbering
 
       eacc_old = eacc
       nvert = num_nodes_per_elem(1)
@@ -746,14 +779,28 @@
       do iel=1,num_elem
         eacc = eacc + 1
 
-        if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
+        !if (eacc.gt.etot_est) write(6,*) 'ERROR: please increase estimate final total hex element number' 
 
-        do ivert =1,nvert
-          if (num_dim.eq.2) then
+        if (num_dim.eq.2) then
+                      
+          call r_or_l_detect_for_quad(iel,r_or_l(eacc))
+	  
+		  do ivert =1,nvert
+            if (r_or_l(eacc).eq.0) then
             jvert = exo_to_nek_vert2D(ivert)
-            xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
+			xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
             ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
-          else
+            else
+            jvert = exo_to_nek_left(ivert)
+			xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
+            ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
+            endif
+          enddo
+			
+ 
+        else 
+
+          do ivert =1,nvert
             jvert = exo_to_nek_vert3D(ivert)
             xm1(jvert,1,1,eacc)=x_exo(connect(nvert*(iel-1)+ivert))
             ym1(jvert,1,1,eacc)=y_exo(connect(nvert*(iel-1)+ivert))
@@ -762,8 +809,11 @@
             xm1(jvert,1,1,eacc)=xm1(jvert,1,1,eacc) + shiftvector(1)
             ym1(jvert,1,1,eacc)=ym1(jvert,1,1,eacc) + shiftvector(2)
             zm1(jvert,1,1,eacc)=zm1(jvert,1,1,eacc) + shiftvector(3)
-          endif
-        enddo
+
+          enddo
+
+       endif
+
       enddo
 
       write(6,'(A)') 'done :: Converting elements '
@@ -797,7 +847,11 @@
           iel = elem_list(i,iss)
           ifc = side_list(i,iss)
           if (num_dim.eq.2) then 
+            if (r_or_l(iel+eacc_old).eq.0) then
             jfc = exo_to_nek_face2D(ifc)
+            else
+            jfc = exo_to_nek_face2D_left(ifc)
+            endif
           else
             jfc = exo_to_nek_face3D(ifc)
           endif
@@ -1633,7 +1687,7 @@
       use SIZE
 
       character(80) hdr
-
+      integer nBCre2
 
       real*4 test
       data   test  / 6.54321 /
@@ -1642,11 +1696,13 @@
             
       num_elem = etot
       !num_dim = 3
+      nBCre2 = 1
+      if (num_elem.ne.eftot)  nBCre2  = 2
 
 !  Write the header
       call blank   (hdr,80)    
-      write(hdr,1) num_elem, num_dim, eftot
-    1 format('#v002',i9,i3,i9,' this is the hdr')
+      write(hdr,1) num_elem, num_dim, eftot, nBCre2
+    1 format('#v004',i16,i3,i16,i4,' hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 

@@ -3292,11 +3292,23 @@ c     open file & chk for byteswap & 8byte reals
 c      write(6,80) hdr
 c   80 format(a80)
 
-      read (hdr,1) version,nelgt,ndim,nelgv
-    1 format(a5,i9,i3,i9)
+    1 format(a5)
+    2 format(a5,i9,i3,i9)
+    3 format(a5,i16,i3,i16)
+
+      read (hdr,1) version
+
+      if ((version.eq.'#v001').or.(version.eq.'#v002')
+     $ .or.(version.eq.'#v003')) then 	    
+      read (hdr,2) version,nelgt,ndim,nelgv
+      else if(version.eq.'#v004') then
+      read (hdr,3) version,nelgt,ndim,nelgv
+      endif
+
       wdsizi=4
       if(version.eq.'#v002')wdsizi=8
       if(version.eq.'#v003')wdsizi=8
+      if(version.eq.'#v004')wdsizi=8
 
       call byte_read(test,1,ierr)
       if(ierr.ne.0) call exitti
