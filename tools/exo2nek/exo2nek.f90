@@ -841,7 +841,7 @@
       write(6,'(a)') 'Converting SideSets ...'
       do iss=1,num_side_sets
         write(6,'(a)') ''
-        write(6,'(a,i2,a)') 'Sideset ',idss(iss), ' ...'
+        write(6,'(a,i0,a)') 'Sideset ',idss(iss), ' ...'
 
         do i=1,num_sides_in_set(iss) 
           iel = elem_list(i,iss)
@@ -860,10 +860,10 @@
            bc (4,jfc,iel+eacc_old) = iexo
         enddo
 
-      write(6,'(A,I2)') 'done :: Sideset ',idss(iss)
+      write(6,'(a,i0)') 'done :: Sideset ',idss(iss)
       enddo
 
-      deallocate(x_exo,y_exo,z_exo,connect)
+      deallocate (x_exo,y_exo,z_exo,connect)
       deallocate (elem_list,side_list)
       deallocate ( idblk )
       deallocate ( num_nodes_per_elem )
@@ -1561,7 +1561,7 @@
       integer*8 iel,jfc
       integer bcID2
       
-      allocate (bcID (100)) ! assuming there is no more than 100 sidesets in total
+      allocate (bcID (1000)) ! assuming there is no more than 100 sidesets in total
 	  
       ibc = 0
 	  
@@ -1702,7 +1702,10 @@
 !  Write the header
       call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, eftot, nBCre2
+      write(hdr,1) num_elem, num_dim, eftot
     1 format('#v004',i16,i3,i16,i4,' hdr')
+!    1 format('#v002',i16,i3,i16,i4,' hdr')
+!    1 FORMAT('#v002',i9,i3,i9,' this is the hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 
