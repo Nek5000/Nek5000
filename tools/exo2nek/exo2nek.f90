@@ -1561,7 +1561,8 @@
       integer*8 iel,jfc
       integer bcID2
       
-      allocate (bcID (1000)) ! assuming there is no more than 100 sidesets in total
+      allocate (bcID (num_side_sets))
+!      allocate (bcID (1000))
 	  
       ibc = 0
 	  
