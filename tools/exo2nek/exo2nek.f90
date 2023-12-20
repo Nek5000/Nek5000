@@ -1702,7 +1702,7 @@
 !  Write the header
       call blank   (hdr,80)    
       write(hdr,1) num_elem, num_dim, eftot, nBCre2
-      write(hdr,1) num_elem, num_dim, eftot
+!      write(hdr,1) num_elem, num_dim, eftot
     1 format('#v004',i16,i3,i16,i4,' hdr')
 !    1 format('#v002',i16,i3,i16,i4,' hdr')
 !    1 FORMAT('#v002',i9,i3,i9,' this is the hdr')
