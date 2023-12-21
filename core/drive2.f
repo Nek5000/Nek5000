@@ -453,10 +453,10 @@ c  24    ierr = 1
 c  23  ENDIF
 c      call err_chk(ierr,' Cannot open SESSION.NAME!$')
 
-      len = ltrunc(path,132)
-      if(indx1(path1(len),'/',1).lt.1) then
-         call chcopy(path1(len+1),'/',1)
-      endif
+c      len = ltrunc(path,132)
+c      if(len.lt.1) then
+c         call chcopy(path1(1),'./',2)
+c      endif
 
 c      call bcast(SESSION,132*CSIZE)
 c      call bcast(PATH,132*CSIZE)
