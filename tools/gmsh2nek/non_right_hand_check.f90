@@ -21,39 +21,11 @@
 		  if (lefthand) call fix_left_hand(iel)
         enddo
       endif
+	  
       return
       end
 !--------------------------------------------------------------------
-      subroutine r_or_l_detect_for_quad(iel,rfflag)
-! detect if iquad is right-hand or left-hand, elements
-! borrowed from gmsh2nek
-      use SIZE
-      include 'exodusII.inc'
-
-      integer iel, rfflag
-      integer node(4)
-      real vec12(3),vec14(3),cz
-	  
-      nvert = num_nodes_per_elem(1)
-	  
-      do inode = 1,4
-         node(inode) = connect(nvert*(iel-1)+inode)
-      enddo
-
-      vec12(1) = x_exo(node(2)) - x_exo(node(1))
-      vec12(2) = y_exo(node(2)) - y_exo(node(1))
-
-      vec14(1) = x_exo(node(4)) - x_exo(node(1))
-      vec14(2) = y_exo(node(4)) - y_exo(node(1))
-	  
-      cz = vec12(1)*vec14(2) - vec12(2)*vec14(1)
-
-      if(cz.gt.0.0) rfflag = 0 ! right hand element
-      if(cz.lt.0.0) rfflag = 1 ! left hand element
-
-      return
-      end
-!--------------------------------------------------------------------
+!----------------------------------------------------------
       subroutine right_hand_check(ne_nrh)
 ! check if there is non-right hand elements (3D)
 ! because if mesh is from ICEM, and mirror operation is made in ICEM,
@@ -78,7 +50,7 @@
 	  
 !      write(6,*) 'using nek-method to do non-right-hand check? (y/n)'
 !      read (5,*) nek_check
- 
+! 
 !      if (nek_check.eq.'y') then
 !        do iel=1,num_elem
 !          if (num_dim.eq.2) then
@@ -88,6 +60,7 @@
 !          endif
 !       enddo
 !      endif
+
 
        ne_nrh = 0
         do iel=1,num_elem
@@ -102,7 +75,7 @@
       write(6,*) 'WARNING: non-right-hand elements detected!'
       write(6,*) 'number of non-right-hand elements: ', ne_nrh
       endif
-	  
+
       return 
       end
 !--------------------------------------------------------------------
@@ -132,7 +105,7 @@
             C3.LE.0.0.OR.C4.LE.0.0 ) THEN
        !write(6,*) 'WARNINGb: Detected non-right-handed element.'
        !write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1)
-        ne_nrh = ne_nrh + 1
+       ne_nrh = ne_nrh + 1
       ENDIF
 
       return
@@ -170,6 +143,7 @@
       !write(6,*) 'WARNINGb: Detected non-right-handed element.'
       !write(6,*) 'at location:',XYZ(1,1),',',XYZ(2,1),',',XYZ(3,1)
        ne_nrh = ne_nrh + 1
+
       endif
 
       return

@@ -44,8 +44,8 @@ module SIZE
 	  
       integer quadratic_option
 	  
-	  
-	  
+      integer,save,allocatable,dimension(:)     ::r_or_l ! right-hand or left-hand 
+
 !
 !
 ! NEK CORE variables:
