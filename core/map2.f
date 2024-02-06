@@ -191,6 +191,10 @@ c-----------------------------------------------------------------------
           tol = tol / 10.0;
           call find_con(wk,size(wk),tol,ierr)
         endif
+        if(ierr.ne.0) then
+          tol = tol / 100.0;
+          call find_con(wk,size(wk),tol,ierr)
+        endif
         call err_chk(ierr,'Connectivity calculation failed! '//
      &    'Try tightening mesh::connectivityTol$')
       endif
@@ -229,8 +233,8 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,0,loglevel,ierr)
+      call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
+     $  fluid_partitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -282,8 +286,8 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  0,0,loglevel,ierr)
+         call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
+     $                  solid_partitioner,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel

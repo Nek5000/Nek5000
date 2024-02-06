@@ -48,7 +48,8 @@ C
 
 c     Set default values for parCon and parRSB
       connectivityTol=0.2
-      meshPartitioner=3 ! HYBRID (RSB+RCB)
+      fluid_partitioner=0 ! RSB
+      solid_partitioner=1 ! RCB
 
 c     Use same tolerances for all fields 
       restol(0) = param(22) ! mesh
