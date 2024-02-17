@@ -226,6 +226,7 @@ C----------------------------------------------------------------------
       include 'TOTAL'
       include 'LVLSET'
       include 'ORTHOT'
+      include 'SVV'
 
       common /lsscratch/ ta(lx1,ly1,lz1,lelt),
      $                   tb(lx1,ly1,lz1,lelt) 
@@ -254,6 +255,10 @@ C----------------------------------------------------------------------
           write(name4t,'(A4)')"CLSR"
         elseif(ifield.eq.ifld_tlsr)then
           write(name4t,'(A4)')"TLSR"
+        endif
+
+        if(ifsvv(ifield-1).and.ifupwindsvv(ifield-1))then
+          call setUpwindSVV(clsnx,clsny,clsnz)
         endif
 
         isd = 1
@@ -452,15 +457,19 @@ c---------------------------------------------------------------
       return
       end 
 c---------------------------------------------------------------
-      real function heaviside(ix,iy,iz,iel,phi)
+      real function heaviside(ix,iy,iz,iel,phi,epsin)
       include 'SIZE'
       include 'LVLSET'
 
       integer ix,iy,iz,iel
 
-      real eps, deltael, phi
+      real eps, deltael, phi, epsin
 
-      eps = deltael(ix,iy,iz,iel)*eps_cls
+      if(epsin.eq.0.0)then
+        eps = deltael(ix,iy,iz,iel)*eps_cls
+      else
+        eps = deltael(ix,iy,iz,iel)*epsin
+      endif
       heaviside = 0.5*(tanh(phi/(2.0*eps))+1.0)
 
       return
