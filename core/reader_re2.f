@@ -576,8 +576,8 @@ c-----------------------------------------------------------------------
       if (nid.eq.0) then
          call nek_file_open(MPI_COMM_NULL,re2fle,0,0,1,re2_h,ierr)
          if(ierr.ne.0) goto 100
-        
-         call nek_file_read(re2_h,sizeof(hdr),int(0,8),hdr,ierr)
+
+         call nek_file_read(re2_h,int(sizeof(hdr),8),int(0,8),hdr,ierr)
          if(ierr.ne.0) goto 100
 
          read (hdr,'(a5)') version
@@ -587,9 +587,8 @@ c-----------------------------------------------------------------------
             read (hdr,1) version,nelgt,ldimr,nelgv
          endif    
    1     format(a5,i9,i3,i9)
-
          if (ifverbose) write (6,'(a,a80)') ' hdr:', hdr
-                        
+
          wdsizi = 4
          if(version.eq.'#v002') wdsizi = 8
          if(version.eq.'#v003') wdsizi = 8
@@ -608,8 +607,8 @@ c-----------------------------------------------------------------------
            endif
          endif
 
-         call nek_file_read(re2_h,sizeof(test),int(sizeof(hdr),8),
-     $                      test,ierr)
+         call nek_file_read(re2_h,int(sizeof(test),8),
+     $                      int(sizeof(hdr),8),test,ierr)
          if(ierr.ne.0) goto 100
          ifbswap = if_byte_swap_test(test,ierr)
          if(ierr.ne.0) goto 100
@@ -617,6 +616,7 @@ c-----------------------------------------------------------------------
       endif
  
  100  call err_chk(ierr,'Error reading re2 header$')
+
 
       call bcast(wdsizi, ISIZE)
       call bcast(ifbswap,LSIZE)
