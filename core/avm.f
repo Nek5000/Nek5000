@@ -7,6 +7,7 @@ c---------------------------------------------------------------
         avm_ncut(i) = 1
         avm_c1(i) = 1.0
         ifcont(i) = .false.
+        ifupwindavm(i) = .false.
       enddo
 
       return
@@ -208,3 +209,104 @@ c            dd = (volavg**dinv)/(lx1-1)
       deltaf = dx(ix,iy,iz,iel)
 
       end 
+c---------------------------------------------------------------
+      subroutine axhelm_avm (au,u,imsh,isd)
+      implicit none  
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'CTIMER'
+      include 'TSTEP'
+      include 'AVM'
+C
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+
+      integer imsh,isd,iz,nel,ntot,nxy,nyz,nxz,nxyz
+C
+      REAL           AU    (LX1,LY1,LZ1,1)
+     $ ,             U     (LX1,LY1,LZ1,1)
+     $ ,             HELM1 (LX1,LY1,LZ1,1)
+      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
+     $ ,             DUDS  (LX1,LY1,LZ1)
+     $ ,             DUDT  (LX1,LY1,LZ1)
+     $ ,             TMP1  (LX1,LY1,LZ1)
+     $ ,             TMP2  (LX1,LY1,LZ1)
+     $ ,             TMP3  (LX1,LY1,LZ1)
+      real dudr,duds,dudt,tmp1,tmp2,tmp3
+
+      REAL           TM1   (LX1,LY1,LZ1)
+      REAL           TM2   (LX1,LY1,LZ1)
+      REAL           TM3   (LX1,LY1,LZ1)
+      REAL           DUAX  (LX1)
+      REAL           YSM1  (LX1)
+      EQUIVALENCE    (DUDR,TM1),(DUDS,TM2),(DUDT,TM3)
+
+      integer e
+
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
+
+      nel=nelt
+      if (imsh.eq.1) nel=nelv
+
+      NXY=lx1*ly1
+      NYZ=ly1*lz1
+      NXZ=lx1*lz1
+      NXYZ=lx1*ly1*lz1
+      NTOT=NXYZ*NEL
+
+      do 100 e=1,nel
+        IF (ldim.EQ.2) THEN
+           call mxm  (dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+           call mxm  (u(1,1,1,e),lx1,dytm1,ly1,duds,ly1)
+           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+           endif
+           call col2 (tmp1,avm_diff(1,1,1,e),nxyz)
+           call col2 (tmp2,avm_diff(1,1,1,e),nxyz)
+           call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+        else
+           call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+           do 10 iz=1,lz1
+              call mxm(u(1,1,iz,e),lx1,dytm1,ly1,duds(1,1,iz),ly1)
+   10      continue
+           call mxm     (u(1,1,1,e),nxy,dztm1,lz1,dudt,lz1)
+           call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp1,dudt,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudt,g6m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
+           endif
+           call col2 (tmp1,avm_diff(1,1,1,e),nxyz)
+           call col2 (tmp2,avm_diff(1,1,1,e),nxyz)
+           call col2 (tmp3,avm_diff(1,1,1,e),nxyz)
+           call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
+           do 20 iz=1,lz1
+              call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
+   20      continue
+           call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+           call add2 (au(1,1,1,e),tm3,nxyz)
+        endif
+C
+ 100  continue
+
+      return
+      end

@@ -2,10 +2,11 @@ c
 c     AVM Parameters
 c
       real avm_c1(ldimt)
-      common /avm_r/ avm_c1
+			real avm_diff(lx1,ly1,lz1,lelv)
+      common /avm_r/ avm_c1, avm_diff
 
-      logical ifcont(ldimt)
-      common /avm_l/ ifcont
+      logical ifcont(ldimt),ifupwindavm(ldimt)
+      common /avm_l/ ifcont, ifupwindavm
       
       integer avm_ncut(ldimt)
       common /avm_i/ avm_ncut

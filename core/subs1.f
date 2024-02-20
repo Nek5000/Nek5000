@@ -1021,6 +1021,7 @@ c     INTLOC =      integration type
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
+      include 'AVM'
 
       real h1(1),h2(1)
 
@@ -1046,6 +1047,11 @@ c        endif
          CALL RZERO (H2,NTOT1)
       endif
 
+      if(ifavm(ifield-1))then
+        do i=1,ntot1
+          avm_diff(i,1,1,1) = avm_vdiff(i,1,1,1,vx,vy,vz)             
+        enddo
+      endif
       if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
       return
       end
@@ -1071,10 +1077,6 @@ c     IF (IFSTRS .AND. IFIELD.EQ.1) CALL STNRINV ! don't call! pff, 2007
          CALL USERVP  (I,J,K,IELG)
          VDIFF (I,J,K,IEL,IFIELD) = UDIFF
          VTRANS(I,J,K,IEL,IFIELD) = UTRANS
-         if(ifavm(ifield-1))then
-           VDIFF(I,J,K,IEL,IFIELD) = VDIFF(I,J,K,IEL,IFIELD)+
-     $                               avm_vdiff(I,J,K,IEL,vx,vy,vz)             
-         endif
  10   CONTINUE
       return
       end
