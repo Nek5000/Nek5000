@@ -248,6 +248,9 @@ C
 
       integer e
 
+      common /avmtemp/ avmau(lx1,ly1,lz1,lelt)
+      real avmau
+
       naxhm = naxhm + 1
       etime1 = dnekclock()
 
@@ -259,6 +262,8 @@ C
       NXZ=lx1*lz1
       NXYZ=lx1*ly1*lz1
       NTOT=NXYZ*NEL
+
+      call rzero(avmau,ntot)
 
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
@@ -274,8 +279,8 @@ C
            call col2 (tmp2,avm_diff(1,1,1,e),nxyz)
            call mxm  (dxtm1,lx1,tmp1,lx1,tm1,nyz)
            call mxm  (tmp2,lx1,dym1,ly1,tm2,ly1)
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
+           call add2 (avmau(1,1,1,e),tm1,nxyz)
+           call add2 (avmau(1,1,1,e),tm2,nxyz)
         else
            call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            do 10 iz=1,lz1
@@ -301,12 +306,14 @@ C
               call mxm(tmp2(1,1,iz),lx1,dym1,ly1,tm2(1,1,iz),ly1)
    20      continue
            call mxm  (tmp3,nxy,dzm1,lz1,tm3,lz1)
-           call add2 (au(1,1,1,e),tm1,nxyz)
-           call add2 (au(1,1,1,e),tm2,nxyz)
-           call add2 (au(1,1,1,e),tm3,nxyz)
+           call add2 (avmau(1,1,1,e),tm1,nxyz)
+           call add2 (avmau(1,1,1,e),tm2,nxyz)
+           call add2 (avmau(1,1,1,e),tm3,nxyz)
         endif
 C
  100  continue
+
+      call add2(au,avmau,ntot)
 
       return
       end
