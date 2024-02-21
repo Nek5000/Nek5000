@@ -21,6 +21,7 @@ C
 
       include 'ORTHOT'
       include 'SVV'
+      include 'AVM'
 
       if (ifdgfld(ifield)) then
          call cdscal_dg(igeom)
@@ -58,9 +59,11 @@ C
          if (ifaxis.and.ifaziv.and.ifield.eq.2) isd = 2
 c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          
-         if(ifsvv(ifield-1).and.ifupwindsvv(ifield-1))then
-           call setUpwindSVV(vx,vy,xz)
+         if((ifsvv(ifield-1).and.ifupwindsvv(ifield-1)).or.
+     $        (ifavm(ifield-1).and.ifupwindavm(ifield-1)))then
+           call setUpwindSVVAVM(vx,vy,xz)
          endif
+
          do 1000 iter=1,nmxnl ! iterate for nonlin. prob. (e.g. radiation b.c.)
 
          intype = 0

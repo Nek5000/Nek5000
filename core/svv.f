@@ -733,7 +733,7 @@ C----------------------------------------------------------------------
       return
       end
 C----------------------------------------------------------------------     
-      subroutine setUpwindSVV(cx,cy,cz)
+      subroutine setUpwindSVVAVM(cx,cy,cz)
       implicit none
       include 'SIZE'
       include 'TOTAL'

@@ -227,6 +227,7 @@ C----------------------------------------------------------------------
       include 'LVLSET'
       include 'ORTHOT'
       include 'SVV'
+      include 'AVM'
 
       common /lsscratch/ ta(lx1,ly1,lz1,lelt),
      $                   tb(lx1,ly1,lz1,lelt) 
@@ -257,8 +258,9 @@ C----------------------------------------------------------------------
           write(name4t,'(A4)')"TLSR"
         endif
 
-        if(ifsvv(ifield-1).and.ifupwindsvv(ifield-1))then
-          call setUpwindSVV(clsnx,clsny,clsnz)
+        if((ifsvv(ifield-1).and.ifupwindsvv(ifield-1)).or. 
+     $       (ifavm(ifield-1).and.ifupwindavm(ifield-1)))then
+              call setUpwindSVVAVM(clsnx,clsny,clsnz)
         endif
 
         isd = 1

@@ -222,6 +222,7 @@ c---------------------------------------------------------------
       include 'CTIMER'
       include 'TSTEP'
       include 'AVM'
+      include 'SVV'
 C
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
@@ -251,6 +252,13 @@ C
       common /avmtemp/ avmau(lx1,ly1,lz1,lelt)
       real avmau
 
+      common /svvtemp2/ gux(lx1,ly1,lz1,lelt),
+     $                  guy(lx1,ly1,lz1,lelt),
+     $                  guz(lx1,ly1,lz1,lelt),
+     $                  gdot(lx1,ly1,lz1,lelt)
+      real gux,guy,guz,gdot
+      real svmin,vlmin
+
       naxhm = naxhm + 1
       etime1 = dnekclock()
 
@@ -265,11 +273,32 @@ C
 
       call rzero(avmau,ntot)
 
+      if(ifupwindavm(ifield-1))then
+        call gradm1(gux,guy,guz,u)
+        call svvbdryfix
+
+        if(if3d)then
+          call vdot3(gdot,gux,guy,guz,svvnx,svvny,svvnz,ntot)
+        else
+          call vdot2(gdot,gux,guy,svvnx,svvny,ntot)
+        endif
+      endif
+
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
-           call mxm  (dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+          if(ifupwindavm(ifield-1))then
+            svmin = vlmin(svvmask(1,1,1,e),nxyz)
+            if(svmin.eq.1.0)then
+              call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(duds,svvns(1,1,1,e),gdot(1,1,1,e),nxyz)
+            else
+              goto 1990
+            endif
+            goto 1991
+          endif
+1990       call mxm  (dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            call mxm  (u(1,1,1,e),lx1,dytm1,ly1,duds,ly1)
-           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+1991       call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
            if (ifdfrm(e)) then
               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
@@ -282,12 +311,23 @@ C
            call add2 (avmau(1,1,1,e),tm1,nxyz)
            call add2 (avmau(1,1,1,e),tm2,nxyz)
         else
-           call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+          if(ifupwindavm(ifield-1))then
+            svmin = vlmin(svvmask(1,1,1,e),nxyz)
+            if(svmin.eq.1.0)then
+              call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(duds,svvns(1,1,1,e),gdot(1,1,1,e),nxyz)
+              call col3(dudt,svvnt(1,1,1,e),gdot(1,1,1,e),nxyz)
+            else
+              goto 1992
+            endif
+            goto 1993
+          endif
+1992       call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
            do 10 iz=1,lz1
               call mxm(u(1,1,iz,e),lx1,dytm1,ly1,duds(1,1,iz),ly1)
    10      continue
            call mxm     (u(1,1,1,e),nxy,dztm1,lz1,dudt,lz1)
-           call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+1993       call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
            if (ifdfrm(e)) then
