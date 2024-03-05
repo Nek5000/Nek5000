@@ -1,9 +1,5 @@
 #include "gslib.h"
 
-#if defined(PARRSB)
-#include "parRSB.h"
-#endif
-
 #define MAXNV 8 /* maximum number of vertices per element */
 
 typedef struct {
@@ -12,10 +8,14 @@ typedef struct {
   int proc;
 } edata;
 
-#ifdef PARMETIS
+#if defined(PARRSB)
+#include "parRSB.h"
+#endif
 
+#ifdef PARMETIS
 #include "defs.h"
 #include "parmetis.h"
+#endif
 
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
                       comm_ext ce) {
@@ -150,7 +150,331 @@ end:
 err:
   return 1;
 }
-#endif
+#endif // PARMETIS
+
+#if defined(ZOLTAN)
+#include "zoltan.h"
+
+typedef struct {
+  uint num_vertices;
+  uint num_neighbors; // Is this needed?
+  ZOLTAN_ID_TYPE *vertex_ids;
+  int *neighbor_index;
+  ZOLTAN_ID_TYPE *neighbor_ids;
+  int *neighbor_procs;
+} graph_t;
+
+static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
+  // Calculate the total number of elements and the offset of elements
+  // for each process.
+  slong out[2], wrk[2], in = nelt;
+  comm_scan(out, c, gs_long, gs_add, &in, 1, wrk);
+  ulong start = out[0], nelg = out[1];
+
+  // Fill the vertices array with information about the vertices.
+  struct vertex_t {
+    ulong vid, eid;
+    uint dest, np;
+  };
+
+  struct array vertices;
+  {
+    array_init(struct vertex_t, &vertices, nelt * nv);
+    struct vertex_t vertex;
+    for (uint i = 0; i < nelt; i++) {
+      for (uint j = 0; j < nv; j++) {
+        vertex.vid = vl[i * nv + j];
+        vertex.eid = i + start + 1;
+        vertex.dest = vertex.vid % c->np;
+        array_cat(struct vertex_t, &vertices, &vertex, 1);
+      }
+    }
+    assert(vertices.n == nelt * nv);
+  }
+
+  // Send vertices to the correct process so we can match them up.
+  struct crystal cr;
+  {
+    crystal_init(&cr, c);
+    sarray_transfer(struct vertex_t, &vertices, dest, 1, &cr);
+  }
+
+  buffer bfr;
+  {
+    buffer_init(&bfr, 1024);
+    sarray_sort_2(struct vertex_t, vertices.ptr, vertices.n, vid, 1, eid, 1,
+                  &bfr);
+  }
+
+  // Find all the elements shared by a given vertex.
+  struct array neighbors;
+  {
+    array_init(struct vertex_t, &neighbors, vertices.n);
+
+    struct vertex_t *pv = (struct vertex_t *)vertices.ptr;
+    uint vn = vertices.n;
+    for (uint i = 0; i < vn;) {
+      uint e = i;
+      while (e < vn && pv[i].vid == pv[e].vid)
+        e++;
+
+      for (uint j = i; j < e; j++) {
+        struct vertex_t v = pv[j];
+        for (uint k = i; k < e; k++) {
+          v.vid = pv[k].eid;
+          v.np = pv[k].dest;
+          array_cat(struct vertex_t, &neighbors, &v, 1);
+        }
+      }
+
+      i = e;
+    }
+  }
+  array_free(&vertices);
+
+  {
+    sarray_transfer(struct vertex_t, &neighbors, dest, 0, &cr);
+    sarray_sort_2(struct vertex_t, neighbors.ptr, neighbors.n, eid, 1, vid, 1,
+                  &bfr);
+  }
+  crystal_free(&cr);
+  buffer_free(&bfr);
+
+  // Compre the neighbors array to find the number of neighbors for each
+  // element.
+  struct neighbor_t {
+    ulong nid, eid;
+    uint np;
+  };
+
+  struct array compressed;
+  {
+    array_init(struct neighbor_t, &compressed, neighbors.n);
+
+    struct vertex_t *pn = (struct vertex_t *)neighbors.ptr;
+    uint nn = neighbors.n;
+    for (uint i = 0; i < nn;) {
+      uint e = i;
+      while (e < nn && pn[i].eid == pn[e].eid && pn[i].vid == pn[e].vid)
+        e++;
+
+      // Sanity check.
+      for (uint j = i + 1; j < e; j++)
+        assert(pn[i].np == pn[j].np);
+
+      // Add to compressed array.
+      struct neighbor_t nbr;
+      nbr.eid = pn[i].eid;
+      nbr.nid = pn[i].vid;
+      nbr.np = pn[i].np;
+      if (nbr.eid != nbr.nid)
+        array_cat(struct neighbor_t, &compressed, &nbr, 1);
+      i = e;
+    }
+  }
+  array_free(&neighbors);
+
+  graph_t *graph = tcalloc(graph_t, 1);
+  graph->num_vertices = nelt;
+  graph->num_neighbors = compressed.n;
+
+  graph->vertex_ids = tcalloc(ZOLTAN_ID_TYPE, nelt);
+  for (uint i = 0; i < nelt; i++)
+    graph->vertex_ids[i] = i + start + 1;
+
+  graph->neighbor_index = tcalloc(int, nelt + 1);
+  {
+    struct neighbor_t *pc = (struct neighbor_t *)compressed.ptr;
+    uint count = 0;
+    for (uint i = 0; i < compressed.n;) {
+      uint e = i;
+      while (e < compressed.n && pc[i].eid == pc[e].eid)
+        e++;
+      count++;
+      graph->neighbor_index[count] = e;
+      i = e;
+    }
+    assert(count == nelt);
+  }
+
+  graph->neighbor_ids = tcalloc(ZOLTAN_ID_TYPE, compressed.n);
+  graph->neighbor_procs = tcalloc(int, compressed.n);
+  {
+    struct neighbor_t *pc = (struct neighbor_t *)compressed.ptr;
+    for (uint i = 0; i < compressed.n; i++) {
+      graph->neighbor_ids[i] = pc[i].nid;
+      graph->neighbor_procs[i] = pc[i].np;
+    }
+  }
+
+  array_free(&compressed);
+
+  return graph;
+}
+
+static void graph_destroy(graph_t **graph_) {
+  graph_t *graph = *graph_;
+  free(graph->vertex_ids);
+  free(graph->neighbor_index);
+  free(graph->neighbor_ids);
+  free(graph->neighbor_procs);
+  free(graph);
+  graph_ = NULL;
+}
+
+static int get_number_of_vertices(void *data, int *ierr) {
+  graph_t *graph = (graph_t *)data;
+  *ierr = ZOLTAN_OK;
+  return graph->num_vertices;
+}
+
+static void get_vertex_list(void *data, int size_gid, int size_lid,
+                            ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                            int wgt_dim, float *obj_wgts, int *ierr) {
+  graph_t *graph = (graph_t *)data;
+  *ierr = ZOLTAN_OK;
+  for (int i = 0; i < graph->num_vertices; i++) {
+    global_id[i] = graph->vertex_ids[i];
+    local_id[i] = i;
+  }
+}
+
+static void get_edge_size_list(void *data, int size_gid, int size_lid,
+                               int num_obj, ZOLTAN_ID_PTR global_id,
+                               ZOLTAN_ID_PTR local_id, int *num_edges,
+                               int *ierr) {
+  graph_t *graph = (graph_t *)data;
+  *ierr = ZOLTAN_OK;
+
+  if (size_gid != 1 || size_lid != 1 || num_obj != graph->num_vertices) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (int i = 0; i < num_obj; i++) {
+    int id = local_id[i];
+    num_edges[i] = graph->neighbor_index[id + 1] - graph->neighbor_index[id];
+  }
+}
+
+static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
+                          ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                          int *num_edges, ZOLTAN_ID_PTR nbr_global_id,
+                          int *nbr_procs, int wgt_dim, float *ewgts,
+                          int *ierr) {
+  graph_t *graph = (graph_t *)data;
+  *ierr = ZOLTAN_OK;
+
+  if ((size_gid != 1) || (size_lid != 1) || (wgt_dim != 0) ||
+      (num_obj != graph->num_vertices)) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (int i = 0; i < num_obj; i++) {
+    int id = local_id[i];
+    int n = graph->neighbor_index[id + 1] - graph->neighbor_index[id];
+    if (num_edges[i] != n) {
+      *ierr = ZOLTAN_FATAL;
+      return;
+    }
+
+    int offset = graph->neighbor_index[id];
+    for (int j = 0; j < n; j++) {
+      nbr_global_id[offset + j] = graph->neighbor_ids[offset + j];
+      nbr_procs[offset + j] = graph->neighbor_procs[offset + j];
+    }
+  }
+}
+
+int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm) {
+  float ver;
+  int rc = Zoltan_Initialize(0, NULL, &ver);
+
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  if (rc != ZOLTAN_OK) {
+    if (rank == 0) {
+      fprintf(stderr, "ERROR: Zoltan_Initialize failed!\n");
+      fflush(stderr);
+    }
+    exit(EXIT_FAILURE);
+  }
+
+  struct Zoltan_Struct *zz = Zoltan_Create(comm);
+  // General parameters.
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+
+  // Graph parameters.
+  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2");
+
+  // We are going to create the dual graph by hand and input it to
+  // Zoltan.
+  struct comm c;
+  comm_init(&c, comm);
+  graph_t *graph = graph_create(vl, nel, nv, &c);
+
+  // Query functions.
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_vertices, graph);
+  Zoltan_Set_Obj_List_Fn(zz, get_vertex_list, graph);
+  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_edge_size_list, graph);
+  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, graph);
+
+  if (rank == 0) {
+    printf("Running Zoltan ... ");
+    fflush(stdout);
+  }
+
+  int changes, num_gid_entries, num_lid_entries, num_import, num_export;
+  ZOLTAN_ID_PTR import_global_ids, import_local_ids, export_global_ids,
+      export_local_ids;
+  int *import_procs, *import_to_part, *export_procs, *export_to_part;
+
+  // Now we can partition the graph.
+  rc = Zoltan_LB_Partition(zz, &changes, &num_gid_entries, &num_lid_entries,
+                           &num_import, &import_global_ids, &import_local_ids,
+                           &import_procs, &import_to_part, &num_export,
+                           &export_global_ids, &export_local_ids, &export_procs,
+                           &export_to_part);
+
+  if (rc != ZOLTAN_OK) {
+    if (rank == 0) {
+      fprintf(stderr, "ERROR: Zoltan_LB_Partition failed!\n");
+      fflush(stderr);
+    }
+    exit(EXIT_FAILURE);
+  }
+
+  if (rank == 0) {
+    printf("done.\n");
+    fflush(stdout);
+  }
+
+  for (uint i = 0; i < graph->num_vertices; i++)
+    part[i] = rank;
+  for (uint i = 0; i < num_export; i++)
+    part[export_local_ids[i]] = export_to_part[i];
+
+  Zoltan_LB_Free_Part(&import_global_ids, &import_local_ids, &import_procs,
+                      &import_to_part);
+  Zoltan_LB_Free_Part(&export_global_ids, &export_local_ids, &export_procs,
+                      &export_to_part);
+  Zoltan_Destroy(&zz);
+
+  graph_destroy(&graph);
+
+  return 0;
+err:
+  return 1;
+}
+#endif // ZOLTAN
 
 void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int i, j;
