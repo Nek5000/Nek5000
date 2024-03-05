@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+VER=3.901
+
+if [ "$1" == "clean" ]; then
+  rm -rf v$VER.tar.gz Zoltan lib include 2>/dev/null
+  exit 0
+fi
+
+if [ -f ./lib/libzoltan.a ]; then
+  exit 0
+fi
+
+wget --no-check-certificate -O v$VER.tar.gz https://github.com/sandialabs/Zoltan/archive/refs/tags/v$VER.tar.gz
+rm -rf Zoltan 2>/dev/null
+mkdir Zoltan
+tar -zxvf v$VER.tar.gz -C ./Zoltan --strip-components=1
+
+install_dir=`pwd`
+parmetis_dir=`pwd`/../parMETIS
+
+cd Zoltan
+mkdir build
+cd build
+
+set -x
+CC=$CC CXX=mpicxx ../configure \
+  --prefix=${install_dir} \
+  --enable-mpi \
+  --with-mpi-compilers \
+  --with-id-type=ulong \
+  --with-gnumake \
+  --with-parmetis \
+  --with-parmetis-incdir="${parmetis_dir}/include" \
+  --with-parmetis-libdir="${parmetis_dir}/lib"
+set +x
+
+make everything
+make install
