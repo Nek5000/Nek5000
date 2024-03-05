@@ -9,11 +9,10 @@ if [ "$1" == "clean" ]; then
 fi
 
 if [ -f ./lib/libparmetis.a ]; then
-echo h
-#  exit 0
+  exit 0
 fi
 
-wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
+wget --no-check-certificate -O v$VER.tar.gz https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/parmetis/4.0.3-4/parmetis_4.0.3.orig.tar.gz
 
 rm -rf parMETIS 2>/dev/null
 mkdir parMETIS
@@ -26,7 +25,7 @@ patch Makefile < ../p_makefile
 make config cc=`which $CC` prefix=`pwd`/..
 set +x
 mkdir -p ../include
-make install 
+make install
 find . -name "libmetis.a" -exec cp {} ../lib \;
 cp ./metis/include/metis.h ../include
 cp ./libparmetis/defs.h ../include
