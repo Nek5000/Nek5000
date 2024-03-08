@@ -135,3 +135,6 @@ c
 
       character*3 bctyps(numsts)
       common /inputmc/ bctyps
+
+      integer out_mask(lelt)
+      common /cbout_mask/ out_mask
