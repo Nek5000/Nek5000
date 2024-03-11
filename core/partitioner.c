@@ -8,14 +8,9 @@ typedef struct {
   int proc;
 } edata;
 
-#if defined(PARRSB)
-#include "parRSB.h"
-#endif
-
 #ifdef PARMETIS
 #include "defs.h"
 #include "parmetis.h"
-#endif
 
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
                       comm_ext ce) {
@@ -627,26 +622,22 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   return 0;
 }
 
-#define fpartmesh FORTRAN_UNPREFIXED(fpartmesh, FPARTMESH)
+#if defined(PARRSB)
+#include "parRSB.h"
+#endif
 
+#define fpartmesh FORTRAN_UNPREFIXED(fpartmesh, FPARTMESH)
 void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
                const int *const lelm, const int *const nve,
                const int *const fcomm, const int *const fpartitioner,
                const int *const falgo, const int *const loglevel, int *rtval) {
+  int nel = *nell;
+  int nv = *nve;
+  int lelt = *lelm;
+  int partitioner = *fpartitioner;
+  int algo = *falgo;
+
   struct comm comm;
-
-  int nel, nv, lelt, partitioner, algo;
-  int e, n;
-  int count, ierr, ibuf;
-  int *part;
-  int opt[3];
-
-  lelt = *lelm;
-  nel = *nell;
-  nv = *nve;
-  partitioner = *fpartitioner;
-  algo = *falgo;
-
 #if defined(MPI)
   comm_ext cext = MPI_Comm_f2c(*fcomm);
 #else
@@ -654,8 +645,8 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
-  ierr = 1;
-  part = (int *)malloc(lelt * sizeof(int));
+  int ierr = 1;
+  int *part = (int *)malloc(lelt * sizeof(int));
 #if defined(PARRSB)
   parrsb_options options = parrsb_default_options;
   options.partitioner = partitioner;
@@ -678,6 +669,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 
 #elif defined(PARMETIS)
   if (partitioner == 8) {
+    int opt[3];
     opt[0] = 1;
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
@@ -701,7 +693,6 @@ err:
 }
 
 #define fpartmesh_greedy FORTRAN_UNPREFIXED(fpartmesh_greedy, FPARTMESH_GRREDY)
-
 void fpartmesh_greedy(int *const nel2, long long *const el2,
                       long long *const vl2, const int *const nel1,
                       const long long *const vl1, const int *const lelm_,
@@ -737,7 +728,6 @@ err:
 }
 
 #define fprintpartstat FORTRAN_UNPREFIXED(printpartstat, PRINTPARTSTAT)
-
 void fprintpartstat(long long *vtx, int *nel, int *nv, int *comm) {
 
 #if defined(MPI)
