@@ -66,15 +66,12 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
   }
 
   color = MPI_UNDEFINED;
-  if (nel > 0)
-    color = 1;
+  if (nel > 0) color = 1;
   MPI_Comm_split(ce, color, 0, &comms);
-  if (color == MPI_UNDEFINED)
-    goto end;
+  if (color == MPI_UNDEFINED) goto end;
 
   comm_init(&comm, comms);
-  if (comm.id == 0)
-    printf("Running parMETIS ... "), fflush(stdout);
+  if (comm.id == 0) printf("Running parMETIS ... "), fflush(stdout);
 
   nelarray = (long long *)malloc(comm.np * sizeof(long long));
   MPI_Allgather(&nell, 1, MPI_LONG_LONG_INT, nelarray, 1, MPI_LONG_LONG_INT,
@@ -87,13 +84,11 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
 
   evlptr = (idx_t *)malloc((nel + 1) * sizeof(idx_t));
   evlptr[0] = 0;
-  for (i = 0; i < nel; ++i)
-    evlptr[i + 1] = evlptr[i] + nv;
+  for (i = 0; i < nel; ++i) evlptr[i + 1] = evlptr[i] + nv;
   nelsm = elmdist[comm.id + 1] - elmdist[comm.id];
   evlptr[nelsm]--;
 
-  if (nv == 8)
-    ncommonnodes = 4;
+  if (nv == 8) ncommonnodes = 4;
   nparts = comm.np;
 
   options[0] = 1;
@@ -108,12 +103,10 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
   }
 
   tpwgts = (real_t *)malloc(ncon * nparts * sizeof(real_t));
-  for (i = 0; i < ncon * nparts; ++i)
-    tpwgts[i] = 1. / (real_t)nparts;
+  for (i = 0; i < ncon * nparts; ++i) tpwgts[i] = 1. / (real_t)nparts;
 
   if (options[3] == PARMETIS_PSR_UNCOUPLED)
-    for (i = 0; i < nel; ++i)
-      part_[i] = comm.id;
+    for (i = 0; i < nel; ++i) part_[i] = comm.id;
 
   comm_barrier(&comm);
   time0 = comm_time();
@@ -123,11 +116,9 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
                                &ubvec, options, &edgecut, part_, &comm.c);
 
   time = comm_time() - time0;
-  if (comm.id == 0)
-    printf("%lf sec\n", time), fflush(stdout);
+  if (comm.id == 0) printf("%lf sec\n", time), fflush(stdout);
 
-  for (i = 0; i < nel; ++i)
-    part[i] = part_[i];
+  for (i = 0; i < nel; ++i) part[i] = part_[i];
 
   free(elmdist);
   free(evlptr);
@@ -138,8 +129,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
 end:
   comm_init(&comm, ce);
   comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf);
-  if (ierrm != METIS_OK)
-    goto err;
+  if (ierrm != METIS_OK) goto err;
   return 0;
 
 err:
@@ -210,8 +200,7 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     uint vn = vertices.n;
     for (uint i = 0; i < vn;) {
       uint e = i;
-      while (e < vn && pv[i].vid == pv[e].vid)
-        e++;
+      while (e < vn && pv[i].vid == pv[e].vid) e++;
 
       for (uint j = i; j < e; j++) {
         struct vertex_t v = pv[j];
@@ -250,12 +239,10 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     uint nn = neighbors.n;
     for (uint i = 0; i < nn;) {
       uint e = i;
-      while (e < nn && pn[i].eid == pn[e].eid && pn[i].vid == pn[e].vid)
-        e++;
+      while (e < nn && pn[i].eid == pn[e].eid && pn[i].vid == pn[e].vid) e++;
 
       // Sanity check.
-      for (uint j = i + 1; j < e; j++)
-        assert(pn[i].np == pn[j].np);
+      for (uint j = i + 1; j < e; j++) assert(pn[i].np == pn[j].np);
 
       // Add to compressed array.
       struct neighbor_t nbr;
@@ -274,8 +261,7 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
   graph->num_neighbors = compressed.n;
 
   graph->vertex_ids = tcalloc(ZOLTAN_ID_TYPE, nelt);
-  for (uint i = 0; i < nelt; i++)
-    graph->vertex_ids[i] = i + start + 1;
+  for (uint i = 0; i < nelt; i++) graph->vertex_ids[i] = i + start + 1;
 
   graph->neighbor_index = tcalloc(int, nelt + 1);
   {
@@ -283,8 +269,7 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     uint count = 0;
     for (uint i = 0; i < compressed.n;) {
       uint e = i;
-      while (e < compressed.n && pc[i].eid == pc[e].eid)
-        e++;
+      while (e < compressed.n && pc[i].eid == pc[e].eid) e++;
       count++;
       graph->neighbor_index[count] = e;
       i = e;
@@ -452,8 +437,7 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm) {
     fflush(stdout);
   }
 
-  for (uint i = 0; i < graph->num_vertices; i++)
-    part[i] = rank;
+  for (uint i = 0; i < graph->num_vertices; i++) part[i] = rank;
   for (uint i = 0; i < num_export; i++)
     part[export_local_ids[i]] = export_to_part[i];
 
@@ -497,13 +481,11 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   np = comm.np;
   id = comm.id;
 
-  if (np == 1)
-    return;
+  if (np == 1) return;
 
   numPoints = nel * nv;
   data = (long long *)malloc(numPoints * sizeof(long long));
-  for (i = 0; i < numPoints; i++)
-    data[i] = vtx[i];
+  for (i = 0; i < numPoints; i++) data[i] = vtx[i];
 
   gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
 
@@ -539,9 +521,11 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   comm_allreduce(&comm, gs_int, gs_min, &nssMin, 1, &b);
   comm_allreduce(&comm, gs_long_long, gs_add, &nssSum, 1, &b_long_long);
 
-  if (Nmsg > 0) nsSum = nsSum / Nmsg;
-  else nsSum = 0;
-  comm_allreduce(&comm, gs_int, gs_add, &nsSum , 1, &b);
+  if (Nmsg > 0)
+    nsSum = nsSum / Nmsg;
+  else
+    nsSum = 0;
+  comm_allreduce(&comm, gs_int, gs_add, &nsSum, 1, &b);
 
   nelMax = nel;
   nelMin = nel;
@@ -553,15 +537,12 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
 
   if (id == 0) {
     printf(" nElements   max/min: %d %d %.2f\n", nelMax, nelMin);
-    printf(
-      " nMessages   max/min/avg: %d %d %.2f\n",
-      ncMax, ncMin, (double)ncSum/npp);
-    printf(
-      " msgSize     max/min/avg: %d %d %.2f\n",
-      nsMax, nsMin, (double)nsSum/npp);
-    printf(
-      " msgSizeSum  max/min/avg: %d %d %.2f\n",
-      nssMax, nssMin, (double)nssSum/npp);
+    printf(" nMessages   max/min/avg: %d %d %.2f\n", ncMax, ncMin,
+           (double)ncSum / npp);
+    printf(" msgSize     max/min/avg: %d %d %.2f\n", nsMax, nsMin,
+           (double)nsSum / npp);
+    printf(" msgSizeSum  max/min/avg: %d %d %.2f\n", nssMax, nssMin,
+           (double)nssSum / npp);
     fflush(stdout);
   }
 
@@ -583,9 +564,7 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     data[e].proc = part[e];
     data[e].eid = el[e];
-    for (n = 0; n < nv; ++n) {
-      data[e].vtx[n] = vl[e * nv + n];
-    }
+    for (n = 0; n < nv; ++n) { data[e].vtx[n] = vl[e * nv + n]; }
   }
 
   crystal_init(&cr, comm);
@@ -599,8 +578,7 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
 
   *nel_ = nel = eList.n;
   count = 0;
-  if (nel > lelt)
-    count = 1;
+  if (nel > lelt) count = 1;
   comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
   if (count > 0) {
     count = nel;
@@ -612,9 +590,7 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
 
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     el[e] = data[e].eid;
-    for (n = 0; n < nv; ++n) {
-      vl[e * nv + n] = data[e].vtx[n];
-    }
+    for (n = 0; n < nv; ++n) { vl[e * nv + n] = data[e].vtx[n]; }
   }
 
   array_free(&eList);
@@ -653,19 +629,15 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   if (partitioner == 0) // RSB
     options.rsb_algo = algo;
 
-  if (*loglevel > 2)
-    print_part_stat(vl, nel, nv, cext);
+  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
 
   ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
-  if (ierr != 0)
-    goto err;
+  if (ierr != 0) goto err;
 
   ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
-  if (ierr != 0)
-    goto err;
+  if (ierr != 0) goto err;
 
-  if (*loglevel > 2)
-    print_part_stat(vl, nel, nv, cext);
+  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
 
 #elif defined(PARMETIS)
   if (partitioner == 8) {
@@ -676,8 +648,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
     ierr = redistribute_data(&nel, vl, el, part, NULL, nv, lelt, &comm);
-    if (ierr != 0)
-      goto err;
+    if (ierr != 0) goto err;
   }
 #endif
   free(part);
@@ -713,8 +684,7 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
   parrsb_part_solid(part, vl2, *nel2, vl1, *nel1, *nv, comm.c);
 
   int ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
-  if (ierr != 0)
-    goto err;
+  if (ierr != 0) goto err;
   *rtval = 0;
 
   free(part);
