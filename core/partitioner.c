@@ -8,6 +8,10 @@ typedef struct {
   int proc;
 } edata;
 
+#if defined(PARRSB)
+#include "parRSB.h"
+#endif
+
 #ifdef PARMETIS
 #include "defs.h"
 #include "parmetis.h"
@@ -598,9 +602,14 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   return 0;
 }
 
-#if defined(PARRSB)
-#include "parRSB.h"
-#endif
+#define check_error(ierr)                                                      \
+  {                                                                            \
+    int ierr_ = (ierr);                                                        \
+    if (ierr_ != 0) {                                                          \
+      *rtval = 1;                                                              \
+      return;                                                                  \
+    }                                                                          \
+  }
 
 #define fpartmesh FORTRAN_UNPREFIXED(fpartmesh, FPARTMESH)
 void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
@@ -623,44 +632,42 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 
   int ierr = 1;
   int *part = (int *)malloc(lelt * sizeof(int));
+
+  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
+
+  if (partitioner == 0 || partitioner == 1) {
 #if defined(PARRSB)
-  parrsb_options options = parrsb_default_options;
-  options.partitioner = partitioner;
-  if (partitioner == 0) // RSB
-    options.rsb_algo = algo;
+    parrsb_options options = parrsb_default_options;
+    options.partitioner = partitioner;
+    if (partitioner == 0) // RSB
+      options.rsb_algo = algo;
 
-  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
-
-  ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
-  if (ierr != 0) goto err;
-
-  ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
-  if (ierr != 0) goto err;
-
-  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
-
-#elif defined(PARMETIS)
-  if (partitioner == 8) {
+    ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
+#endif
+  } else if (partitioner == 8) {
+#if defined(PARMETIS)
     int opt[3];
     opt[0] = 1;
     opt[1] = 0; /* verbosity */
     opt[2] = comm.np;
 
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
-    ierr = redistribute_data(&nel, vl, el, part, NULL, nv, lelt, &comm);
-    if (ierr != 0) goto err;
-  }
 #endif
-  free(part);
-  comm_free(&comm);
+  } else if (partitioner == 16) {
+#if defined(ZOLTAN)
+    ierr = Zoltan_partMesh(part, vl, nel, nv, comm.c);
+#endif
+  }
 
-  *nell = nel;
-  *rtval = 0;
-  return;
+  check_error(ierr);
 
-err:
-  fflush(stdout);
-  *rtval = 1;
+  ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
+  check_error(ierr);
+
+  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
+
+  free(part), comm_free(&comm);
+  *nell = nel, *rtval = 0;
 }
 
 #define fpartmesh_greedy FORTRAN_UNPREFIXED(fpartmesh_greedy, FPARTMESH_GRREDY)
