@@ -9,8 +9,10 @@ LIB=$(OBJDIR)/libnek5000.a
 LD=
 FC=
 CC=
+CXX=
 FFLAGS+=
 CFLAGS+=
+CXXFLAGS+=
 LDFLAGS+=
 
 PPPO=
@@ -22,6 +24,7 @@ USR_LFLAGS=
 MPI=0 
 DPROCMAP=0
 VISIT=0
+ZOLTAN2=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
@@ -32,6 +35,7 @@ PARRSB_IFLAGS=
 PARMETIS_IFLAGS=
 ZOLTAN_IFLAGS=
 PART_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS)
+ZOLTAN2_IFLAGS=
 
 ################################################################################
 
@@ -87,6 +91,10 @@ else
 	DUMMY:= $(shell rm -rf $S/core/mpif.h) 
 endif
 
+ifeq ($(ZOLTAN2), 1)
+	CORE := $(CORE) zoltan2.c.o zoltan2.cpp.o
+endif
+
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
 INCLUDES_DIR += $(OPT_INCDIR)
@@ -109,6 +117,10 @@ FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S/core $(INCLUDES)
 cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+
+cxxFL0   = $(L0) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+cxxFL2   = $(L2) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+cxxFL3   = $(L3) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 
 ################################################################################
 all : nek5000
@@ -232,7 +244,11 @@ $(OBJDIR)/crs_amg.o          :$S/core/crs_amg.c;           $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_IFLAGS) $< -o $@
-$(OBJDIR)/nekio.o          :$S/core/nekio.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+
+# CXX Files ##################################################################################
+$(OBJDIR)/zoltan2.cpp.o :$S/core/zoltan2.cpp; $(CXX) -c $(cxxFL2) $(GSLIB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
 $(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;	     $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@

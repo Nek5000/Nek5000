@@ -10,6 +10,7 @@ set -a
 # Fortran/C compiler
 #FC="mpif77"
 #CC="mpicc"
+#CXX="mpicxx"
 
 # Linker
 #LD="$FC"
@@ -24,6 +25,7 @@ set -a
 # optional compiler flags
 #FFLAGS=""
 #CFLAGS=""
+#CXXFLAGS=""
 
 # optional linking flags
 #USR_LFLAGS+=" -L/usr/lib -lfoo"

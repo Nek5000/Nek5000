@@ -12,7 +12,7 @@ typedef struct {
 #include "parRSB.h"
 #endif
 
-#ifdef PARMETIS
+#if defined(PARMETIS)
 #include "defs.h"
 #include "parmetis.h"
 
@@ -457,7 +457,13 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm) {
 err:
   return 1;
 }
-#endif // ZOLTAN
+#endif
+
+#if defined(ZOLTAN2)
+
+extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
+                            MPI_Comm comm_, int verbose);
+#endif // ZOLTAN2
 
 void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int i, j;
@@ -654,6 +660,10 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
 #endif
   } else if (partitioner == 16) {
+#if defined(ZOLTAN2)
+    ierr = Zoltan2_partMesh(part, vl, nel, nv, comm.c, 1);
+#endif
+  } else if (partitioner == 32) {
 #if defined(ZOLTAN)
     ierr = Zoltan_partMesh(part, vl, nel, nv, comm.c);
 #endif
