@@ -894,9 +894,12 @@ c set partitioner options
       else if (index(c_out,'METIS').eq.1) then
          fluid_partitioner=8
          solid_partitioner=8
-      else if (index(c_out,'ZOLTAN').eq.1) then
+      else if (index(c_out,'ZOLTAN2').eq.1) then
          fluid_partitioner=16
          solid_partitioner=16
+      else if (index(c_out,'ZOLTAN').eq.1) then
+         fluid_partitioner=32
+         solid_partitioner=32
       endif
 
 c set partitioner options
@@ -908,8 +911,10 @@ c set partitioner options
          fluid_partitioner=1
       else if (index(c_out,'METIS').eq.1) then
          fluid_partitioner=8
-      else if (index(c_out,'ZOLTAN').eq.1) then
+      else if (index(c_out,'ZOLTAN2').eq.1) then
          fluid_partitioner=16
+      else if (index(c_out,'ZOLTAN').eq.1) then
+         fluid_partitioner=32
       endif
 
 c set partitioner options
@@ -921,8 +926,10 @@ c set partitioner options
          solid_partitioner=1
       else if (index(c_out,'METIS').eq.1) then
          solid_partitioner=8
-      else if (index(c_out,'ZOLTAN').eq.1) then
+      else if (index(c_out,'ZOLTAN2').eq.1) then
          solid_partitioner=16
+      else if (index(c_out,'ZOLTAN').eq.1) then
+         solid_partitioner=32
       endif
 
 c set connectivity tolerance

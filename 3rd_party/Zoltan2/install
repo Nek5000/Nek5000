@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+
+VER=15-1-0
+
+if [ "$1" == "clean" ]; then
+  rm -rf v$VER.tar.gz Trilinos bin include lib64 2>/dev/null
+  exit 0
+fi
+
+if [ -f ./lib64/libzoltan2.a ]; then
+  exit 0
+fi
+
+if [ ! -d ./Trilinos ]; then
+  mkdir Trilinos
+  wget -O v$VER.tar.gz \
+    https://github.com/trilinos/Trilinos/archive/refs/tags/trilinos-release-$VER.tar.gz
+  tar -zxvf v$VER.tar.gz -C ./Trilinos --strip-components=1
+fi
+
+INSTALL_DIR=`pwd`
+PARMETIS_DIR=`pwd`/../parMETIS
+
+mkdir -p Trilinos/build
+cd Trilinos/build
+
+cmake \
+  -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+  -DTPL_ENABLE_MPI=ON \
+  -DCMAKE_CXX_COMPILER:STRING=$CXX \
+  -DCMAKE_C_COMPILER:STRING=$CC \
+  -DCMAKE_Fortran_COMPILER:STRING=$FC \
+  -DCMAKE_INSTALL_PREFIX:PATH=${INSTALL_DIR} \
+  -DBUILD_SHARED_LIBS=ON \
+  -DMPI_CXX_COMPILER:STRING=$CXX \
+  -DMPI_C_COMPILER:STRING=$CC \
+  -DMPI_Fortran_COMPILER:STRING=$FC \
+  -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+  -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+  -DTrilinos_ENABLE_TESTS:BOOL=OFF \
+  -DTrilinos_ENABLE_EXAMPLES:BOOL=OFF \
+  -DTrilinos_ENABLE_Teuchos:BOOL=ON \
+  -DTeuchosCore_ENABLE_MPI:BOOL=ON \
+  -DTrilinos_ENABLE_Epetra:BOOL=OFF \
+  -DTrilinos_ENABLE_EpetraExt:BOOL=OFF \
+  -DTrilinos_ENABLE_AztecOO:BOOL=OFF \
+  -DTrilinos_ENABLE_Amesos:BOOL=OFF \
+  -DTrilinos_ENABLE_Ifpack:BOOL=OFF \
+  -DTrilinos_ENABLE_ML:BOOL=OFF \
+  -DTrilinos_ENABLE_Anasazi:BOOL=ON \
+  -DTrilinos_ENABLE_Belos:BOOL=ON \
+  -DTrilinos_ENABLE_NOX:BOOL=OFF \
+  -DTrilinos_ENABLE_Stratimikos:BOOL=OFF \
+  -DTrilinos_ENABLE_Thyra:BOOL=OFF \
+  -DTrilinos_ENABLE_Rythmos:BOOL=OFF \
+  -DTrilinos_ENABLE_Teko:BOOL=OFF \
+  -DTrilinos_ENABLE_TriKota:BOOL=OFF \
+  -DTrilinos_ENABLE_Stokhos:BOOL=OFF \
+  -DTrilinos_ENABLE_Piro:BOOL=OFF \
+  -DTrilinos_ENABLE_Isorropia:BOOL=OFF \
+  -DTrilinos_ENABLE_Phalanx:BOOL=OFF \
+  -DTrilinos_ENABLE_Intrepid:BOOL=OFF \
+  -DTrilinos_ENABLE_Sacado:BOOL=OFF \
+  -DTrilinos_ENABLE_STK:BOOL=OFF \
+  -DTrilinos_ENABLE_Xpetra:BOOL=ON \
+  -DTrilinos_ENABLE_Zoltan:BOOL=ON \
+  -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
+  -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
+  -DTPL_ParMETIS_LIBRARIES:PATH="${PARMETIS_DIR}/lib/libparmetis.a;${PARMETIS_DIR}/lib/libmetis.a" \
+  -DTPL_ParMETIS_INCLUDE_DIRS:PATH="${PARMETIS_DIR}/include" \
+  -DZoltan2_ENABLE_Zoltan2Sphynx=ON \
+  -DBLAS_LIBRARY_DIRS:PATH=${BLASDIR} \
+  -DBLAS_LIBRARY_NAMES:STRING="blasLapack" \
+  -DTPL_LAPACK_LIBRARIES:PATH=${BLASDIR}/libblasLapack.a \
+  ..
+
+make -j8 install
