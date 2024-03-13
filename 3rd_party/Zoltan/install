@@ -25,7 +25,7 @@ mkdir build
 cd build
 
 set -x
-CC=$CC CXX=mpicxx ../configure \
+CC=$CC CXX=$CXX ../configure \
   --prefix=${install_dir} \
   --enable-mpi \
   --with-mpi-compilers \
