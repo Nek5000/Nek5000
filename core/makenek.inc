@@ -13,11 +13,11 @@ function build_3rdparty() {
 
   cd $SOURCE_ROOT_BLAS
   FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  cd $CASEDIR 
+  cd $CASEDIR
 
   cd $SOURCE_ROOT_GSLIB
   CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  cd $CASEDIR 
+  cd $CASEDIR
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
@@ -32,6 +32,7 @@ function build_3rdparty() {
   cd $CASEDIR
 
   if [ $ZOLTAN -ne 0 ]; then
+     check_cxx_compiler
      cd $SOURCE_ROOT_ZOLTAN
      CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
@@ -76,6 +77,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
+: ${CXX:="mpicxx"}
 : ${LD:=$FC}
 : ${MPI:=1}
 : ${PROFILING:=1}
@@ -89,7 +91,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  clean         cleanup build environment"
   echo "  -build-dep    build dependencies"
   echo ""
-  echo "PPLIST config options:" 
+  echo "PPLIST config options:"
   echo "  NOMPIIO       disable MPI-IO"
   echo "  XSMM          use libxsmm for mxm"
   echo "  CVODE         enable CVODE support"
@@ -136,17 +138,17 @@ NODEP=1
 if [ "$1" == "-build-dep" ]; then
   ONLYDEP=1
   nargs=0
-fi 
+fi
 
 if [[ $1 = "clean" ]]; then
   while true; do
     read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rdparty; 
+        clean_3rdparty;
         if [ -f makefile ]; then make clean; fi
         break ;;
-      * ) 
+      * )
         if [ -f makefile ]; then make clean; fi
         break ;;
     esac
@@ -164,7 +166,7 @@ fi
 #    case $yn in
 #      [Yy]* )
 #        break ;;
-#      * ) 
+#      * )
 #        return 0
 #        break ;;
 #    esac
@@ -181,12 +183,19 @@ if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
   return 11
 fi
-if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
+if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   return 11
 fi
 
-# trying to figure which compiler the wrapper is using 
+function check_cxx_compiler() {
+  if ! which `echo $CXX | awk '{print $1}'` 1>/dev/null ; then
+    echo "FATAL ERROR: Cannot find `echo $CXX | awk '{print $1}'`!"
+    return 11
+  fi
+}
+
+# trying to figure which compiler the wrapper is using
 FCok=0
 
 FCcomp_=`$FC -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
@@ -277,7 +286,7 @@ cat > test_underscore.f << _ACEOF
         call test
       end
 _ACEOF
-$FCcomp -c test_underscore.f 2>&1 >/dev/null 
+$FCcomp -c test_underscore.f 2>&1 >/dev/null
 if nm test_underscore.o | grep -q test_ ; then
   UNDERSCORE=1
 fi
@@ -305,11 +314,11 @@ fi
 
 if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
-fi 
+fi
 
 if [ $LONGLONGINT -ne 0 ]; then
   PPLIST="${PPLIST} GLOBAL_LONG_LONG"
-fi 
+fi
 
 if [ $PROFILING -ne 0 ]; then
   PPLIST="${PPLIST} TIMER"
@@ -326,7 +335,7 @@ ZOLTAN=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
-VENDOR_BLAS=0 
+VENDOR_BLAS=0
 
 for i in $PPLIST
 do
@@ -338,7 +347,8 @@ do
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
-     PARRSB_OPT=" DESTDIR=${SOURCE_ROOT_PARRSB} UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=0"
+     PARRSB_OPT=" DESTDIR=${SOURCE_ROOT_PARRSB} UNDERSCORE=$UNDERSCORE"
+     PARRSB_OPT+=" MPI=$MPI BLAS=0"
      PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
@@ -353,14 +363,14 @@ do
      USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
      METIS_INC="$SOURCE_ROOT_PARMETIS/include"
    fi
-   if [ "$i" == "CVODE" ]; then 
+   if [ "$i" == "CVODE" ]; then
      CVODE=1
      if [ $MPI -eq 1 ]; then
        USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel"
      else
        USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
+       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial"
      fi
    fi
    if [ "$i" == "HYPRE" ]; then
@@ -406,7 +416,8 @@ export FCPP
 export FR8
 export FF77
 export CC
-export NEK_WARN 
+export CXX
+export NEK_WARN
 export MPI
 export MPIO
 export UNDERSCORE
@@ -415,8 +426,8 @@ export PARRSB_OPT
 
 if [ $ONLYDEP -eq 1 ]; then
   build_3rdparty
-  return 0 
-fi 
+  return 0
+fi
 
 if [ $nargs -eq 0 ]; then
    NCASEFILES=`find *.usr 2>/dev/null| wc -l`
@@ -534,11 +545,11 @@ if [ -f .makefile ]; then
 -e "s:${NEK_SOURCE_ROOT}:\$S:g" \
 -e "s:^S[ ]*=.*:S\:=${NEK_SOURCE_ROOT}:" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
--e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
+-e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile
   printf "done\n"
 else
   printf "failed!\n"
-  return 1 
+  return 1
 fi
 \rm .makefile 2>/dev/null
 
@@ -658,7 +669,7 @@ if [ -f .state ]; then
           * )
            break ;;
         esac
-      done  
+      done
       make clean;
       break
     fi
