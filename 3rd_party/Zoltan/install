@@ -35,7 +35,7 @@ CC=$CC CXX=$CXX ../configure \
   --with-parmetis \
   --with-parmetis-incdir="${PARMETIS_DIR}/include" \
   --with-parmetis-libdir="${PARMETIS_DIR}/lib"
-set +x
 
 make everything
 make install
+set +x
