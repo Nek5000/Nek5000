@@ -4,7 +4,7 @@ set -e
 VER=4.0.3
 
 if [ "$1" == "clean" ]; then
-  rm -rf parMETIS bin lib include 2>/dev/null 
+  rm -rf v$VER.tar.gz parMETIS bin lib include 2>/dev/null
   exit 0
 fi
 
@@ -12,20 +12,23 @@ if [ -f ./lib/libparmetis.a ]; then
   exit 0
 fi
 
-wget --no-check-certificate -O v$VER.tar.gz https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/parmetis/4.0.3-4/parmetis_4.0.3.orig.tar.gz
+if [ ! -d ./parMETIS ]; then
+  wget --no-check-certificate -O v$VER.tar.gz \
+    https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/parmetis/4.0.3-4/parmetis_4.0.3.orig.tar.gz
+  mkdir parMETIS
+  tar -zxvf v$VER.tar.gz -C ./parMETIS --strip-components=1
+fi
 
-rm -rf parMETIS 2>/dev/null
-mkdir parMETIS
-tar -zxvf v$VER.tar.gz -C ./parMETIS --strip-components=1
 cd parMETIS
 
 set -x
 patch metis/include/metis.h < ../p_idx64
 patch Makefile < ../p_makefile
 make config cc=`which $CC` prefix=`pwd`/..
-set +x
 mkdir -p ../include
 make install
+set +x
+
 find . -name "libmetis.a" -exec cp {} ../lib \;
 cp ./metis/include/metis.h ../include
 cp ./libparmetis/defs.h ../include
