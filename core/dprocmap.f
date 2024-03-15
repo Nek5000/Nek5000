@@ -22,6 +22,7 @@ c-----------------------------------------------------------------------
 #ifdef MPI
       disp_unit = ISIZE
       wsize  = disp_unit*size(dProcmapWin)
+      call mpi_comm_dup(nekcomm,commproc,ierr)
       call MPI_Win_create(dProcmapWin,
      $                    wsize,
      $                    disp_unit,
