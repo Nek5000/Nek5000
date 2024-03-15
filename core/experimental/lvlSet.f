@@ -886,10 +886,58 @@ c-----------------------------------------------------------------------
       call col2(clsny,tb,ntot)
       if(if3d)call col2(clsnz,tb,ntot)
 
+      call bdry_tlsr_fix(clsnx,clsny,clsnz)
       call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
      $                    clsnx,clsny,clsnz,.false.)  
 
       call invcol3(du,ta,bm1,ntot)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine bdry_tlsr_fix(cx,cy,cz)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real cx(lx1,ly1,lz1,1)
+      real cy(lx1,ly1,lz1,1)
+      real cz(lx1,ly1,lz1,1)
+
+      integer ie,ifc
+      integer kx1,kx2,ky1,ky2,kz1,kz2
+      real usn(3),udot
+      real velx,vely,velz
+      character*3 cb
+      integer ix,iy,iz
+
+      do ie=1,nelv
+        do ifc=1,2*ndim
+          cb = cbc(ifc,ie,1)
+          if(cb.eq.'O  ' .or. cb.eq.'o  ')then
+
+            CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,ifc)
+
+            do iz=kz1,kz2
+              do iy=ky1,ky2
+                do ix=kx1,kx2
+                  call getSnormal(usn,ix,iy,iz,ifc,ie)
+                  velx = cx(ix,iy,iz,ie)
+                  vely = cy(ix,iy,iz,ie)
+                  velz = cz(ix,iy,iz,ie)
+                  udot = velx*usn(1)+vely*usn(2)
+                  if(if3d)udot = udot+velz*usn(3)
+                  if(udot .lt. 0.0)then
+                    cx(ix,iy,iz,ie)=-cx(ix,iy,iz,ie)
+                    cy(ix,iy,iz,ie)=-cy(ix,iy,iz,ie)
+                    if(if3d)cz(ix,iy,iz,ie)=-cz(ix,iy,iz,ie)
+                  endif
+                enddo
+              enddo
+            enddo
+          endif
+        enddo
+      enddo
 
       return
       end
