@@ -802,8 +802,6 @@ c---------------------------------------------------------------
       !Therefore do not use ifld_tls to define the sign function
       !for TLS re-distancing
       signls = (t(ix,iy,iz,ie,ifld_cls-1)-0.5)*2.0
-      signls = min(1.0,signls)
-      signls = max(-1.0,signls)
 
       return
       end
