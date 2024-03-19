@@ -1,17 +1,18 @@
 C----------------------------------------------------------------------     
       include "experimental/lshmholtz.f"
 C----------------------------------------------------------------------     
-      subroutine ls_init(nsteps_in,eps_in,dt_in,
+      subroutine ls_init(nsteps_cls_in,nsteps_tls_in,
+     $                   eps_in,dt_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in,
-     $                    ifdebug)
+     $                   ifdebug)
       implicit none
       include 'SIZE'
       include 'TOTAL'
       include 'LVLSET'
 
       real eps_in,dt_in
-      integer nsteps_in
+      integer nsteps_cls_in,nsteps_tls_in
       integer ifld_cls_in, ifld_tls_in
       integer ifld_clsr_in, ifld_tlsr_in
       integer ntot, ifdebug
@@ -19,7 +20,8 @@ C----------------------------------------------------------------------
       ! multiple of element length
       eps_cls = eps_in
       
-      nsteps_cls = nsteps_in
+      nsteps_cls = nsteps_cls_in
+      nsteps_tls = nsteps_tls_in
 
       ifld_cls = ifld_cls_in
       ifld_clsr = ifld_clsr_in
@@ -38,7 +40,7 @@ C----------------------------------------------------------------------
         call rone(tmask(1,1,1,1,ifld_cls_in-1),ntot)
       endif
       if(ifld_clsr_in.ne.0)then 
-        call rone(tmask(1,1,1,1,ifld_clsr_in-1),ntot)
+        ! call rone(tmask(1,1,1,1,ifld_clsr_in-1),ntot)
         idpss(ifld_clsr_in-1) = -1
       endif
       if(ifld_tls_in.ne.0)then 
@@ -63,8 +65,10 @@ C----------------------------------------------------------------------
       include 'LVLSET'
 
       integer istep_save, ifld_save
-      real dt_save, time_save
+      real dt_save, time_save, timef_save
       integer i,ntot,ifld
+      integer nsteps_in
+      real dtlag_save(10)
 
       if(ifld.ne.ifld_clsr .and. ifld.ne.ifld_tlsr)then
         if(nio.eq.0)then 
@@ -79,7 +83,11 @@ C----------------------------------------------------------------------
       istep_save = ISTEP
       dt_save = dt
       time_save = time
+      timef_save = timef
       ifld_save = ifield
+      do i=1,10
+        dtlag_save(i) = dtlag(i)
+      enddo
 
       ISTEP = 0
       dt = dt_cls
@@ -93,7 +101,11 @@ C----------------------------------------------------------------------
         write(*,*) "Max iteration count", nsteps_cls
       endif
 
-      do i=1,nsteps_cls
+      nsteps_in = 0
+      if(ifld.eq.ifld_clsr) nsteps_in = nsteps_cls
+      if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
+
+      do i=1,nsteps_in
         istep = istep + 1
         call ls_advance
       enddo
@@ -102,7 +114,11 @@ C----------------------------------------------------------------------
       ISTEP = istep_save
       dt = dt_save
       time = time_save
+      timef = timef_save
       ifield = ifld_save
+      do i=1,10
+        dtlag(i) = dtlag_save(i)
+      enddo
 
       return
       end
@@ -175,7 +191,7 @@ C----------------------------------------------------------------------
       CALL SETABBD (AB,DTLAG,NAB,NBD)
 
       if(ifls_debug.eq.1 .and. nio.eq.0)then
-        write(*,*)"BDF/EXT order",nbd,nab
+        write(*,*)"BDF/EXT order",nbd,nab,irst
       endif
 
       return
@@ -268,11 +284,16 @@ C----------------------------------------------------------------------
           intype = 0
           if(iftran) intype = -1
           call sethlm_ls(h1,h2,intype)
+          call bcneusc(ta,-1)
+          call add2(h2,ta,n)
           !following is divergence term
           call add2 (h2,adq(1,1,1,1,ifield-1),n)
+          call bcdirsc(t(1,1,1,1,ifield-1))
           call axhelm_cls(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           ! call axhelm_cls2(ta,t(1,1,1,1,ifield-1),h1,h2,imesh,isd) 
           call sub3(tb,bq(1,1,1,1,ifield-1),ta,n)
+          call bcneusc(ta,1)
+          call add2(tb,ta,n)
 
           call hsolve_cls(name4t,ta,tb,h1,h2,
      $                tmask(1,1,1,1,ifield-1),
@@ -773,6 +794,13 @@ c---------------------------------------------------------------
       eps = deltael(ix,iy,iz,ie) * eps_cls
 
       signls = tanh(phi/(2.0 * eps))
+
+      !The TLSR works better with below definition
+      !Therefore do not use ifld_tls to define the sign function
+      !for TLS re-distancing
+      signls = (t(ix,iy,iz,ie,ifld_cls-1)-0.5)*2.0
+      signls = min(1.0,signls)
+      signls = max(-1.0,signls)
 
       return
       end
