@@ -106,6 +106,9 @@ C----------------------------------------------------------------------
       if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
 
       do i=1,nsteps_in
+        ! if(ifld.eq.ifld_tlsr)then
+        !   dt = (0.5*(1.0 + tanh(2.0*PI*(2.*i/nsteps_in-0.5))))*dt_cls
+        ! endif
         istep = istep + 1
         call ls_advance
       enddo
