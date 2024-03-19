@@ -2,7 +2,7 @@ C----------------------------------------------------------------------
       include "experimental/lshmholtz.f"
 C----------------------------------------------------------------------     
       subroutine ls_init(nsteps_cls_in,nsteps_tls_in,
-     $                   eps_in,dt_in,
+     $                   eps_in,dt_cls_in,dt_tls_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in,
      $                   ifdebug)
@@ -11,7 +11,7 @@ C----------------------------------------------------------------------
       include 'TOTAL'
       include 'LVLSET'
 
-      real eps_in,dt_in
+      real eps_in,dt_cls_in,dt_tls_in
       integer nsteps_cls_in,nsteps_tls_in
       integer ifld_cls_in, ifld_tls_in
       integer ifld_clsr_in, ifld_tlsr_in
@@ -28,7 +28,8 @@ C----------------------------------------------------------------------
       ifld_tls = ifld_tls_in
       ifld_tlsr = ifld_tlsr_in
 
-      dt_cls = dt_in
+      dt_cls = dt_cls_in
+      dt_tls = dt_tls_in
 
       ifls_debug = ifdebug
 
@@ -69,6 +70,7 @@ C----------------------------------------------------------------------
       integer i,ntot,ifld
       integer nsteps_in
       real dtlag_save(10)
+      integer nbdinp_save
 
       if(ifld.ne.ifld_clsr .and. ifld.ne.ifld_tlsr)then
         if(nio.eq.0)then 
@@ -88,11 +90,14 @@ C----------------------------------------------------------------------
       do i=1,10
         dtlag_save(i) = dtlag(i)
       enddo
+      nbdinp_save = NBDINP
 
       ISTEP = 0
-      dt = dt_cls
+      if(ifield.eq.ifld_clsr) dt = dt_cls
+      if(ifield.eq.ifld_tlsr) dt = dt_tls
       time = 0.0
       ifield = ifld
+      NBDINP = 2
 
       if(ifls_debug.eq.1 .and. nio.eq.0)then
         write(*,*) "Field", ifield
@@ -106,9 +111,9 @@ C----------------------------------------------------------------------
       if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
 
       do i=1,nsteps_in
-        ! if(ifld.eq.ifld_tlsr)then
-        !   dt = (0.5*(1.0 + tanh(2.0*PI*(2.*i/nsteps_in-0.5))))*dt_cls
-        ! endif
+        if(ifld.eq.ifld_tlsr)then
+          dt = (0.5*(1.0 + tanh(2.0*PI*(3.*i/nsteps_in-0.5))))*dt_tls
+        endif
         istep = istep + 1
         call ls_advance
       enddo
@@ -122,6 +127,7 @@ C----------------------------------------------------------------------
       do i=1,10
         dtlag(i) = dtlag_save(i)
       enddo
+      NBDINP = nbdinp_save
 
       return
       end
