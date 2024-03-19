@@ -17,5 +17,5 @@
       real clsnx,clsny,clsnz,clsnr,clsns,clsnt
       real avmls
 
-      real dt_cls, eps_cls
-      common /lvlset_r/ dt_cls, eps_cls
+      real dt_cls, dt_tls, eps_cls
+      common /lvlset_r/ dt_cls, dt_tls, eps_cls
