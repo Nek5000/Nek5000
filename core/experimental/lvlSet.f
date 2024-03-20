@@ -909,6 +909,8 @@ c-----------------------------------------------------------------------
 
       ntot = lx1*ly1*lz1*nelv
 
+      call constrainTLSR
+
       !Need to change this to ifld_tlsr later
       !there might exist a novel better solution for this
       !maybe narrow band?
@@ -977,3 +979,22 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine constrainTLSR
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer i,ntot
+      real sgn,phi
+
+      ntot = lx1*ly1*lz1*nelt
+
+      do i=1,ntot
+        phi = (t(i,1,1,1,ifld_cls-1)-0.5)*2.0
+        sgn = sign(1.,phi)
+        t(i,1,1,1,ifld_tlsr-1) = sgn * abs(t(i,1,1,1,ifld_tlsr-1))
+      enddo
+
+      return
+      end
