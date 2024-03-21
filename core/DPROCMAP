@@ -1,8 +1,8 @@
       logical dProcmapCache
       common /cbpmlo/ dProcmapCache
 
-      integer dProcmapH ! window handle 
-      common /cbpmwinh/ dProcmapH 
+      integer commproc, dProcmapH ! window handle 
+      common /cbpmwinh/ commproc, dProcmapH 
 
       integer dProcmapWin 
       common /cbpmwd/ dProcmapWin(2*lelt)

@@ -77,6 +77,8 @@ c     Set default logicals
       CALL RZERO(USRDIV,NTOT)
       CALL RZERO(QTL,NTOT)
 
+      CALL IONE(out_mask, lelt)
+
       NSTEPS = 0
 
       RETURN

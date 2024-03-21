@@ -21,12 +21,13 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
       disp_unit = ISIZE
-      wsize  = disp_unit*size(dProcmapWin)
+      wsize = disp_unit*size(dProcmapWin)
+      call mpi_comm_dup(nekcomm,commproc,ierr)
       call MPI_Win_create(dProcmapWin,
      $                    wsize,
      $                    disp_unit,
      $                    MPI_INFO_NULL,
-     $                    nekcomm,dProcmapH,ierr)
+     $                    commproc,dProcmapH,ierr)
 
       if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
 #endif
