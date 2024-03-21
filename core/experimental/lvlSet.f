@@ -59,7 +59,7 @@ C----------------------------------------------------------------------
       return
       end
 C----------------------------------------------------------------------     
-      subroutine ls_drive(ifld)
+      subroutine ls_drive(ifld,sgntype)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -71,6 +71,9 @@ C----------------------------------------------------------------------
       integer nsteps_in
       real dtlag_save(10)
       integer nbdinp_save
+      integer sgntype
+
+      signtype = sgntype 
 
       if(ifld.ne.ifld_clsr .and. ifld.ne.ifld_tlsr)then
         if(nio.eq.0)then 
@@ -111,9 +114,9 @@ C----------------------------------------------------------------------
       if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
 
       do i=1,nsteps_in
-        if(ifld.eq.ifld_tlsr)then
-          dt = (0.5*(1.0 + tanh(2.0*PI*(3.*i/nsteps_in-0.5))))*dt_tls
-        endif
+        ! if(ifld.eq.ifld_tlsr)then
+        !   dt = (0.5*(1.0 + tanh(2.0*PI*(3.*i/nsteps_in-0.5))))*dt_tls
+        ! endif
         istep = istep + 1
         call ls_advance
       enddo
@@ -311,6 +314,7 @@ C----------------------------------------------------------------------
      $                approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
 
           call add2(t(1,1,1,1,ifield-1),ta,n)
+          if(ifield.eq.ifld_tlsr) call constrainTLSR
           call cvgnlps (ifconv)
           if (ifconv) exit
         enddo
@@ -799,15 +803,17 @@ c---------------------------------------------------------------
       integer ix,iy,iz,ie
       real deltael,phi,eps
 
-      phi = t(ix,iy,iz,ie,ifld_tls-1)
-      eps = deltael(ix,iy,iz,ie) * eps_cls
+      if(signtype.eq.1)then
+        phi = t(ix,iy,iz,ie,ifld_tlsr-1)
+        eps = deltael(ix,iy,iz,ie) * eps_cls
 
-      signls = tanh(phi/(2.0 * eps))
-
+        signls = tanh(phi/(2.0 * eps))
+      else
       !The TLSR works better with below definition
       !Therefore do not use ifld_tls to define the sign function
       !for TLS re-distancing
-      signls = (t(ix,iy,iz,ie,ifld_cls-1)-0.5)*2.0
+        signls = (t(ix,iy,iz,ie,ifld_cls-1)-0.5)*2.0
+      endif
 
       return
       end
@@ -909,7 +915,6 @@ c-----------------------------------------------------------------------
 
       ntot = lx1*ly1*lz1*nelv
 
-      call constrainTLSR
 
       !Need to change this to ifld_tlsr later
       !there might exist a novel better solution for this
