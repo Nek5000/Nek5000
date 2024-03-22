@@ -16,8 +16,8 @@ typedef struct {
 #include "defs.h"
 #include "parmetis.h"
 
-int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
-                      comm_ext ce) {
+static int parMETIS_partMesh(int *part, long long *vl, int nel, int nv,
+                             int *opt, comm_ext ce) {
   int i, j;
   int ierrm;
   double time, time0;
@@ -465,7 +465,7 @@ extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                             MPI_Comm comm_, int verbose);
 #endif // ZOLTAN2
 
-void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
+static void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int i, j;
 
   struct comm comm;
@@ -475,6 +475,7 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int *Ncomm;
 
   int nelMin, nelMax;
+  long long nelSum;
   int ncMin, ncMax, ncSum;
   int nsMin, nsMax, nsSum;
   int nssMin, nssMax;
@@ -513,10 +514,8 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   comm_allreduce(&comm, gs_int, gs_min, &ncMin, 1, &b);
   comm_allreduce(&comm, gs_int, gs_add, &ncSum, 1, &b);
 
-  nsMax = Ncomm[0];
-  nsMin = Ncomm[0];
-  nsSum = Ncomm[0];
-  for (i = 1; i < Nmsg; ++i) {
+  nsMax = nsSum = 0, nsMin = INT_MAX;
+  for (i = 0; i < Nmsg; ++i) {
     nsMax = Ncomm[i] > Ncomm[i - 1] ? Ncomm[i] : Ncomm[i - 1];
     nsMin = Ncomm[i] < Ncomm[i - 1] ? Ncomm[i] : Ncomm[i - 1];
     nsSum += Ncomm[i];
@@ -539,44 +538,48 @@ void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
 
   nelMax = nel;
   nelMin = nel;
+  nelSum = nel;
   comm_allreduce(&comm, gs_int, gs_max, &nelMax, 1, &b);
   comm_allreduce(&comm, gs_int, gs_min, &nelMin, 1, &b);
+  comm_allreduce(&comm, gs_long_long, gs_add, &nelSum, 1, &b_long_long);
 
   sint npp = (Nmsg > 0);
   comm_allreduce(&comm, gs_int, gs_add, &npp, 1, &b);
 
-  if (id == 0) {
-    printf(" nElements   max/min: %d %d %.2f\n", nelMax, nelMin);
-    printf(" nMessages   max/min/avg: %d %d %.2f\n", ncMax, ncMin,
-           (double)ncSum / npp);
-    printf(" msgSize     max/min/avg: %d %d %.2f\n", nsMax, nsMin,
-           (double)nsSum / npp);
-    printf(" msgSizeSum  max/min/avg: %d %d %.2f\n", nssMax, nssMin,
-           (double)nssSum / npp);
-    fflush(stdout);
-  }
+  if (id > 0) goto comm_free_and_exit;
+  if (nelMin > 0)
+    printf(" nElements   max/min/avg: %d %d %.2f\n", nelMax, nelMin,
+           (double)nelMax / nelMin);
+  else
+    printf(" nElements   max/min/avg: %d %d INFINITY\n", nelMax, nelMin);
+  printf(" nMessages   max/min/avg: %d %d %.2f\n", ncMax, ncMin,
+         (double)ncSum / npp);
+  printf(" msgSize     max/min/avg: %d %d %.2f\n", nsMax, nsMin,
+         (double)nsSum / npp);
+  printf(" msgSizeSum  max/min/avg: %d %d %.2f\n", nssMax, nssMin,
+         (double)nssSum / npp);
+  fflush(stdout);
 
+comm_free_and_exit:
   comm_free(&comm);
 }
 
-int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
-                      int nv, int lelt, struct comm *comm) {
+static int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
+                             int nv, int lelt, struct comm *comm) {
   int nel = *nel_;
 
-  struct crystal cr;
   struct array eList;
-  edata *data;
-
-  int count, e, n, ibuf;
-
-  /* redistribute data */
   array_init(edata, &eList, nel), eList.n = nel;
+
+  int e, n;
+  edata *data;
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     data[e].proc = part[e];
     data[e].eid = el[e];
     for (n = 0; n < nv; ++n) { data[e].vtx[n] = vl[e * nv + n]; }
   }
 
+  struct crystal cr;
   crystal_init(&cr, comm);
   sarray_transfer(edata, &eList, proc, 0, &cr);
   crystal_free(&cr);
@@ -587,17 +590,17 @@ int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   buffer_free(&bfr);
 
   *nel_ = nel = eList.n;
-  count = 0;
-  if (nel > lelt) count = 1;
-  comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibuf);
-  if (count > 0) {
-    count = nel;
-    comm_allreduce(comm, gs_int, gs_max, &count, 1, &ibuf);
-    if (comm->id == 0)
-      printf("ERROR: resulting parition requires lelt=%d!\n", count);
-    return 1;
-  }
+  int ibfr, count = (nel > lelt) ? 1 : 0;
+  comm_allreduce(comm, gs_int, gs_add, &count, 1, &ibfr);
+  if (count == 0) goto success;
 
+  count = nel;
+  comm_allreduce(comm, gs_int, gs_max, &count, 1, &ibfr);
+  if (comm->id == 0)
+    printf("ERROR: resulting parition requires lelt = %d!\n", count);
+  return 1;
+
+success:
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     el[e] = data[e].eid;
     for (n = 0; n < nv; ++n) { vl[e * nv + n] = data[e].vtx[n]; }

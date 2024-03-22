@@ -12,6 +12,7 @@ extern "C" laplacian_t laplacian_weighted(long long *vl, unsigned nel,
                                           unsigned nv, MPI_Comm comm,
                                           int verbose);
 extern "C" uint laplacian_size(laplacian_t L);
+extern "C" void laplacian_print(laplacian_t L);
 extern "C" ulong *laplacian_rows(laplacian_t L);
 extern "C" ulong *laplacian_columns(laplacian_t L);
 extern "C" double *laplacian_values(laplacian_t L);
@@ -86,6 +87,8 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
     MPI_Comm_size(comm_, &size);
   }
 
+  if (rank == 0) printf("Running Zoltan2 ... "), fflush(stdout);
+
   const long long nel_ = nel;
   long long num_global_elements = 0, element_offset;
   double imbalance_tol = 0;
@@ -99,7 +102,7 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
     if (rank == 0 && verbose) {
       fprintf(stderr,
-              "num_global_elements = %lld element_offset = %lld "
+              "\nnum_global_elements = %lld element_offset = %lld "
               "imbalance_tol = %lf\n",
               num_global_elements, element_offset, imbalance_tol);
       fflush(stdout);
@@ -116,6 +119,8 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
   RCP<Matrix_t> matrix;
   {
     laplacian_t L = laplacian_weighted(vl, nel, nv, comm_, verbose);
+    if (verbose >= 2) laplacian_print(L);
+
     local_t size = laplacian_size(L);
     ulong *rows = laplacian_rows(L);
     ulong *columns = laplacian_columns(L);
@@ -135,21 +140,24 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
   matrix->fillComplete();
 
+  std::string algorithm = "parmetis";
+  ParameterList params;
+  {
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", algorithm);
+    params.set("imbalance_tolerance", imbalance_tol);
+    params.set("num_global_parts", size);
+  }
+
   if (rank == 0 && verbose) {
     fprintf(stderr,
             "global: num_rows = %lld, num_non_zeros = %lld, num_procs = %lld\n",
             matrix->getGlobalNumRows(), matrix->getGlobalNumEntries(), size);
     fprintf(stderr, "local: num_rows = %lld, num_non_zeros = %lld, nel = %d\n",
             matrix->getLocalNumRows(), matrix->getLocalNumEntries(), nel);
+    fprintf(stderr, "algorithm = %s, imbalance_tolerance = %lf\n",
+            algorithm.c_str(), imbalance_tol);
     fflush(stderr);
-  }
-
-  ParameterList params;
-  {
-    params.set("partitioning_approach", "partition");
-    params.set("algorithm", "parmetis");
-    params.set("imbalance_tolerance", imbalance_tol);
-    params.set("num_global_parts", size);
   }
 
   MatrixAdapter_t adapter(matrix);
@@ -158,7 +166,7 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
   try {
     problem.solve();
   } catch (std::exception &e) {
-    fprintf(stderr, "Exception returned from solve() : %s\n", e.what());
+    fprintf(stderr, "\nException returned from solve() : %s\n", e.what());
     fflush(stderr);
     return 1;
   }
@@ -167,6 +175,8 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
   const part_t *assignments = solution.getPartListView();
   for (local_t id = 0; id < nel; id++) part[id] = assignments[id];
+
+  check_solution(matrix, adapter, solution, rank, verbose);
 
   return 0;
 }

@@ -136,6 +136,14 @@ laplacian_t laplacian_weighted(long long *vl, unsigned nel, unsigned nv,
   return L;
 }
 
+void laplacian_print(laplacian_t L) {
+  for (uint i = 0; i < L->size; i++) {
+    fprintf(stderr, "(%lld, %lld) -> %lf\n", L->rows[i], L->columns[i],
+            L->values[i]);
+    fflush(stderr);
+  }
+}
+
 uint laplacian_size(laplacian_t L) { return L->size; }
 
 ulong *laplacian_rows(laplacian_t L) { return L->rows; }
