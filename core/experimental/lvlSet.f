@@ -956,7 +956,8 @@ c-----------------------------------------------------------------------
       do ie=1,nelv
         do ifc=1,2*ndim
           cb = cbc(ifc,ie,1)
-          if(cb.eq.'O  ' .or. cb.eq.'o  ')then
+          if(cb.eq.'O  ' .or. cb.eq.'o  '
+     $       .or. cb.eq.'W  '.or. cb.eq.'SYM')then
 
             CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,ifc)
 
