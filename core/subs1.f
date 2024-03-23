@@ -1047,12 +1047,15 @@ c        endif
          CALL RZERO (H2,NTOT1)
       endif
 
-      if(ifavm(ifield-1))then
-        do i=1,ntot1
-          avm_diff(i,1,1,1) = avm_vdiff(i,1,1,1,vx,vy,vz)             
-        enddo
+      if(ifield.gt.1)then
+        if(ifavm(ifield-1))then
+          do i=1,ntot1
+            avm_diff(i,1,1,1) = avm_vdiff(i,1,1,1,vx,vy,vz)             
+          enddo
+        endif
+        if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
       endif
-      if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
+
       return
       end
 c-----------------------------------------------------------------------

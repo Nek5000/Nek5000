@@ -222,7 +222,9 @@ c
         endif
 C
  100  continue
-      if(ifavm(ifield-1))call axhelm_avm(au,u,imsh,isd)
+        if(ifield.gt.1 .and. ifavm(ifield-1)) then
+          call axhelm_avm(au,u,imsh,isd)
+        endif
 C
       if (ifh2) call addcol4 (au,helm2,bm1,u,ntot)
 C
