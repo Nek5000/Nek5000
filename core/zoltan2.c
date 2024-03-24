@@ -1,17 +1,18 @@
 #include <gslib.h>
 
-struct laplacian_private {
+struct zoltan_lapalacian_private {
   uint size;
   ulong *rows, *columns;
   double *values;
 };
-typedef struct laplacian_private *laplacian_t;
+typedef struct zoltan_lapalacian_private *zoltan_lapalacian_t;
 
 static void free_(void **ptr) { free(*ptr), *ptr = NULL; }
 #define tfree(ptr) free_((void **)(ptr))
 
-laplacian_t laplacian_weighted(long long *vl, unsigned nel, unsigned nv,
-                               MPI_Comm comm, int verbose) {
+zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
+                                               unsigned nv, MPI_Comm comm,
+                                               int verbose) {
   struct comm c;
   comm_init(&c, comm);
 
@@ -100,7 +101,7 @@ laplacian_t laplacian_weighted(long long *vl, unsigned nel, unsigned nv,
     neighbors.n = num_unique;
   }
 
-  laplacian_t L = tcalloc(struct laplacian_private, 1);
+  zoltan_lapalacian_t L = tcalloc(struct zoltan_lapalacian_private, 1);
   {
     neighbor_t *pn = (neighbor_t *)neighbors.ptr;
     uint s = 0;
@@ -136,7 +137,7 @@ laplacian_t laplacian_weighted(long long *vl, unsigned nel, unsigned nv,
   return L;
 }
 
-void laplacian_print(laplacian_t L) {
+void zoltan_lapalacian_print(zoltan_lapalacian_t L) {
   for (uint i = 0; i < L->size; i++) {
     fprintf(stderr, "(%lld, %lld) -> %lf\n", L->rows[i], L->columns[i],
             L->values[i]);
@@ -144,16 +145,16 @@ void laplacian_print(laplacian_t L) {
   }
 }
 
-uint laplacian_size(laplacian_t L) { return L->size; }
+uint zoltan_lapalacian_size(zoltan_lapalacian_t L) { return L->size; }
 
-ulong *laplacian_rows(laplacian_t L) { return L->rows; }
+ulong *zoltan_lapalacian_rows(zoltan_lapalacian_t L) { return L->rows; }
 
-ulong *laplacian_columns(laplacian_t L) { return L->columns; }
+ulong *zoltan_lapalacian_columns(zoltan_lapalacian_t L) { return L->columns; }
 
-double *laplacian_values(laplacian_t L) { return L->values; }
+double *zoltan_lapalacian_values(zoltan_lapalacian_t L) { return L->values; }
 
-void laplacian_free(laplacian_t *L_) {
-  laplacian_t L = *L_;
+void zoltan_lapalacian_free(zoltan_lapalacian_t *L_) {
+  zoltan_lapalacian_t L = *L_;
   if (!L) return;
   tfree(&L->rows), tfree(&L->columns), tfree(&L->values);
   tfree(L_);

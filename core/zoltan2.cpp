@@ -7,16 +7,16 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
-typedef void *laplacian_t;
-extern "C" laplacian_t laplacian_weighted(long long *vl, unsigned nel,
-                                          unsigned nv, MPI_Comm comm,
-                                          int verbose);
-extern "C" uint laplacian_size(laplacian_t L);
-extern "C" void laplacian_print(laplacian_t L);
-extern "C" ulong *laplacian_rows(laplacian_t L);
-extern "C" ulong *laplacian_columns(laplacian_t L);
-extern "C" double *laplacian_values(laplacian_t L);
-extern "C" void laplacian_free(laplacian_t *L);
+typedef void *zoltan_lapalacian_t;
+extern "C" zoltan_lapalacian_t
+zoltan_lapalacian_weighted(long long *vl, unsigned nel, unsigned nv,
+                           MPI_Comm comm, int verbose);
+extern "C" uint zoltan_lapalacian_size(zoltan_lapalacian_t L);
+extern "C" void zoltan_lapalacian_print(zoltan_lapalacian_t L);
+extern "C" ulong *zoltan_lapalacian_rows(zoltan_lapalacian_t L);
+extern "C" ulong *zoltan_lapalacian_columns(zoltan_lapalacian_t L);
+extern "C" double *zoltan_lapalacian_values(zoltan_lapalacian_t L);
+extern "C" void zoltan_lapalacian_free(zoltan_lapalacian_t *L);
 
 using Teuchos::ArrayView;
 using Teuchos::Comm;
@@ -118,13 +118,14 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
   RCP<Matrix_t> matrix;
   {
-    laplacian_t L = laplacian_weighted(vl, nel, nv, comm_, verbose);
-    if (verbose >= 2) laplacian_print(L);
+    zoltan_lapalacian_t L =
+        zoltan_lapalacian_weighted(vl, nel, nv, comm_, verbose);
+    if (verbose >= 2) zoltan_lapalacian_print(L);
 
-    local_t size = laplacian_size(L);
-    ulong *rows = laplacian_rows(L);
-    ulong *columns = laplacian_columns(L);
-    double *values = laplacian_values(L);
+    local_t size = zoltan_lapalacian_size(L);
+    ulong *rows = zoltan_lapalacian_rows(L);
+    ulong *columns = zoltan_lapalacian_columns(L);
+    double *values = zoltan_lapalacian_values(L);
 
     matrix = rcp(new Matrix_t(map, 27));
     for (local_t id = 0; id < size; id++) {
@@ -135,7 +136,7 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                                  ArrayView<scalar_t>(&value, 1));
     }
 
-    laplacian_free(&L);
+    zoltan_lapalacian_free(&L);
   }
 
   matrix->fillComplete();
