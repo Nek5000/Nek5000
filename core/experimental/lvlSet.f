@@ -1004,3 +1004,77 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine surfacetension(ix,iy,iz,e,gamm,sfx,sfy,sfz)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ix,iy,iz,e
+      real sfx,sfy,sfz
+      common /sforce/ stx(lx1,ly1,lz1,lelv),
+     $                sty(lx1,ly1,lz1,lelv), 
+     $                stz(lx1,ly1,lz1,lelv), 
+     $                curv(lx1,ly1,lz1,lelv),
+     $                delta(lx1,ly1,lz1,lelv)
+
+      real stx,sty,stz,curv,delta
+      real gamm
+
+      integer ntot
+
+      ntot = lx1*ly1*lz1*nelv
+
+      if(ix*iy*iz*e.eq.1)then
+
+        call deltals(t(1,1,1,1,ifld_tls-1),delta)
+        call col2(delta,bm1,ntot)
+        call dssum(delta,lx1,ly1,lz1)
+        call col2(delta,binvm1,ntot)
+
+        call cls_normals(clsnx,clsny,clsnz,ifld_tls)
+        call opdiv(curv,clsnx,clsny,clsnz)
+        call dssum(curv,lx1,ly1,lz1)
+        call col2(curv,binvm1,ntot)
+
+        call col4(stx,curv,delta,clsnx,ntot)
+        call col4(sty,curv,delta,clsny,ntot)
+        if(if3d) call col4(stz,curv,delta,clsnz,ntot)
+
+        call cmult(stx,gamm,ntot)
+        call cmult(sty,gamm,ntot)
+        if(if3d)call cmult(stz,gamm,ntot)
+      endif
+
+      sfx = stx(ix,iy,iz,e)
+      sfy = sty(ix,iy,iz,e)
+      if(if3d) sfz = stz(ix,iy,iz,e)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine deltals(phi,delta)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ntot,i
+      real phi(1),delta(1)
+      real eps
+      real deltael
+
+      ntot = lx1*ly1*lz1*nelv
+
+      do i=1,ntot
+        eps = 2.0*deltael(i,1,1,1)*eps_cls
+        if(abs(phi(i)).gt.eps)then
+          delta(i) = 0.0
+        else
+          delta(i) = 0.5*(1.0+cos(PI*phi(i)/eps))/eps
+        endif
+      enddo
+
+      return
+      end
