@@ -514,10 +514,11 @@ static void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   comm_allreduce(&comm, gs_int, gs_min, &ncMin, 1, &b);
   comm_allreduce(&comm, gs_int, gs_add, &ncSum, 1, &b);
 
-  nsMax = nsSum = 0, nsMin = INT_MAX;
+  nsMax = nsSum = 0;
+  nsMin = INT_MAX;
   for (i = 0; i < Nmsg; ++i) {
-    nsMax = Ncomm[i] > Ncomm[i - 1] ? Ncomm[i] : Ncomm[i - 1];
-    nsMin = Ncomm[i] < Ncomm[i - 1] ? Ncomm[i] : Ncomm[i - 1];
+    nsMax = Ncomm[i] > nsMax ? Ncomm[i] : nsMax;
+    nsMin = Ncomm[i] < nsMin ? Ncomm[i] : nsMin;
     nsSum += Ncomm[i];
   }
   comm_allreduce(&comm, gs_int, gs_max, &nsMax, 1, &b);
