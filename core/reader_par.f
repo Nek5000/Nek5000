@@ -900,6 +900,9 @@ c set partitioner options
       else if (index(c_out,'ZOLTAN').eq.1) then
          fluid_partitioner=32
          solid_partitioner=32
+      else if (index(c_out,'KAHIP').eq.1) then
+         fluid_partitioner=64
+         solid_partitioner=64
       endif
 
 c set partitioner options
@@ -915,6 +918,8 @@ c set partitioner options
          fluid_partitioner=16
       else if (index(c_out,'ZOLTAN').eq.1) then
          fluid_partitioner=32
+      else if (index(c_out,'KAHIP').eq.1) then
+         fluid_partitioner=64
       endif
 
 c set partitioner options
@@ -930,6 +935,8 @@ c set partitioner options
          solid_partitioner=16
       else if (index(c_out,'ZOLTAN').eq.1) then
          solid_partitioner=32
+      else if (index(c_out,'KAHIP').eq.1) then
+         solid_partitioner=64
       endif
 
 c set connectivity tolerance

@@ -473,6 +473,11 @@ extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                             MPI_Comm comm_, int verbose);
 #endif // ZOLTAN2
 
+#if defined(KAHIP)
+#include <stdbool.h>
+#include <kaHIP_interface.h>
+#endif // KAHIP
+
 static void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int i, j;
 
