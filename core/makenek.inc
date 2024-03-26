@@ -375,7 +375,7 @@ do
    if [ "$i" == "ZOLTAN2" ]; then
      ZOLTAN2=1
      USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_ZOLTAN2}/lib64 "
-     USR_LFLAGS+=" -L${SOURCE_ROOT_ZOLTAN2}/lib64 -lzoltan2 -lzoltan -lxpetra"
+     USR_LFLAGS+=" -L${SOURCE_ROOT_ZOLTAN2}/lib64 -lzoltan2 -lxpetra"
      USR_LFLAGS+=" -ltpetra -lteuchoscomm -lteuchosparameterlist -lteuchoscore"
      USR_LFLAGS+=" -lkokkosalgorithms -lkokkoskernels -lkokkoscontainers"
      USR_LFLAGS+=" -lkokkossimd -lkokkoscore"
