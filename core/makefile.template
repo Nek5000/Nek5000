@@ -25,6 +25,7 @@ MPI=0
 DPROCMAP=0
 VISIT=0
 ZOLTAN2=0
+KAHIP=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
@@ -34,7 +35,8 @@ GSLIB_IFLAGS=
 PARRSB_IFLAGS=
 PARMETIS_IFLAGS=
 ZOLTAN_IFLAGS=
-PART_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS)
+KAHIP_IFLAGS=
+PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS) $(KAHIP_IFLAGS)
 ZOLTAN2_IFLAGS=
 
 ################################################################################
@@ -243,7 +245,7 @@ $(OBJDIR)/crs_xxt.o          :$S/core/crs_xxt.c;           $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/crs_amg.o          :$S/core/crs_amg.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
-$(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_IFLAGS) $< -o $@
+$(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 
