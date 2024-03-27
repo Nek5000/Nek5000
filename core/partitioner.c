@@ -8,6 +8,184 @@ typedef struct {
   int proc;
 } edata;
 
+typedef struct {
+  uint num_vertices;
+  ulong *vertex_ids;
+  int *neighbor_index;
+  ulong *neighbor_ids;
+  int *neighbor_procs;
+  int *neighbor_weights;
+} graph_t;
+
+static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
+  // Calculate the total number of elements and the offset of elements
+  // for each process.
+  slong out[2], wrk[2], in = nelt;
+  comm_scan(out, c, gs_long, gs_add, &in, 1, wrk);
+  ulong start = out[0], nelg = out[1];
+
+  // Fill the vertices array with information about the vertices.
+  typedef struct {
+    ulong vid, eid;
+    uint dest, np;
+  } vertex_t;
+
+  struct array vertices;
+  {
+    array_init(vertex_t, &vertices, nelt * nv);
+    vertex_t vertex;
+    for (uint i = 0; i < nelt; i++) {
+      vertex.eid = i + start + 1;
+      for (uint j = 0; j < nv; j++) {
+        vertex.vid = vl[i * nv + j];
+        vertex.dest = vertex.vid % c->np;
+        array_cat(vertex_t, &vertices, &vertex, 1);
+      }
+    }
+    // Sanity check.
+    assert(vertices.n == nelt * nv);
+  }
+
+  // Send vertices to the correct process so we can match them up.
+  struct crystal cr;
+  {
+    crystal_init(&cr, c);
+    sarray_transfer(vertex_t, &vertices, dest, 1, &cr);
+  }
+
+  buffer bfr;
+  {
+    buffer_init(&bfr, 1024);
+    sarray_sort_2(vertex_t, vertices.ptr, vertices.n, vid, 1, eid, 1, &bfr);
+  }
+
+  // Find all the elements shared by a given vertex.
+  struct array neighbors;
+  {
+    array_init(vertex_t, &neighbors, vertices.n);
+
+    const vertex_t *const pv = (const vertex_t *const)vertices.ptr;
+    uint vn = vertices.n;
+    uint s = 0;
+    while (s < vn) {
+      uint e = s + 1;
+      while (e < vn && pv[s].vid == pv[e].vid) e++;
+
+      for (uint j = s; j < e; j++) {
+        vertex_t v = pv[j];
+        for (uint k = s; k < e; k++) {
+          v.vid = pv[k].eid;
+          v.np = pv[k].dest;
+          array_cat(vertex_t, &neighbors, &v, 1);
+        }
+      }
+      s = e;
+    }
+  }
+  array_free(&vertices);
+
+  {
+    sarray_transfer(vertex_t, &neighbors, dest, 0, &cr);
+    sarray_sort_2(vertex_t, neighbors.ptr, neighbors.n, eid, 1, vid, 1, &bfr);
+  }
+  crystal_free(&cr);
+  buffer_free(&bfr);
+
+  // Compre the neighbors array to find the number of neighbors for each
+  // element.
+  typedef struct {
+    ulong nid, eid;
+    uint np;
+    int weight;
+  } neighbor_t;
+
+  struct array compressed;
+  {
+    array_init(neighbor_t, &compressed, neighbors.n);
+
+    const vertex_t *const pn = (const vertex_t *const)neighbors.ptr;
+    uint nn = neighbors.n;
+    neighbor_t nbr;
+    uint s = 0;
+    while (s < nn) {
+      uint e = s + 1;
+      while (e < nn && pn[s].eid == pn[e].eid && pn[s].vid == pn[e].vid) e++;
+
+      // Sanity check.
+      for (uint j = s + 1; j < e; j++) assert(pn[s].np == pn[j].np);
+
+      // Add to compressed array.
+      nbr.eid = pn[s].eid;
+      nbr.nid = pn[s].vid;
+      nbr.np = pn[s].np;
+      nbr.weight = (int)(e - s);
+      if (nbr.eid != nbr.nid) array_cat(neighbor_t, &compressed, &nbr, 1);
+      s = e;
+    }
+  }
+  array_free(&neighbors);
+
+  graph_t *graph = tcalloc(graph_t, 1);
+  graph->num_vertices = nelt;
+  graph->vertex_ids = tcalloc(ulong, nelt);
+  for (uint i = 0; i < nelt; i++) graph->vertex_ids[i] = i + start + 1;
+
+  graph->neighbor_index = tcalloc(int, nelt + 1);
+  {
+    neighbor_t *pc = (neighbor_t *)compressed.ptr;
+    uint count = 0;
+    uint s = 0;
+    while (s < compressed.n) {
+      uint e = s + 1;
+      while (e < compressed.n && pc[s].eid == pc[e].eid) e++;
+      count++;
+      graph->neighbor_index[count] = e;
+      s = e;
+    }
+    assert(count == nelt);
+    assert(graph->neighbor_index[count] == compressed.n);
+  }
+
+  graph->neighbor_ids = tcalloc(ulong, compressed.n);
+  graph->neighbor_procs = tcalloc(int, compressed.n);
+  graph->neighbor_weights = tcalloc(int, compressed.n);
+  {
+    neighbor_t *pc = (neighbor_t *)compressed.ptr;
+    for (uint i = 0; i < compressed.n; i++) {
+      graph->neighbor_ids[i] = pc[i].nid;
+      graph->neighbor_procs[i] = pc[i].np;
+      graph->neighbor_weights[i] = pc[i].weight;
+    }
+  }
+
+  array_free(&compressed);
+
+  return graph;
+}
+
+static void graph_print(graph_t *graph) {
+  for (uint i = 0; i < graph->num_vertices; i++) {
+    fprintf(stderr, "%lld : ", graph->vertex_ids[i]);
+    for (uint j = graph->neighbor_index[i]; j < graph->neighbor_index[i + 1];
+         j++)
+      fprintf(stderr, " %lld (%d)", graph->neighbor_ids[j],
+              graph->neighbor_procs[j]);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+  }
+}
+
+static void graph_destroy(graph_t **graph_) {
+  graph_t *graph = *graph_;
+  free(graph->vertex_ids);
+  free(graph->neighbor_index);
+  free(graph->neighbor_ids);
+  free(graph->neighbor_procs);
+  free(graph->neighbor_weights);
+  free(graph);
+  graph_ = NULL;
+}
+
 #if defined(PARRSB)
 #include "parRSB.h"
 #endif
@@ -143,184 +321,6 @@ err:
 
 #if defined(ZOLTAN)
 #include "zoltan.h"
-
-typedef struct {
-  uint num_vertices;
-  ZOLTAN_ID_TYPE *vertex_ids;
-  int *neighbor_index;
-  ZOLTAN_ID_TYPE *neighbor_ids;
-  int *neighbor_procs;
-  int *neighbor_weights;
-} graph_t;
-
-static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
-  // Calculate the total number of elements and the offset of elements
-  // for each process.
-  slong out[2], wrk[2], in = nelt;
-  comm_scan(out, c, gs_long, gs_add, &in, 1, wrk);
-  ulong start = out[0], nelg = out[1];
-
-  // Fill the vertices array with information about the vertices.
-  typedef struct {
-    ulong vid, eid;
-    uint dest, np;
-  } vertex_t;
-
-  struct array vertices;
-  {
-    array_init(vertex_t, &vertices, nelt * nv);
-    vertex_t vertex;
-    for (uint i = 0; i < nelt; i++) {
-      vertex.eid = i + start + 1;
-      for (uint j = 0; j < nv; j++) {
-        vertex.vid = vl[i * nv + j];
-        vertex.dest = vertex.vid % c->np;
-        array_cat(vertex_t, &vertices, &vertex, 1);
-      }
-    }
-    // Sanity check.
-    assert(vertices.n == nelt * nv);
-  }
-
-  // Send vertices to the correct process so we can match them up.
-  struct crystal cr;
-  {
-    crystal_init(&cr, c);
-    sarray_transfer(vertex_t, &vertices, dest, 1, &cr);
-  }
-
-  buffer bfr;
-  {
-    buffer_init(&bfr, 1024);
-    sarray_sort_2(vertex_t, vertices.ptr, vertices.n, vid, 1, eid, 1, &bfr);
-  }
-
-  // Find all the elements shared by a given vertex.
-  struct array neighbors;
-  {
-    array_init(vertex_t, &neighbors, vertices.n);
-
-    const vertex_t *const pv = (const vertex_t *const)vertices.ptr;
-    uint vn = vertices.n;
-    uint s = 0;
-    while (s < vn) {
-      uint e = s + 1;
-      while (e < vn && pv[s].vid == pv[e].vid) e++;
-
-      for (uint j = s; j < e; j++) {
-        vertex_t v = pv[j];
-        for (uint k = s; k < e; k++) {
-          v.vid = pv[k].eid;
-          v.np = pv[k].dest;
-          array_cat(vertex_t, &neighbors, &v, 1);
-        }
-      }
-      s = e;
-    }
-  }
-  array_free(&vertices);
-
-  {
-    sarray_transfer(vertex_t, &neighbors, dest, 0, &cr);
-    sarray_sort_2(vertex_t, neighbors.ptr, neighbors.n, eid, 1, vid, 1, &bfr);
-  }
-  crystal_free(&cr);
-  buffer_free(&bfr);
-
-  // Compre the neighbors array to find the number of neighbors for each
-  // element.
-  typedef struct {
-    ulong nid, eid;
-    uint np;
-    int weight;
-  } neighbor_t;
-
-  struct array compressed;
-  {
-    array_init(neighbor_t, &compressed, neighbors.n);
-
-    const vertex_t *const pn = (const vertex_t *const)neighbors.ptr;
-    uint nn = neighbors.n;
-    neighbor_t nbr;
-    uint s = 0;
-    while (s < nn) {
-      uint e = s + 1;
-      while (e < nn && pn[s].eid == pn[e].eid && pn[s].vid == pn[e].vid) e++;
-
-      // Sanity check.
-      for (uint j = s + 1; j < e; j++) assert(pn[s].np == pn[j].np);
-
-      // Add to compressed array.
-      nbr.eid = pn[s].eid;
-      nbr.nid = pn[s].vid;
-      nbr.np = pn[s].np;
-      nbr.weight = (int)(e - s);
-      if (nbr.eid != nbr.nid) array_cat(neighbor_t, &compressed, &nbr, 1);
-      s = e;
-    }
-  }
-  array_free(&neighbors);
-
-  graph_t *graph = tcalloc(graph_t, 1);
-  graph->num_vertices = nelt;
-  graph->vertex_ids = tcalloc(ZOLTAN_ID_TYPE, nelt);
-  for (uint i = 0; i < nelt; i++) graph->vertex_ids[i] = i + start + 1;
-
-  graph->neighbor_index = tcalloc(int, nelt + 1);
-  {
-    neighbor_t *pc = (neighbor_t *)compressed.ptr;
-    uint count = 0;
-    uint s = 0;
-    while (s < compressed.n) {
-      uint e = s + 1;
-      while (e < compressed.n && pc[s].eid == pc[e].eid) e++;
-      count++;
-      graph->neighbor_index[count] = e;
-      s = e;
-    }
-    assert(count == nelt);
-    assert(graph->neighbor_index[count] == compressed.n);
-  }
-
-  graph->neighbor_ids = tcalloc(ZOLTAN_ID_TYPE, compressed.n);
-  graph->neighbor_procs = tcalloc(int, compressed.n);
-  graph->neighbor_weights = tcalloc(int, compressed.n);
-  {
-    neighbor_t *pc = (neighbor_t *)compressed.ptr;
-    for (uint i = 0; i < compressed.n; i++) {
-      graph->neighbor_ids[i] = pc[i].nid;
-      graph->neighbor_procs[i] = pc[i].np;
-      graph->neighbor_weights[i] = pc[i].weight;
-    }
-  }
-
-  array_free(&compressed);
-
-  return graph;
-}
-
-static void graph_print(graph_t *graph) {
-  for (uint i = 0; i < graph->num_vertices; i++) {
-    fprintf(stderr, "%lld : ", graph->vertex_ids[i]);
-    for (uint j = graph->neighbor_index[i]; j < graph->neighbor_index[i + 1];
-         j++)
-      fprintf(stderr, " %lld (%d)", graph->neighbor_ids[j],
-              graph->neighbor_procs[j]);
-    fprintf(stderr, "\n");
-    fflush(stderr);
-  }
-}
-
-static void graph_destroy(graph_t **graph_) {
-  graph_t *graph = *graph_;
-  free(graph->vertex_ids);
-  free(graph->neighbor_index);
-  free(graph->neighbor_ids);
-  free(graph->neighbor_procs);
-  free(graph->neighbor_weights);
-  free(graph);
-  graph_ = NULL;
-}
 
 static int get_number_of_vertices(void *data, int *ierr) {
   graph_t *graph = (graph_t *)data;
@@ -478,13 +478,97 @@ err:
 #if defined(ZOLTAN2)
 
 extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
-                            MPI_Comm comm_, int verbose);
+                            comm_ext comm_, int verbose);
 #endif // ZOLTAN2
 
 #if defined(KAHIP)
 #include <stdbool.h>
 
-#include <kaHIP_interface.h>
+#include <parhip_interface.h>
+
+static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
+                          comm_ext ce, int verbose) {
+  if (sizeof(idxtype) != sizeof(unsigned long long)) {
+    printf("ERROR: invalid sizeof(idxtype)!\n");
+    goto err;
+  }
+  if (nv != 4 && nv != 8) {
+    printf("ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
+    goto err;
+  }
+
+  struct comm comm;
+  MPI_Comm active;
+  sint ierr = 0;
+  {
+    int color = (nel > 0) ? 1 : MPI_UNDEFINED;
+    MPI_Comm_split(ce, color, 0, &active);
+    if (color == MPI_UNDEFINED) goto end;
+    comm_init(&comm, active);
+  }
+
+  if (comm.id == 0) fprintf(stderr, "Running KaHIP ... "), fflush(stderr);
+
+  idxtype *nel_array = tcalloc(idxtype, comm.np);
+  idxtype nel_ull = nel;
+  MPI_Allgather(&nel_ull, 1, MPI_UNSIGNED_LONG_LONG, nel_array, 1,
+                MPI_UNSIGNED_LONG_LONG, comm.c);
+
+  idxtype *vtxdist = tcalloc(idxtype, comm.np + 1);
+  for (int i = 0; i < comm.np; i++) vtxdist[i + 1] = vtxdist[i] + nel_array[i];
+  free(nel_array);
+
+  assert((vtxdist[comm.id + 1] - vtxdist[comm.id]) == nel);
+
+  graph_t *graph = graph_create(vl, nel, nv, &comm);
+  assert(graph->num_vertices == nel);
+
+  idxtype *xadj = tcalloc(idxtype, nel + 1);
+  for (uint i = 0; i < nel + 1; i++) xadj[i] = graph->neighbor_index[i];
+
+  uint num_neighbors = graph->neighbor_index[nel];
+  idxtype *adjncy = tcalloc(idxtype, num_neighbors);
+  for (uint i = 0; i < num_neighbors; i++) adjncy[i] = graph->neighbor_ids[i] - 1;
+
+  idxtype *vwgt = tcalloc(idxtype, nel);
+  for (uint i = 0; i < nel; i++) vwgt[i] = 1;
+
+  idxtype *adjwgt = tcalloc(idxtype, num_neighbors);
+  for (uint i = 0; i < num_neighbors; i++)
+    adjwgt[i] = graph->neighbor_weights[i];
+
+  graph_destroy(&graph);
+
+  int num_parts = comm.np;
+  double imbalance = 1.0 / (vtxdist[comm.np] / comm.np);
+  bool suppress_output = false;
+  int seed = 0;
+  int mode = ECOMESH;
+  int edgecut = 0;
+  idxtype *part_ = tcalloc(idxtype, nel);
+
+  ParHIPPartitionKWay(vtxdist, xadj, adjncy, vwgt, adjwgt, &num_parts,
+                      &imbalance, suppress_output, seed, mode, &edgecut, part_,
+                      &active);
+
+  free(vtxdist), free(xadj), free(adjncy), free(vwgt), free(adjwgt);
+  comm_free(&comm);
+  MPI_Comm_free(&active);
+
+  for (uint i = 0; i < nel; i++) part[i] = part_[i];
+  free(part_);
+
+end:
+  comm_init(&comm, ce);
+  sint ierr_max = ierr, ibfr;
+  comm_allreduce(&comm, gs_int, gs_max, &ierr_max, 1, &ibfr);
+  if (ierr_max != 0) goto err;
+  return 0;
+
+err:
+  return 1;
+}
+
 #endif // KAHIP
 
 static void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
@@ -692,6 +776,10 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   } else if (partitioner == 32) {
 #if defined(ZOLTAN)
     ierr = Zoltan_partMesh(part, vl, nel, nv, comm.c, 1);
+#endif
+  } else if (partitioner == 64) {
+#if defined(KAHIP)
+    ierr = KaHIP_partMesh(part, vl, nel, nv, comm.c, 1);
 #endif
   }
 
