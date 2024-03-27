@@ -150,6 +150,7 @@ typedef struct {
   int *neighbor_index;
   ZOLTAN_ID_TYPE *neighbor_ids;
   int *neighbor_procs;
+  int *neighbor_weights;
 } graph_t;
 
 static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
@@ -231,6 +232,7 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
   typedef struct {
     ulong nid, eid;
     uint np;
+    int weight;
   } neighbor_t;
 
   struct array compressed;
@@ -252,6 +254,7 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
       nbr.eid = pn[s].eid;
       nbr.nid = pn[s].vid;
       nbr.np = pn[s].np;
+      nbr.weight = (int)(e - s);
       if (nbr.eid != nbr.nid) array_cat(neighbor_t, &compressed, &nbr, 1);
       s = e;
     }
@@ -281,11 +284,13 @@ static graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
 
   graph->neighbor_ids = tcalloc(ZOLTAN_ID_TYPE, compressed.n);
   graph->neighbor_procs = tcalloc(int, compressed.n);
+  graph->neighbor_weights = tcalloc(int, compressed.n);
   {
     neighbor_t *pc = (neighbor_t *)compressed.ptr;
     for (uint i = 0; i < compressed.n; i++) {
       graph->neighbor_ids[i] = pc[i].nid;
       graph->neighbor_procs[i] = pc[i].np;
+      graph->neighbor_weights[i] = pc[i].weight;
     }
   }
 
@@ -312,6 +317,7 @@ static void graph_destroy(graph_t **graph_) {
   free(graph->neighbor_index);
   free(graph->neighbor_ids);
   free(graph->neighbor_procs);
+  free(graph->neighbor_weights);
   free(graph);
   graph_ = NULL;
 }
@@ -356,12 +362,12 @@ static void get_edge_size_list(void *data, int size_gid, int size_lid,
 static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
                           ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                           int *num_edges, ZOLTAN_ID_PTR nbr_global_id,
-                          int *nbr_procs, int wgt_dim, float *ewgts,
+                          int *nbr_procs, int wgt_dim, float *neighbor_weights,
                           int *ierr) {
   graph_t *graph = (graph_t *)data;
   *ierr = ZOLTAN_FATAL;
 
-  if ((size_gid != 1) || (size_lid != 1) || (wgt_dim != 0) ||
+  if ((size_gid != 1) || (size_lid != 1) || (wgt_dim != 1) ||
       (num_obj != graph->num_vertices))
     return;
 
@@ -375,6 +381,7 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
          j++) {
       nbr_global_id[j] = graph->neighbor_ids[j];
       nbr_procs[j] = graph->neighbor_procs[j];
+      neighbor_weights[j] = graph->neighbor_weights[j];
     }
   }
 
@@ -392,7 +399,7 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
     }                                                                          \
   }
 
-int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
+int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, comm_ext comm,
                     int verbose) {
   float ver;
   int rc = Zoltan_Initialize(0, NULL, &ver);
@@ -412,6 +419,7 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "1");
 
   // Graph parameters:
   Zoltan_Set_Param(zz, "CHECK_GRAPH", "2");
@@ -420,7 +428,7 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
 
   // parMETIS options:
   Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
-  // Zoltan_Set_Param(zz, "", "PARTKWAY");
+  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
   // Zoltan_Set_Param(zz,"GRAPH_PACKAGE","SCOTCH");
 
   // We are going to create the dual graph by hand and input it to
@@ -475,6 +483,7 @@ extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
 #if defined(KAHIP)
 #include <stdbool.h>
+
 #include <kaHIP_interface.h>
 #endif // KAHIP
 
