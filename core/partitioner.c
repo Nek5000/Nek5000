@@ -405,8 +405,22 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, comm_ext comm,
   int rc = Zoltan_Initialize(0, NULL, &ver);
 
   int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  double imbalance_tol;
+  {
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    long long nelg = 0, nel_ = nel;
+    MPI_Allreduce(&nel_, &nelg, 1, MPI_LONG_LONG, MPI_SUM, comm);
+    nel_ = nelg / size;
+    imbalance_tol = (nel_ + 1.0) / nel_;
+
+    if (rank == 0 && verbose) {
+      fprintf(stderr, "\nnum_global_elements = %lld imbalance_tol = %lf\n",
+              nelg, imbalance_tol);
+      fflush(stderr);
+    }
+  }
 
   check_zoltan(rc, "ERROR: Zoltan_Initialize failed!\n");
 
@@ -415,7 +429,11 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, comm_ext comm,
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "2");
   Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
   Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.01");
+
+  char imbalance_tol_str[32] = {0};
+  snprintf(imbalance_tol_str, 32, "%lf", imbalance_tol);
+  Zoltan_Set_Param(zz, "IMBALANCE_TOL", imbalance_tol_str);
+
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
@@ -507,7 +525,8 @@ static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
     comm_init(&comm, active);
   }
 
-  if (comm.id == 0) fprintf(stderr, "Running KaHIP ... "), fflush(stderr);
+  if (comm.id == 0 && verbose)
+    fprintf(stderr, "Running KaHIP ... "), fflush(stderr);
 
   idxtype *nel_array = tcalloc(idxtype, comm.np);
   idxtype nel_ull = nel;
@@ -528,7 +547,8 @@ static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
 
   uint num_neighbors = graph->neighbor_index[nel];
   idxtype *adjncy = tcalloc(idxtype, num_neighbors);
-  for (uint i = 0; i < num_neighbors; i++) adjncy[i] = graph->neighbor_ids[i] - 1;
+  for (uint i = 0; i < num_neighbors; i++)
+    adjncy[i] = graph->neighbor_ids[i] - 1;
 
   idxtype *vwgt = tcalloc(idxtype, nel);
   for (uint i = 0; i < nel; i++) vwgt[i] = 1;
@@ -546,6 +566,11 @@ static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
   int mode = ECOMESH;
   int edgecut = 0;
   idxtype *part_ = tcalloc(idxtype, nel);
+
+  if (comm.id == 0 && verbose) {
+    fprintf(stderr, "imbalance_tol = %lf", imbalance_tol);
+    fflush(stderr);
+  }
 
   ParHIPPartitionKWay(vtxdist, xadj, adjncy, vwgt, adjwgt, &num_parts,
                       &imbalance, suppress_output, seed, mode, &edgecut, part_,
