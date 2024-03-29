@@ -427,8 +427,8 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, comm_ext comm,
   Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".35");
 
   // parMETIS options:
-  Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
-  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
+  // Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
+  // Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
   // Zoltan_Set_Param(zz,"GRAPH_PACKAGE","SCOTCH");
 
   // We are going to create the dual graph by hand and input it to
