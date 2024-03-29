@@ -89,10 +89,10 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
   if (rank == 0) printf("Running Zoltan2 ... "), fflush(stdout);
 
-  const long long nel_ = nel;
   long long num_global_elements = 0, element_offset;
   double imbalance_tol = 0;
   {
+    const long long nel_ = nel;
     MPI_Allreduce(&nel_, &num_global_elements, 1, MPI_LONG_LONG, MPI_SUM,
                   comm_);
     MPI_Scan(&nel_, &element_offset, 1, MPI_LONG_LONG, MPI_SUM, comm_);
@@ -105,7 +105,7 @@ extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
               "\nnum_global_elements = %lld element_offset = %lld "
               "imbalance_tol = %lf\n",
               num_global_elements, element_offset, imbalance_tol);
-      fflush(stdout);
+      fflush(stderr);
     }
   }
 
