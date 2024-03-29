@@ -8,7 +8,7 @@ if [ "$1" == "clean" ]; then
   exit 0
 fi
 
-if [ -f ./lib/libkahip_static.a ]; then
+if [ -f ./lib/libkahip.so ]; then
   exit 0
 fi
 
@@ -25,6 +25,8 @@ cd KaHIP/build
 
 set -x
 CC=$CC CXX=$CXX cmake .. -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+  -DCMAKE_C_FLAGS="$CFLAGS" \
+  -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
   -DCMAKE_BUILD_TYPE=Release
 make -j4 install
 set +x

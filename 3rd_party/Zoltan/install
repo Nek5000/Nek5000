@@ -26,7 +26,7 @@ mkdir -p Zoltan/build
 cd Zoltan/build
 
 set -x
-CC=$CC CXX=$CXX ../configure \
+../configure CC=$CC CXX=$CXX CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" \
   --prefix=${INSTALL_DIR} \
   --enable-mpi \
   --with-mpi-compilers \

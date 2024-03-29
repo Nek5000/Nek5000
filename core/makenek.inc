@@ -34,22 +34,22 @@ function build_3rdparty() {
   if [ $ZOLTAN -ne 0 ]; then
      check_cxx_compiler
      cd $SOURCE_ROOT_ZOLTAN
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $KAHIP -ne 0 ]; then
      check_cxx_compiler
      cd $SOURCE_ROOT_KAHIP
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $ZOLTAN2 -ne 0 ]; then
      check_cxx_compiler
      cd $SOURCE_ROOT_ZOLTAN2
-     BLASDIR=${SOURCE_ROOT_BLAS} ./install 2>&1 | tee -a \
-       $CASEDIR/build.log >/dev/null
+     BLASDIR=${SOURCE_ROOT_BLAS} CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" \
+       ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
