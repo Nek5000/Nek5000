@@ -899,7 +899,38 @@ c-----------------------------------------------------------------------
       call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_
-      call mfo_write_hdr                          ! including element mapping
+
+      call blank(rdcode1,10)
+      i = 1
+      IF (IFXYO) THEN
+         rdcode1(i)='X'
+         i = i + 1
+      ENDIF
+      IF (IFVO) THEN
+         rdcode1(i)='U'
+         i = i + 1
+      ENDIF
+      IF (IFPO) THEN
+         rdcode1(i)='P'
+         i = i + 1
+      ENDIF
+      IF (IFTO) THEN
+         rdcode1(i)='T'
+         i = i + 1
+      ENDIF
+      IF (LDIMT.GT.1) THEN
+         NPSCALO = 0
+         do k = 1,ldimt-1
+           if(ifpsco(k)) NPSCALO = NPSCALO + 1
+         enddo
+         IF (NPSCALO.GT.0) THEN
+            rdcode1(i) = 'S'
+            WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
+            WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
+         ENDIF
+      ENDIF
+
+      call mfo_write_hdr(rdcode1) ! including element mapping
 
       nxyzo8  = nxo*nyo*nzo
 
@@ -1959,7 +1990,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfo_write_hdr          ! write hdr, byte key, els.
+      subroutine mfo_write_hdr(varcode)          ! write hdr, byte key, els.
 
       include 'SIZE'
       include 'SOLN'
@@ -1967,6 +1998,9 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
       include 'TSTEP'
+
+      character varcode(10)
+
       real*4 test_pattern
       common /ctmp0/ lglist(0:lelt)
 
@@ -2001,43 +2035,14 @@ c-----------------------------------------------------------------------
         else
           mtype = nid
           call crecv(mtype,idum,4)          ! hand-shake
-          call csend(mtype,cnt,4,pid0,0)   ! u4 :=: u8
+          call csend(mtype,cnt,4,pid0,0)    ! u4 :=: u8
         endif 
       endif
 
       ierr = 0
       if(nid.eq.pid0) then
 
-      call blank(hdr,132)              ! write header
-      call blank(rdcode1,10)
-      i = 1
-      IF (IFXYO) THEN
-         rdcode1(i)='X'
-         i = i + 1
-      ENDIF
-      IF (IFVO) THEN
-         rdcode1(i)='U'
-         i = i + 1
-      ENDIF
-      IF (IFPO) THEN
-         rdcode1(i)='P'
-         i = i + 1
-      ENDIF
-      IF (IFTO) THEN
-         rdcode1(i)='T'
-         i = i + 1
-      ENDIF
-      IF (LDIMT.GT.1) THEN
-         NPSCALO = 0
-         do k = 1,ldimt-1
-           if(ifpsco(k)) NPSCALO = NPSCALO + 1
-         enddo
-         IF (NPSCALO.GT.0) THEN
-            rdcode1(i) = 'S'
-            WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
-            WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
-         ENDIF
-      ENDIF
+      call blank(hdr,132)
 
 c     check pressure format
       if_press_mesh = .false.
@@ -2045,7 +2050,7 @@ c     check pressure format
 
       nelog = cntg 
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelog,time,istep,fid0,nfileoo
-     $            ,(rdcode1(i),i=1,10),p0th,if_press_mesh
+     $            ,(varcode(i),i=1,10),p0th,if_press_mesh
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1)
 
