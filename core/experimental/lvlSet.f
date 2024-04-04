@@ -1078,3 +1078,50 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine LS_default_driver(ftlsr,fclsr)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ftlsr       !freq of TLS re-distancing
+      integer fclsr       !freq of CLS re-initialization
+
+      integer ntot
+
+      integer nclsr
+      save nclsr
+      data nclsr /0/
+
+      ntot = lx1*ly1*lz1*nelt
+
+      !re-distancing TLS every n steps
+      if(mod(istep,ftlsr).eq.0)then
+        call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
+
+        call cadd(t(1,1,1,1,ifld_tlsr-1),-0.5,ntot)
+        
+        call cmult(t(1,1,1,1,ifld_tlsr-1),0.01,ntot)
+
+        call ls_drive(ifld_tlsr,0)
+
+        call ls_drive(ifld_tlsr,1)
+
+        call copy(t(1,1,1,1,ifld_tls-1),t(1,1,1,1,ifld_tlsr-1),ntot)
+
+        nclsr = 0
+      endif
+
+
+      if(mod(nclsr,fclsr).eq.0)then
+        call copy(t(1,1,1,1,ifld_clsr-1),t(1,1,1,1,ifld_cls-1),ntot)
+        call ls_drive(ifld_clsr)
+        call copy(t(1,1,1,1,ifld_cls-1),t(1,1,1,1,ifld_clsr-1),ntot)
+      endif
+
+      nclsr = nclsr + 1
+
+      return
+      end
+c-----------------------------------------------------------------------
