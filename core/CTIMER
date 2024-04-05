@@ -21,8 +21,9 @@ c
      $               ,twal,tgp2,tcvf,tproj,tusfq,tuchk
      $               ,tmakf,tmakq
 c
-      integer nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3
+      integer nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3,ireset_ls
       common /itimer/ nmxmf,nmxms,ndsum,naxhm,ncopy,ninvc,ninv3
+     $               ,ireset_ls
 c
       integer         nsolv,ngsum,ndsnd,ndadd,ncdtp,nmltd,nprep
      $               ,npres,nhmhz,ngop ,ngop1,ndott,nbsol,nbso2
@@ -61,5 +62,5 @@ c
       save    icalld
       data    icalld /0/
 
-      logical         ifsync
-      common /ctimel/ ifsync
+      logical         ifsync, ifcoupledls
+      common /ctimel/ ifsync, ifcoupledls

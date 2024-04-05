@@ -190,6 +190,8 @@ C
 
       ifdg      = .false.
       ifsync    = .false.  
+      ifcoupledls = .false.
+      ireset_ls = 0
       ifanls    = .false.  
       ifcoup    = .false.  
       ifvcoup   = .false.  

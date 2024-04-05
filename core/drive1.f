@@ -246,13 +246,29 @@ c-----------------------------------------------------------------------
 
       common /cgeom/ igeom
 
+      integer istep_save
+
       ntot = lx1*ly1*lz1*nelv
 
       call nekgsync
 
       call setup_convect(2) ! Save conv vel
 
+      !reset time order if either CLS or TLS is reset
+      !resets order for all solvers - including fluid
+      !not a perfect mechanism - TO DO
+      if(ifcoupledls) then
+        ireset_ls = ireset_ls + 1
+        istep_save = istep
+        istep = ireset_ls
+      endif
+
       if (iftran) call settime
+
+      if(ifcoupledls)then
+        istep = istep_save
+      endif
+
       if (ifmhd ) call cfl_check
       call setsolv
       call comment
