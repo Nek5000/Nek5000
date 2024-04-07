@@ -340,7 +340,7 @@ C----------------------------------------------------------------------
 
       if(ifield.eq.ifld_clsr)then
         do i=1,n
-          VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1) * eps_cls
+          VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1)*eps_cls/4.0
         enddo
       elseif(ifield.eq.ifld_tlsr)then
         call cfill(vdiff(1,1,1,1,ifield),1e-10,n)
@@ -472,10 +472,16 @@ c---------------------------------------------------------------
       data icalld /0/
       save icalld
 
+      integer nedge
+      parameter(nedge = 4 + 8*(ldim-2))
+      real ledg(nedge)
+
       integer nxyz,n,ie
       real dd,dinv
       real dxmin_e
       real dxmax_e
+      real dist_xyzc
+      real vlmax
 
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
@@ -483,7 +489,23 @@ c---------------------------------------------------------------
       if (icalld.eq.0 .or. ifmvbd) then
          dinv = 1./ldim
          do ie = 1,nelv
-            dd = dxmax_e(ie)
+           ledg(1) = dist_xyzc(1,2,ie)
+           ledg(2) = dist_xyzc(1,4,ie)
+           ledg(3) = dist_xyzc(2,3,ie)
+           ledg(4) = dist_xyzc(4,3,ie)
+           if (ndim.eq.3) then
+             ledg(5)  = dist_xyzc(1,5,ie)
+             ledg(6)  = dist_xyzc(2,6,ie)
+             ledg(7)  = dist_xyzc(4,8,ie)
+             ledg(8)  = dist_xyzc(3,7,ie)
+
+             ledg(9)  = dist_xyzc(5,6,ie)
+             ledg(10) = dist_xyzc(5,8,ie)
+             ledg(11) = dist_xyzc(8,7,ie)
+             ledg(12) = dist_xyzc(6,7,ie)
+           endif
+            dd = vlmax(ledg,nedge)
+            ! dd = dxmax_e(ie)
             call cfill(dx(1,1,1,ie),dd,nxyz) 
          enddo
          icalld = 1
@@ -495,7 +517,9 @@ c---------------------------------------------------------------
       end 
 c---------------------------------------------------------------
       real function heaviside(ix,iy,iz,iel,phi,epsin)
+      implicit none
       include 'SIZE'
+      include 'TOTAL'
       include 'LVLSET'
 
       integer ix,iy,iz,iel
@@ -507,7 +531,22 @@ c---------------------------------------------------------------
       else
         eps = deltael(ix,iy,iz,iel)*epsin
       endif
+      !this factor (/4.0) is introduced so that eps_cls=1
+      !gives heaviside transition roughly equal to the
+      !element edge
+      eps = eps/4.0
       heaviside = 0.5*(tanh(phi/(2.0*eps))+1.0)
+
+      !It looks like CLSR equation is really designed for
+      !the tanh heaviside profile rather than the below function
+      !Be also wary of the diffusion coefficient for the CLSR
+      ! if(phi.ge.eps)then
+      !   heaviside = 1.0
+      ! elseif(phi.le.-eps)then
+      !   heaviside = 0.0
+      ! elseif(abs(phi).lt.eps)then
+      !   heaviside = 0.5*(1.0 + phi/eps + (1./PI)*sin(PI*phi/eps))
+      ! endif
 
       return
       end
@@ -1068,7 +1107,7 @@ c-----------------------------------------------------------------------
       ntot = lx1*ly1*lz1*nelv
 
       do i=1,ntot
-        eps = 2.0*deltael(i,1,1,1)*eps_cls
+        eps = deltael(i,1,1,1)*eps_cls
         if(abs(phi(i)).gt.eps)then
           delta(i) = 0.0
         else
