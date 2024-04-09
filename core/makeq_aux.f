@@ -16,7 +16,10 @@
             call add2s2 (bq(1,1,1,1,ifield-1),bm1,dd,ntot) 
       endif
 
-      if(filterType.eq.2) call make_hpf
+      !Do NOT apply hpf if either svv or avm is active
+      if(.not.ifsvv(ifield-1) .and. .not.ifavm(ifield-1))then
+        if(filterType.eq.2) call make_hpf
+      endif
     
       return
       end
