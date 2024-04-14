@@ -3,7 +3,7 @@ c---------------------------------------------------------------
       include 'SIZE'
       include 'AVM'
 
-      do i=1,ldimt
+      do i=1,ldimt+1
         avm_ncut(i) = 1
         avm_c1(i) = 1.0
         ifcont(i) = .false.
@@ -81,13 +81,13 @@ c
          if (ibuild(ifield).eq.0) then
            if(nid.eq.0)then
              write(6,*)'AVM Parameters for ifield:',ifield
-             write(6,*)'ncut:',avm_ncut(ifield-1)
-             write(6,*)'c1:',avm_c1(ifield-1)
-             write(6,*)'C0 continuous:', ifcont(ifield-1)
+             write(6,*)'ncut:',avm_ncut(ifield)
+             write(6,*)'c1:',avm_c1(ifield)
+             write(6,*)'C0 continuous:', ifcont(ifield)
              write(6,*)
            endif
 
-           call hpf_trns_fcn(hpf_filter,avm_ncut(ifield-1))
+           call hpf_trns_fcn(hpf_filter,avm_ncut(ifield))
            call build_hpf_mat(hpf_op(1,ifield),hpf_filter,.false.)
            ibuild(ifield) = ibuild(ifield) + 1
          endif
@@ -132,7 +132,7 @@ c
          endif
          vismax = c2 * h0max * vmax
          visc(i,1,1,ie) = min(vismax, 
-     $        avm_c1(ifield-1)*h0**2 * abs(r(i,ie))*uinf)
+     $        avm_c1(ifield)*h0**2 * abs(r(i,ie))*uinf)
       enddo
       enddo
 
@@ -143,7 +143,7 @@ c
       enddo
 
       ! make it P1 continuous
-      if (ifcont(ifield-1)) then
+      if (ifcont(ifield)) then
          call dsop (visc,'max',lx1,ly1,lz1)
          do ie = 1,nelv 
            viscc(1,ie) = visc(1  ,1  ,1  ,ie)
@@ -273,7 +273,7 @@ C
 
       call rzero(avmau,ntot)
 
-      if(ifupwindavm(ifield-1))then
+      if(ifupwindavm(ifield))then
         call gradm1(gux,guy,guz,u)
         call svvbdryfix
 
@@ -286,7 +286,7 @@ C
 
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
-          if(ifupwindavm(ifield-1))then
+          if(ifupwindavm(ifield))then
             svmin = vlmin(svvmask(1,1,1,e),nxyz)
             if(svmin.eq.1.0)then
               call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
@@ -311,7 +311,7 @@ C
            call add2 (avmau(1,1,1,e),tm1,nxyz)
            call add2 (avmau(1,1,1,e),tm2,nxyz)
         else
-          if(ifupwindavm(ifield-1))then
+          if(ifupwindavm(ifield))then
             svmin = vlmin(svvmask(1,1,1,e),nxyz)
             if(svmin.eq.1.0)then
               call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)

@@ -26,9 +26,11 @@ c
      $     svvnr,svvns,svvnt,
      $     svvmask
 
-      real svv_c0(ldimt),svv_k0(ldimt),
-     $     svv_k1(ldimt),svvcut(ldimt)
-      common /svvparam/ svv_c0,svvcut,svv_k0,svv_k1
+      real svv_c0(ldimt+1),svv_k0(ldimt+1),
+     $     svv_k1(ldimt+1),svvcut(ldimt+1),
+     $     svv_c0_fluid,svvcut_fluid
+      common /svvparam/ svv_c0,svvcut,svv_k0,svv_k1,
+     $     svv_c0_fluid,svvcut_fluid
 
-      logical ifnlsvv(ldimt),ifupwindsvv(ldimt)
+      logical ifnlsvv(ldimt+1),ifupwindsvv(ldimt+1)
       common /svvl/ ifnlsvv,ifupwindsvv

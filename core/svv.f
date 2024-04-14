@@ -6,7 +6,10 @@ c---------------------------------------------------------------------
 
       integer i
 
-      do i=1,ldimt
+      svv_c0_fluid = 0.1
+      svvcut_fluid = (lx1-1.0)/2.0
+
+      do i=1,ldimt+1
         svv_c0(i) = 0.1
         svvcut(i) = (lx1-1.0)/2.0
         ifnlsvv(i) = .false.
@@ -62,11 +65,11 @@ c     Scale with advection velocity
       enddo
       
       call col2(svvmu,svvf,ntot)
-      call cmult(svvmu,svv_c0(ifield-1),ntot)
+      call cmult(svvmu,svv_c0(ifield),ntot)
       call copy(svvprec,svvmu,ntot)
-      if(ifnlsvv(ifield-1))then
-         call getnlsvvsf(phi,csf)
-         call col2(svvmu,csf,ntot)
+      if(ifnlsvv(ifield))then
+        call getnlsvvsf(phi,csf)
+        call col2(svvmu,csf,ntot)
       endif
       
       return
@@ -110,7 +113,7 @@ c      call col2(cdi,bm1,ntot)
             
       do ie=1,nelv
          do i=1,nxyz
-           cnl = (lx1-1.0)**svv_k1(ifield-1)
+           cnl = (lx1-1.0)**svv_k1(ifield)
             csf(i,1,1,ie) = switch(ie)*max(0.5,cnl*cdi(i,1,1,ie))            
          enddo
       enddo
@@ -173,7 +176,7 @@ c
                enddo
             enddo
          endif
-         threshold = 10.0**((lx1-1.)/svv_k0(ifield-1))      
+         threshold = 10.0**((lx1-1.)/svv_k0(ifield))      
          icalld = 1
       endif
      
@@ -361,6 +364,7 @@ c     Get all the 1d Legendre basis at Z for polynomial order NZ-1
 c---------------------------------------------------------------------
       subroutine diffFilter1D(q)
 c      
+      implicit none
       include 'SIZE'
       include 'TOTAL'
       include 'SVV'
@@ -368,6 +372,7 @@ c
       real q(lx1,lx1)
       real a,k
       real n
+      integer i
 c
       n = lx1-1.0
 
@@ -375,11 +380,12 @@ c
       
       do i=1,lx1
          k = i-1
-         q(i,i) = (k/n)**(svvcut(ifield-1)/2.0)
+         q(i,i) = (k/n)**(svvcut(ifield)/2.0)
       enddo
       
       if(nid .eq. 0)then
          write(*,*)"---------Modal parameters for SVV filter---------"
+         write(*,*)"Field is",ifield
          write(*,*)(q(i,i),i=1,lx1)
          write(*,*)"-------------------------------------------------"
       endif
@@ -447,7 +453,7 @@ C
 
       CALL RZERO (SVVAU,NTOT)
 
-      if(ifupwindsvv(ifield-1))then
+      if(ifupwindsvv(ifield))then
         call gradsvv(gux,guy,guz,u)
         call svvbdryfix
 
@@ -460,7 +466,7 @@ C
 
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
-          if(ifupwindsvv(ifield-1))then
+          if(ifupwindsvv(ifield))then
             svmin = vlmin(svvmask(1,1,1,e),nxyz)
             if(svmin.eq.1.0)then
               call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
@@ -484,7 +490,7 @@ C
            call add2 (svvau(1,1,1,e),tm1,nxyz)
            call add2 (svvau(1,1,1,e),tm2,nxyz)
         else
-          if(ifupwindsvv(ifield-1))then
+          if(ifupwindsvv(ifield))then
             svmin = vlmin(svvmask(1,1,1,e),nxyz)
             if(svmin.eq.1.0)then
               call col3(dudr,svvnr(1,1,1,e),gdot(1,1,1,e),nxyz)
@@ -769,3 +775,143 @@ C----------------------------------------------------------------------
 
       return
       end
+c---------------------------------------------------------------------
+      subroutine axhelm_svv_fluid (au,u,imsh,isd)
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'CTIMER'
+      include 'TSTEP'
+      include 'SVV'
+      include 'SOLN'
+C
+      COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+C
+      REAL           AU    (LX1,LY1,LZ1,1)
+     $ ,             U     (LX1,LY1,LZ1,1)
+     $ ,             HELM1 (LX1,LY1,LZ1,1)
+     $ ,             HELM2 (LX1,LY1,LZ1,1)
+      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
+     $ ,             DUDS  (LX1,LY1,LZ1)
+     $ ,             DUDT  (LX1,LY1,LZ1)
+     $ ,             TMP1  (LX1,LY1,LZ1)
+     $ ,             TMP2  (LX1,LY1,LZ1)
+     $ ,             TMP3  (LX1,LY1,LZ1)
+
+      REAL           TM1   (LX1,LY1,LZ1)
+      REAL           TM2   (LX1,LY1,LZ1)
+      REAL           TM3   (LX1,LY1,LZ1)
+      REAL           DUAX  (LX1)
+      REAL           YSM1  (LX1)
+      EQUIVALENCE    (DUDR,TM1),(DUDS,TM2),(DUDT,TM3)
+
+      integer e
+
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
+
+      nel=nelt
+      if (imsh.eq.1) nel=nelv
+
+      NXY=lx1*ly1
+      NYZ=ly1*lz1
+      NXZ=lx1*lz1
+      NXYZ=lx1*ly1*lz1
+      NTOT=NXYZ*NEL
+
+      CALL RZERO (AU,NTOT)
+
+      do 100 e=1,nel
+        IF (ldim.EQ.2) THEN
+          call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+          call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
+
+          call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+          call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+           endif
+           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+        else
+          call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
+           do 10 iz=1,lz1
+              call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
+   10      continue
+           call mxm     (u(1,1,1,e),nxy,cdztm1,lz1,dudt,lz1)
+           call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
+           call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
+           call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
+           if (ifdfrm(e)) then
+              call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp1,dudt,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
+              call addcol3 (tmp2,dudt,g6m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
+              call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
+           endif
+           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
+           do 20 iz=1,lz1
+              call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
+   20      continue
+           call mxm  (tmp3,nxy,cdzm1,lz1,tm3,lz1)
+           call add2 (au(1,1,1,e),tm1,nxyz)
+           call add2 (au(1,1,1,e),tm2,nxyz)
+           call add2 (au(1,1,1,e),tm3,nxyz)
+        endif
+ 100  continue
+
+      call col2(au,svvmu,ntot)
+
+      call col2(au,bm1,ntot)
+      call dssum(au,lx1,ly1,lz1)
+      call col2(au,binvm1,ntot)
+
+      taxhm=taxhm+(dnekclock()-etime1)
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine svv_fluid(ix,iy,iz,e,svvx,svvy,svvz)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      common /svvfluid/ auvx(lx1,ly1,lz1,lelv),
+     $                  auvy(lx1,ly1,lz1,lelv),
+     $                  auvz(lx1,ly1,lz1,lelv) 
+      real auvx,auvy,auvz
+
+      real svvx,svvy,svvz
+      integer ix,iy,iz,e
+
+      integer ntot
+      real dummy(lx1,ly1,lz1,lelv)
+
+      if(ix*iy*iz*e .eq. 1)then
+        ntot = lx1*ly1*lz1*lelv
+        call rone(dummy,ntot)
+        call setmu_svv(dummy,vx,vy,vz)
+
+        call axhelm_svv_fluid(auvx,vx,1,1)
+        call axhelm_svv_fluid(auvy,vy,1,1)
+        if(if3d)then
+          call axhelm_svv_fluid(auvz,vz,1,1)
+        endif
+      endif
+
+      svvx = auvx(ix,iy,iz,e)
+      svvy = auvy(ix,iy,iz,e)
+      svvz = auvz(ix,iy,iz,e)
+
+      return
+      end
+

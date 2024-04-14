@@ -17,7 +17,7 @@
       endif
 
       !Do NOT apply hpf if either svv or avm is active
-      if(.not.ifsvv(ifield-1) .and. .not.ifavm(ifield-1))then
+      if(.not.ifsvv(ifield) .and. .not.ifavm(ifield))then
         if(filterType.eq.2) call make_hpf
       endif
     

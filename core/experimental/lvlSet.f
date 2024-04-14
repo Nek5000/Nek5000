@@ -286,8 +286,8 @@ C----------------------------------------------------------------------
           write(name4t,'(A4)')"TLSR"
         endif
 
-        if((ifsvv(ifield-1).and.ifupwindsvv(ifield-1)).or. 
-     $       (ifavm(ifield-1).and.ifupwindavm(ifield-1)))then
+        if((ifsvv(ifield).and.ifupwindsvv(ifield)).or. 
+     $       (ifavm(ifield).and.ifupwindavm(ifield)))then
               call setUpwindSVVAVM(clsnx,clsny,clsnz)
         endif
 
@@ -346,7 +346,7 @@ C----------------------------------------------------------------------
         call cfill(vdiff(1,1,1,1,ifield),1e-10,n)
       endif
 
-      if(ifavm(ifield-1))then
+      if(ifavm(ifield))then
         do i=1,n
           avm_diff(i,1,1,1) = avm_vdiff(i,1,1,1,clsnx,clsny,clsnz)   
         enddo
@@ -703,15 +703,15 @@ c---------------------------------------------------------------
         enddo
       endif
 
-      if(ifavm(ifield-1))call axhelm_avm(au,u,imsh,isd)
+      if(ifavm(ifield))call axhelm_avm(au,u,imsh,isd)
 
       call addcol4 (au,helm2,bm1,u,ntot)
 
-      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
+      if(ifsvv(ifield))call axhelm_svv(au,u,imsh,isd)
       !lets worry about axisymmetry later
 
       if(ifls_debug.eq.1 .and. nio.eq.0)
-     $ write(*,*)"SVV status",ifsvv(ifield-1)
+     $ write(*,*)"SVV status",ifsvv(ifield)
       if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
 
       return
@@ -819,15 +819,15 @@ c---------------------------------------------------------------
         enddo
       endif
 
-      if(ifavm(ifield-1))call axhelm_avm(au,u,imsh,isd)
+      if(ifavm(ifield))call axhelm_avm(au,u,imsh,isd)
 
       call addcol4 (au,helm2,bm1,u,ntot)
 
-      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
+      if(ifsvv(ifield))call axhelm_svv(au,u,imsh,isd)
       !lets worry about axisymmetry later
 
       if(ifls_debug.eq.1 .and. nio.eq.0)
-     $ write(*,*)"SVV status",ifsvv(ifield-1)
+     $ write(*,*)"SVV status",ifsvv(ifield)
       if(ifls_debug.eq.1) call lsmonitor(au,'Diff ')
 
       return
@@ -894,7 +894,7 @@ c        endif
          CALL RZERO (H2,NTOT1)
       endif
 
-      if(ifsvv(ifield-1))then 
+      if(ifsvv(ifield))then 
         call setmu_svv(t(1,1,1,1,ifield-1),clsnx,clsny,clsnz)
       endif
 

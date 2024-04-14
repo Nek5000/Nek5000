@@ -258,7 +258,11 @@ C               endif
   200    continue
       endif
 
-      if(ifsvv(ifield-1))call axhelm_svv(au,u,imsh,isd)
+      !For fluid field SVV is only added explicitly
+      !therefore  exclude here
+      if(ifield.gt.1 .and. ifsvv(ifield))then 
+        call axhelm_svv(au,u,imsh,isd)
+      endif
       taxhm=taxhm+(dnekclock()-etime1)
       return
       end
@@ -523,7 +527,9 @@ C
       ENDIF
 C
       CALL DSSUM (DPCM1,lx1,ly1,lz1)
-      if(ifsvv(ifield-1))call setprec_svv(DPCM1,imsh,isd)
+      if(ifield.gt.1 .and. ifsvv(ifield))then 
+        call setprec_svv(DPCM1,imsh,isd)
+      endif
       CALL INVCOL1 (DPCM1,NTOT)
 C
       return

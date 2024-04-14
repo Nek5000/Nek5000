@@ -1048,12 +1048,12 @@ c        endif
       endif
 
       if(ifield.gt.1)then
-        if(ifavm(ifield-1))then
+        if(ifavm(ifield))then
           do i=1,ntot1
             avm_diff(i,1,1,1) = avm_vdiff(i,1,1,1,vx,vy,vz)             
           enddo
         endif
-        if(ifsvv(ifield-1))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
+        if(ifsvv(ifield))call setmu_svv(t(1,1,1,1,ifield-1),vx,vy,vz)
       endif
 
       return

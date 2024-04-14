@@ -151,7 +151,7 @@ C
          idpss(i) = -1
       enddo 
 
-      do i=1,ldimt
+      do i=1,ldimt+1
         ifavm(i) = .false.
         ifsvv(i) = .false.
       enddo
@@ -904,9 +904,9 @@ c scalar regularization
         call capit(c_out,132)
         if(ifnd .eq. 1)then
           if(index(c_out,'AVM') .eq. 1) then
-            ifavm(i) = .true.
+            ifavm(i+1) = .true.
           elseif(index(c_out,'SVV') .eq. 1)then
-            ifsvv(i) = .true.
+            ifsvv(i+1) = .true.
           elseif(index(c_out,'NONE') .eq. 1)then
             continue
           endif
@@ -991,8 +991,8 @@ C
 
       call bcast(timeioe,sizeof(timeioe))
 
-      call bcast(ifavm, ldimt*lsize)
-      call bcast(ifsvv, ldimt*lsize)
+      call bcast(ifavm, (ldimt+1)*lsize)
+      call bcast(ifsvv, (ldimt+1)*lsize)
 
 c set some internals 
       if (ldim.eq.3) if3d=.true.

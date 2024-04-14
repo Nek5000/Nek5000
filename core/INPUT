@@ -51,7 +51,7 @@ c
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
      $               ,ifmpiio,ifrich,ifvvisp
-     $               ,ifavm(ldimt),ifsvv(ldimt) 
+     $               ,ifavm(ldimt+1),ifsvv(ldimt+1) 
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
