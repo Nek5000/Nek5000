@@ -1176,7 +1176,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'LVLSET'
 
-      integer ntot
+      integer ntot,i
       real glsum
 
       real vol(lx1,ly1,lz1,lelt)
@@ -1191,6 +1191,15 @@ c-----------------------------------------------------------------------
       else
         call copy(vol,t(1,1,1,1,ifld_cls-1),ntot)
       endif
+
+      !Convert to step heaviside function
+      do i=1,ntot
+        if(vol(i,1,1,1) .ge. 0.5)then
+          vol(i,1,1,1) = 1.0
+        else
+          vol(i,1,1,1) = 0.0
+        endif
+      enddo
 
       call col2(vol,bm1,ntot)
 
