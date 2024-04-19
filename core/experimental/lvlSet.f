@@ -1170,3 +1170,31 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      real function enclosedVol(direc)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ntot
+      real glsum
+
+      real vol(lx1,ly1,lz1,lelt)
+      integer direc
+
+      ntot = lx1*ly1*lz1*lelv
+
+      if(direc.lt.0)then
+        call copy(vol,t(1,1,1,1,ifld_cls-1),ntot)
+        call cmult(vol,-1.0,ntot)
+        call cadd(vol,1.0,ntot)
+      else
+        call copy(vol,t(1,1,1,1,ifld_cls-1),ntot)
+      endif
+
+      call col2(vol,bm1,ntot)
+
+      enclosedVol = glsum(vol,ntot)
+
+      return
+      end
