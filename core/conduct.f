@@ -61,7 +61,7 @@ c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          
          if((ifsvv(ifield).and.ifupwindsvv(ifield)).or.
      $        (ifavm(ifield).and.ifupwindavm(ifield)))then
-           call setUpwindSVVAVM(vx,vy,xz)
+           call setUpwindSVVAVM(vx,vy,vz)
          endif
 
          do 1000 iter=1,nmxnl ! iterate for nonlin. prob. (e.g. radiation b.c.)
