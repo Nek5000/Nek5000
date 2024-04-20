@@ -60,7 +60,7 @@ C
 c        if (ifaxis.and.ifmhd) isd = 2 !This is a problem if T is to be T!
          
          if((ifsvv(ifield).and.ifupwindsvv(ifield)).or.
-     $        (ifavm(ifield-1).and.ifupwindavm(ifield-1)))then
+     $        (ifavm(ifield).and.ifupwindavm(ifield)))then
            call setUpwindSVVAVM(vx,vy,xz)
          endif
 

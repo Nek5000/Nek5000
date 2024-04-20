@@ -222,7 +222,7 @@ c
         endif
 C
  100  continue
-        if(ifield.gt.1 .and. ifavm(ifield-1)) then
+        if(ifield.gt.1 .and. ifavm(ifield)) then
           call axhelm_avm(au,u,imsh,isd)
         endif
 C
