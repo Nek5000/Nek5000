@@ -794,8 +794,8 @@ c---------------------------------------------------------------
             call add2 (au(1,1,1,e),tm2,nxyz)
           else
             call col3(tmp1,g1m1(1,1,1,e),clsnr(1,1,1,e),nxyz)
-            call col3(tmp1,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
-            call col3(tmp1,g3m1(1,1,1,e),clsnt(1,1,1,e),nxyz)
+            call col3(tmp2,g2m1(1,1,1,e),clsns(1,1,1,e),nxyz)
+            call col3(tmp3,g3m1(1,1,1,e),clsnt(1,1,1,e),nxyz)
             if (ifdfrm(e)) then
               call addcol3 (tmp1,clsns(1,1,1,e),g4m1(1,1,1,e),nxyz)
               call addcol3 (tmp1,clsnt(1,1,1,e),g5m1(1,1,1,e),nxyz)
