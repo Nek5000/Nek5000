@@ -219,7 +219,7 @@ if [ "$1" == "clean" ]; then
    done 
 else
    LIST=""
-   if [ "$1" == "" ] || [ "$1" == "core" ]; then
+   if [ "$1" == "core" ]; then
       LIST=$LIST_CORE
    elif [ "$1" == "all" ]; then
       LIST=$LIST_ALL
