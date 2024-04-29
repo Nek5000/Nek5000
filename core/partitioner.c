@@ -441,16 +441,24 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, comm_ext comm,
 
   // Graph parameters:
   Zoltan_Set_Param(zz, "CHECK_GRAPH", "2");
+
   Zoltan_Set_Param(zz, "HYPERGRAPH_PACKAGE", "PHG");
   Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".35");
 
   // parMETIS options:
-  // Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
-  // Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
-  // Zoltan_Set_Param(zz,"GRAPH_PACKAGE","SCOTCH");
+  const char *enable_parmetis = getenv("ENABLE_ZOLTAN_PARMETIS");
+  if (!enable_parmetis || atoi(enable_parmetis) == 0) goto enable_scotch;
+  Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
+  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
 
-  // We are going to create the dual graph by hand and input it to
-  // Zoltan.
+  // Scotch options:
+enable_scotch:
+  const char *enable_scotch = getenv("ENABLE_ZOLTAN_SCOTCH");
+  if (!enable_scotch || atoi(enable_scotch) == 0) goto create_dual_graph;
+  Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "SCOTCH");
+
+  // We are going to create the dual graph by hand and input it to Zoltan.
+create_dual_graph:
   struct comm c;
   comm_init(&c, comm);
   graph_t *graph = graph_create(vl, nel, nv, &c);
@@ -504,8 +512,8 @@ extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
 
 #include <parhip_interface.h>
 
-static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
-                          comm_ext ce, int verbose) {
+static int ParHIP_partMesh(int *part, long long *vl, int nel, int nv,
+                           comm_ext ce, int verbose) {
   if (sizeof(idxtype) != sizeof(unsigned long long)) {
     printf("ERROR: invalid sizeof(idxtype)!\n");
     goto err;
@@ -526,7 +534,7 @@ static int KaHIP_partMesh(int *part, long long *vl, int nel, int nv,
   }
 
   if (comm.id == 0 && verbose)
-    fprintf(stderr, "Running KaHIP ... "), fflush(stderr);
+    fprintf(stderr, "Running ParHIP ... "), fflush(stderr);
 
   idxtype *nel_array = tcalloc(idxtype, comm.np);
   idxtype nel_ull = nel;
@@ -804,7 +812,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 #endif
   } else if (partitioner == 64) {
 #if defined(KAHIP)
-    ierr = KaHIP_partMesh(part, vl, nel, nv, comm.c, 1);
+    ierr = ParHIP_partMesh(part, vl, nel, nv, comm.c, 1);
 #endif
   }
 
