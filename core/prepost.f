@@ -1559,6 +1559,8 @@ c-----------------------------------------------------------------------
       integer cnt 
       integer lbuf 
 
+      real umin(3), umax(3)
+
       call nekgsync() ! clear outstanding message queues.
 
       nxyz = lx1*ly1*lz1
@@ -1567,6 +1569,11 @@ c-----------------------------------------------------------------------
       lsend = 4 * (1 + n*nelt)
       ierr = 0
 
+      do i = 1,3
+        umin(i) = 1e30
+        umax(i) = -umin(i)
+      enddo
+
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
@@ -1574,13 +1581,25 @@ c-----------------------------------------------------------------------
          do e=1,nel
             if(out_mask(e).ne.0) then
               buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin(1) = min(buffer(j+0), umin(1))
+
               buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax(1) = max(buffer(j+1), umax(1))
+
               buffer(j+2) = vlmin(v(1,e),nxyz) 
+              umin(2) = min(buffer(j+2), umin(2))
+
               buffer(j+3) = vlmax(v(1,e),nxyz)
+              umax(2) = max(buffer(j+3), umax(2))
+
               j = j + 4
               if(if3d) then
                 buffer(j+0) = vlmin(w(1,e),nxyz) 
+                umin(3) = min(buffer(j+0), umin(3))
+
                 buffer(j+1) = vlmax(w(1,e),nxyz)
+                umax(3) = max(buffer(j+1), umax(3))
+
                 j = j + 2
               endif
               cnt = cnt + 1
@@ -1619,13 +1638,25 @@ c-----------------------------------------------------------------------
          do e=1,nel
             if(out_mask(e).ne.0) then
               buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin(1) = min(buffer(j+0), umin(1))
+
               buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax(1) = max(buffer(j+1), umax(1))
+
               buffer(j+2) = vlmin(v(1,e),nxyz) 
+              umin(2) = min(buffer(j+2), umin(2))
+
               buffer(j+3) = vlmax(v(1,e),nxyz)
+              umax(2) = max(buffer(j+3), umax(2))
+
               j = j + 4
               if(n.eq.6) then
-                buffer(j+0) = vlmin(w(1,e),nxyz) 
+                buffer(j+0) = vlmin(w(1,e),nxyz)
+                umin(3) = min(buffer(j+0), umin(3))
+ 
                 buffer(j+1) = vlmax(w(1,e),nxyz)
+                umax(3) = max(buffer(j+1), umax(3))
+
                 j = j + 2
               endif
               cnt = cnt + 1
@@ -1640,6 +1671,18 @@ c-----------------------------------------------------------------------
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_mdatav. $')
+
+      gmin_u = glmin(umin(1), 1)
+      gmax_u = glmax(umax(1), 1)
+      gmin_v = glmin(umin(2), 1)
+      gmax_v = glmax(umax(2), 1)
+      gmin_w = glmin(umin(3), 1)
+      gmax_w = glmax(umax(3), 1)
+
+      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
+     $             gmin_u,gmax_u, 
+     $             gmin_v,gmax_v, 
+     $             gmin_w,gmax_w
 
       return
       end
@@ -1659,6 +1702,8 @@ c-----------------------------------------------------------------------
       integer cnt
       integer lbuf
 
+      real umin, umax
+
       call nekgsync() ! clear outstanding message queues.
 
       nxyz = lx1*ly1*lz1
@@ -1667,14 +1712,21 @@ c-----------------------------------------------------------------------
       lsend = 4 * (1 + n*nelt)
       ierr = 0
 
+      umin = 1e30
+      umax = -umin
+
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          cnt = 0
          j = 1
          do e=1,nel
             if(out_mask(e).ne.0) then
-              buffer(j+0) = vlmin(u(1,e),nxyz) 
+              buffer(j+0) = vlmin(u(1,e),nxyz)
+              umin = min(buffer(j+0), umin)
+
               buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax = max(buffer(j+0), umax)
+
               j = j + 2 
               cnt = cnt + 1
             endif
@@ -1712,7 +1764,11 @@ c-----------------------------------------------------------------------
          do e=1,nel
             if(out_mask(e).ne.0) then
               buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin = min(buffer(j+0), umin)
+
               buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax = max(buffer(j+1), umax)
+
               j = j + 2
               cnt = cnt + 1
             endif
@@ -1726,6 +1782,10 @@ c-----------------------------------------------------------------------
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_mdatas. $')
+
+      umin = glmin(umin, 1)
+      umax = glmax(umax, 1)
+      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', umin,umax
 
       return
       end
@@ -1746,11 +1806,6 @@ c-----------------------------------------------------------------------
 
       integer e
       integer cnt
-
-      umin = glmin(u,nel*mx*my*mz)
-      umax = glmax(u,nel*mx*my*mz)
-      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', 
-     $             umin,umax
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
@@ -1862,15 +1917,6 @@ c-----------------------------------------------------------------------
 
       integer e
       integer cnt
-
-      umax = glmax(u,nel*mx*my*mz)
-      vmax = glmax(v,nel*mx*my*mz)
-      wmax = glmax(w,nel*mx*my*mz)
-      umin = glmin(u,nel*mx*my*mz)
-      vmin = glmin(v,nel*mx*my*mz)
-      wmin = glmin(w,nel*mx*my*mz)
-      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
-     $             umin,umax, vmin,vmax, wmin,wmax
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
