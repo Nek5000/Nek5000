@@ -1725,7 +1725,7 @@ c-----------------------------------------------------------------------
               umin = min(buffer(j+0), umin)
 
               buffer(j+1) = vlmax(u(1,e),nxyz)
-              umax = max(buffer(j+0), umax)
+              umax = max(buffer(j+1), umax)
 
               j = j + 2 
               cnt = cnt + 1
