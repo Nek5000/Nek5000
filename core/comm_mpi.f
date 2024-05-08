@@ -63,7 +63,13 @@ c-----------------------------------------------------------------------
  22        rewind(8)
            if (nlin.gt.2) then 
              read(8,*,err=24) nsessions
-             if(nsessions.gt.nsessmax) goto 24
+             if(nsessions.gt.nsessmax) then
+               write(6,80) nsessmax, nsessions
+ 82            format(//,2x,'Error: Nek has been compiled'
+     $                 /,2x,'       for max.',i4,' sessions. This run'
+     $                 /,2x,'       requires that nsessmax be set to',i4,'.')
+               call exitt
+             endif
            endif
            if (nsessions.gt.1) read(8,*,err=24) ifneknekc
            do n=0,nsessions-1
