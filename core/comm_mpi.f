@@ -64,10 +64,10 @@ c-----------------------------------------------------------------------
            if (nlin.gt.2) then 
              read(8,*,err=24) nsessions
              if(nsessions.gt.nsessmax) then
-               write(6,80) nsessmax, nsessions
- 82            format(//,2x,'Error: Nek has been compiled'
-     $                 /,2x,'       for max.',i4,' sessions. This run'
-     $                 /,2x,'       requires that nsessmax be set to',i4,'.')
+               write(6,82) nsessmax, nsessions
+ 82            format(//,2x,'Error: Nek has been compiled for max.',i4,
+     $                 /,2x,'       sessions. This run requires that'
+     $                 /,2x,'       nsessmax be set to',i4,'.')
                call exitt
              endif
            endif
