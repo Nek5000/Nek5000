@@ -38,9 +38,9 @@ function build_3rdparty() {
   fi
   cd $CASEDIR
 
-  if [ $KAHIP -ne 0 ]; then
+  if [ $PARHIP -ne 0 ]; then
      check_cxx_compiler
-     cd $SOURCE_ROOT_KAHIP
+     cd $SOURCE_ROOT_PARHIP
      CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
@@ -82,7 +82,7 @@ function clean_3rdparty() {
   cd $CASEDIR
   cd $SOURCE_ROOT_ZOLTAN2; ./install clean 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_KAHIP; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARHIP; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
   cd $CASEDIR
@@ -121,7 +121,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  PARMETIS      use online parMETIS partitioner"
   echo "  ZOLTAN        use online Zoltan partitioner"
   echo "  ZOLTAN2       use online Zoltan2 partitioner"
-  echo "  KAHIP         use online KaHIP partitioner"
+  echo "  PARHIP        use online KaHIP partitioner"
   return 11
 fi
 
@@ -152,8 +152,8 @@ SOURCE_ROOT_ZOLTAN="$NEK_SOURCE_ROOT/3rd_party/Zoltan"
 export SOURCE_ROOT_ZOLTAN
 SOURCE_ROOT_ZOLTAN2="$NEK_SOURCE_ROOT/3rd_party/Zoltan2"
 export SOURCE_ROOT_ZOLTAN2
-SOURCE_ROOT_KAHIP="$NEK_SOURCE_ROOT/3rd_party/KaHIP"
-export SOURCE_ROOT_KAHIP
+SOURCE_ROOT_PARHIP="$NEK_SOURCE_ROOT/3rd_party/KaHIP"
+export SOURCE_ROOT_PARHIP
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
@@ -358,7 +358,7 @@ PARRSB=0
 PARMETIS=0
 ZOLTAN=0
 ZOLTAN2=0
-KAHIP=0
+PARHIP=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
@@ -394,11 +394,11 @@ do
      USR_LFLAGS+=" -lkokkossimd -lkokkoscore"
      ZOLTAN2_INC="${SOURCE_ROOT_ZOLTAN2}/include"
    fi
-   if [ "$i" == "KAHIP" ]; then
-     KAHIP=1
-     USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_KAHIP}/lib"
-     USR_LFLAGS+=" -L${SOURCE_ROOT_KAHIP}/lib -lparhip_interface -lkahip"
-     KAHIP_INC="${SOURCE_ROOT_KAHIP}/include"
+   if [ "$i" == "PARHIP" ]; then
+     PARHIP=1
+     USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_PARHIP}/lib"
+     USR_LFLAGS+=" -L${SOURCE_ROOT_PARHIP}/lib -lparhip_interface -lkahip"
+     PARHIP_INC="${SOURCE_ROOT_PARHIP}/include"
    fi
    if [ "$i" == "PARMETIS" ]; then
      PARMETIS=1
@@ -514,7 +514,7 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
--e "s/^KAHIP[ ]*=.*/KAHIP=${KAHIP}/" \
+-e "s/^PARHIP[ ]*=.*/PARHIP=${PARHIP}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
@@ -582,8 +582,8 @@ if [ $ZOLTAN2 -ne 0 ]; then
   mv .makefile.tmp .makefile
 fi
 
-if [ $KAHIP -ne 0 ]; then
-  sed -e "s:^KAHIP_IFLAGS[ ]*=.*:KAHIP_IFLAGS\:=-I${KAHIP_INC}:" \
+if [ $PARHIP -ne 0 ]; then
+  sed -e "s:^PARHIP_IFLAGS[ ]*=.*:PARHIP_IFLAGS\:=-I${PARHIP_INC}:" \
       .makefile > .makefile.tmp
 
   mv .makefile.tmp .makefile
