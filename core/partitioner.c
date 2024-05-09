@@ -507,7 +507,7 @@ extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                             comm_ext comm_, int verbose);
 #endif // ZOLTAN2
 
-#if defined(KAHIP)
+#if defined(PARHIP)
 #include <stdbool.h>
 
 #include <parhip_interface.h>
@@ -568,7 +568,7 @@ static int ParHIP_partMesh(int *part, long long *vl, int nel, int nv,
   graph_destroy(&graph);
 
   int num_parts = comm.np;
-  double imbalance = 1.0 / (vtxdist[comm.np] / comm.np);
+  double imbalance_tol = 1.0 / (vtxdist[comm.np] / comm.np);
   bool suppress_output = false;
   int seed = 0;
   int mode = ECOMESH;
@@ -581,8 +581,8 @@ static int ParHIP_partMesh(int *part, long long *vl, int nel, int nv,
   }
 
   ParHIPPartitionKWay(vtxdist, xadj, adjncy, vwgt, adjwgt, &num_parts,
-                      &imbalance, suppress_output, seed, mode, &edgecut, part_,
-                      &active);
+                      &imbalance_tol, suppress_output, seed, mode, &edgecut,
+                      part_, &active);
 
   free(vtxdist), free(xadj), free(adjncy), free(vwgt), free(adjwgt);
   comm_free(&comm);
@@ -602,7 +602,7 @@ err:
   return 1;
 }
 
-#endif // KAHIP
+#endif // PARHIP
 
 static void print_part_stat(long long *vtx, int nel, int nv, comm_ext ce) {
   int i, j;
@@ -811,7 +811,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
     ierr = Zoltan_partMesh(part, vl, nel, nv, comm.c, 1);
 #endif
   } else if (partitioner == 64) {
-#if defined(KAHIP)
+#if defined(PARHIP)
     ierr = ParHIP_partMesh(part, vl, nel, nv, comm.c, 1);
 #endif
   }
