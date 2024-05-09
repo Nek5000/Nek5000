@@ -26,6 +26,7 @@ DPROCMAP=0
 VISIT=0
 ZOLTAN2=0
 PARHIP=0
+PARMETIS=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
@@ -91,6 +92,10 @@ ifeq ($(MPI),0)
 	DUMMY:= $(shell cp $S/core/mpi_dummy.h $S/core/mpif.h) 
 else
 	DUMMY:= $(shell rm -rf $S/core/mpif.h) 
+endif
+
+ifeq ($(PARMETIS), 1)
+	CORE := $(CORE) parmetis.o
 endif
 
 ifeq ($(ZOLTAN2), 1)
@@ -243,10 +248,11 @@ $(OBJDIR)/chelpers.o         :$S/core/chelpers.c;          $(CC) -c $(cFL2) $< -
 $(OBJDIR)/fcrs.o             :$S/core/fcrs.c;              $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_xxt.o          :$S/core/crs_xxt.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/crs_amg.o          :$S/core/crs_amg.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
-$(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 
 # CXX Files ##################################################################################
