@@ -353,21 +353,39 @@ PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
 MPIIO=1
+CVODE=0
+HYPRE=0
+VENDOR_BLAS=0
 DPROCMAP=0
 PARRSB=0
 PARMETIS=0
 ZOLTAN=0
 ZOLTAN2=0
 PARHIP=0
-CVODE=0
-HYPRE=0
 MXM_USER="mxm_std.o"
-VENDOR_BLAS=0
 
 for i in $PPLIST
 do
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
+   fi
+   if [ "$i" == "CVODE" ]; then
+     CVODE=1
+     if [ $MPI -eq 1 ]; then
+       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
+       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel"
+     else
+       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
+       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial"
+     fi
+   fi
+   if [ "$i" == "HYPRE" ]; then
+     HYPRE=1
+     USR_LFLAGS+=" -L$SOURCE_ROOT_HYPRE/lib -lHYPRE"
+     HYPRE_INC="$SOURCE_ROOT_HYPRE/include"
+   fi
+   if [ "$i" == "VENDOR_BLAS" ]; then
+     VENDOR_BLAS=1
    fi
    if [ "$i" == "DPROCMAP" ]; then
      DPROCMAP=1
@@ -404,24 +422,6 @@ do
      PARMETIS=1
      USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
      METIS_INC="$SOURCE_ROOT_PARMETIS/include"
-   fi
-   if [ "$i" == "CVODE" ]; then
-     CVODE=1
-     if [ $MPI -eq 1 ]; then
-       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel"
-     else
-       USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial"
-     fi
-   fi
-   if [ "$i" == "HYPRE" ]; then
-     HYPRE=1
-     USR_LFLAGS+=" -L$SOURCE_ROOT_HYPRE/lib -lHYPRE"
-     HYPRE_INC="$SOURCE_ROOT_HYPRE/include"
-   fi
-   if [ "$i" == "VENDOR_BLAS" ]; then
-     VENDOR_BLAS=1
    fi
 done
 
@@ -511,8 +511,9 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE=$CVODE/" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
--e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
+-e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
+-e "s/^PARMETIS[ ]*=.*/PARMETIS=${PARMETIS}/" \
 -e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
 -e "s/^PARHIP[ ]*=.*/PARHIP=${PARHIP}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
