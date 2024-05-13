@@ -14,4 +14,7 @@ typedef struct {
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
                       MPI_Comm ce);
 
+int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
+                    int verbose);
+
 #endif // __NEK5000_PARTITIONER_H__

@@ -514,6 +514,7 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^PARMETIS[ ]*=.*/PARMETIS=${PARMETIS}/" \
+-e "s/^ZOLTAN[ ]*=.*/ZOLTAN=${ZOLTAN}/" \
 -e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
 -e "s/^PARHIP[ ]*=.*/PARHIP=${PARHIP}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \

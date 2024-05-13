@@ -22,17 +22,17 @@ USR=
 USR_LFLAGS=
 
 MPI=0 
-DPROCMAP=0
 VISIT=0
+DPROCMAP=0
+PARMETIS=0
+ZOLTAN=0
 ZOLTAN2=0
 PARHIP=0
-PARMETIS=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
 HYPRE_IFLAGS=
 GSLIB_IFLAGS=
-
 PARRSB_IFLAGS=
 PARMETIS_IFLAGS=
 ZOLTAN_IFLAGS=
@@ -97,6 +97,10 @@ endif
 
 ifeq ($(PARMETIS), 1)
 	CORE := $(CORE) parmetis.o
+endif
+
+ifeq ($(ZOLTAN), 1)
+	CORE := $(CORE) zoltan.o
 endif
 
 ifeq ($(ZOLTAN2), 1)
@@ -254,6 +258,7 @@ $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(c
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/zoltan.o           :$S/core/zoltan.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 
 # CXX Files ##################################################################################
