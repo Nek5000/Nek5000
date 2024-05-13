@@ -36,9 +36,10 @@ GSLIB_IFLAGS=
 PARRSB_IFLAGS=
 PARMETIS_IFLAGS=
 ZOLTAN_IFLAGS=
-PARHIP_IFLAGS=
-PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS) $(PARHIP_IFLAGS)
 ZOLTAN2_IFLAGS=
+PARHIP_IFLAGS=
+
+PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS) $(PARHIP_IFLAGS)
 
 ################################################################################
 
@@ -259,7 +260,7 @@ $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/zoltan2.cpp.o :$S/core/zoltan2.cpp; $(CXX) -c $(cxxFL2) $(GSLIB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;	     $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
+$(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;         $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/core/3rd_party/nek_in_situ.f;   $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/core/3rd_party/finiparser.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
 $(OBJDIR)/iniparser.o    :$S/core/3rd_party/iniparser.c;     $(CC) -c $(cFL2) $(JL) $< -o $@
