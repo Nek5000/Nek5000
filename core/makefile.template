@@ -107,13 +107,14 @@ ifeq ($(ZOLTAN2), 1)
 	CORE := $(CORE) zoltan2.c.o zoltan2.cpp.o
 endif
 
+CORE := $(CORE) partitioner-weak.o
+
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
 INCLUDES_DIR += $(OPT_INCDIR)
 INCLUDES_DIR += $(S)/core/experimental
 INCLUDES_DIR += $(OBJDIR)
 INCLUDES:= $(foreach dir,$(INCLUDES_DIR),-I$(dir))
-#$(info $(shell echo "INCLUDES: $(INCLUDES)"))
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 USRF = $(OBJDIR)/${CASENAME}.o
@@ -257,6 +258,7 @@ $(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GS
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/partitioner-weak.o :$S/core/partitioner-weak.c;  $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan.o           :$S/core/zoltan.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
