@@ -1,15 +1,5 @@
 #include "partitioner.h"
 
-#if defined(ZOLTAN2)
-
-extern int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
-                            MPI_Comm comm_, int verbose);
-#endif // ZOLTAN2
-
-#if defined(PARRSB)
-#include "parRSB.h"
-#endif
-
 #if defined(PARHIP)
 #include <stdbool.h>
 
