@@ -78,10 +78,11 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
     }                                                                          \
   }
 
-int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
-                    int verbose) {
+int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
+                    MPI_Comm comm) {
   float ver;
-  int   rc = Zoltan_Initialize(0, NULL, &ver);
+  int   rc      = Zoltan_Initialize(0, NULL, &ver);
+  int   verbose = (int)opt[1];
 
   int    rank, size;
   double imbalance_tol;

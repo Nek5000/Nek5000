@@ -3,8 +3,10 @@
 #include "parhip_interface.h"
 #include "partitioner.h"
 
-int parHIP_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm ce,
-                    int verbose) {
+int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
+                    MPI_Comm ce) {
+  int verbose = (int)opt[1];
+
   if (sizeof(idxtype) != sizeof(unsigned long long)) {
     printf("ERROR: invalid sizeof(idxtype)!\n");
     goto err;
