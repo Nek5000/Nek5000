@@ -4,7 +4,7 @@
 #include "parmetis.h"
 #include "partitioner.h"
 
-int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
+int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                       MPI_Comm ce) {
   int    i, j;
   int    ierrm;
@@ -86,11 +86,11 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
   options[0]                  = 1;
   options[PMV3_OPTION_DBGLVL] = 0;
   options[PMV3_OPTION_SEED]   = 0;
-  if (opt[0] != 0) {
-    options[PMV3_OPTION_DBGLVL] = opt[1];
+  if ((int)opt[0] > 0) {
+    options[PMV3_OPTION_DBGLVL] = (int)opt[1];
     if (opt[2] != 0) {
       options[3] = PARMETIS_PSR_UNCOUPLED;
-      nparts     = opt[2];
+      nparts     = (int)opt[2];
     }
   }
 

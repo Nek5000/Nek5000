@@ -15,17 +15,17 @@ typedef struct {
   int       proc;
 } edata;
 
-int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, int *opt,
-                      MPI_Comm ce);
+int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
+                      MPI_Comm comm);
 
-int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
-                    int verbose);
+int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
+                    MPI_Comm comm);
 
 int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
-                     MPI_Comm comm, int verbose);
+                     double *opt, MPI_Comm comm);
 
-int parHIP_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
-                    int verbose);
+int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
+                    MPI_Comm comm);
 
 typedef struct {
   uint   num_vertices;

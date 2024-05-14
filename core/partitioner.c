@@ -163,6 +163,7 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   int lelt        = *lelm;
   int partitioner = *fpartitioner;
   int algo        = *falgo;
+  int verbose     = *loglevel;
 
   struct comm comm;
 #if defined(MPI)
@@ -172,11 +173,17 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 #endif
   comm_init(&comm, cext);
 
-  int  ierr = 1;
+  if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
+
   int *part = (int *)malloc(lelt * sizeof(int));
 
-  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
+  double opt[10] = {0};
+  opt[0]         = 1;
+  opt[1]         = 0;       /* verbosity */
+  opt[2]         = comm.np; /* number of partitions */
+  opt[3]         = 1.10;    /* imbalance tolerance */
 
+  int ierr = 1;
   if (partitioner == 0 || partitioner == 1) {
 #if defined(PARRSB)
     parrsb_options options = parrsb_default_options;
@@ -187,26 +194,13 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
     ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
 #endif
   } else if (partitioner == 8) {
-#if defined(PARMETIS)
-    int opt[3];
-    opt[0] = 1;
-    opt[1] = 0; /* verbosity */
-    opt[2] = comm.np;
-
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
-#endif
   } else if (partitioner == 16) {
-#if defined(ZOLTAN2)
-    ierr = Zoltan2_partMesh(part, vl, nel, nv, comm.c, 1);
-#endif
+    ierr = Zoltan2_partMesh(part, vl, nel, nv, opt, comm.c);
   } else if (partitioner == 32) {
-#if defined(ZOLTAN)
-    ierr = Zoltan_partMesh(part, vl, nel, nv, comm.c, 1);
-#endif
+    ierr = Zoltan_partMesh(part, vl, nel, nv, opt, comm.c);
   } else if (partitioner == 64) {
-#if defined(PARHIP)
-    ierr = parHIP_partMesh(part, vl, nel, nv, comm.c, 1);
-#endif
+    ierr = parHIP_partMesh(part, vl, nel, nv, opt, comm.c);
   }
 
   check_error(ierr);
@@ -214,10 +208,11 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
   check_error(ierr);
 
-  if (*loglevel > 2) print_part_stat(vl, nel, nv, cext);
+  if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
   free(part), comm_free(&comm);
-  *nell = nel, *rtval = 0;
+  *nell  = nel;
+  *rtval = 0;
 }
 
 #define fpartmesh_greedy FORTRAN_UNPREFIXED(fpartmesh_greedy, FPARTMESH_GRREDY)
@@ -241,16 +236,10 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
   parrsb_part_solid(part, vl2, *nel2, vl1, *nel1, *nv, comm.c);
 
   int ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
-  if (ierr != 0) goto err;
-  *rtval = 0;
+  check_error(ierr);
 
   free(part);
   comm_free(&comm);
-  return;
-
-err:
-  fflush(stdout);
-  *rtval = 1;
 #endif
 }
 

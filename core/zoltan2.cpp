@@ -8,6 +8,7 @@
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
 typedef void *zoltan_lapalacian_t;
+
 extern "C" zoltan_lapalacian_t
 zoltan_lapalacian_weighted(long long *vl, unsigned nel, unsigned nv,
                            MPI_Comm comm, int verbose);
@@ -80,7 +81,9 @@ static void check_solution(const RCP<Matrix_t>        &matrix,
 }
 
 extern "C" int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
-                                MPI_Comm comm_, int verbose) {
+                                double *opt, MPI_Comm comm_) {
+  int verbose = (int)opt[1];
+
   int rank, size;
   {
     MPI_Comm_rank(comm_, &rank);
