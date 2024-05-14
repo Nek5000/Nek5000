@@ -265,3 +265,8 @@ void fprintpartstat(long long *vtx, int *nel, int *nv, int *comm) {
 
   print_part_stat(vtx, *nel, *nv, c);
 }
+
+#undef fprintpartstat
+#undef fpartmesh_greedy
+#undef fpartmesh
+#undef check_error
