@@ -40,3 +40,11 @@ int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                      MPI_Comm comm, int verbose) {
   exit_if_not_enabled("Zoltan2", "ZOLTAN2", comm);
 }
+
+int parHIP_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
+                    int verbose) __attribute__((weak));
+
+int parHIP_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
+                    int verbose) {
+  exit_if_not_enabled("parHIP", "PARHIP", comm);
+}

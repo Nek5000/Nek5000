@@ -24,4 +24,7 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
 int Zoltan2_partMesh(int *part, long long *vl, unsigned nel, int nv,
                      MPI_Comm comm, int verbose);
 
+int parHIP_partMesh(int *part, long long *vl, int nel, int nv, MPI_Comm comm,
+                    int verbose);
+
 #endif // __NEK5000_PARTITIONER_H__
