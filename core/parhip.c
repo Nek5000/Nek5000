@@ -5,29 +5,27 @@
 
 int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                     MPI_Comm ce) {
-  int verbose = (int)opt[1];
+  sint ierrm = 1;
+  sint ibfr;
 
   if (sizeof(idxtype) != sizeof(unsigned long long)) {
-    printf("ERROR: invalid sizeof(idxtype)!\n");
-    goto err;
+    fprintf(stderr, "ERROR: invalid sizeof(idxtype)!\n");
+    goto wait_and_check;
   }
-  if (nv != 4 && nv != 8) {
-    printf("ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
-    goto err;
-  }
+
+  int    verbose       = (int)opt[1];
+  int    num_parts     = (int)opt[2];
+  double imbalance_tol = opt[3];
 
   struct comm comm;
   MPI_Comm    active;
-  sint        ierr = 0;
-  {
-    int color = (nel > 0) ? 1 : MPI_UNDEFINED;
-    MPI_Comm_split(ce, color, 0, &active);
-    if (color == MPI_UNDEFINED) goto end;
-    comm_init(&comm, active);
-  }
 
-  if (comm.id == 0 && verbose)
-    fprintf(stderr, "Running parHIP ... "), fflush(stderr);
+  int color = (nel > 0) ? 1 : MPI_UNDEFINED;
+  MPI_Comm_split(ce, color, 0, &active);
+  if (color == MPI_UNDEFINED) goto wait_and_check;
+
+  comm_init(&comm, active);
+  if (comm.id == 0 && verbose) printf("Running parHIP ... "), fflush(stdout);
 
   idxtype *nel_array = tcalloc(idxtype, comm.np);
   idxtype  nel_ull   = nel;
@@ -60,22 +58,19 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
 
   graph_destroy(&graph);
 
-  int      num_parts       = comm.np;
-  double   imbalance_tol   = 1.0 / (vtxdist[comm.np] / comm.np);
   bool     suppress_output = false;
   int      seed            = 0;
   int      mode            = ECOMESH;
   int      edgecut         = 0;
   idxtype *part_           = tcalloc(idxtype, nel);
 
-  if (comm.id == 0 && verbose) {
-    fprintf(stderr, "imbalance_tol = %lf", imbalance_tol);
-    fflush(stderr);
-  }
-
+  double time0 = comm_time();
   ParHIPPartitionKWay(vtxdist, xadj, adjncy, vwgt, adjwgt, &num_parts,
                       &imbalance_tol, suppress_output, seed, mode, &edgecut,
                       part_, &active);
+
+  double time = comm_time() - time0;
+  if (comm.id == 0 && verbose) printf("%lf sec\n", time), fflush(stdout);
 
   free(vtxdist), free(xadj), free(adjncy), free(vwgt), free(adjwgt);
   comm_free(&comm);
@@ -83,13 +78,12 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
 
   for (uint i = 0; i < nel; i++) part[i] = part_[i];
   free(part_);
+  ierrm = 0;
 
-end:
+wait_and_check:
+  fflush(stderr);
   comm_init(&comm, ce);
-  sint ierr_max = ierr, ibfr;
-  comm_allreduce(&comm, gs_int, gs_max, &ierr_max, 1, &ibfr);
-  return (ierr_max != 0);
-
-err:
-  return 1;
+  comm_allreduce(&comm, gs_int, gs_max, &ierrm, 1, &ibfr);
+  comm_free(&comm);
+  return (ierrm != 0);
 }

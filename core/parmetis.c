@@ -7,13 +7,13 @@
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                       MPI_Comm ce) {
   int    i, j;
-  int    ierrm;
+  sint   ierrm;
+  sint   ibfr;
   double time, time0;
 
   MPI_Comm    comms;
   struct comm comm;
   int         color;
-  int         ibuf;
 
   struct crystal cr;
   struct array   A;
@@ -49,21 +49,21 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   part_ = (idx_t *)malloc(nel * sizeof(idx_t));
 
   if (sizeof(idx_t) != sizeof(long long)) {
-    printf("ERROR: invalid sizeof(idx_t)!\n");
-    goto err;
-  }
-  if (nv != 4 && nv != 8) {
-    printf("ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
-    goto err;
+    ierrm = METIS_ERROR;
+    fprintf(stderr, "ERROR: invalid sizeof(idx_t)!\n");
+    goto wait_and_check;
   }
 
-  color = MPI_UNDEFINED;
-  if (nel > 0) color = 1;
+  int    verbose       = (int)opt[1];
+  int    num_parts     = (int)opt[2];
+  double imbalance_tol = opt[3];
+
+  color = (nel > 0) ? 1 : MPI_UNDEFINED;
   MPI_Comm_split(ce, color, 0, &comms);
-  if (color == MPI_UNDEFINED) goto end;
+  if (color == MPI_UNDEFINED) goto wait_and_check;
 
   comm_init(&comm, comms);
-  if (comm.id == 0) printf("Running parMETIS ... "), fflush(stdout);
+  if (comm.id == 0 && verbose) printf("Running parMETIS ... "), fflush(stdout);
 
   nelarray = (long long *)malloc(comm.np * sizeof(long long));
   MPI_Allgather(&nell, 1, MPI_LONG_LONG_INT, nelarray, 1, MPI_LONG_LONG_INT,
@@ -87,11 +87,12 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   options[PMV3_OPTION_DBGLVL] = 0;
   options[PMV3_OPTION_SEED]   = 0;
   if ((int)opt[0] > 0) {
-    options[PMV3_OPTION_DBGLVL] = (int)opt[1];
+    options[PMV3_OPTION_DBGLVL] = verbose;
     if (opt[2] != 0) {
       options[3] = PARMETIS_PSR_UNCOUPLED;
-      nparts     = (int)opt[2];
+      nparts     = num_parts;
     }
+    ubvec = imbalance_tol;
   }
 
   tpwgts = (real_t *)malloc(ncon * nparts * sizeof(real_t));
@@ -108,7 +109,7 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                                &ubvec, options, &edgecut, part_, &comm.c);
 
   time = comm_time() - time0;
-  if (comm.id == 0) printf("%lf sec\n", time), fflush(stdout);
+  if (comm.id == 0 && verbose) printf("%lf sec\n", time), fflush(stdout);
 
   for (i = 0; i < nel; ++i) part[i] = part_[i];
 
@@ -118,12 +119,10 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   MPI_Comm_free(&comms);
   comm_free(&comm);
 
-end:
+wait_and_check:
+  fflush(stderr);
   comm_init(&comm, ce);
-  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibuf);
-  if (ierrm != METIS_OK) goto err;
-  return 0;
-
-err:
-  return 1;
+  comm_allreduce(&comm, gs_int, gs_min, &ierrm, 1, &ibfr);
+  comm_free(&comm);
+  return (ierrm != METIS_OK);
 }
