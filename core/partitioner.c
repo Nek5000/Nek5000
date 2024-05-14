@@ -144,13 +144,9 @@ success:
   return 0;
 }
 
-#define check_error(ierr)                                                      \
+#define check_error(error)                                                     \
   {                                                                            \
-    int ierr_ = (ierr);                                                        \
-    if (ierr_ != 0) {                                                          \
-      *rtval = 1;                                                              \
-      return;                                                                  \
-    }                                                                          \
+    if (error != 0) goto check_global_error;                                   \
   }
 
 #define fpartmesh FORTRAN_UNPREFIXED(fpartmesh, FPARTMESH)
@@ -158,40 +154,46 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
                const int *const lelm, const int *const nve,
                const int *const fcomm, const int *const fpartitioner,
                const int *const falgo, const int *const loglevel, int *rtval) {
-  int nel         = *nell;
-  int nv          = *nve;
-  int lelt        = *lelm;
-  int partitioner = *fpartitioner;
-  int algo        = *falgo;
-  int verbose     = *loglevel;
+  int  nel         = *nell;
+  int  nv          = *nve;
+  int  lelt        = *lelm;
+  int  partitioner = *fpartitioner;
+  int  algo        = *falgo;
+  int  verbose     = *loglevel;
+  sint ierr        = 1;
+
+  if (nv != 4 && nv != 8) {
+    fprintf(stderr, "ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
+    goto check_global_error;
+  }
 
   struct comm comm;
 #if defined(MPI)
   MPI_Comm cext = MPI_Comm_f2c(*fcomm);
 #else
-  MPI_Comm cext = 0;
+  int cext = 0;
 #endif
   comm_init(&comm, cext);
 
   if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
-  int *part = (int *)malloc(lelt * sizeof(int));
-
   double opt[10] = {0};
   opt[0]         = 1;
   opt[1]         = 0;       /* verbosity */
   opt[2]         = comm.np; /* number of partitions */
-  opt[3]         = 1.10;    /* imbalance tolerance */
+  opt[3]         = 1.05;    /* imbalance tolerance */
 
-  int ierr = 1;
+  int *part = (int *)malloc(lelt * sizeof(int));
   if (partitioner == 0 || partitioner == 1) {
 #if defined(PARRSB)
     parrsb_options options = parrsb_default_options;
     options.partitioner    = partitioner;
-    if (partitioner == 0) // RSB
+    if (partitioner == 0) // If the partitioner is RSB
       options.rsb_algo = algo;
 
     ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
+#else
+    ierr = 1;
 #endif
   } else if (partitioner == 8) {
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
@@ -202,17 +204,22 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   } else if (partitioner == 64) {
     ierr = parHIP_partMesh(part, vl, nel, nv, opt, comm.c);
   }
-
   check_error(ierr);
 
   ierr = redistribute_data(&nel, vl, el, part, nv, lelt, &comm);
   check_error(ierr);
+  *nell = nel;
 
   if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
-  free(part), comm_free(&comm);
-  *nell  = nel;
-  *rtval = 0;
+  free(part);
+
+  sint b;
+check_global_error:
+  fflush(stderr);
+  comm_allreduce(&comm, gs_int, gs_max, &ierr, 1, &b);
+  comm_free(&comm);
+  *rtval = ierr;
 }
 
 #define fpartmesh_greedy FORTRAN_UNPREFIXED(fpartmesh_greedy, FPARTMESH_GRREDY)
@@ -221,9 +228,6 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
                       const long long *const vl1, const int *const lelm_,
                       const int *const nv, const int *const fcomm,
                       int *const rtval) {
-#if defined(PARRSB)
-  const int lelm = *lelm_;
-
   struct comm comm;
 #if defined(MPI)
   MPI_Comm cext = MPI_Comm_f2c(*fcomm);
@@ -232,15 +236,24 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
 #endif
   comm_init(&comm, cext);
 
+  const int lelm = *lelm_;
+  sint      ierr = 1;
+
+#if defined(PARRSB)
   int *const part = (int *)malloc(lelm * sizeof(int));
   parrsb_part_solid(part, vl2, *nel2, vl1, *nel1, *nv, comm.c);
-
-  int ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
-  check_error(ierr);
-
-  free(part);
-  comm_free(&comm);
 #endif
+
+  ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
+  check_error(ierr);
+  free(part);
+
+  sint b;
+check_global_error:
+  fflush(stderr);
+  comm_allreduce(&comm, gs_int, gs_max, &ierr, 1, &b);
+  comm_free(&comm);
+  *rtval = ierr;
 }
 
 #define fprintpartstat FORTRAN_UNPREFIXED(printpartstat, PRINTPARTSTAT)
