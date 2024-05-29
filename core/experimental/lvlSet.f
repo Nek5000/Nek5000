@@ -96,8 +96,8 @@ C----------------------------------------------------------------------
       nbdinp_save = NBDINP
 
       ISTEP = 0
-      if(ifield.eq.ifld_clsr) dt = dt_cls
-      if(ifield.eq.ifld_tlsr) dt = dt_tls
+      if(ifld.eq.ifld_clsr) dt = dt_cls
+      if(ifld.eq.ifld_tlsr) dt = dt_tls
       time = 0.0
       ifield = ifld
       NBDINP = 2
