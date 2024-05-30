@@ -1207,3 +1207,22 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine limit_cls(ix,iy,iz,e)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ix,iy,iz,e
+      real psi
+
+      if(ifield.eq.ifld_clsr .or. ifield.eq.ifld_cls)then
+        psi = t(ix,iy,iz,e,ifield-1)
+        if(psi.lt.0.0) psi = 0.0
+        if(psi.gt.1.0) psi = 1.0
+        t(ix,iy,iz,e,ifield-1) = psi
+      endif
+      return
+      end
+
