@@ -56,6 +56,8 @@ C----------------------------------------------------------------------
       
       if(nio.eq.0)write(*,*)"Debug mode",ifls_debug
 
+      call fixcorners('shl','W  ')
+
       return
       end
 C----------------------------------------------------------------------     
@@ -1225,4 +1227,236 @@ c-----------------------------------------------------------------------
       endif
       return
       end
+c-----------------------------------------------------------------------
+      subroutine traction_ls(ix,iy,iz,e,iside)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      
+      integer ix,iy,iz,e,iside
 
+      real usn(3),tsn(3),bsn(3)
+      real velx,vely,velz
+      real utx,uty,utz
+      real ut1,ut2,uw
+      real yplus,uplus,utau
+      real Econ,kappa
+      real tw1,tw2
+      real unormal,rho
+
+      if(cbc(iside,e,1).eq.'shl')then
+        rho = vtrans(ix,iy,iz,e,1)
+
+        yplus = 30.0
+        Econ = 9.0
+        kappa = 0.41
+
+        call getSnormal(usn,ix,iy,iz,iside,e)
+        call getangent(tsn,ix,iy,iz,iside,e)
+        call getbitangent(bsn,ix,iy,iz,iside,e)
+
+        !Get the tangential velocity
+        velx = vx(ix,iy,iz,e)
+        vely = vy(ix,iy,iz,e)
+        velz = vz(ix,iy,iz,e)
+        if(if3d)then
+          unormal = velx*usn(1)+vely*usn(2)+velz*usn(3)
+        else
+          unormal = velx*usn(1)+vely*usn(2)
+        endif
+        utx = velx-unormal*usn(1)
+        uty = vely-unormal*usn(2)
+        utz = velz-unormal*usn(3)
+
+        ut1=tsn(1)*utx+tsn(2)*uty
+        ut2=0.0
+        if(if3d) then
+          ut1=ut1+tsn(3)*utz
+          ut2=bsn(1)*utx+bsn(2)*uty+bsn(3)*utz
+        endif
+        uw = sqrt(ut1*ut1+ut2*ut2)
+
+        uplus = (1./kappa)*log(Econ*yplus)
+
+        utau = uw/uplus
+
+        tw1 = 0.0
+        tw2 = 0.0
+
+        tw1 = (ut1/uplus)*utau*rho
+        tw2 = (ut2/uplus)*utau*rho
+
+        trn = 0.0
+        tr1 = -tw1
+        tr2 = -tw2
+      endif
+
+      return
+      end
+c---------------------------------------------------------------------      
+      subroutine fixcorners(cbtype1,cbtype2)
+
+c     fixes masks for SYM face corners
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'PARALLEL'
+
+      common /scruz/ rmlt(lx1,ly1,lz1,lelv),runx(lx1,ly1,lz1,lelv)
+     $              ,runy(lx1,ly1,lz1,lelv),runz(lx1,ly1,lz1,lelv)
+     $              ,rt1x(lx1,ly1,lz1,lelv),rt1y(lx1,ly1,lz1,lelv)
+     $              ,rt1z(lx1,ly1,lz1,lelv),rt2x(lx1,ly1,lz1,lelv)
+     $              ,rt2y(lx1,ly1,lz1,lelv),rt2z(lx1,ly1,lz1,lelv)
+
+      character*3 cb,cbtype1,cbtype2
+
+      nxyz1= lx1*ly1*lz1
+      ntot1= nxyz1*nelv
+      nfaces = 2*ldim
+      tol  = 1.e-01
+
+      call rzero  (rmlt,    ntot1)
+      call oprzero(runx,runy,runz)
+      call oprzero(rt1x,rt1y,rt1z)
+      call oprzero(rt2x,rt2y,rt2z)
+
+c      write(*,*) 'element faces from fixmask2'
+      do 1000 iel=1,nelv
+      ieg = lglel(iel)
+      do 100 iface=1,nfaces
+         cb = cbc(iface,iel,1)
+         if (cb.eq.cbtype1 .or. cb.eq.cbtype2) then
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
+            ia = 0
+            do 10 iz=kz1,kz2
+            do 10 iy=ky1,ky2
+            do 10 ix=kx1,kx2
+              ia =ia + 1
+              rmlt(ix,iy,iz,iel)=rmlt(ix,iy,iz,iel)+1.
+              runx(ix,iy,iz,iel)=runx(ix,iy,iz,iel)+unx(ia,1,iface,iel)
+              runy(ix,iy,iz,iel)=runy(ix,iy,iz,iel)+uny(ia,1,iface,iel)
+              rt1x(ix,iy,iz,iel)=rt1x(ix,iy,iz,iel)+t1x(ia,1,iface,iel)
+              rt1y(ix,iy,iz,iel)=rt1y(ix,iy,iz,iel)+t1y(ia,1,iface,iel)
+              rt2x(ix,iy,iz,iel)=rt2x(ix,iy,iz,iel)+t2x(ia,1,iface,iel)
+              rt2y(ix,iy,iz,iel)=rt2y(ix,iy,iz,iel)+t2y(ia,1,iface,iel)
+              if(if3d) then
+               runz(ix,iy,iz,iel)=runz(ix,iy,iz,iel)+unz(ia,1,iface,iel)
+               rt1z(ix,iy,iz,iel)=rt1z(ix,iy,iz,iel)+t1z(ia,1,iface,iel)
+               rt2z(ix,iy,iz,iel)=rt2z(ix,iy,iz,iel)+t2z(ia,1,iface,iel)
+              endif
+ 10         continue
+         endif
+ 100  continue
+ 1000 continue
+
+      call dssum  (rmlt,nx1,ny1,nz1)
+      call opdssum(runx, runy, runz)
+      call opdssum(rt1x, rt1y, rt1z)
+      call opdssum(rt2x, rt2y, rt2z)
+
+      do 2000 iel=1,nelv
+      ieg = lglel(iel)
+      do 200 iface=1,nfaces
+         cb = cbc(iface,iel,1)
+         if (cb.eq.cbtype1 .or. cb.eq.cbtype2) then
+            call facind(kx1,kx2,ky1,ky2,kz1,kz2,lx1,ly1,lz1,iface)
+            ia = 0
+            do 20 iz=kz1,kz2
+            do 20 iy=ky1,ky2
+            do 20 ix=kx1,kx2
+               ia =ia + 1
+               amul = rmlt(ix,iy,iz,iel)
+               runxs= runx(ix,iy,iz,iel)/amul
+               runys= runy(ix,iy,iz,iel)/amul
+               runzs= 0.0
+               rt1xs= rt1x(ix,iy,iz,iel)/amul
+               rt1ys= rt1y(ix,iy,iz,iel)/amul
+               rt1zs= 0.0
+               rt2xs= rt2x(ix,iy,iz,iel)/amul
+               rt2ys= rt2y(ix,iy,iz,iel)/amul
+               rt2zs= 0.0
+               if(if3d) then
+                  runzs= runz(ix,iy,iz,iel)/amul
+                  rt1zs= rt1z(ix,iy,iz,iel)/amul
+                  rt2zs= rt2z(ix,iy,iz,iel)/amul
+               endif
+               unmag = sqrt(runxs*runxs+runys*runys+runzs*runzs)
+               t1mag = sqrt(rt1xs*rt1xs+rt1ys*rt1ys+rt1zs*rt1zs)
+               t2mag = sqrt(rt2xs*rt2xs+rt2ys*rt2ys+rt2zs*rt2zs)
+
+               if((1.0-abs(unmag)).ge.tol) then
+c                 write(*,'(4(1X,A),3I5,2(2X,G14.7))') 'converting BC '
+c     $            ,cb, ' to ','W  ', ieg, iface, ia, unmag, amul
+
+                 cbc(iface,iel,1) = 'W  '
+               endif
+
+ 20         continue
+         endif
+ 200  continue
+ 2000 continue
+
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine getangent(st,ix,iy,iz,iside,e)
+
+c     calculate surface normal
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'TOPOL'
+
+      real st(3)
+      integer e,f
+
+      f = eface1(iside)
+
+      if (1.le.f.and.f.le.2) then     ! "r face"
+         st(1) = t1x(iy,iz,iside,e)
+         st(2) = t1y(iy,iz,iside,e)
+         st(3) = t1z(iy,iz,iside,e)
+      elseif (3.le.f.and.f.le.4) then ! "s face"
+         st(1) = t1x(ix,iz,iside,e)
+         st(2) = t1y(ix,iz,iside,e)
+         st(3) = t1z(ix,iz,iside,e)
+      elseif (5.le.f.and.f.le.6) then ! "t face"
+         st(1) = t1x(ix,iy,iside,e)
+         st(2) = t1y(ix,iy,iside,e)
+         st(3) = t1z(ix,iy,iside,e)
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine getbitangent(sb,ix,iy,iz,iside,e)
+
+c     calculate surface normal
+
+      include 'SIZE'
+      include 'GEOM'
+      include 'TOPOL'
+
+      real sb(3)
+      integer e,f
+
+      f = eface1(iside)
+
+      if (1.le.f.and.f.le.2) then     ! "r face"
+         sb(1) = t2x(iy,iz,iside,e)
+         sb(2) = t2y(iy,iz,iside,e)
+         sb(3) = t2z(iy,iz,iside,e)
+      elseif (3.le.f.and.f.le.4) then ! "s face"
+         sb(1) = t2x(ix,iz,iside,e)
+         sb(2) = t2y(ix,iz,iside,e)
+         sb(3) = t2z(ix,iz,iside,e)
+      elseif (5.le.f.and.f.le.6) then ! "t face"
+         sb(1) = t2x(ix,iy,iside,e)
+         sb(2) = t2y(ix,iy,iside,e)
+         sb(3) = t2z(ix,iy,iside,e)
+      endif
+
+      return
+      end
