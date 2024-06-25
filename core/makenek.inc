@@ -217,6 +217,10 @@ case $FCcomp in
                FR8="-r8"
                FF77="-Mfixed"
                ;;
+  *flang*)     FCPP="-Mpreprocess"
+               FR8="-r8"
+               FF77="-Mfixed"
+               ;;
   *nvfortran*) FCPP="-Mpreprocess"
                FR8="-r8"
                FF77="-Mfixed"

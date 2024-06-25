@@ -857,6 +857,8 @@ c-----------------------------------------------------------------------
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzo8
       character prefix*(*)
       logical ifxyo_s
+
+      integer cnt, cntg
  
       common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
      &              , ur2(lxo*lxo*lxo*lelt)
@@ -868,7 +870,7 @@ c-----------------------------------------------------------------------
 
       ifxyo_s = ifxyo 
       ifxyo_  = ifxyo
-      nout = nelt
+      nout = nelt ! ump all fields based on the t-mesh to avoid different topologies
       nxo  = lx1
       nyo  = ly1
       nzo  = lz1
@@ -883,7 +885,12 @@ c-----------------------------------------------------------------------
          nzo  = 1
          if(if3d) nzo = nrg
       endif
-      offs0 = iHeaderSize + 4 + isize*nelgt
+
+      cnt = 0
+      do iel = 1,nelt
+        if(out_mask(iel).ne.0) cnt = cnt + 1
+      enddo
+      cntg = iglsum(cnt, 1)
 
       ierr=0
       if (nid.eq.pid0) then
@@ -892,17 +899,47 @@ c-----------------------------------------------------------------------
       call err_chk(ierr,'Error opening file in mfo_open_files. $')
       call bcast(ifxyo_,lsize)
       ifxyo = ifxyo_
-      call mfo_write_hdr                     ! create element mapping +
 
-c     call exitti('this is wdsizo A:$',wdsizo)
-                                             ! write hdr
+      call blank(rdcode1,10)
+      i = 1
+      IF (IFXYO) THEN
+         rdcode1(i)='X'
+         i = i + 1
+      ENDIF
+      IF (IFVO) THEN
+         rdcode1(i)='U'
+         i = i + 1
+      ENDIF
+      IF (IFPO) THEN
+         rdcode1(i)='P'
+         i = i + 1
+      ENDIF
+      IF (IFTO) THEN
+         rdcode1(i)='T'
+         i = i + 1
+      ENDIF
+      IF (LDIMT.GT.1) THEN
+         NPSCALO = 0
+         do k = 1,ldimt-1
+           if(ifpsco(k)) NPSCALO = NPSCALO + 1
+         enddo
+         IF (NPSCALO.GT.0) THEN
+            rdcode1(i) = 'S'
+            WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
+            WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
+         ENDIF
+      ENDIF
+
+      call mfo_write_hdr(rdcode1) ! including element mapping
+
       nxyzo8  = nxo*nyo*nzo
+
+      ! only relevant for single shared file
+      offs0 = iHeaderSize + 4 + isize*cntg
+      stride  = cntg* nxyzo8*wdsizo
       strideB = nelB * nxyzo8*wdsizo
-      stride  = nelgt* nxyzo8*wdsizo
 
       ioflds = 0
-      ! dump all fields based on the t-mesh to avoid different
-      ! topologies in the post-processor
       if (ifxyo) then
          offs = offs0 + ldim*strideB
          call byte_set_view(offs,ifh_mbyte)
@@ -964,16 +1001,16 @@ c     call exitti('this is wdsizo A:$',wdsizo)
            ioflds = ioflds + 1
          endif
       enddo
-      dnbyte = 1.*ioflds*nout*wdsizo*nxo*nyo*nzo
+      dnbyte = 1.*ioflds*cnt*wdsizo*nxo*nyo*nzo
 
+      ! add meta data to the end of the file
       if (if3d) then
-         offs0   = offs0 + ioflds*stride
-         strideB = nelB *2*4   ! min/max single precision
-         stride  = nelgt*2*4
+         offs0 = offs0 + ioflds*stride
+         stride  = cntg *2*4
+         strideB = nelB *2*4
          ioflds  = 0
-         ! add meta data to the end of the file
          if (ifxyo) then
-            offs = offs0 + ldim*strideB
+            offs = offs0 + ioflds*stride + ldim*strideB
             call byte_set_view(offs,ifh_mbyte)
             call mfo_mdatav(xm1,ym1,zm1,nout)
             ioflds = ioflds + ldim
@@ -1002,7 +1039,7 @@ c     call exitti('this is wdsizo A:$',wdsizo)
             if(ifpsco(k)) call mfo_mdatas(t(1,1,1,1,k+1),nout)
             ioflds = ioflds + 1
          enddo
-         dnbyte = dnbyte + 2.*ioflds*nout*wdsizo
+         dnbyte = dnbyte + 2.*ioflds*cnt*wdsizo
       endif
 
       ierr = 0
@@ -1019,7 +1056,7 @@ c     call exitti('this is wdsizo A:$',wdsizo)
       if (tio.le.0) tio=1.
 
       dnbyte = glsum(dnbyte,1)
-      dnbyte = dnbyte + iHeaderSize + 4. + isize*nelgt
+      dnbyte = dnbyte + iHeaderSize + 4. + isize*cntg
       dnbyte = dnbyte/1e9
       if(nio.eq.0) write(6,7) istep,time,dnbyte,dnbyte/tio,
      &             nfileo
@@ -1040,6 +1077,8 @@ c-----------------------------------------------------------------------
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
+
+      integer cnt
 
       ifdiro = .false.
 
@@ -1071,9 +1110,14 @@ c-----------------------------------------------------------------------
       endif
 
       ! how many elements are present up to rank nid
-      nn = nelt
+      cnt = 0
+      do iel = 1,nelt
+        if(out_mask(iel).ne.0) cnt = cnt + 1
+      enddo
+
+      nn = cnt 
       nelB = igl_running_sum(nn)
-      nelB = nelB - nelt
+      nelB = nelB - cnt 
      
       pid00 = glmin(pid0,1)
 
@@ -1512,33 +1556,58 @@ c-----------------------------------------------------------------------
       real*4 buffer(1+6*lelt)
 
       integer e
+      integer cnt 
+      integer lbuf 
+
+      real umin(3), umax(3)
 
       call nekgsync() ! clear outstanding message queues.
 
       nxyz = lx1*ly1*lz1
       n    = 2*ldim
-      len  = 4 + 4*(n*lelt)   ! recv buffer size
-      leo  = 4 + 4*(n*nelt) 
+      lrecv = 4 * (1 + n*lelt)
+      lsend = 4 * (1 + n*nelt)
       ierr = 0
+
+      do i = 1,3
+        umin(i) = 1e30
+        umax(i) = -umin(i)
+      enddo
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
          j = 1
+         cnt = 0
          do e=1,nel
-            buffer(j+0) = vlmin(u(1,e),nxyz) 
-            buffer(j+1) = vlmax(u(1,e),nxyz)
-            buffer(j+2) = vlmin(v(1,e),nxyz) 
-            buffer(j+3) = vlmax(v(1,e),nxyz)
-            j = j + 4
-            if(if3d) then
-              buffer(j+0) = vlmin(w(1,e),nxyz) 
-              buffer(j+1) = vlmax(w(1,e),nxyz)
-              j = j + 2
+            if(out_mask(e).ne.0) then
+              buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin(1) = min(buffer(j+0), umin(1))
+
+              buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax(1) = max(buffer(j+1), umax(1))
+
+              buffer(j+2) = vlmin(v(1,e),nxyz) 
+              umin(2) = min(buffer(j+2), umin(2))
+
+              buffer(j+3) = vlmax(v(1,e),nxyz)
+              umax(2) = max(buffer(j+3), umax(2))
+
+              j = j + 4
+              if(if3d) then
+                buffer(j+0) = vlmin(w(1,e),nxyz) 
+                umin(3) = min(buffer(j+0), umin(3))
+
+                buffer(j+1) = vlmax(w(1,e),nxyz)
+                umax(3) = max(buffer(j+1), umax(3))
+
+                j = j + 2
+              endif
+              cnt = cnt + 1
             endif
          enddo
 
          ! write out my data
-         nout = n*nel
+         nout = n*cnt
          if(ierr.eq.0) then
            if(ifmpiio) then
              call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
@@ -1552,7 +1621,7 @@ c-----------------------------------------------------------------------
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,buffer,len)
+            call crecv(mtype,buffer,lrecv)
             inelp = buffer(1)
             nout  = n*inelp
             if(ierr.eq.0) then 
@@ -1564,29 +1633,56 @@ c-----------------------------------------------------------------------
             endif
          enddo
       else
-         j = 1
-         buffer(j) = nel
-         j = j + 1
+         j = 2 
+         cnt = 0
          do e=1,nel
-            buffer(j+0) = vlmin(u(1,e),nxyz) 
-            buffer(j+1) = vlmax(u(1,e),nxyz)
-            buffer(j+2) = vlmin(v(1,e),nxyz) 
-            buffer(j+3) = vlmax(v(1,e),nxyz)
-            j = j + 4
-            if(n.eq.6) then
-              buffer(j+0) = vlmin(w(1,e),nxyz) 
-              buffer(j+1) = vlmax(w(1,e),nxyz)
-              j = j + 2
+            if(out_mask(e).ne.0) then
+              buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin(1) = min(buffer(j+0), umin(1))
+
+              buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax(1) = max(buffer(j+1), umax(1))
+
+              buffer(j+2) = vlmin(v(1,e),nxyz) 
+              umin(2) = min(buffer(j+2), umin(2))
+
+              buffer(j+3) = vlmax(v(1,e),nxyz)
+              umax(2) = max(buffer(j+3), umax(2))
+
+              j = j + 4
+              if(n.eq.6) then
+                buffer(j+0) = vlmin(w(1,e),nxyz)
+                umin(3) = min(buffer(j+0), umin(3))
+ 
+                buffer(j+1) = vlmax(w(1,e),nxyz)
+                umax(3) = max(buffer(j+1), umax(3))
+
+                j = j + 2
+              endif
+              cnt = cnt + 1
             endif
          enddo
+         buffer(1) = cnt 
 
          ! send my data to my pararent I/O node
          mtype = nid
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,lsend,pid0,0)   ! u4 :=: u8
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_mdatav. $')
+
+      gmin_u = glmin(umin(1), 1)
+      gmax_u = glmax(umax(1), 1)
+      gmin_v = glmin(umin(2), 1)
+      gmax_v = glmax(umax(2), 1)
+      gmin_w = glmin(umin(3), 1)
+      gmax_w = glmax(umax(3), 1)
+
+      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
+     $             gmin_u,gmax_u, 
+     $             gmin_v,gmax_v, 
+     $             gmin_w,gmax_w
 
       return
       end
@@ -1603,26 +1699,41 @@ c-----------------------------------------------------------------------
       real*4 buffer(1+2*lelt)
 
       integer e
+      integer cnt
+      integer lbuf
+
+      real umin, umax
 
       call nekgsync() ! clear outstanding message queues.
 
       nxyz = lx1*ly1*lz1
       n    = 2
-      len  = 4 + 4*(n*lelt)    ! recv buffer size
-      leo  = 4 + 4*(n*nelt)
+      lrecv = 4 * (1 + n*lelt)
+      lsend = 4 * (1 + n*nelt)
       ierr = 0
+
+      umin = 1e30
+      umax = -umin
 
       ! Am I an I/O node?
       if (nid.eq.pid0) then
+         cnt = 0
          j = 1
          do e=1,nel
-            buffer(j+0) = vlmin(u(1,e),nxyz) 
-            buffer(j+1) = vlmax(u(1,e),nxyz)
-            j = j + 2
+            if(out_mask(e).ne.0) then
+              buffer(j+0) = vlmin(u(1,e),nxyz)
+              umin = min(buffer(j+0), umin)
+
+              buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax = max(buffer(j+1), umax)
+
+              j = j + 2 
+              cnt = cnt + 1
+            endif
          enddo
 
          ! write out my data
-         nout = n*nel
+         nout = n*cnt
          if(ierr.eq.0) then 
            if(ifmpiio) then
              call byte_write_mpi(buffer,nout,-1,ifh_mbyte,ierr)
@@ -1636,7 +1747,7 @@ c-----------------------------------------------------------------------
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,buffer,len)
+            call crecv(mtype,buffer,lrecv)
             inelp = buffer(1)
             nout  = n*inelp
             if(ierr.eq.0) then 
@@ -1648,22 +1759,33 @@ c-----------------------------------------------------------------------
             endif
          enddo
       else
-         j = 1
-         buffer(j) = nel
-         j = j + 1
+         cnt = 0
+         j = 2
          do e=1,nel
-            buffer(j+0) = vlmin(u(1,e),nxyz) 
-            buffer(j+1) = vlmax(u(1,e),nxyz)
-            j = j + 2
+            if(out_mask(e).ne.0) then
+              buffer(j+0) = vlmin(u(1,e),nxyz) 
+              umin = min(buffer(j+0), umin)
+
+              buffer(j+1) = vlmax(u(1,e),nxyz)
+              umax = max(buffer(j+1), umax)
+
+              j = j + 2
+              cnt = cnt + 1
+            endif
          enddo
+         buffer(1) = cnt 
 
          ! send my data to my pararent I/O node
          mtype = nid
          call crecv(mtype,idum,4)                ! hand-shake
-         call csend(mtype,buffer,leo,pid0,0)     ! u4 :=: u8
+         call csend(mtype,buffer,lsend,pid0,0)     ! u4 :=: u8
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_mdatas. $')
+
+      umin = glmin(umin, 1)
+      umax = glmax(umax, 1)
+      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', umin,umax
 
       return
       end
@@ -1675,7 +1797,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
 
-      real u(mx,my,mz,1)
+      real u(mx*my*mz,1)
 
       common /SCRNS/ u4(2+lxo*lxo*lxo*2*lelt)
       real*4         u4
@@ -1683,10 +1805,7 @@ c-----------------------------------------------------------------------
       equivalence    (u4,u8)
 
       integer e
-
-      umax = glmax(u,nel*mx*my*mz)
-      umin = glmin(u,nel*mx*my*mz)
-      if(nid.eq.0) write(6,'(A,2g13.5)') ' min/max:', umin,umax
+      integer cnt
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
@@ -1694,22 +1813,33 @@ c-----------------------------------------------------------------------
         call exitt
       endif
 
-      nxyz = mx*my*mz
-      len  = 8 + 8*(lelt*nxyz)  ! recv buffer size
-      leo  = 8 + wdsizo*(nel*nxyz)
-      ntot = nxyz*nel
-
-      idum = 1
-      ierr = 0
+      nxyz  = mx*my*mz
+      lrecv = 8 + 8*(lelt*nxyz)   ! recv buffer size (u4)
+      lsend = 8 + wdsizo*(nel*nxyz)
+      idum  = 1
+      ierr  = 0
 
       if (nid.eq.pid0) then
-
+         cnt = 0
+         j = 0 
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4,u,ntot)
+             do iel = 1,nel
+               if(out_mask(iel).ne.0) then
+                 call copyx4   (u4(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 cnt = cnt + 1 
+                endif
+             enddo
          else
-             call copy   (u8,u,ntot)
+             do iel = 1,nel
+               if(out_mask(iel).ne.0) then
+                 call copy     (u8(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 cnt = cnt + 1 
+               endif
+             enddo
          endif
-         nout = wdsizo/4 * ntot
+         nout = wdsizo/4 * cnt * nxyz
          if(ierr.eq.0) then 
            if(ifmpiio) then
              call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
@@ -1719,12 +1849,12 @@ c-----------------------------------------------------------------------
          endif
 
          ! write out the data of my childs
-         idum  = 1
          do k=pid0+1,pid1
             mtype = k
-            call csend(mtype,idum,4,k,0)       ! handshake
-            call crecv(mtype,u4,len)
+            call csend(mtype,idum,4,k,0)           ! handshake
+            call crecv(mtype,u4,lrecv)
             nout  = wdsizo/4 * nxyz * u8(1)
+
             if (wdsizo.eq.4.and.ierr.eq.0) then
                if(ifmpiio) then
                  call byte_write_mpi(u4(3),nout,-1,ifh_mbyte,ierr)
@@ -1739,28 +1869,38 @@ c-----------------------------------------------------------------------
                endif
             endif
          enddo
-
       else
-
-         u8(1)= nel
+         cnt = 0
          if (wdsizo.eq.4) then             ! 32-bit output
-             call copyx4 (u4(3),u,ntot)
+             j = 2
+             do iel = 1,nel
+               if(out_mask(iel).ne.0) then
+                 call copyx4   (u4(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 cnt = cnt + 1
+               endif
+             enddo
          else
-             call copy   (u8(2),u,ntot)
+             j = 1
+             do iel = 1,nel
+               if(out_mask(iel).ne.0) then
+                 call copy     (u8(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 cnt = cnt + 1
+               endif
+             enddo
          endif
+         u8(1) = cnt 
 
          mtype = nid
-         call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,u4,leo,pid0,0)     ! u4 :=: u8
-
+         call crecv(mtype,idum,4)              ! hand-shake
+         call csend(mtype,u4,lsend,pid0,0)     ! u4 :=: u8
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_outs. $')
-
       return
       end
 c-----------------------------------------------------------------------
-
       subroutine mfo_outv(u,v,w,nel,mx,my,mz)   ! output a vector field
 
       include 'SIZE'
@@ -1776,15 +1916,7 @@ c-----------------------------------------------------------------------
       equivalence    (u4,u8)
 
       integer e
-
-      umax = glmax(u,nel*mx*my*mz)
-      vmax = glmax(v,nel*mx*my*mz)
-      wmax = glmax(w,nel*mx*my*mz)
-      umin = glmin(u,nel*mx*my*mz)
-      vmin = glmin(v,nel*mx*my*mz)
-      wmin = glmin(w,nel*mx*my*mz)
-      if(nid.eq.0) write(6,'(A,6g13.5)') ' min/max:', 
-     $             umin,umax, vmin,vmax, wmin,wmax
+      integer cnt
 
       call nekgsync() ! clear outstanding message queues.
       if(mx.gt.lxo .or. my.gt.lxo .or. mz.gt.lxo) then
@@ -1792,38 +1924,45 @@ c-----------------------------------------------------------------------
         call exitt
       endif
 
-      nxyz = mx*my*mz
-      len  = 8 + 8*(lelt*nxyz*ldim)   ! recv buffer size (u4)
-      leo  = 8 + wdsizo*(nel*nxyz*ldim)
-      idum = 1
-      ierr = 0
+      nxyz  = mx*my*mz
+      lrecv = 8 + 8*(lelt*nxyz*ldim)   ! recv buffer size (u4)
+      lsend = 8 + wdsizo*(nel*nxyz*ldim)
+      idum  = 1
+      ierr  = 0
 
       if (nid.eq.pid0) then
+         cnt = 0
          j = 0 
          if (wdsizo.eq.4) then             ! 32-bit output
              do iel = 1,nel
-                call copyx4   (u4(j+1),u(1,iel),nxyz)
-                j = j + nxyz
-                call copyx4   (u4(j+1),v(1,iel),nxyz)
-                j = j + nxyz
-                if(if3d) then
-                  call copyx4 (u4(j+1),w(1,iel),nxyz)
-                  j = j + nxyz
-                endif
+               if(out_mask(iel).ne.0) then
+                 call copyx4   (u4(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 call copyx4   (u4(j+1),v(1,iel),nxyz)
+                 j = j + nxyz
+                 if(if3d) then
+                   call copyx4 (u4(j+1),w(1,iel),nxyz)
+                   j = j + nxyz
+                 endif
+                 cnt = cnt + 1 
+               endif
              enddo
          else
              do iel = 1,nel
-                call copy     (u8(j+1),u(1,iel),nxyz)
-                j = j + nxyz
-                call copy     (u8(j+1),v(1,iel),nxyz)
-                j = j + nxyz
-                if(if3d) then
-                  call copy   (u8(j+1),w(1,iel),nxyz)
-                  j = j + nxyz
-                endif
+               if(out_mask(iel).ne.0) then
+                 call copy     (u8(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 call copy     (u8(j+1),v(1,iel),nxyz)
+                 j = j + nxyz
+                 if(if3d) then
+                   call copy   (u8(j+1),w(1,iel),nxyz)
+                   j = j + nxyz
+                 endif
+                 cnt = cnt + 1 
+               endif
              enddo
          endif
-         nout = wdsizo/4 * ldim*nel * nxyz
+         nout = wdsizo/4 * ldim*cnt * nxyz
          if(ierr.eq.0) then 
            if(ifmpiio) then
              call byte_write_mpi(u4,nout,-1,ifh_mbyte,ierr)
@@ -1836,8 +1975,8 @@ c-----------------------------------------------------------------------
          do k=pid0+1,pid1
             mtype = k
             call csend(mtype,idum,4,k,0)           ! handshake
-            call crecv(mtype,u4,len)
-            nout  = wdsizo/4 * ldim*nxyz * u8(1)
+            call crecv(mtype,u4,lrecv)
+            nout = wdsizo/4 * ldim*nxyz * u8(1)
 
             if (wdsizo.eq.4.and.ierr.eq.0) then
                if(ifmpiio) then
@@ -1854,45 +1993,50 @@ c-----------------------------------------------------------------------
             endif
          enddo
       else
-
-         u8(1) = nel
+         cnt = 0
          if (wdsizo.eq.4) then             ! 32-bit output
              j = 2
              do iel = 1,nel
-                call copyx4   (u4(j+1),u(1,iel),nxyz)
-                j = j + nxyz
-                call copyx4   (u4(j+1),v(1,iel),nxyz)
-                j = j + nxyz
-                if(if3d) then
-                  call copyx4 (u4(j+1),w(1,iel),nxyz)
-                  j = j + nxyz
-                endif
+               if(out_mask(iel).ne.0) then
+                 call copyx4   (u4(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 call copyx4   (u4(j+1),v(1,iel),nxyz)
+                 j = j + nxyz
+                 if(if3d) then
+                   call copyx4 (u4(j+1),w(1,iel),nxyz)
+                   j = j + nxyz
+                 endif
+                 cnt = cnt + 1
+               endif
              enddo
          else
              j = 1
              do iel = 1,nel
-                call copy     (u8(j+1),u(1,iel),nxyz)
-                j = j + nxyz
-                call copy     (u8(j+1),v(1,iel),nxyz)
-                j = j + nxyz
-                if(if3d) then
-                  call copy   (u8(j+1),w(1,iel),nxyz)
-                  j = j + nxyz
-                endif
+               if(out_mask(iel).ne.0) then
+                 call copy     (u8(j+1),u(1,iel),nxyz)
+                 j = j + nxyz
+                 call copy     (u8(j+1),v(1,iel),nxyz)
+                 j = j + nxyz
+                 if(if3d) then
+                   call copy   (u8(j+1),w(1,iel),nxyz)
+                   j = j + nxyz
+                 endif
+                 cnt = cnt + 1
+               endif
              enddo
          endif
+         u8(1) = cnt 
 
          mtype = nid
          call crecv(mtype,idum,4)            ! hand-shake
-         call csend(mtype,u4,leo,pid0,0)     ! u4 :=: u8
-
+         call csend(mtype,u4,lsend,pid0,0)     ! u4 :=: u8
       endif
 
       call err_chk(ierr,'Error writing data to .f00 in mfo_outv. $')
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mfo_write_hdr          ! write hdr, byte key, els.
+      subroutine mfo_write_hdr(varcode)          ! write hdr, byte key, els.
 
       include 'SIZE'
       include 'SOLN'
@@ -1900,6 +2044,9 @@ c-----------------------------------------------------------------------
       include 'PARALLEL'
       include 'RESTART'
       include 'TSTEP'
+
+      character varcode(10)
+
       real*4 test_pattern
       common /ctmp0/ lglist(0:lelt)
 
@@ -1907,16 +2054,24 @@ c-----------------------------------------------------------------------
       integer*8 ioff
       logical if_press_mesh
 
+      integer cnt, cntg
+
       call nekgsync()
       idum = 1
 
+      cnt = 0
+      do iel = 1,nelt
+        if(out_mask(iel).ne.0) cnt = cnt + 1
+      enddo
+      cntg = iglsum(cnt, 1)
+
       if(ifmpiio) then
         nfileoo = 1   ! all data into one file
-        nelo = nelgt
+        nelo = cntg 
       else
         nfileoo = nfileo
         if(nid.eq.pid0) then                ! how many elements to dump
-          nelo = nelt
+          nelo = cnt 
           do j = pid0+1,pid1
              mtype = j
              call csend(mtype,idum,4,j,0)   ! handshake
@@ -1926,50 +2081,22 @@ c-----------------------------------------------------------------------
         else
           mtype = nid
           call crecv(mtype,idum,4)          ! hand-shake
-          call csend(mtype,nelt,4,pid0,0)   ! u4 :=: u8
+          call csend(mtype,cnt,4,pid0,0)    ! u4 :=: u8
         endif 
       endif
 
       ierr = 0
       if(nid.eq.pid0) then
 
-      call blank(hdr,132)              ! write header
-      call blank(rdcode1,10)
-      i = 1
-      IF (IFXYO) THEN
-         rdcode1(i)='X'
-         i = i + 1
-      ENDIF
-      IF (IFVO) THEN
-         rdcode1(i)='U'
-         i = i + 1
-      ENDIF
-      IF (IFPO) THEN
-         rdcode1(i)='P'
-         i = i + 1
-      ENDIF
-      IF (IFTO) THEN
-         rdcode1(i)='T'
-         i = i + 1
-      ENDIF
-      IF (LDIMT.GT.1) THEN
-         NPSCALO = 0
-         do k = 1,ldimt-1
-           if(ifpsco(k)) NPSCALO = NPSCALO + 1
-         enddo
-         IF (NPSCALO.GT.0) THEN
-            rdcode1(i) = 'S'
-            WRITE(rdcode1(i+1),'(I1)') NPSCALO/10
-            WRITE(rdcode1(i+2),'(I1)') NPSCALO-(NPSCALO/10)*10
-         ENDIF
-      ENDIF
+      call blank(hdr,132)
 
 c     check pressure format
       if_press_mesh = .false.
       if (.not.ifsplit.and.if_full_pres) if_press_mesh = .true.
- 
-      write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelgt,time,istep,fid0,nfileoo
-     $            ,(rdcode1(i),i=1,10),p0th,if_press_mesh
+
+      nelog = cntg 
+      write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelog,time,istep,fid0,nfileoo
+     $            ,(varcode(i),i=1,10),p0th,if_press_mesh
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
      &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1)
 
@@ -1988,14 +2115,23 @@ c     check pressure format
 
       call err_chk(ierr,'Error writing header in mfo_write_hdr. $')
 
+      lglist(0) = cnt
+      j = 1 
+      do iel = 1,nelt
+        if(out_mask(iel).ne.0) then
+          lglist(j) = lglel(iel)
+          j = j + 1
+        endif
+      enddo
+
       ! write global element numbering for this group
       if(nid.eq.pid0) then
         if(ifmpiio) then
           ioff = iHeaderSize + 4 + nelB*isize
           call byte_set_view (ioff,ifh_mbyte)
-          call byte_write_mpi(lglel,nelt,-1,ifh_mbyte,ierr)
+          call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte,ierr)
         else
-          call byte_write(lglel,nelt,ierr)
+          call byte_write(lglist(1),lglist(0),ierr)
         endif
 
         do j = pid0+1,pid1
@@ -2014,11 +2150,8 @@ c     check pressure format
       else
         mtype = nid
         call crecv(mtype,idum,4)          ! hand-shake
-        
-        lglist(0) = nelt
-        call icopy(lglist(1),lglel,nelt)
-
-        len = 4*(nelt+1)
+ 
+        len = 4*(lglist(0)+1)
         call csend(mtype,lglist,len,pid0,0)  
       endif 
 

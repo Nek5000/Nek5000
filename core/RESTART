@@ -41,3 +41,6 @@ c
 
       integer          ifh_mbyte
       common /i4mpiio/ ifh_mbyte
+
+      integer rsH, commrs
+      common /cbrewinh/ rsH, commrs

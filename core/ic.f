@@ -1932,28 +1932,28 @@ c
 c-----------------------------------------------------------------------
       subroutine mfi_gets(u,wk,lwk,iskip)
 
+      include 'mpif.h'
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
       include 'RESTART'
 
-
       real u(lx1*ly1*lz1,1)
 
       real*4 wk(2*lwk) ! message buffer
+
       parameter(lrbs=20*lx1*ly1*lz1*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
 
-      integer e,ei,eg,msg_id(lelt)
+      integer e,ei
       logical iskip
       integer*8 i8tmp
 
-      call nekgsync() ! clear outstanding message queues.
+      integer*8 disp
 
       nxyzr  = nxr*nyr*nzr  
       dnxyzr = nxyzr 
-      len    = nxyzr*wdsizr  ! message length
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer wk
@@ -1972,14 +1972,7 @@ c-----------------------------------------------------------------------
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
 
-      ! pre-post recieves
-      if (np.gt.1) then
-         l = 1
-         do e=1,nelt
-            msg_id(e) = irecv(e,wk(l),len)
-            l = l+nxyzr
-         enddo
-      endif
+      call nekgsync()
 
       ierr = 0
       if (nid.eq.pid0r.and.np.gt.1) then ! only i/o nodes will read
@@ -1999,15 +1992,21 @@ c-----------------------------------------------------------------------
               endif
             endif
 
-            ! distribute data across target processors
+#ifdef MPI
+            ! redistribute data based on the current el-proc map
             l = 1
+            call MPI_Win_lock_all(0,rsH,ierr)
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
                jeln = gllel(er(e))
-               if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
+
+               disp = (jeln-1) * int(nxyzr,8)
+               call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                      disp,nxyzr,MPI_REAL4,rsH,ierr)
                l = l+nxyzr
             enddo
+            call MPI_Win_unlock_all(rsH,ierr)
+#endif
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
@@ -2018,8 +2017,9 @@ c-----------------------------------------------------------------------
          endif
       endif
 
+      call nekgsync() ! completed both at the origin and at the target when the call returns 
+
       if (iskip) then
-         call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't use the data
       endif
 
@@ -2031,7 +2031,6 @@ c-----------------------------------------------------------------------
       l = 1
       do e=1,nelt
          if (np.gt.1) then
-            call msgwait(msg_id(e))
             ei = e
          elseif(np.eq.1) then
             ei = er(e)
@@ -2066,6 +2065,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine mfi_getv(u,v,w,wk,lwk,iskip)
 
+      include 'mpif.h'
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -2079,13 +2079,12 @@ c-----------------------------------------------------------------------
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
 
-      integer e,ei,eg,msg_id(lelt)
+      integer e,ei
       integer*8 i8tmp
- 
-      call nekgsync() ! clear outstanding message queues.
+
+      integer*8 disp
 
       nxyzr  = ldim*nxr*nyr*nzr
-      len    = nxyzr*wdsizr             ! message length in bytes
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer wk
@@ -2104,15 +2103,7 @@ c-----------------------------------------------------------------------
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
 
-      ! pre-post recieves (one mesg per element)
-      ! this assumes we never pre post more messages than supported
-      if (np.gt.1) then
-         l = 1
-         do e=1,nelt
-            msg_id(e) = irecv(e,wk(l),len)
-            l = l+nxyzr
-         enddo
-      endif
+      call nekgsync()
 
       ierr = 0
       if (nid.eq.pid0r .and. np.gt.1) then ! only i/o nodes
@@ -2131,15 +2122,21 @@ c-----------------------------------------------------------------------
               endif
             endif
 
+#ifdef MPI
             ! redistribute data based on the current el-proc map
             l = 1
+            call MPI_Win_lock_all(0,rsH,ierr)
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
                jeln = gllel(er(e))
-               if(ierr.ne.0) call rzero(w2(l),len)
-               call csend(jeln,w2(l),len,jnid,0)  ! blocking send
+
+               disp = (jeln-1) * int(nxyzr,8)
+               call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                      disp,nxyzr,MPI_REAL4,rsH,ierr)
                l = l+nxyzr
             enddo
+            call MPI_Win_unlock_all(rsH,ierr)
+#endif
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
@@ -2150,8 +2147,9 @@ c-----------------------------------------------------------------------
          endif
       endif
 
+      call nekgsync() ! completed both at the origin and at the target when the call returns 
+
       if (iskip) then
-         call nekgsync() ! clear outstanding message queues.
          goto 100     ! don't assign the data we just read
       endif
 
@@ -2163,11 +2161,11 @@ c-----------------------------------------------------------------------
       l = 1
       do e=1,nelt
          if (np.gt.1) then
-            call msgwait(msg_id(e))
             ei = e
          else if(np.eq.1) then
             ei = er(e) 
          endif
+
          if (if_byte_sw) then
             if(wdsizr.eq.8) then
                call byte_reverse8(wk(l),nxyzv*2,ierr)
@@ -2175,6 +2173,7 @@ c-----------------------------------------------------------------------
                call byte_reverse(wk(l),nxyzv,ierr)
             endif
          endif
+
          if (nxr.eq.lx1.and.nyr.eq.ly1.and.nzr.eq.lz1) then
             if (wdsizr.eq.4) then         ! COPY
                call copy4r(u(1,ei),wk(l        ),nxyzr)
@@ -2204,6 +2203,7 @@ c-----------------------------------------------------------------------
       enddo
 
  100  call err_chk(ierr,'Error reading restart data, in getv.$')
+
       return
       end
 c-----------------------------------------------------------------------
@@ -2377,6 +2377,7 @@ c     ii.  For MHD and perturbation cases, 1st file is for U,P,T;
 c          subsequent files are for B-field or perturbation fields
 c
 c
+      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
@@ -2395,6 +2396,24 @@ c
       integer e
 
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
+
+      common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
+
+      integer   disp_unit
+      integer*8 win_size
+
+#ifdef MPI
+      disp_unit = 4 
+      win_size  = int(disp_unit,8)*size(wk)
+      call mpi_comm_dup(nekcomm,commrs,ierr)
+      call MPI_Win_create(wk,
+     $                    win_size,
+     $                    disp_unit,
+     $                    MPI_INFO_NULL,
+     $                    commrs,rsH,ierr)
+
+      if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+#endif
 
       tiostart=dnekclock()
 
@@ -2513,6 +2532,10 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
      &       30X,'io-nodes = ',i5,/)
 
 
+#ifdef MPI
+      call MPI_Win_free(rsH, ierr)
+#endif
+
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
@@ -2564,6 +2587,7 @@ c-----------------------------------------------------------------------
       real*4 bytetest
 
       integer*8 offs0,offs
+
 
       ierr = 0
       ! rank0 (i/o master) will do a pre-read to get some infos 

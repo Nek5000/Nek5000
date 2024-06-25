@@ -191,6 +191,10 @@ c-----------------------------------------------------------------------
           tol = tol / 10.0;
           call find_con(wk,size(wk),tol,ierr)
         endif
+        if(ierr.ne.0) then
+          tol = tol / 100.0;
+          call find_con(wk,size(wk),tol,ierr)
+        endif
         call err_chk(ierr,'Connectivity calculation failed! '//
      &    'Try tightening mesh::connectivityTol$')
       endif
@@ -229,8 +233,8 @@ c fluid elements
       neliv = j
 
       nel = neliv
-      call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $  meshPartitioner,0,loglevel,ierr)
+      call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
+     $  fluid_partitioner,0,loglevel,ierr)
       call err_chk(ierr,'partMesh fluid failed!$')
 
       nelv = nel
@@ -282,8 +286,8 @@ c solid elements
          nelit = j
 
          nel = nelit
-         call fpartMesh(eid8,vtx8,xyz,lelt,nel,nlv,nekcomm,
-     $                  0,0,loglevel,ierr)
+         call fpartMesh(nel,eid8,vtx8,xyz,lelt,nlv,nekcomm,
+     $                  solid_partitioner,0,loglevel,ierr)
          call err_chk(ierr,'partMesh solid failed!$')
 
          nelt = nelv + nel
@@ -404,7 +408,7 @@ c-----------------------------------------------------------------------
 
            call blank(hdr,sizeof(hdr))
            offs = 0
-           call nek_file_read(co2_h,sizeof(hdr),offs,hdr,ierr)
+           call nek_file_read(co2_h,int(sizeof(hdr),8),offs,hdr,ierr)
            offs = offs + sizeof(hdr)
            if(ierr.ne.0) goto 100
 
@@ -417,7 +421,7 @@ c-----------------------------------------------------------------------
            endif
            write (6,'(a,a128)') ' hdr:', hdr
 
-           call nek_file_read(co2_h,sizeof(test),offs,test,ierr)
+           call nek_file_read(co2_h,int(sizeof(test),8),offs,test,ierr)
            if(ierr.ne.0) goto 100
            call nek_file_close(co2_h,ierr) 
            if(ierr.ne.0) goto 100
@@ -765,14 +769,16 @@ c-----------------------------------------------------------------------
             if(ierr.ne.0) goto 100
 
             call blank(hdr,132)
-            call nek_file_read(ma2_h,sizeof(hdr),int(0,8),hdr,ierr)
+            call nek_file_read(ma2_h,int(sizeof(hdr),8),int(0,8),
+     $                         hdr,ierr)
             lma2off_b = sizeof(hdr)
             if(ierr.ne.0) goto 100
 
             read (hdr,1) version,neli,nnzi
     1       format(a5,2i12)
 
-            call nek_file_read(ma2_h,sizeof(test),lma2off_b,test,ierr)
+            call nek_file_read(ma2_h,int(sizeof(test),8),lma2off_b,
+     $                         test,ierr)
             if(ierr.ne.0) goto 100
 
             call nek_file_close(ma2_h,ierr)

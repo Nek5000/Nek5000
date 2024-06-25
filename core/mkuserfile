@@ -86,7 +86,11 @@ c automatically added by makenek
 _ACEOF
 fi
 
-if ! cat $CASENAME.f | grep -qi "subroutine.*usrdat" ; then
+notFound1=`cat $CASENAME.f | grep -qi "subroutine.*usrdat"'$'; echo $?`
+notFound2=`cat $CASENAME.f | grep -qi "subroutine.*usrdat .*"; echo $?`
+notFound3=`cat $CASENAME.f | grep -qi "subroutine.*usrdat().*"; echo $?`
+
+if [[ $notFound1 -gt 0 && $notFound2 -gt 0 && $notFound3 -gt 0 ]] ; then
 cat >> $CASENAME.f << _ACEOF
 
 c automatically added by makenek
