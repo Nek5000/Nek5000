@@ -90,9 +90,11 @@ c     Get file name
       do ii=1,nparam
          read(10,80) sstring
          if(ii.eq.23) read(sstring,*) rnpscal
+         if(ii.eq.32) read(sstring,*) rBCrea
          write(11,80) sstring
       enddo
       npscal=rnpscal
+      nBCrea=rBCrea
 
       call scanout(sstring,'LOGICAL',7,10,11)
       read(sstring,*) nlogical
@@ -129,15 +131,11 @@ c     Get file name
       elseif (version.eq.'#v004') then
          wdsizi = 8
          read (hdr,3) version,nelt,ndim,nelv,nBCre2
-         nBC = 0
-         if (ifflow) nBC = nBC + 1
-         if (ifheat) nBC = nBC + 1
-         nBC = nBC + npscal
-         if (nBC.ne.nBCre2) then
-            write(6,4) nBC,ifflow,ifheat,npscal,nBCre2
+         if (nBCrea.ne.nBCre2) then
+            write(6,4) nBCrea,nBCre2
             call exitt
          endif
-    4    format('Error: nBC mismatched! rea=',i3,'(',2l4,i3,') re2=',i3)
+    4    format('Error: nBC mismatched! rea=',i3,' re2=',i3)
       else
          write(6,*) 'Error: Unsupported version number',version
          call exitt
