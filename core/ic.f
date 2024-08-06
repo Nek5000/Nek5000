@@ -2405,14 +2405,16 @@ c
 #ifdef MPI
       disp_unit = 4 
       win_size  = int(disp_unit,8)*size(wk)
-      call mpi_comm_dup(nekcomm,commrs,ierr)
-      call MPI_Win_create(wk,
-     $                    win_size,
-     $                    disp_unit,
-     $                    MPI_INFO_NULL,
-     $                    commrs,rsH,ierr)
+      if (commrs .eq. MPI_COMM_NULL) then
+        call mpi_comm_dup(nekcomm,commrs,ierr)
+        call MPI_Win_create(wk,
+     $                      win_size,
+     $                      disp_unit,
+     $                      MPI_INFO_NULL,
+     $                      commrs,rsH,ierr)
 
-      if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+        if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+      endif
 #endif
 
       tiostart=dnekclock()
@@ -2531,10 +2533,6 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
      &       30X,'avg data-throughput = ',f7.1,'GB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
-
-#ifdef MPI
-      call MPI_Win_free(rsH, ierr)
-#endif
 
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure

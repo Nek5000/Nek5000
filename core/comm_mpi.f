@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
       include 'PARALLEL' 
       include 'TSTEP' 
       include 'INPUT'
+      include 'RESTART'
 
       integer comm, newcomm, newcommg
       character session_in*(*), path_in*(*)
@@ -27,6 +28,8 @@ c-----------------------------------------------------------------------
       call mpi_comm_dup(comm,newcommg,ierr)
       newcomm = newcommg
       nekcomm = newcommg 
+
+      commrs = MPI_COMM_NULL
 
       call mpi_comm_size(nekcomm,np_global,ierr)
       call mpi_comm_rank(nekcomm,nid_global,ierr)
@@ -204,6 +207,7 @@ C     Test timer accuracy
       edif = edif/10.
 
       call fgslib_crystal_setup(cr_h,nekcomm,np)  ! set cr handle to new instance
+
       return
       end
 c-----------------------------------------------------------------------
