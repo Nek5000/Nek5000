@@ -568,11 +568,12 @@ c---------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      real cnx(lx1,ly1,lz1,1)
-      real cny(lx1,ly1,lz1,1)
-      real cnz(lx1,ly1,lz1,1)
+      real cnx(1)
+      real cny(1)
+      real cnz(1)
 
-      real cmag(lx1,ly1,lz1,lelv)
+      common /cls_norm_temp/ cmag(lx1*ly1*lz1*lelv)
+      real cmag
 
       integer ntot,ifld,i
 
@@ -590,10 +591,10 @@ c---------------------------------------------------------------
       call vsqrt(cmag,ntot)
 
       do i=1,ntot
-        if(cmag(i,1,1,1).gt.0.)then
-          cnx(i,1,1,1) = cnx(i,1,1,1)/cmag(i,1,1,1)
-          cny(i,1,1,1) = cny(i,1,1,1)/cmag(i,1,1,1)
-          if(if3d)cnz(i,1,1,1) = cnz(i,1,1,1)/cmag(i,1,1,1)
+        if(cmag(i).gt.0.)then
+          cnx(i) = cnx(i)/cmag(i)
+          cny(i) = cny(i)/cmag(i)
+          if(if3d)cnz(i) = cnz(i)/cmag(i)
         endif
       enddo
 
@@ -1008,7 +1009,8 @@ c-----------------------------------------------------------------------
         do ifc=1,2*ndim
           cb = cbc(ifc,ie,1)
           if(cb.eq.'O  ' .or. cb.eq.'o  '
-     $       .or. cb.eq.'W  '.or. cb.eq.'SYM')then
+     $       .or. cb.eq.'W  '.or. cb.eq.'SYM'
+     $        .or. cb.eq.'shl')then
 
             CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,ifc)
 
