@@ -484,6 +484,11 @@ c---------------------------------------------------------------
       real dxmax_e
       real dist_xyzc
       real vlmax
+      real glsum, dxsum
+      integer iglsum
+
+      real delta_save
+      save delta_save
 
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
@@ -510,10 +515,15 @@ c---------------------------------------------------------------
             ! dd = dxmax_e(ie)
             call cfill(dx(1,1,1,ie),dd,nxyz) 
          enddo
+
+         dxsum = glsum(dx,n)
+        
+         delta_save = dxsum/iglsum(n,1)
+
          icalld = 1
       endif
 
-      deltael = dx(ix,iy,iz,iel)
+      deltael = delta_save !dx(ix,iy,iz,iel)
 
       return
       end 
