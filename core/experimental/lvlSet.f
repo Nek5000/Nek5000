@@ -464,6 +464,7 @@ c---------------------------------------------------------------
       implicit none
       include 'SIZE'
       include 'TOTAL'
+      include 'LVLSET'
 
       integer ix,iy,iz,iel
 
@@ -484,11 +485,12 @@ c---------------------------------------------------------------
       real dxmax_e
       real dist_xyzc
       real vlmax
-      real glsum, dxsum
+      real glsum, dxsum, glmax, glmin
       integer iglsum
 
       real delta_save
       save delta_save
+      real dmax,dmin,dave
 
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
@@ -517,8 +519,23 @@ c---------------------------------------------------------------
          enddo
 
          dxsum = glsum(dx,n)
+         dmax = glmax(dx,n)
+         dmin = glmin(dx,n)
         
          delta_save = dxsum/iglsum(n,1)
+
+         dave = delta_save
+
+         if(nio.eq.0)then
+           write(*,*)"Max/min/avg el length",dmax,dmin,dave
+         endif
+         dmax = dmax/dave * eps_cls
+         dmin = dmin/dave * eps_cls
+         dave = dave/dave * eps_cls
+         if(nio.eq.0)then
+           write(*,*)"Interface thickness:"
+           write(*,*)"factor of min/max/avg el length",dmax,dmin,dave
+         endif
 
          icalld = 1
       endif
