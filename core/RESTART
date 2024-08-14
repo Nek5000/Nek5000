@@ -8,12 +8,12 @@ c
      $       ,nxo,nyo,nzo,nrg
      $       ,wdsizr,wdsizo
      $       ,nfileo,nproc_o,nfldr
-     $       ,er(lelr),nelB,nelBr
+     $       ,er(lelr),nelB,nelBr,npsr
       common /cmfi_i/ nxr,nyr,nzr,nelr,nelgr,istpr,ifiler,nfiler
      $              , nxo,nyo,nzo,nrg
      $              , wdsizr,wdsizo
      $              , nfileo,nproc_o,nfldr
-     $              , er,nelB,nelBr
+     $              , er,nelB,nelBr,npsr
 
       integer iHeaderSize
       parameter(iHeaderSize=132)
