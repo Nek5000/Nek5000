@@ -2381,6 +2381,7 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
+
       character*132  hdr
       character*132  fname_in
 
@@ -2433,7 +2434,11 @@ c
       endif
 
       call mfi_prepare(fname)       ! determine reader nodes +
-                                    ! read hdr + element mapping 
+                                    ! read hdr + element mapping
+
+      nid_r = 0
+      if(.not. ifmpiio) nid_r = pid0r
+      if(nid.eq.nid_r) write(6,*) '      FILE:', fname
 
       offs0   = iHeadersize + 4 + isize*nelgr
       nxyzr8  = nxr*nyr*nzr
@@ -2634,7 +2639,6 @@ c-----------------------------------------------------------------------
            call blank(hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
-           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
            call byte_open(hname,ierr)
 
            if(ierr.ne.0) goto 102
@@ -2671,7 +2675,6 @@ c-----------------------------------------------------------------------
         offs = offs0 + nelBr*isize
 
         call addfid(hname,fid0r)
-        if(nio.eq.0) write(6,*) '      FILE:',hname
         call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
 
         if(ierr.ne.0) goto 102
