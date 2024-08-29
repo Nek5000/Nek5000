@@ -1995,7 +1995,7 @@ c-----------------------------------------------------------------------
 #ifdef MPI
             ! redistribute data based on the current el-proc map
             l = 1
-            call MPI_Win_lock_all(MPI_MODE_NOCHECK,rsH,ierr)
+            call MPI_Win_lock_all(0,rsH,ierr)
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
                jeln = gllel(er(e))
@@ -2006,6 +2006,7 @@ c-----------------------------------------------------------------------
                l = l+nxyzr
             enddo
             call MPI_Win_unlock_all(rsH,ierr)
+            call nekgsync()
 #endif
             k  = k + nelrr
          enddo
@@ -2125,7 +2126,7 @@ c-----------------------------------------------------------------------
 #ifdef MPI
             ! redistribute data based on the current el-proc map
             l = 1
-            call MPI_Win_lock_all(MPI_MODE_NOCHECK,rsH,ierr)
+            call MPI_Win_lock_all(0,rsH,ierr)
             do e = k+1,k+nelrr
                jnid = gllnid(er(e))                ! where is er(e) now?
                jeln = gllel(er(e))
@@ -2136,6 +2137,7 @@ c-----------------------------------------------------------------------
                l = l+nxyzr
             enddo
             call MPI_Win_unlock_all(rsH,ierr)
+            call nekgsync()
 #endif
             k  = k + nelrr
          enddo
