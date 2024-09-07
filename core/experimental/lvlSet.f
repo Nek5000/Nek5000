@@ -608,10 +608,14 @@ c---------------------------------------------------------------
       call vsqrt(cmag,ntot)
 
       do i=1,ntot
-        if(cmag(i).gt.0.)then
+        if(cmag(i).gt.1e-6)then
           cnx(i) = cnx(i)/cmag(i)
           cny(i) = cny(i)/cmag(i)
           if(if3d)cnz(i) = cnz(i)/cmag(i)
+        else
+          cnx(i) = 0.0
+          cny(i) = 0.0
+          cnz(i) = 0.0
         endif
       enddo
 

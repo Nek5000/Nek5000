@@ -887,14 +887,15 @@ c---------------------------------------------------------------------
 
       common /svvfluid/ auvx(lx1,ly1,lz1,lelv),
      $                  auvy(lx1,ly1,lz1,lelv),
-     $                  auvz(lx1,ly1,lz1,lelv) 
+     $                  auvz(lx1,ly1,lz1,lelv),
+     $                  dummy(lx1,ly1,lz1,lelv)
       real auvx,auvy,auvz
 
       real svvx,svvy,svvz
       integer ix,iy,iz,e
 
       integer ntot
-      real dummy(lx1,ly1,lz1,lelv)
+      real dummy
 
       if(ix*iy*iz*e .eq. 1)then
         ntot = lx1*ly1*lz1*lelv
