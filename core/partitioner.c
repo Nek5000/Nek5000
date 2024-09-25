@@ -4,23 +4,23 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   int i, j;
 
   struct comm comm;
-  int         np, id;
+  int np, id;
 
-  int  Nmsg;
+  int Nmsg;
   int *Ncomm;
 
-  int       nelMin, nelMax;
+  int nelMin, nelMax;
   long long nelSum;
-  int       ncMin, ncMax, ncSum;
-  int       nsMin, nsMax, nsSum;
-  int       nssMin, nssMax;
+  int ncMin, ncMax, ncSum;
+  int nsMin, nsMax, nsSum;
+  int nssMin, nssMax;
   long long nssSum;
 
   struct gs_data *gsh;
-  int             b;
-  long long       b_long_long;
+  int b;
+  long long b_long_long;
 
-  int        numPoints;
+  int numPoints;
   long long *data;
 
   comm_init(&comm, ce);
@@ -30,7 +30,7 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   if (np == 1) return;
 
   numPoints = nel * nv;
-  data      = (long long *)malloc(numPoints * sizeof(long long));
+  data = (long long *)malloc(numPoints * sizeof(long long));
   for (i = 0; i < numPoints; i++) data[i] = vtx[i];
 
   gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
@@ -50,7 +50,7 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   comm_allreduce(&comm, gs_int, gs_add, &ncSum, 1, &b);
 
   nsMax = nsSum = 0;
-  nsMin         = INT_MAX;
+  nsMin = INT_MAX;
   for (i = 0; i < Nmsg; ++i) {
     nsMax = Ncomm[i] > nsMax ? Ncomm[i] : nsMax;
     nsMin = Ncomm[i] < nsMin ? Ncomm[i] : nsMin;
@@ -66,8 +66,10 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   comm_allreduce(&comm, gs_int, gs_min, &nssMin, 1, &b);
   comm_allreduce(&comm, gs_long_long, gs_add, &nssSum, 1, &b_long_long);
 
-  if (Nmsg > 0) nsSum = nsSum / Nmsg;
-  else nsSum = 0;
+  if (Nmsg > 0)
+    nsSum = nsSum / Nmsg;
+  else
+    nsSum = 0;
   comm_allreduce(&comm, gs_int, gs_add, &nsSum, 1, &b);
 
   nelMax = nel;
@@ -84,7 +86,8 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   if (nelMin > 0)
     printf(" nElements   max/min/avg: %d %d %.2f\n", nelMax, nelMin,
            (double)nelMax / nelMin);
-  else printf(" nElements   max/min/avg: %d %d INFINITY\n", nelMax, nelMin);
+  else
+    printf(" nElements   max/min/avg: %d %d INFINITY\n", nelMax, nelMin);
   printf(" nMessages   max/min/avg: %d %d %.2f\n", ncMax, ncMin,
          (double)ncSum / npp);
   printf(" msgSize     max/min/avg: %d %d %.2f\n", nsMax, nsMin,
@@ -104,11 +107,11 @@ static int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   struct array eList;
   array_init(edata, &eList, nel), eList.n = nel;
 
-  int    e, n;
+  int e, n;
   edata *data;
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     data[e].proc = part[e];
-    data[e].eid  = el[e];
+    data[e].eid = el[e];
     for (n = 0; n < nv; ++n) { data[e].vtx[n] = vl[e * nv + n]; }
   }
 
@@ -154,13 +157,13 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
                const int *const lelm, const int *const nve,
                const int *const fcomm, const int *const fpartitioner,
                const int *const falgo, const int *const loglevel, int *rtval) {
-  int  nel         = *nell;
-  int  nv          = *nve;
-  int  lelt        = *lelm;
-  int  partitioner = *fpartitioner;
-  int  algo        = *falgo;
-  int  verbose     = *loglevel;
-  sint ierr        = 1;
+  int nel = *nell;
+  int nv = *nve;
+  int lelt = *lelm;
+  int partitioner = *fpartitioner;
+  int algo = *falgo;
+  int verbose = *loglevel;
+  sint ierr = 1;
 
   if (nv != 4 && nv != 8) {
     fprintf(stderr, "ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
@@ -178,16 +181,16 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
   if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
   double opt[10] = {0};
-  opt[0]         = 1;
-  opt[1]         = 0;       /* verbosity */
-  opt[2]         = comm.np; /* number of partitions */
-  opt[3]         = 1.05;    /* imbalance tolerance */
+  opt[0] = 1;
+  opt[1] = 0;       /* verbosity */
+  opt[2] = comm.np; /* number of partitions */
+  opt[3] = 1.05;    /* imbalance tolerance */
 
   int *part = (int *)malloc(lelt * sizeof(int));
   if (partitioner == 0 || partitioner == 1) {
 #if defined(PARRSB)
     parrsb_options options = parrsb_default_options;
-    options.partitioner    = partitioner;
+    options.partitioner = partitioner;
     if (partitioner == 0) // If the partitioner is RSB
       options.rsb_algo = algo;
 
@@ -237,7 +240,7 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
   comm_init(&comm, cext);
 
   const int lelm = *lelm_;
-  sint      ierr = 1;
+  sint ierr = 1;
 
 #if defined(PARRSB)
   int *const part = (int *)malloc(lelm * sizeof(int));
@@ -262,7 +265,7 @@ void fprintpartstat(long long *vtx, int *nel, int *nv, int *comm) {
 #if defined(MPI)
   MPI_Comm c = MPI_Comm_f2c(*comm);
 #else
-  MPI_Comm c    = 0;
+  MPI_Comm c = 0;
 #endif
 
   print_part_stat(vtx, *nel, *nv, c);

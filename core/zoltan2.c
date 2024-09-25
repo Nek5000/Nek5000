@@ -1,8 +1,8 @@
 #include <gslib.h>
 
 struct zoltan_lapalacian_private {
-  uint    size;
-  ulong  *rows, *columns;
+  uint size;
+  ulong *rows, *columns;
   double *values;
 };
 typedef struct zoltan_lapalacian_private *zoltan_lapalacian_t;
@@ -25,7 +25,7 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
 
   typedef struct {
     ulong e, v;
-    uint  p;
+    uint p;
   } pair_t;
 
   struct array arr;
@@ -45,8 +45,8 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
 
   typedef struct {
     ulong e1, e2;
-    uint  p;
-    int   w;
+    uint p;
+    int w;
   } neighbor_t;
 
   struct array neighbors;
@@ -63,7 +63,7 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
     sarray_sort(pair_t, arr.ptr, arr.n, v, 1, &bfr);
 
     pair_t *pa = (pair_t *)arr.ptr;
-    uint    s  = 0;
+    uint s = 0;
     while (s < arr.n) {
       uint e = s + 1;
       for (; e < arr.n && pa[e].v == pa[s].v; e++)
@@ -88,15 +88,15 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
 
   {
     neighbor_t *pn = (neighbor_t *)neighbors.ptr;
-    uint        s = 0, num_unique = 0;
+    uint s = 0, num_unique = 0;
     while (s < neighbors.n) {
       uint e = s + 1;
       for (; e < neighbors.n && pn[e].e1 == pn[s].e1 && pn[e].e2 == pn[s].e2;
            e++)
         ;
-      pn[num_unique]     = pn[s];
+      pn[num_unique] = pn[s];
       pn[num_unique++].w = -(int)(e - s);
-      s                  = e;
+      s = e;
     }
     neighbors.n = num_unique;
   }
@@ -104,11 +104,11 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
   zoltan_lapalacian_t L = tcalloc(struct zoltan_lapalacian_private, 1);
   {
     neighbor_t *pn = (neighbor_t *)neighbors.ptr;
-    uint        s  = 0;
+    uint s = 0;
     while (s < neighbors.n) {
-      int  sum  = (pn[s].e1 == pn[s].e2) ? 0 : pn[s].w;
-      int  diag = (pn[s].e1 == pn[s].e2) ? s : -1;
-      uint e    = s + 1;
+      int sum = (pn[s].e1 == pn[s].e2) ? 0 : pn[s].w;
+      int diag = (pn[s].e1 == pn[s].e2) ? s : -1;
+      uint e = s + 1;
       for (; e < neighbors.n && pn[e].e1 == pn[s].e1; e++) {
         if (pn[e].e1 != pn[e].e2) {
           sum += pn[e].w;
@@ -118,17 +118,17 @@ zoltan_lapalacian_t zoltan_lapalacian_weighted(long long *vl, unsigned nel,
       }
       assert(diag >= 0 && sum < 0);
       pn[diag].w = -sum;
-      s          = e;
+      s = e;
     }
 
-    L->size    = neighbors.n;
-    L->rows    = tcalloc(ulong, neighbors.n);
+    L->size = neighbors.n;
+    L->rows = tcalloc(ulong, neighbors.n);
     L->columns = tcalloc(ulong, neighbors.n);
-    L->values  = tcalloc(double, neighbors.n);
+    L->values = tcalloc(double, neighbors.n);
     for (uint i = 0; i < L->size; i++) {
-      L->rows[i]    = pn[i].e1;
+      L->rows[i] = pn[i].e1;
       L->columns[i] = pn[i].e2;
-      L->values[i]  = pn[i].w;
+      L->values[i] = pn[i].w;
     }
   }
 

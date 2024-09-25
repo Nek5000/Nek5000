@@ -3,7 +3,7 @@
 
 static int get_number_of_vertices(void *data, int *ierr) {
   graph_t *graph = (graph_t *)data;
-  *ierr          = ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
   return graph->num_vertices;
 }
 
@@ -11,11 +11,11 @@ static void get_vertex_list(void *data, int size_gid, int size_lid,
                             ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                             int wgt_dim, float *obj_wgts, int *ierr) {
   graph_t *graph = (graph_t *)data;
-  *ierr          = ZOLTAN_FATAL;
+  *ierr = ZOLTAN_FATAL;
 
   for (int i = 0; i < graph->num_vertices; i++) {
     global_id[i] = graph->vertex_ids[i];
-    local_id[i]  = i;
+    local_id[i] = i;
   }
 
   *ierr = ZOLTAN_OK;
@@ -26,12 +26,12 @@ static void get_edge_size_list(void *data, int size_gid, int size_lid,
                                ZOLTAN_ID_PTR local_id, int *num_edges,
                                int *ierr) {
   graph_t *graph = (graph_t *)data;
-  *ierr          = ZOLTAN_FATAL;
+  *ierr = ZOLTAN_FATAL;
 
   if (size_gid != 1 || size_lid != 1 || num_obj != graph->num_vertices) return;
 
   for (int i = 0; i < num_obj; i++) {
-    int id       = local_id[i];
+    int id = local_id[i];
     num_edges[i] = graph->neighbor_index[id + 1] - graph->neighbor_index[id];
   }
 
@@ -44,7 +44,7 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
                           int *nbr_procs, int wgt_dim, float *neighbor_weights,
                           int *ierr) {
   graph_t *graph = (graph_t *)data;
-  *ierr          = ZOLTAN_FATAL;
+  *ierr = ZOLTAN_FATAL;
 
   if ((size_gid != 1) || (size_lid != 1) || (wgt_dim != 1) ||
       (num_obj != graph->num_vertices))
@@ -58,8 +58,8 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
 
     for (int j = graph->neighbor_index[id]; j < graph->neighbor_index[id + 1];
          j++) {
-      nbr_global_id[j]    = graph->neighbor_ids[j];
-      nbr_procs[j]        = graph->neighbor_procs[j];
+      nbr_global_id[j] = graph->neighbor_ids[j];
+      nbr_procs[j] = graph->neighbor_procs[j];
       neighbor_weights[j] = graph->neighbor_weights[j];
     }
   }
@@ -69,7 +69,7 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
 
 #define check_zoltan(status, msg)                                              \
   {                                                                            \
-    int         rc_  = (rc);                                                   \
+    int rc_ = (rc);                                                            \
     const char *msg_ = msg;                                                    \
     if (rc_ != ZOLTAN_OK) {                                                    \
       fprintf(stderr, msg);                                                    \
@@ -81,10 +81,10 @@ static void get_edge_list(void *data, int size_gid, int size_lid, int num_obj,
 int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                     MPI_Comm comm) {
   float ver;
-  int   rc      = Zoltan_Initialize(0, NULL, &ver);
-  int   verbose = (int)opt[1];
+  int rc = Zoltan_Initialize(0, NULL, &ver);
+  int verbose = (int)opt[1];
 
-  int    rank, size;
+  int rank, size;
   double imbalance_tol;
   {
     MPI_Comm_rank(comm, &rank);
@@ -92,7 +92,7 @@ int Zoltan_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
 
     long long nelg = 0, nel_ = nel;
     MPI_Allreduce(&nel_, &nelg, 1, MPI_LONG_LONG, MPI_SUM, comm);
-    nel_          = nelg / size;
+    nel_ = nelg / size;
     imbalance_tol = (nel_ + 1.0) / nel_;
 
     if (rank == 0 && verbose) {
@@ -153,7 +153,7 @@ create_dual_graph:
   int changes, num_gid_entries, num_lid_entries, num_import, num_export;
   ZOLTAN_ID_PTR import_global_ids, import_local_ids, export_global_ids;
   ZOLTAN_ID_PTR export_local_ids;
-  int          *import_procs, *import_to_part, *export_procs, *export_to_part;
+  int *import_procs, *import_to_part, *export_procs, *export_to_part;
 
   // Now we can partition the graph.
   rc = Zoltan_LB_Partition(zz, &changes, &num_gid_entries, &num_lid_entries,

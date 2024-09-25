@@ -6,44 +6,44 @@
 
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                       MPI_Comm ce) {
-  int    i, j;
-  sint   ierrm;
-  sint   ibfr;
+  int i, j;
+  sint ierrm;
+  sint ibfr;
   double time, time0;
 
-  MPI_Comm    comms;
+  MPI_Comm comms;
   struct comm comm;
-  int         color;
+  int color;
 
   struct crystal cr;
-  struct array   A;
-  edata         *row;
+  struct array A;
+  edata *row;
 
-  long long  nell;
+  long long nell;
   long long *nelarray;
-  idx_t     *elmdist;
-  idx_t     *evlptr;
-  idx_t     *part_;
-  real_t    *tpwgts;
-  idx_t      edgecut;
-  real_t     ubvec;
-  idx_t     *elmwgt;
-  idx_t      wgtflag;
-  idx_t      numflag;
-  idx_t      ncon;
-  idx_t      ncommonnodes;
-  idx_t      nparts;
-  idx_t      nelsm;
-  idx_t      options[10];
+  idx_t *elmdist;
+  idx_t *evlptr;
+  idx_t *part_;
+  real_t *tpwgts;
+  idx_t edgecut;
+  real_t ubvec;
+  idx_t *elmwgt;
+  idx_t wgtflag;
+  idx_t numflag;
+  idx_t ncon;
+  idx_t ncommonnodes;
+  idx_t nparts;
+  idx_t nelsm;
+  idx_t options[10];
 
-  ierrm        = METIS_OK;
-  nell         = nel;
-  edgecut      = 0;
-  wgtflag      = 0;
-  numflag      = 0;
-  ncon         = 1;
-  ubvec        = 1.02;
-  elmwgt       = NULL; /* no weights */
+  ierrm = METIS_OK;
+  nell = nel;
+  edgecut = 0;
+  wgtflag = 0;
+  numflag = 0;
+  ncon = 1;
+  ubvec = 1.02;
+  elmwgt = NULL; /* no weights */
   ncommonnodes = 2;
 
   part_ = (idx_t *)malloc(nel * sizeof(idx_t));
@@ -54,8 +54,8 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
     goto wait_and_check;
   }
 
-  int    verbose       = (int)opt[1];
-  int    num_parts     = (int)opt[2];
+  int verbose = (int)opt[1];
+  int num_parts = (int)opt[2];
   double imbalance_tol = opt[3];
 
   color = (nel > 0) ? 1 : MPI_UNDEFINED;
@@ -68,13 +68,13 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   nelarray = (long long *)malloc(comm.np * sizeof(long long));
   MPI_Allgather(&nell, 1, MPI_LONG_LONG_INT, nelarray, 1, MPI_LONG_LONG_INT,
                 comm.c);
-  elmdist    = (idx_t *)malloc((comm.np + 1) * sizeof(idx_t));
+  elmdist = (idx_t *)malloc((comm.np + 1) * sizeof(idx_t));
   elmdist[0] = 0;
   for (i = 0; i < comm.np; ++i)
     elmdist[i + 1] = elmdist[i] + (idx_t)nelarray[i];
   free(nelarray);
 
-  evlptr    = (idx_t *)malloc((nel + 1) * sizeof(idx_t));
+  evlptr = (idx_t *)malloc((nel + 1) * sizeof(idx_t));
   evlptr[0] = 0;
   for (i = 0; i < nel; ++i) evlptr[i + 1] = evlptr[i] + nv;
   nelsm = elmdist[comm.id + 1] - elmdist[comm.id];
@@ -83,14 +83,14 @@ int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   if (nv == 8) ncommonnodes = 4;
   nparts = comm.np;
 
-  options[0]                  = 1;
+  options[0] = 1;
   options[PMV3_OPTION_DBGLVL] = 0;
-  options[PMV3_OPTION_SEED]   = 0;
+  options[PMV3_OPTION_SEED] = 0;
   if ((int)opt[0] > 0) {
     options[PMV3_OPTION_DBGLVL] = verbose;
     if (opt[2] != 0) {
       options[3] = PARMETIS_PSR_UNCOUPLED;
-      nparts     = num_parts;
+      nparts = num_parts;
     }
     ubvec = imbalance_tol;
   }
