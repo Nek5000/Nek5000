@@ -13,12 +13,12 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
     goto wait_and_check;
   }
 
-  int    verbose       = (int)opt[1];
-  int    num_parts     = (int)opt[2];
+  int verbose = (int)opt[1];
+  int num_parts = (int)opt[2];
   double imbalance_tol = opt[3];
 
   struct comm comm;
-  MPI_Comm    active;
+  MPI_Comm active;
 
   int color = (nel > 0) ? 1 : MPI_UNDEFINED;
   MPI_Comm_split(ce, color, 0, &active);
@@ -28,7 +28,7 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   if (comm.id == 0 && verbose) printf("Running parHIP ... "), fflush(stdout);
 
   idxtype *nel_array = tcalloc(idxtype, comm.np);
-  idxtype  nel_ull   = nel;
+  idxtype nel_ull = nel;
   MPI_Allgather(&nel_ull, 1, MPI_UNSIGNED_LONG_LONG, nel_array, 1,
                 MPI_UNSIGNED_LONG_LONG, comm.c);
 
@@ -44,8 +44,8 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
   idxtype *xadj = tcalloc(idxtype, nel + 1);
   for (uint i = 0; i < nel + 1; i++) xadj[i] = graph->neighbor_index[i];
 
-  uint     num_neighbors = graph->neighbor_index[nel];
-  idxtype *adjncy        = tcalloc(idxtype, num_neighbors);
+  uint num_neighbors = graph->neighbor_index[nel];
+  idxtype *adjncy = tcalloc(idxtype, num_neighbors);
   for (uint i = 0; i < num_neighbors; i++)
     adjncy[i] = graph->neighbor_ids[i] - 1;
 
@@ -58,11 +58,11 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
 
   graph_destroy(&graph);
 
-  bool     suppress_output = false;
-  int      seed            = 0;
-  int      mode            = ECOMESH;
-  int      edgecut         = 0;
-  idxtype *part_           = tcalloc(idxtype, nel);
+  bool suppress_output = false;
+  int seed = 0;
+  int mode = ECOMESH;
+  int edgecut = 0;
+  idxtype *part_ = tcalloc(idxtype, nel);
 
   double time0 = comm_time();
   ParHIPPartitionKWay(vtxdist, xadj, adjncy, vwgt, adjwgt, &num_parts,
