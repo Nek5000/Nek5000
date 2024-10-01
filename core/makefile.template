@@ -25,6 +25,7 @@ MPI=0
 VISIT=0
 DPROCMAP=0
 
+PARRSB=0
 PARMETIS=0
 ZOLTAN=0
 ZOLTAN2=0
@@ -94,6 +95,10 @@ ifeq ($(MPI),0)
 	DUMMY:= $(shell cp $S/core/mpi_dummy.h $S/core/mpif.h) 
 else
 	DUMMY:= $(shell rm -rf $S/core/mpif.h) 
+endif
+
+ifeq ($(PARRSB), 1)
+	CORE := $(CORE) parrsb.o
 endif
 
 ifeq ($(PARMETIS), 1)
@@ -264,6 +269,7 @@ $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(c
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner-weak.o :$S/core/partitioner-weak.c;  $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/parrsb.o           :$S/core/parrsb.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan.o           :$S/core/zoltan.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@

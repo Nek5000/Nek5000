@@ -188,16 +188,9 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 
   int *part = (int *)malloc(lelt * sizeof(int));
   if (partitioner == 0 || partitioner == 1) {
-#if defined(PARRSB)
-    parrsb_options options = parrsb_default_options;
-    options.partitioner = partitioner;
-    if (partitioner == 0) // If the partitioner is RSB
-      options.rsb_algo = algo;
-
-    ierr = parrsb_part_mesh(part, vl, xyz, NULL, nel, nv, &options, comm.c);
-#else
-    ierr = 1;
-#endif
+    opt[0] = partitioner;
+    opt[1] = algo;
+    ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c, xyz);
   } else if (partitioner == 8) {
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
   } else if (partitioner == 16) {
@@ -215,40 +208,6 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 
   if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
-  free(part);
-
-  sint b;
-check_global_error:
-  fflush(stderr);
-  comm_allreduce(&comm, gs_int, gs_max, &ierr, 1, &b);
-  comm_free(&comm);
-  *rtval = ierr;
-}
-
-#define fpartmesh_greedy FORTRAN_UNPREFIXED(fpartmesh_greedy, FPARTMESH_GRREDY)
-void fpartmesh_greedy(int *const nel2, long long *const el2,
-                      long long *const vl2, const int *const nel1,
-                      const long long *const vl1, const int *const lelm_,
-                      const int *const nv, const int *const fcomm,
-                      int *const rtval) {
-  struct comm comm;
-#if defined(MPI)
-  MPI_Comm cext = MPI_Comm_f2c(*fcomm);
-#else
-  MPI_Comm cext = 0;
-#endif
-  comm_init(&comm, cext);
-
-  const int lelm = *lelm_;
-  sint ierr = 1;
-
-#if defined(PARRSB)
-  int *const part = (int *)malloc(lelm * sizeof(int));
-  parrsb_part_solid(part, vl2, *nel2, vl1, *nel1, *nv, comm.c);
-#endif
-
-  ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
-  check_error(ierr);
   free(part);
 
   sint b;

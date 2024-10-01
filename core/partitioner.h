@@ -3,10 +3,6 @@
 
 #include "gslib.h"
 
-#if defined(PARRSB)
-#include "parRSB.h"
-#endif
-
 #define MAXNV 8 /* maximum number of vertices per element */
 
 typedef struct {

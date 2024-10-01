@@ -513,6 +513,7 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
+-e "s/^PARRSB[ ]*=.*/PARRSB=${PARRSB}/" \
 -e "s/^PARMETIS[ ]*=.*/PARMETIS=${PARMETIS}/" \
 -e "s/^ZOLTAN[ ]*=.*/ZOLTAN=${ZOLTAN}/" \
 -e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
