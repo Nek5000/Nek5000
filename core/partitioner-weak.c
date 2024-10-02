@@ -18,10 +18,10 @@ barrier_before_abort:
 }
 
 int parRSB_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
-                      MPI_Comm comm, double *xyz) __attribute__((weak));
+                    MPI_Comm comm, double *xyz) __attribute__((weak));
 
 int parRSB_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
-                      MPI_Comm comm, double *xyz) {
+                    MPI_Comm comm, double *xyz) {
   exit_if_not_enabled("parRSB", "PARRSB", comm);
 }
 

@@ -1,10 +1,10 @@
 #include "parRSB.h"
 
 int parRSB_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
-                      MPI_Comm comm, double *xyz) {
+                    MPI_Comm comm, double *xyz) {
   parrsb_options options = parrsb_default_options;
 
-  int partitioner = (int)opt[0];
+  int partitioner     = (int)opt[0];
   options.partitioner = partitioner;
 
   if (partitioner == 0) // If the partitioner is RSB

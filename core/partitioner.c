@@ -10,7 +10,7 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
   // Fill the vertices array with information about the vertices.
   typedef struct {
     ulong vid, eid;
-    uint dest, np;
+    uint  dest, np;
   } vertex_t;
 
   struct array vertices;
@@ -20,7 +20,7 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     for (uint i = 0; i < nelt; i++) {
       vertex.eid = i + start + 1;
       for (uint j = 0; j < nv; j++) {
-        vertex.vid = vl[i * nv + j];
+        vertex.vid  = vl[i * nv + j];
         vertex.dest = vertex.vid % c->np;
         array_cat(vertex_t, &vertices, &vertex, 1);
       }
@@ -48,17 +48,18 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     array_init(vertex_t, &neighbors, vertices.n);
 
     const vertex_t *const pv = (const vertex_t *const)vertices.ptr;
-    uint vn = vertices.n;
-    uint s = 0;
+    uint                  vn = vertices.n;
+    uint                  s  = 0;
     while (s < vn) {
       uint e = s + 1;
-      while (e < vn && pv[s].vid == pv[e].vid) e++;
+      while (e < vn && pv[s].vid == pv[e].vid)
+        e++;
 
       for (uint j = s; j < e; j++) {
         vertex_t v = pv[j];
         for (uint k = s; k < e; k++) {
           v.vid = pv[k].eid;
-          v.np = pv[k].dest;
+          v.np  = pv[k].dest;
           array_cat(vertex_t, &neighbors, &v, 1);
         }
       }
@@ -76,8 +77,8 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
   // element.
   typedef struct {
     ulong nid, eid;
-    uint np;
-    int weight;
+    uint  np;
+    int   weight;
   } neighbor_t;
 
   struct array compressed;
@@ -85,20 +86,22 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
     array_init(neighbor_t, &compressed, neighbors.n);
 
     const vertex_t *const pn = (const vertex_t *const)neighbors.ptr;
-    uint nn = neighbors.n;
-    neighbor_t nbr;
-    uint s = 0;
+    uint                  nn = neighbors.n;
+    neighbor_t            nbr;
+    uint                  s = 0;
     while (s < nn) {
       uint e = s + 1;
-      while (e < nn && pn[s].eid == pn[e].eid && pn[s].vid == pn[e].vid) e++;
+      while (e < nn && pn[s].eid == pn[e].eid && pn[s].vid == pn[e].vid)
+        e++;
 
       // Sanity check.
-      for (uint j = s + 1; j < e; j++) assert(pn[s].np == pn[j].np);
+      for (uint j = s + 1; j < e; j++)
+        assert(pn[s].np == pn[j].np);
 
       // Add to compressed array.
-      nbr.eid = pn[s].eid;
-      nbr.nid = pn[s].vid;
-      nbr.np = pn[s].np;
+      nbr.eid    = pn[s].eid;
+      nbr.nid    = pn[s].vid;
+      nbr.np     = pn[s].np;
       nbr.weight = (int)(e - s);
       if (nbr.eid != nbr.nid) array_cat(neighbor_t, &compressed, &nbr, 1);
       s = e;
@@ -106,35 +109,37 @@ graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c) {
   }
   array_free(&neighbors);
 
-  graph_t *graph = tcalloc(graph_t, 1);
+  graph_t *graph      = tcalloc(graph_t, 1);
   graph->num_vertices = nelt;
-  graph->vertex_ids = tcalloc(ulong, nelt);
-  for (uint i = 0; i < nelt; i++) graph->vertex_ids[i] = i + start + 1;
+  graph->vertex_ids   = tcalloc(ulong, nelt);
+  for (uint i = 0; i < nelt; i++)
+    graph->vertex_ids[i] = i + start + 1;
 
   graph->neighbor_index = tcalloc(int, nelt + 1);
   {
-    neighbor_t *pc = (neighbor_t *)compressed.ptr;
-    uint count = 0;
-    uint s = 0;
+    neighbor_t *pc    = (neighbor_t *)compressed.ptr;
+    uint        count = 0;
+    uint        s     = 0;
     while (s < compressed.n) {
       uint e = s + 1;
-      while (e < compressed.n && pc[s].eid == pc[e].eid) e++;
+      while (e < compressed.n && pc[s].eid == pc[e].eid)
+        e++;
       count++;
       graph->neighbor_index[count] = e;
-      s = e;
+      s                            = e;
     }
     assert(count == nelt);
     assert(graph->neighbor_index[count] == compressed.n);
   }
 
-  graph->neighbor_ids = tcalloc(ulong, compressed.n);
-  graph->neighbor_procs = tcalloc(int, compressed.n);
+  graph->neighbor_ids     = tcalloc(ulong, compressed.n);
+  graph->neighbor_procs   = tcalloc(int, compressed.n);
   graph->neighbor_weights = tcalloc(int, compressed.n);
   {
     neighbor_t *pc = (neighbor_t *)compressed.ptr;
     for (uint i = 0; i < compressed.n; i++) {
-      graph->neighbor_ids[i] = pc[i].nid;
-      graph->neighbor_procs[i] = pc[i].np;
+      graph->neighbor_ids[i]     = pc[i].nid;
+      graph->neighbor_procs[i]   = pc[i].np;
       graph->neighbor_weights[i] = pc[i].weight;
     }
   }
@@ -171,23 +176,23 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   int i, j;
 
   struct comm comm;
-  int np, id;
+  int         np, id;
 
-  int Nmsg;
+  int  Nmsg;
   int *Ncomm;
 
-  int nelMin, nelMax;
+  int       nelMin, nelMax;
   long long nelSum;
-  int ncMin, ncMax, ncSum;
-  int nsMin, nsMax, nsSum;
-  int nssMin, nssMax;
+  int       ncMin, ncMax, ncSum;
+  int       nsMin, nsMax, nsSum;
+  int       nssMin, nssMax;
   long long nssSum;
 
   struct gs_data *gsh;
-  int b;
-  long long b_long_long;
+  int             b;
+  long long       b_long_long;
 
-  int numPoints;
+  int        numPoints;
   long long *data;
 
   comm_init(&comm, ce);
@@ -197,8 +202,9 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   if (np == 1) return;
 
   numPoints = nel * nv;
-  data = (long long *)malloc(numPoints * sizeof(long long));
-  for (i = 0; i < numPoints; i++) data[i] = vtx[i];
+  data      = (long long *)malloc(numPoints * sizeof(long long));
+  for (i = 0; i < numPoints; i++)
+    data[i] = vtx[i];
 
   gsh = gs_setup(data, numPoints, &comm, 0, gs_pairwise, 0);
 
@@ -217,7 +223,7 @@ static void print_part_stat(long long *vtx, int nel, int nv, MPI_Comm ce) {
   comm_allreduce(&comm, gs_int, gs_add, &ncSum, 1, &b);
 
   nsMax = nsSum = 0;
-  nsMin = INT_MAX;
+  nsMin         = INT_MAX;
   for (i = 0; i < Nmsg; ++i) {
     nsMax = Ncomm[i] > nsMax ? Ncomm[i] : nsMax;
     nsMin = Ncomm[i] < nsMin ? Ncomm[i] : nsMin;
@@ -274,12 +280,14 @@ static int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
   struct array eList;
   array_init(edata, &eList, nel), eList.n = nel;
 
-  int e, n;
+  int    e, n;
   edata *data;
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     data[e].proc = part[e];
-    data[e].eid = el[e];
-    for (n = 0; n < nv; ++n) { data[e].vtx[n] = vl[e * nv + n]; }
+    data[e].eid  = el[e];
+    for (n = 0; n < nv; ++n) {
+      data[e].vtx[n] = vl[e * nv + n];
+    }
   }
 
   struct crystal cr;
@@ -306,7 +314,9 @@ static int redistribute_data(int *nel_, long long *vl, long long *el, int *part,
 success:
   for (data = eList.ptr, e = 0; e < nel; ++e) {
     el[e] = data[e].eid;
-    for (n = 0; n < nv; ++n) { vl[e * nv + n] = data[e].vtx[n]; }
+    for (n = 0; n < nv; ++n) {
+      vl[e * nv + n] = data[e].vtx[n];
+    }
   }
 
   array_free(&eList);
@@ -324,13 +334,13 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
                const int *const lelm, const int *const nve,
                const int *const fcomm, const int *const fpartitioner,
                const int *const falgo, const int *const loglevel, int *rtval) {
-  int nel = *nell;
-  int nv = *nve;
-  int lelt = *lelm;
-  int partitioner = *fpartitioner;
-  int algo = *falgo;
-  int verbose = *loglevel;
-  sint ierr = 1;
+  int  nel         = *nell;
+  int  nv          = *nve;
+  int  lelt        = *lelm;
+  int  partitioner = *fpartitioner;
+  int  algo        = *falgo;
+  int  verbose     = *loglevel;
+  sint ierr        = 1;
 
   if (nv != 4 && nv != 8) {
     fprintf(stderr, "ERROR: nv is %d but only 4 and 8 are supported!\n", nv);
@@ -341,23 +351,23 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
 #if defined(MPI)
   MPI_Comm cext = MPI_Comm_f2c(*fcomm);
 #else
-  int cext = 0;
+  int      cext = 0;
 #endif
   comm_init(&comm, cext);
 
   if (verbose >= 2) print_part_stat(vl, nel, nv, cext);
 
   double opt[10] = {0};
-  opt[0] = 1;
-  opt[1] = 0;       /* verbosity */
-  opt[2] = comm.np; /* number of partitions */
-  opt[3] = 1.05;    /* imbalance tolerance */
+  opt[0]         = 1;
+  opt[1]         = 0;       /* verbosity */
+  opt[2]         = comm.np; /* number of partitions */
+  opt[3]         = 1.05;    /* imbalance tolerance */
 
   int *part = (int *)malloc(lelt * sizeof(int));
   if (partitioner == 0 || partitioner == 1) {
     opt[0] = partitioner;
     opt[1] = algo;
-    ierr = parRSB_partMesh(part, vl, nel, nv, opt, comm.c, xyz);
+    ierr   = parRSB_partMesh(part, vl, nel, nv, opt, comm.c, xyz);
   } else if (partitioner == 8) {
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
   } else if (partitioner == 16) {
@@ -391,7 +401,7 @@ void fprintpartstat(long long *vtx, int *nel, int *nv, int *comm) {
 #if defined(MPI)
   MPI_Comm c = MPI_Comm_f2c(*comm);
 #else
-  MPI_Comm c = 0;
+  MPI_Comm c    = 0;
 #endif
 
   print_part_stat(vtx, *nel, *nv, c);

@@ -7,8 +7,8 @@
 
 typedef struct {
   long long vtx[MAXNV];
-  ulong eid;
-  int proc;
+  ulong     eid;
+  int       proc;
 } edata;
 
 int parMETIS_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
@@ -24,12 +24,12 @@ int parHIP_partMesh(int *part, long long *vl, int nel, int nv, double *opt,
                     MPI_Comm comm);
 
 typedef struct {
-  uint num_vertices;
+  uint   num_vertices;
   ulong *vertex_ids;
-  int *neighbor_index;
+  int   *neighbor_index;
   ulong *neighbor_ids;
-  int *neighbor_procs;
-  int *neighbor_weights;
+  int   *neighbor_procs;
+  int   *neighbor_weights;
 } graph_t;
 
 graph_t *graph_create(long long *vl, int nelt, int nv, struct comm *c);
