@@ -82,8 +82,9 @@ c     Solution data for magnetic field
       real nu_star
       common /expvis/ nu_star
 
-      real pr(lx2,ly2,lz2,lelv), prlag(lx2,ly2,lz2,lelv,lorder2)
-      common /cbm2/ pr, prlag
+      real pr(lx2,ly2,lz2,lelv), prlag(lx2,ly2,lz2,lelv,lorder),
+     $vtrans0(lx2,ly2,lz2,lelv), prext(lx2,ly2,lz2,lelv)
+      common /cbm2/ pr, prlag, prext, vtrans0
 
       real qtl(lx2,ly2,lz2,lelt), usrdiv(lx2,ly2,lz2,lelt)
       common /diverg/ qtl, usrdiv

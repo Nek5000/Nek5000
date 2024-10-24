@@ -60,6 +60,7 @@ c
          call bcdirvc  (vx,vy,vz,v1mask,v2mask,v3mask) 
 
          ! compute pressure
+         call copy(prlag(1,1,1,1,2),prlag(1,1,1,1,1),ntot1)
          call copy(prlag,pr,ntot1)
          if (icalld.eq.0) tpres=0.0
          icalld=icalld+1
@@ -67,7 +68,7 @@ c
          etime1=dnekclock()
 
          call crespsp  (respr)
-         call invers2  (h1,vtrans,ntot1)
+         call invers2  (h1,vtrans0,ntot1)  ! constant coef 1/rho0 for var_dens
          call rzero    (h2,ntot1)
          call ctolspl  (tolspl,respr)
          napproxp(1) = laxtp
@@ -81,12 +82,12 @@ c
          tpres=tpres+(dnekclock()-etime1)
 
          ! compute velocity
-         if(ifstrs .and. .not.ifaxis) then
-            call bcneutr
-            call cresvsp_weak(res1,res2,res3,h1,h2)
-         else
-            call cresvsp     (res1,res2,res3,h1,h2)
-         endif
+         call bcneutr
+c         if(ifstrs .and. .not.ifaxis) then
+c           call cresvsp_weak(res1,res2,res3,h1,h2)
+c         else
+           call cresvsp     (res1,res2,res3,h1,h2)
+c         endif
          call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
          call opadd2       (vx,vy,vz,dv1,dv2,dv3)
 
@@ -182,6 +183,15 @@ c     add old pressure term because we solve for delta p
       call axhelm  (respr,pr,ta1,ta2,imesh,1)
       call chsign  (respr,ntot1)
 
+c add (1/rho-1/rho0) \del (prext-pr) term for var_dens
+      call invers2 (ta2,vtrans0,ntot1)
+      call sub2    (ta1,ta2,ntot1)
+      call rzero   (ta2,ntot1)
+
+      call sub3    (w1,prext,pr,ntot1)
+      call axhelm  (ta3,w1,ta1,ta2,imesh,1)
+      call add2    (respr,ta3  ,ntot1)
+
 c     add explicit (NONLINEAR) terms 
       n = lx1*ly1*lz1*nelv
       do i=1,n
@@ -225,7 +235,8 @@ C     surface terms
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
-     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'shl') then
+     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'shl'
+     $                                   .or.cb.eq.'snl') then
                CALL FACCL3
      $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
@@ -247,7 +258,7 @@ C     surface terms
      $      CALL ADD2   (W1(1,IEL),W3(1,IEL),NXYZ1)
             CALL FACCL2 (W1(1,IEL),AREA(1,1,IFC,IEL),IFC)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
-     $         cb.eq.'MV '.or.cb.eq.'mv ') then
+     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'snl') then
               CALL CMULT(W1(1,IEL),dtbd,NXYZ1)
             endif
             CALL SUB2 (RESPR(1,IEL),W1(1,IEL),NXYZ1)
@@ -291,7 +302,7 @@ C     Compute the residual for the velocity
       if (ifstrs) scale =  2./3.
 
       call col3    (ta4,vdiff,qtl,ntot)
-      call add2s1  (ta4,pr,scale,ntot)
+      call add2s1  (ta4,prext,scale,ntot) ! use prext instead of pr for var_dens
       call opgrad  (ta1,ta2,ta3,TA4)
       if(IFAXIS) then
          CALL COL2 (TA2, OMASK,NTOT)
@@ -300,6 +311,13 @@ C     Compute the residual for the velocity
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
+
+c add -(\rho/\rho0)(\del pr^{n+1} - \del prext)
+      call sub3    (ta4,pr,prext,ntot)
+      call opgrad  (ta1,ta2,ta3,TA4)
+      call invcol3 (ta4,vtrans,vtrans0,ntot)
+      call opcolv  (ta1,ta2,ta3,ta4)
+      call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
 
       return
       end
@@ -345,9 +363,10 @@ C     Compute the residual for the velocity
       call cmult   (ta4,scale,ntot)
       call opgrad  (ta1,ta2,ta3,TA4)
 
-      call cdtp    (wa1,pr ,rxm1,sxm1,txm1,1)
-      call cdtp    (wa2,pr ,rym1,sym1,tym1,1)
-      if(if3d) call cdtp    (wa3,pr ,rzm1,szm1,tzm1,1)
+      !use prext instead of pr for var_dens
+      call cdtp    (wa1,prext ,rxm1,sxm1,txm1,1)
+      call cdtp    (wa2,prext ,rym1,sym1,tym1,1)
+      if(if3d) call cdtp    (wa3,prext ,rzm1,szm1,tzm1,1)
 
       call sub2    (ta1,wa1,ntot)
       call sub2    (ta2,wa2,ntot)
@@ -360,6 +379,13 @@ C     Compute the residual for the velocity
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
+
+c add -(\rho/\rho0)(\del pr^{n+1} - \del prext)
+      call sub3    (ta4,pr,prext,ntot)
+      call opgrad  (ta1,ta2,ta3,TA4)
+      call invcol3 (ta4,vtrans,vtrans0,ntot)
+      call opcolv  (ta1,ta2,ta3,ta4)
+      call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
 
       return
       end
