@@ -236,13 +236,13 @@ void fpartmesh_greedy(int *const nel2, long long *const el2,
   comm_init(&comm, cext);
 
   const int lelm = *lelm_;
-  sint ierr = 1;
+  int *const part = (int *)malloc(lelm * sizeof(int));
 
 #if defined(PARRSB)
-  int *const part = (int *)malloc(lelm * sizeof(int));
   parrsb_part_solid(part, vl2, *nel2, vl1, *nel1, *nv, comm.c);
 #endif
 
+  sint ierr = 1;
   ierr = redistribute_data(nel2, vl2, el2, part, *nv, lelm, &comm);
   check_error(ierr);
   free(part);
