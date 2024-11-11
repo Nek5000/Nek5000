@@ -26,9 +26,7 @@ VISIT=0
 DPROCMAP=0
 
 PARMETIS=0
-ZOLTAN=0
 ZOLTAN2=0
-PARHIP=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
@@ -36,11 +34,9 @@ HYPRE_IFLAGS=
 GSLIB_IFLAGS=
 PARRSB_IFLAGS=
 PARMETIS_IFLAGS=
-ZOLTAN_IFLAGS=
 ZOLTAN2_IFLAGS=
-PARHIP_IFLAGS=
 
-PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN_IFLAGS) $(PARHIP_IFLAGS)
+PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS)
 
 ################################################################################
 
@@ -100,16 +96,8 @@ ifeq ($(PARMETIS), 1)
 	CORE := $(CORE) parmetis.o
 endif
 
-ifeq ($(ZOLTAN), 1)
-	CORE := $(CORE) zoltan.o
-endif
-
 ifeq ($(ZOLTAN2), 1)
 	CORE := $(CORE) zoltan2.c.o zoltan2.cpp.o
-endif
-
-ifeq ($(PARHIP), 1)
-	CORE := $(CORE) parhip.o
 endif
 
 CORE := $(CORE) partitioner-weak.o
@@ -265,9 +253,7 @@ $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2)
 $(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/partitioner-weak.o :$S/core/partitioner-weak.c;  $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
-$(OBJDIR)/zoltan.o           :$S/core/zoltan.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 $(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
-$(OBJDIR)/parhip.o           :$S/core/parhip.c;            $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
 
 # CXX Files ##################################################################################
 $(OBJDIR)/zoltan2.cpp.o :$S/core/zoltan2.cpp; $(CXX) -c $(cxxFL2) $(GSLIB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS) $< -o $@

@@ -31,20 +31,6 @@ function build_3rdparty() {
   fi
   cd $CASEDIR
 
-  if [ $ZOLTAN -ne 0 ]; then
-     check_cxx_compiler
-     cd $SOURCE_ROOT_ZOLTAN
-     CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  fi
-  cd $CASEDIR
-
-  if [ $PARHIP -ne 0 ]; then
-     check_cxx_compiler
-     cd $SOURCE_ROOT_PARHIP
-     CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  fi
-  cd $CASEDIR
-
   if [ $ZOLTAN2 -ne 0 ]; then
      check_cxx_compiler
      cd $SOURCE_ROOT_ZOLTAN2
@@ -78,11 +64,7 @@ function clean_3rdparty() {
   cd $CASEDIR
   cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_ZOLTAN; ./install clean 2>/dev/null
-  cd $CASEDIR
   cd $SOURCE_ROOT_ZOLTAN2; ./install clean 2>/dev/null
-  cd $CASEDIR
-  cd $SOURCE_ROOT_PARHIP; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
   cd $CASEDIR
@@ -119,9 +101,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  DPROCMAP      use distributed processor mapping"
   echo "  PARRSB        use online RSB partitioner"
   echo "  PARMETIS      use online parMETIS partitioner"
-  echo "  ZOLTAN        use online Zoltan partitioner"
   echo "  ZOLTAN2       use online Zoltan2 partitioner"
-  echo "  PARHIP        use online KaHIP partitioner"
   return 11
 fi
 
@@ -148,12 +128,8 @@ SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
 SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
 export SOURCE_ROOT_PARMETIS
-SOURCE_ROOT_ZOLTAN="$NEK_SOURCE_ROOT/3rd_party/Zoltan"
-export SOURCE_ROOT_ZOLTAN
 SOURCE_ROOT_ZOLTAN2="$NEK_SOURCE_ROOT/3rd_party/Zoltan2"
 export SOURCE_ROOT_ZOLTAN2
-SOURCE_ROOT_PARHIP="$NEK_SOURCE_ROOT/3rd_party/KaHIP"
-export SOURCE_ROOT_PARHIP
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
@@ -359,9 +335,7 @@ VENDOR_BLAS=0
 DPROCMAP=0
 PARRSB=0
 PARMETIS=0
-ZOLTAN=0
 ZOLTAN2=0
-PARHIP=0
 MXM_USER="mxm_std.o"
 
 for i in $PPLIST
@@ -398,25 +372,14 @@ do
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
    fi
-   if [ "$i" == "ZOLTAN" ]; then
-     ZOLTAN=1
-     USR_LFLAGS+=" -L${SOURCE_ROOT_ZOLTAN}/lib -lzoltan"
-     ZOLTAN_INC="${SOURCE_ROOT_ZOLTAN}/include"
-   fi
    if [ "$i" == "ZOLTAN2" ]; then
      ZOLTAN2=1
      USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_ZOLTAN2}/lib64 "
      USR_LFLAGS+=" -L${SOURCE_ROOT_ZOLTAN2}/lib64 -lzoltan2 -lxpetra"
      USR_LFLAGS+=" -ltpetra -lteuchoscomm -lteuchosparameterlist -lteuchoscore"
      USR_LFLAGS+=" -lkokkosalgorithms -lkokkoskernels -lkokkoscontainers"
-     USR_LFLAGS+=" -lkokkossimd -lkokkoscore"
+     USR_LFLAGS+=" -lkokkossimd -lkokkoscore -lzoltan"
      ZOLTAN2_INC="${SOURCE_ROOT_ZOLTAN2}/include"
-   fi
-   if [ "$i" == "PARHIP" ]; then
-     PARHIP=1
-     USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_PARHIP}/lib"
-     USR_LFLAGS+=" -L${SOURCE_ROOT_PARHIP}/lib -lparhip_interface -lkahip"
-     PARHIP_INC="${SOURCE_ROOT_PARHIP}/include"
    fi
    if [ "$i" == "PARMETIS" ]; then
      PARMETIS=1
@@ -514,9 +477,7 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^PARMETIS[ ]*=.*/PARMETIS=${PARMETIS}/" \
--e "s/^ZOLTAN[ ]*=.*/ZOLTAN=${ZOLTAN}/" \
 -e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
--e "s/^PARHIP[ ]*=.*/PARHIP=${PARHIP}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
@@ -570,22 +531,8 @@ if [ $PARMETIS -ne 0 ]; then
   mv .makefile.tmp .makefile
 fi
 
-if [ $ZOLTAN -ne 0 ]; then
-  sed -e "s:^ZOLTAN_IFLAGS[ ]*=.*:ZOLTAN_IFLAGS\:=-I${ZOLTAN_INC}:" \
-      .makefile > .makefile.tmp
-
-  mv .makefile.tmp .makefile
-fi
-
 if [ $ZOLTAN2 -ne 0 ]; then
   sed -e "s:^ZOLTAN2_IFLAGS[ ]*=.*:ZOLTAN2_IFLAGS\:=-I${ZOLTAN2_INC}:" \
-      .makefile > .makefile.tmp
-
-  mv .makefile.tmp .makefile
-fi
-
-if [ $PARHIP -ne 0 ]; then
-  sed -e "s:^PARHIP_IFLAGS[ ]*=.*:PARHIP_IFLAGS\:=-I${PARHIP_INC}:" \
       .makefile > .makefile.tmp
 
   mv .makefile.tmp .makefile

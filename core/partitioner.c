@@ -202,10 +202,6 @@ void fpartmesh(int *nell, long long *el, long long *vl, double *xyz,
     ierr = parMETIS_partMesh(part, vl, nel, nv, opt, comm.c);
   } else if (partitioner == 16) {
     ierr = Zoltan2_partMesh(part, vl, nel, nv, opt, comm.c);
-  } else if (partitioner == 32) {
-    ierr = Zoltan_partMesh(part, vl, nel, nv, opt, comm.c);
-  } else if (partitioner == 64) {
-    ierr = parHIP_partMesh(part, vl, nel, nv, opt, comm.c);
   }
   check_error(ierr);
 
