@@ -5,7 +5,7 @@ C----------------------------------------------------------------------
      $                   eps_in,dt_cls_in,dt_tls_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in,
-     $                   ifdebug)
+     $                   ifdebug,ifixCLSbdry_in)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -16,6 +16,7 @@ C----------------------------------------------------------------------
       integer ifld_cls_in, ifld_tls_in
       integer ifld_clsr_in, ifld_tlsr_in
       integer ntot, ifdebug
+      integer ifixCLSbdry_in
       
       ! multiple of element length
       eps_cls = eps_in
@@ -32,6 +33,7 @@ C----------------------------------------------------------------------
       dt_tls = dt_tls_in
 
       ifls_debug = ifdebug
+      ifixCLSbdry = ifixCLSbdry_in
 
       ntot = lx1*ly1*lz1*nelv
       !no natural BCs for LS fields
@@ -1197,6 +1199,7 @@ c-----------------------------------------------------------------------
         call copy(t(1,1,1,1,ifld_clsr-1),t(1,1,1,1,ifld_cls-1),ntot)
         call ls_drive(ifld_clsr)
         call copy(t(1,1,1,1,ifld_cls-1),t(1,1,1,1,ifld_clsr-1),ntot)
+        if(ifixCLSbdry .eq. 1)call fixCLSbdryI
         ireset_ls = 0
       endif
 
@@ -1490,6 +1493,44 @@ c     calculate surface normal
          sb(2) = t2y(ix,iy,iside,e)
          sb(3) = t2z(ix,iy,iside,e)
       endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine fixCLSbdryI
+c     This routine will avoid spurious interfaces at the I boundary of CLSR
+c     field
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      integer ie, ifc, ix, iy, iz
+      integer kx1,kx2,ky1,ky2,kz1,kz2
+      character*3 cb
+      real deltael, eps, phi
+
+      do ie=1,nelv
+        do ifc=1,2*ndim
+          cb = cbc(ifc,ie,ifld_clsr)
+          if(cb.eq.'I  ')then
+            CALL FACIND (KX1,KX2,KY1,KY2,KZ1,KZ2,lx1,ly1,lz1,ifc)
+            do iz=kz1,kz2
+              do iy=ky1,ky2
+                do ix=kx1,kx2
+                  eps = deltael(ix,iy,iz,ie) * eps_cls
+                  phi = t(ix,iy,iz,ie,ifld_tls-1)
+                  if(phi .gt. 2.0*eps)then
+                    t(ix,iy,iz,ie,ifld_cls-1) = 1.0
+                  elseif(phi .lt. -2.0*eps)then
+                    t(ix,iy,iz,ie,ifld_cls-1) = 0.0
+                  endif
+                enddo
+              enddo
+            enddo
+          endif
+        enddo
+      enddo
 
       return
       end

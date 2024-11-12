@@ -1,12 +1,12 @@
       integer ifld_cls,ifld_clsr,ifld_tls,ifld_tlsr
 
       integer nsteps_cls,ifls_debug,icls_mid,nsteps_tls
-			integer signtype
+			integer signtype, ifixCLSbdry
       
       common /lvlset_i/ ifld_cls, ifld_clsr, ifld_tls,
      $                  ifld_tlsr, nsteps_cls,
      $                  ifls_debug, icls_mid, nsteps_tls,
-     $                  signtype
+     $                  signtype, ifixCLSbdry
 
       common /lvlset_a/ clsnx(lx1,ly1,lz1,lelv),
      $                  clsny(lx1,ly1,lz1,lelv),
