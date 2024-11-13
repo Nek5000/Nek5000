@@ -82,11 +82,12 @@ c
          tpres=tpres+(dnekclock()-etime1)
 
          ! compute velocity
-         call bcneutr
 c         if(ifstrs .and. .not.ifaxis) then
-c           call cresvsp_weak(res1,res2,res3,h1,h2)
+c            call bcneutr
+c            call cresvsp_weak(res1,res2,res3,h1,h2)
 c         else
-           call cresvsp     (res1,res2,res3,h1,h2)
+            call bcneutr
+            call cresvsp     (res1,res2,res3,h1,h2)
 c         endif
          call ophinv       (dv1,dv2,dv3,res1,res2,res3,h1,h2,tolhv,nmxv)
          call opadd2       (vx,vy,vz,dv1,dv2,dv3)
@@ -190,7 +191,7 @@ c add (1/rho-1/rho0) \del (prext-pr) term for var_dens
 
       call sub3    (w1,prext,pr,ntot1)
       call axhelm  (ta3,w1,ta1,ta2,imesh,1)
-      call add2    (respr,ta3  ,ntot1)
+      call sub2    (respr,ta3  ,ntot1)
 
 c     add explicit (NONLINEAR) terms 
       n = lx1*ly1*lz1*nelv
@@ -235,8 +236,7 @@ C     surface terms
      $      CALL RZERO  (W3(1,IEL),NXYZ1)
             CB = CBC(IFC,IEL,IFIELD)
             IF (CB(1:1).EQ.'V'.OR.CB(1:1).EQ.'v'.or.
-     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'shl'
-     $                                   .or.cb.eq.'snl') then
+     $         cb.eq.'MV '.or.cb.eq.'mv '.or.cb.eq.'snl') then
                CALL FACCL3
      $         (W1(1,IEL),VX(1,1,1,IEL),UNX(1,1,IFC,IEL),IFC)
                CALL FACCL3
@@ -363,10 +363,9 @@ C     Compute the residual for the velocity
       call cmult   (ta4,scale,ntot)
       call opgrad  (ta1,ta2,ta3,TA4)
 
-      !use prext instead of pr for var_dens
-      call cdtp    (wa1,prext ,rxm1,sxm1,txm1,1)
-      call cdtp    (wa2,prext ,rym1,sym1,tym1,1)
-      if(if3d) call cdtp    (wa3,prext ,rzm1,szm1,tzm1,1)
+      call cdtp    (wa1,pr ,rxm1,sxm1,txm1,1)
+      call cdtp    (wa2,pr ,rym1,sym1,tym1,1)
+      if(if3d) call cdtp    (wa3,pr ,rzm1,szm1,tzm1,1)
 
       call sub2    (ta1,wa1,ntot)
       call sub2    (ta2,wa2,ntot)
@@ -379,13 +378,6 @@ C     Compute the residual for the velocity
 c
       call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
       call opadd2  (resv1,resv2,resv3,bfx,bfy,bfz)
-
-c add -(\rho/\rho0)(\del pr^{n+1} - \del prext)
-      call sub3    (ta4,pr,prext,ntot)
-      call opgrad  (ta1,ta2,ta3,TA4)
-      call invcol3 (ta4,vtrans,vtrans0,ntot)
-      call opcolv  (ta1,ta2,ta3,ta4)
-      call opsub2  (resv1,resv2,resv3,ta1,ta2,ta3)
 
       return
       end

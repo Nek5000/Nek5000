@@ -1284,7 +1284,7 @@ c-----------------------------------------------------------------------
       if(cbc(iside,e,1).eq.'shl')then
         rho = vtrans(ix,iy,iz,e,1)
 
-        yplus = 30.0
+        yplus = 1.0
         Econ = 9.0
         kappa = 0.41
 
@@ -1313,7 +1313,7 @@ c-----------------------------------------------------------------------
         endif
         uw = sqrt(ut1*ut1+ut2*ut2)
 
-        uplus = (1./kappa)*log(Econ*yplus)
+        uplus = yplus !(1./kappa)*log(Econ*yplus)
 
         utau = uw/uplus
 
