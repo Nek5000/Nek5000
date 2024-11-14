@@ -9,8 +9,10 @@ LIB=$(OBJDIR)/libnek5000.a
 LD=
 FC=
 CC=
+CXX=
 FFLAGS+=
 CFLAGS+=
+CXXFLAGS+=
 LDFLAGS+=
 
 PPPO=
@@ -20,14 +22,21 @@ USR=
 USR_LFLAGS=
 
 MPI=0 
-DPROCMAP=0
 VISIT=0
+DPROCMAP=0
+
+PARMETIS=0
+ZOLTAN2=0
 
 VISIT_IFLAGS=
 VISIT_LFLAGS=
 HYPRE_IFLAGS=
 GSLIB_IFLAGS=
 PARRSB_IFLAGS=
+PARMETIS_IFLAGS=
+ZOLTAN2_IFLAGS=
+
+PART_C_IFLAGS = $(PARRSB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS)
 
 ################################################################################
 
@@ -83,13 +92,22 @@ else
 	DUMMY:= $(shell rm -rf $S/core/mpif.h) 
 endif
 
+ifeq ($(PARMETIS), 1)
+	CORE := $(CORE) parmetis.o
+endif
+
+ifeq ($(ZOLTAN2), 1)
+	CORE := $(CORE) zoltan2.c.o zoltan2.cpp.o
+endif
+
+CORE := $(CORE) partitioner-weak.o
+
 TMP1 = $(CORE) $(MXM) $(USR) $(COMM_MPI) $(VISITO)
 
 INCLUDES_DIR += $(OPT_INCDIR)
 INCLUDES_DIR += $(S)/core/experimental
 INCLUDES_DIR += $(OBJDIR)
 INCLUDES:= $(foreach dir,$(INCLUDES_DIR),-I$(dir))
-#$(info $(shell echo "INCLUDES: $(INCLUDES)"))
 
 NOBJS = $(patsubst %,$(OBJDIR)/%,$(TMP1))
 USRF = $(OBJDIR)/${CASENAME}.o
@@ -105,6 +123,10 @@ FL3   = $(L3) $(FFLAGS) $(PPS_F) -I$(CASEDIR) -I$S/core $(INCLUDES)
 cFL0   = $(L0) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL2   = $(L2) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 cFL3   = $(L3) $(CFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+
+cxxFL0   = $(L0) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+cxxFL2   = $(L2) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
+cxxFL3   = $(L3) $(CXXFLAGS) $(PPS_C) -I$S/core $(INCLUDES)
 
 ################################################################################
 all : nek5000
@@ -225,13 +247,19 @@ $(OBJDIR)/chelpers.o         :$S/core/chelpers.c;          $(CC) -c $(cFL2) $< -
 $(OBJDIR)/fcrs.o             :$S/core/fcrs.c;              $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_xxt.o          :$S/core/crs_xxt.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/crs_amg.o          :$S/core/crs_amg.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/nekio.o            :$S/core/nekio.c;             $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
 $(OBJDIR)/fem_amg_preco.o    :$S/core/experimental/fem_amg_preco.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
 $(OBJDIR)/crs_hypre.o        :$S/core/experimental/crs_hypre.c; $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(HYPRE_IFLAGS) $< -o $@
-$(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PARRSB_IFLAGS) $< -o $@
-$(OBJDIR)/nekio.o          :$S/core/nekio.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+$(OBJDIR)/partitioner.o      :$S/core/partitioner.c;       $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/partitioner-weak.o :$S/core/partitioner-weak.c;  $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/parmetis.o         :$S/core/parmetis.c;          $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $(PART_C_IFLAGS) $< -o $@
+$(OBJDIR)/zoltan2.c.o        :$S/core/zoltan2.c;           $(CC) -c $(cFL2) $(GSLIB_IFLAGS) $< -o $@
+
+# CXX Files ##################################################################################
+$(OBJDIR)/zoltan2.cpp.o :$S/core/zoltan2.cpp; $(CXX) -c $(cxxFL2) $(GSLIB_IFLAGS) $(PARMETIS_IFLAGS) $(ZOLTAN2_IFLAGS) $< -o $@
 
 # 3rd party #######################################################################################
-$(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;	     $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
+$(OBJDIR)/visit.o        :$S/core/3rd_party/visit.f;         $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/nek_in_situ.o  :$S/core/3rd_party/nek_in_situ.f;   $(FC) -c $(VISIT_IFLAGS) $(FL2) $< -o $@
 $(OBJDIR)/finiparser.o   :$S/core/3rd_party/finiparser.c;    $(CC) -c $(cFL2) $(JL) $< -o $@
 $(OBJDIR)/iniparser.o    :$S/core/3rd_party/iniparser.c;     $(CC) -c $(cFL2) $(JL) $< -o $@

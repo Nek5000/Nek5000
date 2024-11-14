@@ -1,19 +1,31 @@
-*** Makefile	2013-03-30 11:24:50.000000000 -0500
---- Makefile_	2020-04-09 02:05:16.487916811 -0500
-***************
-*** 67,73 ****
-  	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
-  		more BUILD.txt; \
-  	else \
-! 	  	make -C $(BUILDDIR) $@ $(MAKEFLAGS); \
-  	fi
-  
-  uninstall:
---- 67,73 ----
-  	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
-  		more BUILD.txt; \
-  	else \
-! 	  	make -C $(BUILDDIR) $@ MAKEFLAGS=$(MAKEFLAGS); \
-  	fi
-  
-  uninstall:
+diff --git a/Makefile b/Makefile.modified
+index cb45466..1814599 100644
+--- a/Makefile
++++ b/Makefile.modified
+@@ -9,6 +9,7 @@ gklib_path = not-set
+ metis_path = not-set
+ shared     = not-set
+ cc         = mpicc
++cflags     = not-set
+ cxx        = mpicxx
+ 
+ 
+@@ -54,6 +55,9 @@ endif
+ ifneq ($(cc), not-set)
+     CONFIG_FLAGS += -DCMAKE_C_COMPILER=$(cc)
+ endif
++ifneq ($(cflags), not-set)
++    CONFIG_FLAGS += -DCMAKE_C_FLAGS=$(cflags)
++endif
+ ifneq ($(cxx), not-set)
+     CONFIG_FLAGS += -DCMAKE_CXX_COMPILER=$(cxx)
+ endif
+@@ -67,7 +71,7 @@ all clean install:
+ 	@if [ ! -f $(BUILDDIR)/Makefile ]; then \
+ 		more BUILD.txt; \
+ 	else \
+-	  	make -C $(BUILDDIR) $@ $(MAKEFLAGS); \
++	  	make -C $(BUILDDIR) $@ MAKEFLAGS=$(MAKEFLAGS); \
+ 	fi
+ 
+ uninstall:

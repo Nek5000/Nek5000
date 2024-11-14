@@ -13,11 +13,11 @@ function build_3rdparty() {
 
   cd $SOURCE_ROOT_BLAS
   FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  cd $CASEDIR 
+  cd $CASEDIR
 
   cd $SOURCE_ROOT_GSLIB
   CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  cd $CASEDIR 
+  cd $CASEDIR
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
@@ -28,6 +28,14 @@ function build_3rdparty() {
   if [ $PARMETIS -ne 0 ]; then
      cd $SOURCE_ROOT_PARMETIS
      CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  fi
+  cd $CASEDIR
+
+  if [ $ZOLTAN2 -ne 0 ]; then
+     check_cxx_compiler
+     cd $SOURCE_ROOT_ZOLTAN2
+     BLASDIR=${SOURCE_ROOT_BLAS} CFLAGS="-O2 $CFLAGS" CXXFLAGS="$CXXFLAGS" \
+       ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
@@ -56,6 +64,8 @@ function clean_3rdparty() {
   cd $CASEDIR
   cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
   cd $CASEDIR
+  cd $SOURCE_ROOT_ZOLTAN2; ./install clean 2>/dev/null
+  cd $CASEDIR
   cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
   cd $CASEDIR
   cd $SOURCE_ROOT_HYPRE; ./install clean 2>/dev/null
@@ -68,6 +78,7 @@ function config_nek() {
 : ${NEK_SOURCE_ROOT:="$HOME/Nek5000"}
 : ${FC:="mpif77"}
 : ${CC:="mpicc"}
+: ${CXX:="mpicxx"}
 : ${LD:=$FC}
 : ${MPI:=1}
 : ${PROFILING:=1}
@@ -81,7 +92,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  clean         cleanup build environment"
   echo "  -build-dep    build dependencies"
   echo ""
-  echo "PPLIST config options:" 
+  echo "PPLIST config options:"
   echo "  NOMPIIO       disable MPI-IO"
   echo "  XSMM          use libxsmm for mxm"
   echo "  CVODE         enable CVODE support"
@@ -89,6 +100,8 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "  VENDOR_BLAS   use VENDOR BLAS/LAPACK"
   echo "  DPROCMAP      use distributed processor mapping"
   echo "  PARRSB        use online RSB partitioner"
+  echo "  PARMETIS      use online parMETIS partitioner"
+  echo "  ZOLTAN2       use online Zoltan2 partitioner"
   return 11
 fi
 
@@ -115,6 +128,8 @@ SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
 SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
 export SOURCE_ROOT_PARMETIS
+SOURCE_ROOT_ZOLTAN2="$NEK_SOURCE_ROOT/3rd_party/Zoltan2"
+export SOURCE_ROOT_ZOLTAN2
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
@@ -124,17 +139,17 @@ NODEP=1
 if [ "$1" == "-build-dep" ]; then
   ONLYDEP=1
   nargs=0
-fi 
+fi
 
 if [[ $1 = "clean" ]]; then
   while true; do
     read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rdparty; 
+        clean_3rdparty;
         if [ -f makefile ]; then make clean; fi
         break ;;
-      * ) 
+      * )
         if [ -f makefile ]; then make clean; fi
         break ;;
     esac
@@ -152,7 +167,7 @@ fi
 #    case $yn in
 #      [Yy]* )
 #        break ;;
-#      * ) 
+#      * )
 #        return 0
 #        break ;;
 #    esac
@@ -169,12 +184,19 @@ if ! which `echo $FC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $FC | awk '{print $1}'`!"
   return 11
 fi
-if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then 
+if ! which `echo $CC | awk '{print $1}'` 1>/dev/null ; then
   echo "FATAL ERROR: Cannot find `echo $CC | awk '{print $1}'`!"
   return 11
 fi
 
-# trying to figure which compiler the wrapper is using 
+function check_cxx_compiler() {
+  if ! which `echo $CXX | awk '{print $1}'` 1>/dev/null ; then
+    echo "FATAL ERROR: Cannot find `echo $CXX | awk '{print $1}'`!"
+    return 11
+  fi
+}
+
+# trying to figure which compiler the wrapper is using
 FCok=0
 
 FCcomp_=`$FC -showme 2>/dev/null | head -1 2>/dev/null 1>.tmp || true`
@@ -265,7 +287,7 @@ cat > test_underscore.f << _ACEOF
         call test
       end
 _ACEOF
-$FCcomp -c test_underscore.f 2>&1 >/dev/null 
+$FCcomp -c test_underscore.f 2>&1 >/dev/null
 if nm test_underscore.o | grep -q test_ ; then
   UNDERSCORE=1
 fi
@@ -293,11 +315,11 @@ fi
 
 if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
-fi 
+fi
 
 if [ $LONGLONGINT -ne 0 ]; then
   PPLIST="${PPLIST} GLOBAL_LONG_LONG"
-fi 
+fi
 
 if [ $PROFILING -ne 0 ]; then
   PPLIST="${PPLIST} TIMER"
@@ -307,42 +329,28 @@ PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
 MPIIO=1
+CVODE=0
+HYPRE=0
+VENDOR_BLAS=0
 DPROCMAP=0
 PARRSB=0
 PARMETIS=0
-CVODE=0
-HYPRE=0
+ZOLTAN2=0
 MXM_USER="mxm_std.o"
-VENDOR_BLAS=0 
 
 for i in $PPLIST
 do
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
    fi
-   if [ "$i" == "DPROCMAP" ]; then
-     DPROCMAP=1
-   fi
-   if [ "$i" == "PARRSB" ]; then
-     PARRSB=1
-     PARRSB_OPT=" DESTDIR=${SOURCE_ROOT_PARRSB} UNDERSCORE=$UNDERSCORE MPI=$MPI BLAS=0"
-     PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
-     USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
-     PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
-   fi
-   if [ "$i" == "PARMETIS" ]; then
-     PARMETIS=1
-     USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
-     METIS_INC="$SOURCE_ROOT_PARMETIS/include"
-   fi
-   if [ "$i" == "CVODE" ]; then 
+   if [ "$i" == "CVODE" ]; then
      CVODE=1
      if [ $MPI -eq 1 ]; then
        USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel" 
+       USR_LFLAGS+=" -lsundials_fnvecparallel -lsundials_nvecparallel"
      else
        USR_LFLAGS+=" -L$SOURCE_ROOT_CVODE/lib -lsundials_fcvode -lsundials_cvode"
-       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial" 
+       USR_LFLAGS+=" -lsundials_fnvecserial -lsundials_nvecserial"
      fi
    fi
    if [ "$i" == "HYPRE" ]; then
@@ -352,6 +360,31 @@ do
    fi
    if [ "$i" == "VENDOR_BLAS" ]; then
      VENDOR_BLAS=1
+   fi
+   if [ "$i" == "DPROCMAP" ]; then
+     DPROCMAP=1
+   fi
+   if [ "$i" == "PARRSB" ]; then
+     PARRSB=1
+     PARRSB_OPT=" DESTDIR=${SOURCE_ROOT_PARRSB} UNDERSCORE=$UNDERSCORE"
+     PARRSB_OPT+=" MPI=$MPI BLAS=0"
+     PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
+     USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
+     PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
+   fi
+   if [ "$i" == "ZOLTAN2" ]; then
+     ZOLTAN2=1
+     USR_LFLAGS+=" -Wl,-rpath,${SOURCE_ROOT_ZOLTAN2}/lib64 "
+     USR_LFLAGS+=" -L${SOURCE_ROOT_ZOLTAN2}/lib64 -lzoltan2 -lxpetra"
+     USR_LFLAGS+=" -ltpetra -lteuchoscomm -lteuchosparameterlist -lteuchoscore"
+     USR_LFLAGS+=" -lkokkosalgorithms -lkokkoskernels -lkokkoscontainers"
+     USR_LFLAGS+=" -lkokkossimd -lkokkoscore -lzoltan"
+     ZOLTAN2_INC="${SOURCE_ROOT_ZOLTAN2}/include"
+   fi
+   if [ "$i" == "PARMETIS" ]; then
+     PARMETIS=1
+     USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
+     METIS_INC="$SOURCE_ROOT_PARMETIS/include"
    fi
 done
 
@@ -388,7 +421,8 @@ export FCPP
 export FR8
 export FF77
 export CC
-export NEK_WARN 
+export CXX
+export NEK_WARN
 export MPI
 export MPIO
 export UNDERSCORE
@@ -397,8 +431,8 @@ export PARRSB_OPT
 
 if [ $ONLYDEP -eq 1 ]; then
   build_3rdparty
-  return 0 
-fi 
+  return 0
+fi
 
 if [ $nargs -eq 0 ]; then
    NCASEFILES=`find *.usr 2>/dev/null| wc -l`
@@ -426,10 +460,12 @@ rm -rf makefile 2>/dev/null
 
 sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s:^CC[ ]*=.*:CC=$CC:" \
+-e "s:^CXX[ ]*=.*:CXX=$CXX:" \
 -e "s:^LD[ ]*=.*:LD=$LD:" \
 -e "s:^OPT_INCDIR[ ]*=.*:OPT_INCDIR=$OPT_INCDIR:" \
 -e "s:^FFLAGS[ ]*+=.*:FFLAGS+=$FCPP $FR8 $FF77 $FFLAGS:" \
 -e "s:^CFLAGS[ ]*+=.*:CFLAGS+=$CFLAGS:" \
+-e "s:^CXXFLAGS[ ]*+=.*:CXXFLAGS+=$CXXFLAGS:" \
 -e "s:^LDFLAGS[ ]*+=.*:LDFLAGS+=$LDFLAGS:" \
 -e "s/^PPPO[ ]*=.*/PPPO=$PPPO/" \
 -e "s/^PPS[ ]*=.*/PPS=$PPLIST/" \
@@ -438,8 +474,10 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE=$CVODE/" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
--e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
+-e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
+-e "s/^PARMETIS[ ]*=.*/PARMETIS=${PARMETIS}/" \
+-e "s/^ZOLTAN2[ ]*=.*/ZOLTAN2=${ZOLTAN2}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
 -e "s:^S[ ]*=.*:S=${NEK_SOURCE_ROOT}:" \
@@ -474,15 +512,6 @@ fi
 
 if [ $HYPRE -ne 0 ]; then
   sed -e "s:^HYPRE_IFLAGS[ ]*=.*:HYPRE_IFLAGS\:=-I${HYPRE_INC}:" \
-      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
-      .makefile > .makefile.tmp
-
-  mv .makefile.tmp .makefile
-fi
-
-if [ $PARMETIS -ne 0 ]; then
-  sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${METIS_INC}:" \
-      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
       .makefile > .makefile.tmp
 
   mv .makefile.tmp .makefile
@@ -490,12 +519,24 @@ fi
 
 if [ $PARRSB -ne 0 ]; then
   sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${PARRSB_INC}:" \
-      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
       .makefile > .makefile.tmp
 
   mv .makefile.tmp .makefile
 fi
 
+if [ $PARMETIS -ne 0 ]; then
+  sed -e "s:^PARMETIS_IFLAGS[ ]*=.*:PARMETIS_IFLAGS\:=-I${METIS_INC}:" \
+      .makefile > .makefile.tmp
+
+  mv .makefile.tmp .makefile
+fi
+
+if [ $ZOLTAN2 -ne 0 ]; then
+  sed -e "s:^ZOLTAN2_IFLAGS[ ]*=.*:ZOLTAN2_IFLAGS\:=-I${ZOLTAN2_INC}:" \
+      .makefile > .makefile.tmp
+
+  mv .makefile.tmp .makefile
+fi
 
 if [ "$USR" != "" ]; then
   echo "###########################################################" >> makefile
@@ -508,11 +549,11 @@ if [ -f .makefile ]; then
 -e "s:${NEK_SOURCE_ROOT}:\$S:g" \
 -e "s:^S[ ]*=.*:S\:=${NEK_SOURCE_ROOT}:" \
 -e "s:^CASEDIR[ ]*=.*:CASEDIR\:=${CASEDIR}:" \
--e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile 
+-e "s:^CASENAME[ ]*=.*:CASENAME\:=${CASENAME}:" .makefile > makefile
   printf "done\n"
 else
   printf "failed!\n"
-  return 1 
+  return 1
 fi
 \rm .makefile 2>/dev/null
 
@@ -614,7 +655,9 @@ declare -a varlist=(
 "FR8"
 "FF77"
 "CC"
+"CXX"
 "CFLAGS"
+"CXXFLAGS"
 "PPLIST"
 )
 if [ -f .state ]; then
@@ -632,7 +675,7 @@ if [ -f .state ]; then
           * )
            break ;;
         esac
-      done  
+      done
       make clean;
       break
     fi
