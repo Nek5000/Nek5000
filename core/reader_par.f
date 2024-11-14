@@ -891,7 +891,7 @@ c set partitioner options
       else if (index(c_out,'RCB').eq.1) then
          fluid_partitioner=1
          solid_partitioner=1
-      else if (index(c_out,'METIS').eq.1) then
+      else if (index(c_out,'PARMETIS').eq.1) then
          fluid_partitioner=8
          solid_partitioner=8
       else if (index(c_out,'ZOLTAN2').eq.1) then
@@ -906,7 +906,7 @@ c set partitioner options
          fluid_partitioner=0
       else if (index(c_out,'RCB').eq.1) then
          fluid_partitioner=1
-      else if (index(c_out,'METIS').eq.1) then
+      else if (index(c_out,'PARMETIS').eq.1) then
          fluid_partitioner=8
       else if (index(c_out,'ZOLTAN2').eq.1) then
          fluid_partitioner=16
@@ -919,7 +919,7 @@ c set partitioner options
          solid_partitioner=0
       else if (index(c_out,'RCB').eq.1) then
          solid_partitioner=1
-      else if (index(c_out,'METIS').eq.1) then
+      else if (index(c_out,'PARMETIS').eq.1) then
          solid_partitioner=8
       else if (index(c_out,'ZOLTAN2').eq.1) then
          solid_partitioner=16
