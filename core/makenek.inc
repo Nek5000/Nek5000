@@ -295,10 +295,6 @@ if [ $UNDERSCORE -ne 0 ]; then
   PPLIST="${PPLIST} UNDERSCORE"
 fi 
 
-if [ $LONGLONGINT -ne 0 ]; then
-  PPLIST="${PPLIST} GLOBAL_LONG_LONG"
-fi 
-
 if [ $PROFILING -ne 0 ]; then
   PPLIST="${PPLIST} TIMER"
 fi

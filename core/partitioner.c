@@ -4,6 +4,8 @@
 #include "parRSB.h"
 #endif
 
+#include "name.h"
+
 #define MAXNV 8 /* maximum number of vertices per element */
 
 typedef struct {

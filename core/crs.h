@@ -5,6 +5,8 @@
 #warning "crs.h" requires "comm.h"
 #endif
 
+#include "name.h"
+
 #define crs_xxt_setup PREFIXED_NAME(crs_xxt_setup)
 #define crs_xxt_solve PREFIXED_NAME(crs_xxt_solve)
 #define crs_xxt_stats PREFIXED_NAME(crs_xxt_stats)

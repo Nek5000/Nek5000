@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include "gslib.h"
+#include "name.h"
 
 #define crs_setup PREFIXED_NAME(crs_xxt_setup)
 #define crs_solve PREFIXED_NAME(crs_xxt_solve)

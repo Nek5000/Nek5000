@@ -340,9 +340,9 @@ c-----------------------------------------------------------------------
       if(instep.ne.0) call runstat
 
 c      if (ifstrs) then
-c         call fgslib_crs_free(xxth_strs) 
+c         call crs_free(xxth_strs) 
 c      else
-c         call fgslib_crs_free(xxth(1))
+c         call crs_free(xxth(1))
 c      endif
 
 #ifdef DPROCMAP
