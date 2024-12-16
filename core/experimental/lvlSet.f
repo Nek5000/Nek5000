@@ -1123,9 +1123,12 @@ c-----------------------------------------------------------------------
         if(if3d)call cmult(stz,gamm,ntot)
       endif
 
-      sfx = stx(ix,iy,iz,e)
-      sfy = sty(ix,iy,iz,e)
-      if(if3d) sfz = stz(ix,iy,iz,e)
+      !BEWARE: forces are internally multiplied by density
+      !So you need to account for that here. 
+      !sfx,sfy,sfz MUST be accelerations
+      sfx = stx(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
+      sfy = sty(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
+      if(if3d) sfz = stz(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
 
       return
       end
