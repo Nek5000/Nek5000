@@ -610,7 +610,7 @@ c---------------------------------------------------------------
       call vsqrt(cmag,ntot)
 
       do i=1,ntot
-        if(cmag(i).gt.1e-6)then
+        if(cmag(i).gt.1e-12)then
           cnx(i) = cnx(i)/cmag(i)
           cny(i) = cny(i)/cmag(i)
           if(if3d)cnz(i) = cnz(i)/cmag(i)
@@ -1197,6 +1197,23 @@ c-----------------------------------------------------------------------
         ireset_ls = 0
       endif
 
+      call LS_CLS_driver(nclsr, fclsr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine LS_CLS_driver(nclsr,fclsr)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+      include 'CTIMER'
+
+      integer fclsr, nclsr
+
+      integer ntot
+
+      ntot = lx1*ly1*lz1*nelt
 
       if(mod(nclsr,fclsr).eq.0)then
         call copy(t(1,1,1,1,ifld_clsr-1),t(1,1,1,1,ifld_cls-1),ntot)
