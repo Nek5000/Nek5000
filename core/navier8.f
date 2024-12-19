@@ -50,7 +50,7 @@ c
       common /scrpre/ uc(lcr*lelt),w(2*lx1*ly1*lz1)
 
       call map_f_to_c_l2_bilin(uf,vf,w)
-      call fgslib_crs_solve(xxth(ifield),uc,uf)
+      call crs_solve(xxth(ifield),uc,uf)
       call map_c_to_f_l2_bilin(uf,uc,w)
 
       return
@@ -214,7 +214,7 @@ c      endif
       call chcopy(fname1(lamgn+1),char(0),1)
 
       ierr = 0
-      call fgslib_crs_setup(xxth(ifield),isolver,nekcomm,mp,ntot,
+      call crs_setup(xxth(ifield),isolver,nekcomm,mp,ntot,
      $     se_to_gcrs,nz,ia,ja,a, null_space, crs_param, 
      $     amgfile_c,ierr)
       ierr = iglmax(ierr,1)
@@ -1525,7 +1525,7 @@ c
 #ifdef TIMER
       etime1=dnekclock()
 #endif
-      call fgslib_crs_solve(xxth(ifield),uc,vc)
+      call crs_solve(xxth(ifield),uc,vc)
 #ifdef TIMER
       tcrsl=tcrsl+dnekclock()-etime1
 #endif

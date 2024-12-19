@@ -1346,7 +1346,7 @@ c
       ncrsl  = ncrsl  + 1
       etime1=dnekclock()
 
-      call fgslib_crs_solve(xxth(ifield),e,r)
+      call crs_solve(xxth(ifield),e,r)
 
       tcrsl=tcrsl+dnekclock()-etime1
 

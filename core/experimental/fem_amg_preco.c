@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include "gslib.h"
+#include "name.h"
 
 #define fem_amg_setup FORTRAN_UNPREFIXED(fem_amg_setup, FEM_AMG_SETUP)
 #define fem_amg_solve FORTRAN_UNPREFIXED(fem_amg_solve, FEM_AMG_SOLVE)

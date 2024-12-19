@@ -2006,6 +2006,7 @@ c-----------------------------------------------------------------------
                l = l+nxyzr
             enddo
             call MPI_Win_unlock_all(rsH,ierr)
+            call nekgsync()
 #endif
             k  = k + nelrr
          enddo
@@ -2136,6 +2137,7 @@ c-----------------------------------------------------------------------
                l = l+nxyzr
             enddo
             call MPI_Win_unlock_all(rsH,ierr)
+            call nekgsync()
 #endif
             k  = k + nelrr
          enddo
@@ -2381,6 +2383,7 @@ c
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
+
       character*132  hdr
       character*132  fname_in
 
@@ -2405,14 +2408,16 @@ c
 #ifdef MPI
       disp_unit = 4 
       win_size  = int(disp_unit,8)*size(wk)
-      call mpi_comm_dup(nekcomm,commrs,ierr)
-      call MPI_Win_create(wk,
-     $                    win_size,
-     $                    disp_unit,
-     $                    MPI_INFO_NULL,
-     $                    commrs,rsH,ierr)
+      if (commrs .eq. MPI_COMM_NULL) then
+        call mpi_comm_dup(nekcomm,commrs,ierr)
+        call MPI_Win_create(wk,
+     $                      win_size,
+     $                      disp_unit,
+     $                      MPI_INFO_NULL,
+     $                      commrs,rsH,ierr)
 
-      if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+        if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+      endif
 #endif
 
       tiostart=dnekclock()
@@ -2431,7 +2436,11 @@ c
       endif
 
       call mfi_prepare(fname)       ! determine reader nodes +
-                                    ! read hdr + element mapping 
+                                    ! read hdr + element mapping
+
+      nid_r = 0
+      if(.not. ifmpiio) nid_r = pid0r
+      if(nid.eq.nid_r) write(6,*) '      FILE:', fname
 
       offs0   = iHeadersize + 4 + isize*nelgr
       nxyzr8  = nxr*nyr*nzr
@@ -2531,10 +2540,6 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
      &       30X,'avg data-throughput = ',f7.1,'GB/s',/,
      &       30X,'io-nodes = ',i5,/)
 
-
-#ifdef MPI
-      call MPI_Win_free(rsH, ierr)
-#endif
 
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
@@ -2636,7 +2641,6 @@ c-----------------------------------------------------------------------
            call blank(hdr,iHeaderSize)
 
            call addfid(hname,fid0r)
-           if(nid.eq.pid0r) write(6,*) '      FILE:',hname
            call byte_open(hname,ierr)
 
            if(ierr.ne.0) goto 102
@@ -2673,7 +2677,6 @@ c-----------------------------------------------------------------------
         offs = offs0 + nelBr*isize
 
         call addfid(hname,fid0r)
-        if(nio.eq.0) write(6,*) '      FILE:',hname
         call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
 
         if(ierr.ne.0) goto 102

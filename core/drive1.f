@@ -331,16 +331,18 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine nek_end
 
+      include 'mpif.h'
       include 'SIZE'
       include 'TOTAL'
       include 'DPROCMAP'
+      include 'RESTART'
 
       if(instep.ne.0) call runstat
 
 c      if (ifstrs) then
-c         call fgslib_crs_free(xxth_strs) 
+c         call crs_free(xxth_strs) 
 c      else
-c         call fgslib_crs_free(xxth(1))
+c         call crs_free(xxth(1))
 c      endif
 
 #ifdef DPROCMAP
@@ -348,6 +350,13 @@ c      endif
       call MPI_Win_free(dProcmapH, ierr)
 #endif
 #endif 
+ 
+#ifdef MPI
+      if (commrs .ne. MPI_COMM_NULL) then
+        call MPI_Win_free(rsH, ierr)
+      endif
+#endif
+
       call in_situ_end()
       call exitt0()
 

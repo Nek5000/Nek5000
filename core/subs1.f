@@ -1924,7 +1924,7 @@ c     Given an input vector v, this generates the H1 coarse-grid solution
       endif
 
       etime1=dnekclock()
-      call fgslib_crs_solve(xxth_strs,uc1,vc1)
+      call crs_solve(xxth_strs,uc1,vc1)
       tcrsl=tcrsl+dnekclock()-etime1
 
       k=0
@@ -2016,8 +2016,8 @@ c     Setup local SEM-based Neumann operators (for now, just full...)
 c     stop
 
       imode = param(40)
-      call fgslib_crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
-     $                      nnz,ia,ja,a,null_space)
+      call crs_setup(xxth_strs,imode,nekcomm,mp,n,se_to_gcrs,
+     $               nnz,ia,ja,a,null_space)
 
       t0 = dnekclock()-t0
       if (nio.eq.0) then
