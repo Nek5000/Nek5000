@@ -43,9 +43,12 @@ c
          ! compute explicit contributions bfx,bfy,bfz 
          call makef 
 
-         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
-         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
-         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+c         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
+c         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
+c         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+         call copy (vx_e,vx,ntot1)
+         call copy (vy_e,vy,ntot1)
+         if (if3d) call copy (vz_e,vz,ntot1)
 
       else
 
@@ -153,6 +156,8 @@ c
 
 c compute stress tensor for ifstrs formulation - variable viscosity Pn-Pn
       if (ifstrs .and. ifvvisp) then
+
+         if(nid.eq.0) write(*,*)'Dear God ifvvisp is ', ifvvisp
          call opgrad   (ta1,ta2,ta3,vdiff)
          call invcol2  (ta1,vdiff,ntot1)
          call invcol2  (ta2,vdiff,ntot1)
