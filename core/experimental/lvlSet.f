@@ -311,6 +311,7 @@ C----------------------------------------------------------------------
           call bcneusc(ta,1)
           call add2(tb,ta,n)
 
+          if(ifield.eq.ifld_tlsr)call constrainTLSR(0)
           call hsolve_cls(name4t,ta,tb,h1,h2,
      $                tmask(1,1,1,1,ifield-1),
      $                tmult(1,1,1,1,ifield-1),
@@ -318,7 +319,7 @@ C----------------------------------------------------------------------
      $                approxt(1,0,ifld1),napproxt(1,ifld1),binvm1)
 
           call add2(t(1,1,1,1,ifield-1),ta,n)
-          if(ifield.eq.ifld_tlsr) call constrainTLSR
+          if(ifield.eq.ifld_tlsr) call constrainTLSR(1)
           call cvgnlps (ifconv)
           if (ifconv) exit
         enddo
@@ -1061,22 +1062,37 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine constrainTLSR
+      subroutine constrainTLSR(op)
       implicit none
       include 'SIZE'
       include 'TOTAL'
       include 'LVLSET'
 
+      !prevents sign being flipped across the interface
+      !with subsequent TLSR iterations
       integer i,ntot
       real sgn,phi
+      real sgnold
+
+      integer op
+      common /constraintls/ tlsr(lx1,ly1,lz1,lelt)
+      real tlsr
 
       ntot = lx1*ly1*lz1*nelt
 
-      do i=1,ntot
-        phi = (t(i,1,1,1,ifld_cls-1)-0.5)*2.0
-        sgn = sign(1.,phi)
-        t(i,1,1,1,ifld_tlsr-1) = sgn * abs(t(i,1,1,1,ifld_tlsr-1))
-      enddo
+      if(op.eq.0)then
+        call copy(tlsr,t(1,1,1,1,ifld_tlsr-1),ntot)
+      else
+        do i=1,ntot
+          phi = (t(i,1,1,1,ifld_cls-1)-0.5)*2.0
+          sgn = sign(1.,phi)
+          phi = tlsr(i,1,1,1)
+          sgnold = sign(1.,phi)
+          if(sgnold*sgn.lt.0.0) then !Do not update
+            t(i,1,1,1,ifld_tlsr-1) = tlsr(i,1,1,1)
+          endif
+        enddo
+      endif
 
       return
       end
