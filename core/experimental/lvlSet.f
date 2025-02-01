@@ -792,6 +792,8 @@ c---------------------------------------------------------------
      $                  tmp(lx1,ly1,lz1,lelv)
 
       real tmpx, tmpy, tmpz, tmp
+      real psi
+      integer i 
 
       NXY=lx1*ly1
       NYZ=ly1*lz1
@@ -814,6 +816,10 @@ c---------------------------------------------------------------
         endif
 
         call col2(tmp,helm1,ntot)
+        do i=1,ntot
+         psi = u(i,1,1,1) 
+         tmp(i,1,1,1) = tmp(i,1,1,1)- psi*(1.0-psi)
+        enddo
 
         do e=1,nelv
           if(.not.if3d)then
@@ -962,6 +968,10 @@ c-----------------------------------------------------------------------
       endif
 
       !(1-psi)*psi
+
+      call rzero(du,ntot)
+      return
+
       call copy(tb,u,ntot)
       call cmult(tb,-1.0,ntot)
       call cadd(tb,1.0,ntot)
