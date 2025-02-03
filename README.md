@@ -8,3 +8,8 @@
 
 - constrainTLSR routine updated to prevent TLSR update if the sign switches
 - Earlier technique was to flip the sign of computed TLSR
+
+### b2859c8
+
+- Auto dt and number of time steps calculation for CLSR and TLSR
+- Based on tests performed on damBreak and circVortex problems
