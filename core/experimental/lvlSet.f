@@ -1,7 +1,60 @@
 C----------------------------------------------------------------------     
       include "experimental/lshmholtz.f"
 C----------------------------------------------------------------------     
-      subroutine ls_init(nsteps_cls_in,nsteps_tls_in,
+      subroutine ls_init(ifld_cls_in, ifld_clsr_in,
+     $                   ifld_tls_in, ifld_tlsr_in,
+     $                   eps_in, ifdebug, ifixCLSbdry_in)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ifld_cls_in, ifld_clsr_in
+      integer ifld_tls_in, ifld_tlsr_in
+      integer ifdebug, ifixCLSbdry_in
+      real eps_in
+
+
+      common /ellength/ dxmax, dxmin
+      real dxmax, dxmin
+
+      real deltael, dxave
+
+      real dt_cls_in, dt_tls_in
+
+      integer nsteps_cls_in, nsteps_tls_in
+
+      real nfac
+
+      !get the element lengths
+      dxave = deltael(1,1,1,1)
+
+      !Based on unit velocity and shortest element
+      !Based on experiment /4 factor gives CFL~0.6
+      dt_tls_in = dxmin / lx1 / 4.0
+
+      !Characteristics must travel nfac times largest element
+      nfac = 3.0
+      nsteps_tls_in = floor(dxmax * nfac /dt_tls_in)
+
+      dt_cls_in = 0.5 * dt_tls_in
+      nfac = 0.1
+      nsteps_cls_in = floor(dxmax * nfac / dt_cls_in)
+
+      if(nio.eq.0)then 
+        write(*,*) "dt - CLSR, TLSR:",dt_cls_in,dt_tls_in
+        write(*,*) "nsteps - CLSR, TLSR:",nsteps_cls_in, nsteps_tls_in
+      endif
+
+      call ls_init2(nsteps_cls_in, nsteps_tls_in,
+     $              eps_in, dt_cls_in, dt_tls_in,
+     $              ifld_cls_in, ifld_clsr_in,
+     $              ifld_tls_in, ifld_tlsr_in,
+     $              ifdebug, ifixCLSbdry_in)
+
+      return
+      end
+C----------------------------------------------------------------------     
+      subroutine ls_init2(nsteps_cls_in,nsteps_tls_in,
      $                   eps_in,dt_cls_in,dt_tls_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in,
@@ -493,7 +546,11 @@ c---------------------------------------------------------------
 
       real delta_save
       save delta_save
-      real dmax,dmin,dave
+
+      common /ellength/ dxmax, dxmin
+      real dxmax, dxmin
+
+      real dxave
 
       nxyz = nx1*ny1*nz1
       n    = nxyz*nelv
@@ -522,24 +579,16 @@ c---------------------------------------------------------------
          enddo
 
          dxsum = glsum(dx,n)
-         dmax = glmax(dx,n)
-         dmin = glmin(dx,n)
+         dxmax = glmax(dx,n)
+         dxmin = glmin(dx,n)
         
          delta_save = dxsum/iglsum(n,1)
 
-         dave = delta_save
+         dxave = delta_save
 
          if(nio.eq.0)then
-           write(*,*)"Max/min/avg el length",dmax,dmin,dave
+           write(*,*)"Max/min/avg el length",dxmax,dxmin,dxave
          endif
-         dmax = dmax/dave * eps_cls
-         dmin = dmin/dave * eps_cls
-         dave = dave/dave * eps_cls
-         if(nio.eq.0)then
-           write(*,*)"Interface thickness:"
-           write(*,*)"factor of min/max/avg el length",dmax,dmin,dave
-         endif
-
          icalld = 1
       endif
 
