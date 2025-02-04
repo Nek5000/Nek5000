@@ -13,11 +13,7 @@ C----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry_in
       real eps_in
 
-
-      common /ellength/ dxmax, dxmin
-      real dxmax, dxmin
-
-      real deltael, dxave
+      real dxmax, dxmin, dxarr(lx1,ly1,lz1,lelt)
 
       real dt_cls_in, dt_tls_in
 
@@ -25,19 +21,33 @@ C----------------------------------------------------------------------
 
       real nfac
 
+      integer ntot,i
+      real glmin, glmax
+
+      ntot = lx1*ly1*lz1*nelv
+
       !get the element lengths
-      dxave = deltael(1,1,1,1)
+      call copy(dxarr,jacm1,ntot)
+      do i=1,ntot
+        if(if3d)then
+          dxarr(i,1,1,1) = dxarr(i,1,1,1)**(1.0/3.0)
+        else
+          dxarr(i,1,1,1) = dxarr(i,1,1,1)**(1.0/2.0)
+        endif
+      enddo
+
+      dxmin = glmin(dxarr,ntot)
+      dxmax = glmax(dxarr,ntot)
 
       !Based on unit velocity and shortest element
-      !Based on experiment /4 factor gives CFL~0.6
-      dt_tls_in = dxmin / lx1 / 4.0
+      dt_tls_in = dxmin / lx1
 
       !Characteristics must travel nfac times largest element
-      nfac = 6.0
+      nfac = 10.0
       nsteps_tls_in = floor(dxmax * nfac /dt_tls_in)
 
-      dt_cls_in = 0.5 * dt_tls_in
-      nfac = 0.1
+      dt_cls_in = 0.25 * dt_tls_in
+      nfac = 0.5
       nsteps_cls_in = floor(dxmax * nfac / dt_cls_in)
 
       if(nio.eq.0)then 
@@ -547,7 +557,6 @@ c---------------------------------------------------------------
       real delta_save
       save delta_save
 
-      common /ellength/ dxmax, dxmin
       real dxmax, dxmin
 
       real dxave
