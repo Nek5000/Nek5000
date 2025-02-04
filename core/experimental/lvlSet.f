@@ -33,7 +33,7 @@ C----------------------------------------------------------------------
       dt_tls_in = dxmin / lx1 / 4.0
 
       !Characteristics must travel nfac times largest element
-      nfac = 3.0
+      nfac = 6.0
       nsteps_tls_in = floor(dxmax * nfac /dt_tls_in)
 
       dt_cls_in = 0.5 * dt_tls_in
@@ -1056,6 +1056,8 @@ c-----------------------------------------------------------------------
       !maybe narrow band?
       !the local divergence should give a max of what this should be
       call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
+      call bdry_tlsr_fix(clsnx,clsny,clsnz)
+
       do i=1,ntot
         tb(i,1,1,1) = signls(i,1,1,1)
       enddo
@@ -1063,7 +1065,6 @@ c-----------------------------------------------------------------------
       call col2(clsny,tb,ntot)
       if(if3d)call col2(clsnz,tb,ntot)
 
-      call bdry_tlsr_fix(clsnx,clsny,clsnz)
       call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
      $                    clsnx,clsny,clsnz,.false.)  
 
@@ -1260,8 +1261,6 @@ c-----------------------------------------------------------------------
         call cadd(t(1,1,1,1,ifld_tlsr-1),-0.5,ntot)
         
         call cmult(t(1,1,1,1,ifld_tlsr-1),0.01,ntot)
-
-        call ls_drive(ifld_tlsr,0)
 
         call ls_drive(ifld_tlsr,1)
 
