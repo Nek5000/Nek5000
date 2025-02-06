@@ -1,12 +1,12 @@
       integer ifld_cls,ifld_clsr,ifld_tls,ifld_tlsr
 
       integer nsteps_cls,ifls_debug,icls_mid,nsteps_tls
-			integer signtype, ifixCLSbdry
+			integer ifixCLSbdry
       
       common /lvlset_i/ ifld_cls, ifld_clsr, ifld_tls,
      $                  ifld_tlsr, nsteps_cls,
      $                  ifls_debug, icls_mid, nsteps_tls,
-     $                  signtype, ifixCLSbdry
+     $                  ifixCLSbdry
 
       common /lvlset_a/ clsnx(lx1,ly1,lz1,lelv),
      $                  clsny(lx1,ly1,lz1,lelv),
@@ -19,5 +19,5 @@
       real clsnx,clsny,clsnz,clsnr,clsns,clsnt
       real avmls
 
-      real dt_cls, dt_tls, eps_cls
-      common /lvlset_r/ dt_cls, dt_tls, eps_cls
+      real dt_cls, dt_tls, eps_cls, gfac
+      common /lvlset_r/ dt_cls, dt_tls, eps_cls, gfac

@@ -13,7 +13,8 @@ C----------------------------------------------------------------------
       integer ifdebug, ifixCLSbdry_in
       real eps_in
 
-      real dxmax, dxmin, dxarr(lx1,ly1,lz1,lelt)
+      common /ellength/ dxmax, dxmin
+      real dxmax, dxmin, dxave, deltael
 
       real dt_cls_in, dt_tls_in
 
@@ -27,28 +28,18 @@ C----------------------------------------------------------------------
       ntot = lx1*ly1*lz1*nelv
 
       !get the element lengths
-      call copy(dxarr,jacm1,ntot)
-      do i=1,ntot
-        if(if3d)then
-          dxarr(i,1,1,1) = dxarr(i,1,1,1)**(1.0/3.0)
-        else
-          dxarr(i,1,1,1) = dxarr(i,1,1,1)**(1.0/2.0)
-        endif
-      enddo
-
-      dxmin = glmin(dxarr,ntot)
-      dxmax = glmax(dxarr,ntot)
+      dxave = deltael(1,1,1,1)
 
       !Based on unit velocity and shortest element
       dt_tls_in = dxmin / lx1
 
       !Characteristics must travel nfac times largest element
-      nfac = 10.0
-      nsteps_tls_in = floor(dxmax * nfac /dt_tls_in)
+      nfac = 20.0
+      nsteps_tls_in = floor(dxave * nfac /dt_tls_in)
 
       dt_cls_in = 0.25 * dt_tls_in
-      nfac = 0.5
-      nsteps_cls_in = floor(dxmax * nfac / dt_cls_in)
+      nfac = 0.2
+      nsteps_cls_in = floor(dxave * nfac / dt_cls_in)
 
       if(nio.eq.0)then 
         write(*,*) "dt - CLSR, TLSR:",dt_cls_in,dt_tls_in
@@ -126,7 +117,7 @@ C----------------------------------------------------------------------
       return
       end
 C----------------------------------------------------------------------     
-      subroutine ls_drive(ifld,sgntype)
+      subroutine ls_drive(ifld)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -138,9 +129,6 @@ C----------------------------------------------------------------------
       integer nsteps_in
       real dtlag_save(10)
       integer nbdinp_save
-      integer sgntype
-
-      signtype = sgntype 
 
       if(ifld.ne.ifld_clsr .and. ifld.ne.ifld_tlsr)then
         if(nio.eq.0)then 
@@ -557,6 +545,7 @@ c---------------------------------------------------------------
       real delta_save
       save delta_save
 
+      common /ellength/ dxmax, dxmin
       real dxmax, dxmin
 
       real dxave
@@ -943,17 +932,10 @@ c---------------------------------------------------------------
       integer ix,iy,iz,ie
       real deltael,phi,eps
 
-      if(signtype.eq.1)then
-        phi = t(ix,iy,iz,ie,ifld_tlsr-1)
-        eps = deltael(ix,iy,iz,ie) * eps_cls
+      phi = t(ix,iy,iz,ie,ifld_tlsr-1) / gfac
+      eps = deltael(ix,iy,iz,ie) * eps_cls
 
-        signls = tanh(phi/(2.0 * eps))
-      else
-      !The TLSR works better with below definition
-      !Therefore do not use ifld_tls to define the sign function
-      !for TLS re-distancing
-        signls = (t(ix,iy,iz,ie,ifld_cls-1)-0.5)*2.0
-      endif
+      signls = tanh(phi/(2.0 * 0.25))
 
       return
       end
@@ -1259,6 +1241,13 @@ c-----------------------------------------------------------------------
       save nclsr
       data nclsr /0/
 
+      integer icalld2
+      save icalld2
+      data icalld2 /0/
+
+      real glmin,glmax
+      real dxmin,dxmax
+
       ntot = lx1*ly1*lz1*nelt
 
       ifcoupledls = .true.
@@ -1268,10 +1257,26 @@ c-----------------------------------------------------------------------
         call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
 
         call cadd(t(1,1,1,1,ifld_tlsr-1),-0.5,ntot)
-        
-        call cmult(t(1,1,1,1,ifld_tlsr-1),0.01,ntot)
 
-        call ls_drive(ifld_tlsr,1)
+        if(icalld2.eq.0)then
+          dxmin = glmin(xm1,ntot)
+          dxmax = glmax(xm1,ntot)
+          gfac = dxmax-dxmin
+          dxmin = glmin(ym1,ntot)
+          dxmax = glmax(ym1,ntot)
+          gfac = min(gfac, dxmax-dxmin)
+          if(if3d)then
+            dxmin = glmin(zm1,ntot)
+            dxmax = glmax(zm1,ntot)
+            gfac = min(gfac, dxmax-dxmin)
+          endif
+          icalld2 = 1
+        endif
+        
+        if(nio.eq.0)write(*,*)"gfac is",gfac
+        call cmult(t(1,1,1,1,ifld_tlsr-1),0.1*gfac,ntot)
+
+        call ls_drive(ifld_tlsr)
 
         call copy(t(1,1,1,1,ifld_tls-1),t(1,1,1,1,ifld_tlsr-1),ntot)
 
