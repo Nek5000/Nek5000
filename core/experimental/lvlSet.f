@@ -34,7 +34,7 @@ C----------------------------------------------------------------------
       dt_tls_in = dxmin / lx1
 
       !Characteristics must travel nfac times largest element
-      nfac = 20.0
+      nfac = 30.0
       nsteps_tls_in = floor(dxave * nfac /dt_tls_in)
 
       dt_cls_in = 0.25 * dt_tls_in
@@ -298,7 +298,11 @@ C----------------------------------------------------------------------
       if(nio.eq.0 .and. istep.eq.1)then
         write(*,*)"CFL: ",cfl
       endif
-      ! worry about adjust dt based on CFL later
+
+      !Limit TLSR CFL to 1.0
+      if(ifield.eq.ifld_tlsr .and. cfl.gt.1.0)then
+        dt = dt * 1.0/cfl
+      endif
 
       return
       end
