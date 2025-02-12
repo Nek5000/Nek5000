@@ -3,7 +3,7 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------     
       subroutine ls_init_maxiter(ifld_cls_in, ifld_clsr_in,
      $                   ifld_tls_in, ifld_tlsr_in,
-     $                   eps_in, ifdebug, ifixCLSbdry_in
+     $                   eps_in, ifdebug, ifixCLSbdry_in,
      $                   ntls_max, ncls_max)
       implicit none
       include 'SIZE'
