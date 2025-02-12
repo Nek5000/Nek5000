@@ -36,11 +36,11 @@ C----------------------------------------------------------------------
       dt_tls_in = dxmin / lx1
 
       !Characteristics must travel nfac times largest element
-      nfac = 30.0
+      nfac = 25.0
       nsteps_tls_in = min(ntls_max,floor(dxave * nfac /dt_tls_in))
 
-      dt_cls_in = 0.25 * dt_tls_in
-      nfac = 0.2
+      dt_cls_in = 0.1 * dt_tls_in
+      nfac = 0.1
       nsteps_cls_in = min(ncls_max,floor(dxave * nfac / dt_cls_in))
 
       if(nio.eq.0)then 
@@ -90,11 +90,11 @@ C----------------------------------------------------------------------
       dt_tls_in = dxmin / lx1
 
       !Characteristics must travel nfac times largest element
-      nfac = 30.0
+      nfac = 25.0
       nsteps_tls_in = floor(dxave * nfac /dt_tls_in)
 
-      dt_cls_in = 0.25 * dt_tls_in
-      nfac = 0.2
+      dt_cls_in = 0.1 * dt_tls_in
+      nfac = 0.1
       nsteps_cls_in = floor(dxave * nfac / dt_cls_in)
 
       if(nio.eq.0)then 
@@ -1452,7 +1452,7 @@ c-----------------------------------------------------------------------
       if(cbc(iside,e,1).eq.'shl')then
         rho = vtrans(ix,iy,iz,e,1)
 
-        yplus = 1.0
+        yplus = 11.0
         Econ = 9.0
         kappa = 0.41
 
@@ -1481,7 +1481,7 @@ c-----------------------------------------------------------------------
         endif
         uw = sqrt(ut1*ut1+ut2*ut2)
 
-        uplus = yplus !(1./kappa)*log(Econ*yplus)
+        uplus = (1./kappa)*log(Econ*yplus)
 
         utau = uw/uplus
 
