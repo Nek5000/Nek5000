@@ -1,6 +1,62 @@
 C----------------------------------------------------------------------     
       include "experimental/lshmholtz.f"
 C----------------------------------------------------------------------     
+      subroutine ls_init_maxiter(ifld_cls_in, ifld_clsr_in,
+     $                   ifld_tls_in, ifld_tlsr_in,
+     $                   eps_in, ifdebug, ifixCLSbdry_in
+     $                   ntls_max, ncls_max)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer ifld_cls_in, ifld_clsr_in
+      integer ifld_tls_in, ifld_tlsr_in
+      integer ifdebug, ifixCLSbdry_in
+      real eps_in
+      integer ntls_max, ncls_max
+
+      common /ellength/ dxmax, dxmin
+      real dxmax, dxmin, dxave, deltael
+
+      real dt_cls_in, dt_tls_in
+
+      integer nsteps_cls_in, nsteps_tls_in
+
+      real nfac
+
+      integer ntot,i
+      real glmin, glmax
+
+      ntot = lx1*ly1*lz1*nelv
+
+      !get the element lengths
+      dxave = deltael(1,1,1,1)
+
+      !Based on unit velocity and shortest element
+      dt_tls_in = dxmin / lx1
+
+      !Characteristics must travel nfac times largest element
+      nfac = 30.0
+      nsteps_tls_in = min(ntls_max,floor(dxave * nfac /dt_tls_in))
+
+      dt_cls_in = 0.25 * dt_tls_in
+      nfac = 0.2
+      nsteps_cls_in = min(ncls_max,floor(dxave * nfac / dt_cls_in))
+
+      if(nio.eq.0)then 
+        write(*,*) "dt - CLSR, TLSR:",dt_cls_in,dt_tls_in
+        write(*,*) "nsteps - CLSR, TLSR:",nsteps_cls_in, nsteps_tls_in
+      endif
+
+      call ls_init2(nsteps_cls_in, nsteps_tls_in,
+     $              eps_in, dt_cls_in, dt_tls_in,
+     $              ifld_cls_in, ifld_clsr_in,
+     $              ifld_tls_in, ifld_tlsr_in,
+     $              ifdebug, ifixCLSbdry_in)
+
+      return
+      end
+C----------------------------------------------------------------------     
       subroutine ls_init(ifld_cls_in, ifld_clsr_in,
      $                   ifld_tls_in, ifld_tlsr_in,
      $                   eps_in, ifdebug, ifixCLSbdry_in)
