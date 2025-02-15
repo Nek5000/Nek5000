@@ -1107,7 +1107,6 @@ c-----------------------------------------------------------------------
       !maybe narrow band?
       !the local divergence should give a max of what this should be
       call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
-      call bdry_tlsr_fix(clsnx,clsny,clsnz)
 
       do i=1,ntot
         tb(i,1,1,1) = signls(i,1,1,1)
@@ -1115,6 +1114,8 @@ c-----------------------------------------------------------------------
       call col2(clsnx,tb,ntot)
       call col2(clsny,tb,ntot)
       if(if3d)call col2(clsnz,tb,ntot)
+
+      call bdry_tlsr_fix(clsnx,clsny,clsnz)
 
       call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
      $                    clsnx,clsny,clsnz,.false.)  
