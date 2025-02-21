@@ -150,7 +150,8 @@ C----------------------------------------------------------------------
       !need to set tmasks to one
       !also turn off internal solvers
       if(ifld_cls_in.ne.0)then 
-        call rone(tmask(1,1,1,1,ifld_cls_in-1),ntot)
+        ! call rone(tmask(1,1,1,1,ifld_cls_in-1),ntot)
+        continue
       endif
       if(ifld_clsr_in.ne.0)then 
         ! call rone(tmask(1,1,1,1,ifld_clsr_in-1),ntot)
