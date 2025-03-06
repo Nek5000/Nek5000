@@ -1483,7 +1483,11 @@ c-----------------------------------------------------------------------
         endif
         uw = sqrt(ut1*ut1+ut2*ut2)
 
-        uplus = (1./kappa)*log(Econ*yplus)
+        if(yplus.le.10.0) then
+          uplus = yplus
+        else
+          uplus = (1./kappa)*log(Econ*yplus)
+        endif
 
         utau = uw/uplus
 
