@@ -3,7 +3,7 @@
 
       use SIZE
 
-      integer option
+      integer option,ne_nrh
 	  
       write(6,'(A)', ADVANCE = "NO") 'Enter mesh dimension: '
       read (5,'(I1)') option
@@ -149,6 +149,13 @@
  
       call deallocate_all_msh_arrays  ! deallocate all msh arrays
 
+      endif
+
+      ne_nrh = 0
+      call right_hand_check(ne_nrh) ! check non-right-hand element here
+
+      if ((num_dim.eq.3).and.(ne_nrh.gt.0)) then
+      call fix_left_hand_elements_3d
       endif
 
       call set_periodicity(1)
@@ -1904,7 +1911,6 @@
       if(num_dim.eq.2) then
       deallocate(node_xyz,node_quad,node_line)
       deallocate(quad_array,line_array)
-      deallocate(r_or_l)
       endif
 
       if(num_dim.eq.3) then
@@ -1935,17 +1941,20 @@
       use SIZE
 
       character*80  hdr
-
+      integer nBCre2
 
       real*4 test
       data   test  / 6.54321 /
 
       call byte_open(re2name,ierr)
-            
+
+      nBCre2 = 1
+      if (num_elem.ne.eftot)  nBCre2  = 2
+
 !  Write the header
       call blank     (hdr,80)    
-      write(hdr,1) num_elem, num_dim, eftot
-    1 format('#v002',i9,i3,i9,' this is the hdr')
+      write(hdr,1) num_elem, num_dim, eftot, nBCre2
+    1 format('#v004',i16,i3,i16,i4,' hdr')
       call byte_write(hdr,20,ierr)         
       call byte_write(test,1,ierr)     ! write the endian discriminator
 

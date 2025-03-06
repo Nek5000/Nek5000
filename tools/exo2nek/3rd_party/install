@@ -6,13 +6,13 @@ if [ "$1" == "clean" ]; then
   exit 0
 fi
 
-VER="c-4.7.4"
+VER="4.7.4"
 CHKSUM=dce4851dd65bf8ec985f11711bb5a8aa299515b9
 
 # NETCDF
 if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then
   if [ ! -f netcdf-$VER.tar.gz ]; then
-    wget --no-check-certificate -O netcdf-$VER.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$VER.tar.gz
+    wget --no-check-certificate -O netcdf-v$VER.tar.gz https://github.com/Unidata/netcdf-c/archive/refs/tags/v$VER.tar.gz
     SUM=`openssl dgst -sha1 netcdf-$VER.tar.gz | sed 's/^.* //'`
     if [ $SUM != $CHKSUM ] ; then
       echo 'Invalid checksum!'
@@ -21,7 +21,7 @@ if [ ! -f ./netcdf/install/lib/libnetcdf.a ]; then
     fi
   fi
   mkdir -p netcdf
-  tar -zxvf netcdf-$VER.tar.gz -C netcdf --strip-components 1
+  tar -zxvf netcdf-v$VER.tar.gz -C netcdf --strip-components 1
   cd netcdf
   mkdir install || true
   export NETCDFPATH=`pwd`/install
