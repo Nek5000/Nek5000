@@ -1434,7 +1434,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine traction_ls(ix,iy,iz,e,iside)
+      subroutine traction_ls(ix,iy,iz,e,iside,yplus)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -1454,7 +1454,6 @@ c-----------------------------------------------------------------------
       if(cbc(iside,e,1).eq.'shl')then
         rho = vtrans(ix,iy,iz,e,1)
 
-        yplus = 11.0
         Econ = 9.0
         kappa = 0.41
 
