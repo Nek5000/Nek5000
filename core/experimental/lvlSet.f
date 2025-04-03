@@ -457,7 +457,7 @@ C----------------------------------------------------------------------
 
       if(ifield.eq.ifld_clsr)then
         do i=1,n
-          VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1)*eps_cls/4.0
+          VDIFF(i,1,1,1,ifield) = deltael(i,1,1,1)*eps_cls
         enddo
       elseif(ifield.eq.ifld_tlsr)then
         call cfill(vdiff(1,1,1,1,ifield),1e-10,n)
@@ -671,10 +671,6 @@ c---------------------------------------------------------------
       else
         eps = deltael(ix,iy,iz,iel)*epsin
       endif
-      !this factor (/4.0) is introduced so that eps_cls=1
-      !gives heaviside transition roughly equal to the
-      !element edge
-      eps = eps/4.0
       heaviside = 0.5*(tanh(phi/(2.0*eps))+1.0)
 
       !It looks like CLSR equation is really designed for
@@ -994,7 +990,6 @@ c---------------------------------------------------------------
       real deltael,phi,eps
 
       phi = t(ix,iy,iz,ie,ifld_tlsr-1) / gfac
-      eps = deltael(ix,iy,iz,ie) * eps_cls
 
       signls = tanh(phi/(2.0 * 0.25))
 
@@ -1276,7 +1271,7 @@ c-----------------------------------------------------------------------
       ntot = lx1*ly1*lz1*nelv
 
       do i=1,ntot
-        eps = deltael(i,1,1,1)*eps_cls
+        eps = deltael(i,1,1,1)*eps_cls*4.0
         if(abs(phi(i)).gt.eps)then
           delta(i) = 0.0
         else
@@ -1691,7 +1686,7 @@ c     field
             do iz=kz1,kz2
               do iy=ky1,ky2
                 do ix=kx1,kx2
-                  eps = deltael(ix,iy,iz,ie) * eps_cls
+                  eps = deltael(ix,iy,iz,ie) * eps_cls * 4.0
                   phi = t(ix,iy,iz,ie,ifld_tls-1)
                   if(phi .gt. 2.0*eps)then
                     t(ix,iy,iz,ie,ifld_cls-1) = 1.0
