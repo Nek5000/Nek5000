@@ -18,3 +18,8 @@
 
 - TLSR now does not use the tanh profile for sign function. It was creating boundary related problems and spurious currents at interface.
 - There are still some issues at the boundary for extreme cases (see clsTest3D case). 
+
+### f725f21
+
+- Changed the epsilon value to be 4X in lvlSet.f
+- In usr file specify 1/N instead of 4/N now
