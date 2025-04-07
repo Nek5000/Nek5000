@@ -1373,44 +1373,6 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      real function enclosedVol(direc)
-      implicit none
-      include 'SIZE'
-      include 'TOTAL'
-      include 'LVLSET'
-
-      integer ntot,i
-      real glsum
-
-      real vol(lx1,ly1,lz1,lelt)
-      integer direc
-
-      ntot = lx1*ly1*lz1*lelv
-
-      if(direc.lt.0)then
-        call copy(vol,t(1,1,1,1,ifld_cls-1),ntot)
-        call cmult(vol,-1.0,ntot)
-        call cadd(vol,1.0,ntot)
-      else
-        call copy(vol,t(1,1,1,1,ifld_cls-1),ntot)
-      endif
-
-      !Convert to step heaviside function
-      do i=1,ntot
-        if(vol(i,1,1,1) .ge. 0.5)then
-          vol(i,1,1,1) = 1.0
-        else
-          vol(i,1,1,1) = 0.0
-        endif
-      enddo
-
-      call col2(vol,bm1,ntot)
-
-      enclosedVol = glsum(vol,ntot)
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine limit_cls(ix,iy,iz,e)
       implicit none
       include 'SIZE'
