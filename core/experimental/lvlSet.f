@@ -40,7 +40,7 @@ C----------------------------------------------------------------------
       nsteps_tls_in = min(ntls_max,floor(dxave * nfac /dt_tls_in))
 
       dt_cls_in = 0.1 * dt_tls_in
-      nfac = 0.2
+      nfac = 0.15
       nsteps_cls_in = min(ncls_max,floor(dxave * nfac / dt_cls_in))
 
       if(nio.eq.0)then 
@@ -94,7 +94,7 @@ C----------------------------------------------------------------------
       nsteps_tls_in = floor(dxave * nfac /dt_tls_in)
 
       dt_cls_in = 0.1 * dt_tls_in
-      nfac = 0.2
+      nfac = 0.15
       nsteps_cls_in = floor(dxave * nfac / dt_cls_in)
 
       if(nio.eq.0)then 
