@@ -282,25 +282,27 @@ c
       real cmat(lx1,lx1), cmatT(lx1,lx1)
 c
       call leg1D(bl,blinv,blt,bltinv)
-      call diffFilter1D(qdiag)
+      do i=1,ldimt+1
+        call diffFilter1D(qdiag,i)
 
-      call mxm(bl,lx1,qdiag,lx1,tmp,lx1)
-      call mxm(tmp,lx1,blinv,lx1,cmat,lx1)
+        call mxm(bl,lx1,qdiag,lx1,tmp,lx1)
+        call mxm(tmp,lx1,blinv,lx1,cmat,lx1)
 
-      call mxm(bltinv,lx1,qdiag,lx1,tmp,lx1)
-      call mxm(tmp,lx1,blt,lx1,cmatT,lx1)
+        call mxm(bltinv,lx1,qdiag,lx1,tmp,lx1)
+        call mxm(tmp,lx1,blt,lx1,cmatT,lx1)
 
 c     Convoluted derivatives
-      call mxm(cmat,lx1,dxm1,lx1,cdxm1,lx1)
-      call mxm(dxtm1,lx1,cmatT,lx1,cdxtm1,lx1)
+        call mxm(cmat,lx1,dxm1,lx1,cdxm1(1,1,i),lx1)
+        call mxm(dxtm1,lx1,cmatT,lx1,cdxtm1(1,1,i),lx1)
 
-      call mxm(cmat,ly1,dym1,ly1,cdym1,ly1)
-      call mxm(dytm1,ly1,cmatT,ly1,cdytm1,ly1)
+        call mxm(cmat,ly1,dym1,ly1,cdym1(1,1,i),ly1)
+        call mxm(dytm1,ly1,cmatT,ly1,cdytm1(1,1,i),ly1)
 
-      if(if3d)then
-         call mxm(cmat,lz1,dzm1,lz1,cdzm1,lz1)
-         call mxm(dztm1,lz1,cmatT,lz1,cdztm1,lz1)
-      endif
+        if(if3d)then
+          call mxm(cmat,lz1,dzm1,lz1,cdzm1(1,1,i),lz1)
+          call mxm(dztm1,lz1,cmatT,lz1,cdztm1(1,1,i),lz1)
+        endif
+      enddo
 
 c     Store original derivatives
       call copy(odxm1,dxm1,lx1*lx1)
@@ -362,7 +364,7 @@ c     Get all the 1d Legendre basis at Z for polynomial order NZ-1
       return
       end
 c---------------------------------------------------------------------
-      subroutine diffFilter1D(q)
+      subroutine diffFilter1D(q,ifld)
 c      
       implicit none
       include 'SIZE'
@@ -373,6 +375,7 @@ c
       real a,k
       real n
       integer i
+      integer ifld
 c
       n = lx1-1.0
 
@@ -380,12 +383,12 @@ c
       
       do i=1,lx1
          k = i-1
-         q(i,i) = (k/n)**(svvcut(ifield)/2.0)
+         q(i,i) = (k/n)**(svvcut(ifld)/2.0)
       enddo
       
       if(nid .eq. 0)then
          write(*,*)"---------Modal parameters for SVV filter---------"
-         write(*,*)"Field is",ifield
+         write(*,*)"Field is",ifld
          write(*,*)(q(i,i),i=1,lx1)
          write(*,*)"-------------------------------------------------"
       endif
@@ -476,8 +479,8 @@ C
             endif
             goto 1991
           endif
-1990      call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-          call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
+1990      call mxm  (cdxm1(1,1,ifield),lx1,u(1,1,1,e),lx1,dudr,nyz)
+          call mxm  (u(1,1,1,e),lx1,cdytm1(1,1,ifield),ly1,duds,ly1)
 
 1991       call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
@@ -485,8 +488,8 @@ C
               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
               call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
            endif
-           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
-           call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
+           call mxm  (cdxtm1(1,1,ifield),lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (tmp2,lx1,cdym1(1,1,ifield),ly1,tm2,ly1)
            call add2 (svvau(1,1,1,e),tm1,nxyz)
            call add2 (svvau(1,1,1,e),tm2,nxyz)
         else
@@ -501,11 +504,12 @@ C
             endif
             goto 1993
           endif
-1992       call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-           do 10 iz=1,lz1
-              call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
-   10      continue
-           call mxm     (u(1,1,1,e),nxy,cdztm1,lz1,dudt,lz1)
+1992       call mxm(cdxm1(1,1,ifield),lx1,u(1,1,1,e),lx1,dudr,nyz)
+          do iz=1,lz1
+           call mxm(u(1,1,iz,e),lx1,cdytm1(1,1,ifield),
+     $       ly1,duds(1,1,iz),ly1)
+          enddo
+          call mxm     (u(1,1,1,e),nxy,cdztm1(1,1,ifield),lz1,dudt,lz1)
 
 1993       call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
@@ -518,11 +522,12 @@ C
               call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
               call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
            endif
-           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
-           do 20 iz=1,lz1
-              call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
-   20      continue
-           call mxm  (tmp3,nxy,cdzm1,lz1,tm3,lz1)
+           call mxm  (cdxtm1(1,1,ifield),lx1,tmp1,lx1,tm1,nyz)
+           do iz=1,lz1
+             call mxm(tmp2(1,1,iz),lx1,cdym1(1,1,ifield),
+     $        ly1,tm2(1,1,iz),ly1)
+           enddo
+           call mxm  (tmp3,nxy,cdzm1(1,1,ifield),lz1,tm3,lz1)
            call add2 (svvau(1,1,1,e),tm1,nxyz)
            call add2 (svvau(1,1,1,e),tm2,nxyz)
            call add2 (svvau(1,1,1,e),tm3,nxyz)
@@ -567,14 +572,14 @@ c---------------------------------------------------------------------
         DO 320 IY=1,ly1
         DO 320 IX=1,lx1
            SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
-     $                          G1M1(IQ,IY,IZ,IE) * CDXTM1(IX,IQ)**2
+     $                          G1M1(IQ,IY,IZ,IE) * CDXTM1(IX,IQ,ifield)**2
   320   CONTINUE
         DO 340 IQ=1,ly1
         DO 340 IZ=1,lz1
         DO 340 IY=1,ly1
         DO 340 IX=1,lx1
            SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
-     $                          G2M1(IX,IQ,IZ,IE) * CDYTM1(IY,IQ)**2
+     $                          G2M1(IX,IQ,IZ,IE) * CDYTM1(IY,IQ,ifield)**2
   340   CONTINUE
         IF (LDIM.EQ.3) THEN
            DO 360 IQ=1,lz1
@@ -582,7 +587,7 @@ c---------------------------------------------------------------------
            DO 360 IY=1,ly1
            DO 360 IX=1,lx1
               SDPCM1(IX,IY,IZ,IE) = SDPCM1(IX,IY,IZ,IE) + 
-     $                             G3M1(IX,IY,IQ,IE) * CDZTM1(IZ,IQ)**2
+     $                          G3M1(IX,IY,IQ,IE) * CDZTM1(IZ,IQ,ifield)**2
   360      CONTINUE
 C
 C          Add cross terms if element is deformed.
@@ -591,29 +596,41 @@ C
               DO 600 IY=1,ly1,ly1-1
               DO 600 IZ=1,lz1,max(1,lz1-1)
               SDPCM1(1,IY,IZ,IE) = SDPCM1(1,IY,IZ,IE)
-     $            + G4M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDYTM1(IY,IY)
-     $            + G5M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDZTM1(IZ,IZ)
+     $            + G4M1(1,IY,IZ,IE) * CDXTM1(1,1,ifield)
+     $            * CDYTM1(IY,IY,ifield)
+     $            + G5M1(1,IY,IZ,IE) * CDXTM1(1,1,ifield)
+     $            * CDZTM1(IZ,IZ,ifield)
               SDPCM1(lx1,IY,IZ,IE) = SDPCM1(lx1,IY,IZ,IE)
-     $            + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDYTM1(IY,IY)
-     $            + G5M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDZTM1(IZ,IZ)
+     $            + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1,ifield)
+     $            * CDYTM1(IY,IY,ifield)
+     $            + G5M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1,ifield)
+     $            * CDZTM1(IZ,IZ,ifield)
   600         CONTINUE
               DO 700 IX=1,lx1,lx1-1
               DO 700 IZ=1,lz1,max(1,lz1-1)
                  SDPCM1(IX,1,IZ,IE) = SDPCM1(IX,1,IZ,IE)
-     $            + G4M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDXTM1(IX,IX)
-     $            + G6M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDZTM1(IZ,IZ)
+     $            + G4M1(IX,1,IZ,IE) * CDYTM1(1,1,ifield)
+     $            * CDXTM1(IX,IX,ifield)
+     $            + G6M1(IX,1,IZ,IE) * CDYTM1(1,1,ifield)
+     $            * CDZTM1(IZ,IZ,ifield)
                  SDPCM1(IX,ly1,IZ,IE) = SDPCM1(IX,ly1,IZ,IE)
-     $            + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDXTM1(IX,IX)
-     $            + G6M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDZTM1(IZ,IZ)
+     $            + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1,ifield)
+     $            * CDXTM1(IX,IX,ifield)
+     $            + G6M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1,ifield)
+     $            * CDZTM1(IZ,IZ,ifield)
   700         CONTINUE
               DO 800 IX=1,lx1,lx1-1
               DO 800 IY=1,ly1,ly1-1
                  SDPCM1(IX,IY,1,IE) = SDPCM1(IX,IY,1,IE)
-     $                + G5M1(IX,IY,1,IE) * CDZTM1(1,1)*CDXTM1(IX,IX)
-     $                + G6M1(IX,IY,1,IE) * CDZTM1(1,1)*CDYTM1(IY,IY)
+     $                + G5M1(IX,IY,1,IE) * CDZTM1(1,1,ifield)
+     $                * CDXTM1(IX,IX,ifield)
+     $                + G6M1(IX,IY,1,IE) * CDZTM1(1,1,ifield)
+     $                * CDYTM1(IY,IY,ifield)
                  SDPCM1(IX,IY,lz1,IE) = SDPCM1(IX,IY,lz1,IE)
-     $              + G5M1(IX,IY,lz1,IE)*CDZTM1(lz1,lz1)*CDXTM1(IX,IX)
-     $              + G6M1(IX,IY,lz1,IE)*CDZTM1(lz1,lz1)*CDYTM1(IY,IY)
+     $              + G5M1(IX,IY,lz1,IE) * CDZTM1(lz1,lz1,ifield)
+     $              * CDXTM1(IX,IX,ifield)
+     $              + G6M1(IX,IY,lz1,IE) * CDZTM1(lz1,lz1,ifield)
+     $              * CDYTM1(IY,IY,ifield)
   800         CONTINUE
            ENDIF
 
@@ -623,15 +640,19 @@ C
            IF (IFDFRM(IE)) THEN
               DO 602 IY=1,ly1,ly1-1
                  SDPCM1(1,IY,IZ,IE) = SDPCM1(1,IY,IZ,IE)
-     $                + G4M1(1,IY,IZ,IE) * CDXTM1(1,1)*CDYTM1(IY,IY)
+     $                + G4M1(1,IY,IZ,IE) * CDXTM1(1,1,ifield)
+     $                * CDYTM1(IY,IY,ifield)
                  SDPCM1(lx1,IY,IZ,IE) = SDPCM1(lx1,IY,IZ,IE)
-     $          + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1)*CDYTM1(IY,IY)
+     $          + G4M1(lx1,IY,IZ,IE) * CDXTM1(lx1,lx1,ifield)
+     $          * CDYTM1(IY,IY,ifield)
   602         CONTINUE
               DO 702 IX=1,lx1,lx1-1
                  SDPCM1(IX,1,IZ,IE) = SDPCM1(IX,1,IZ,IE)
-     $                + G4M1(IX,1,IZ,IE) * CDYTM1(1,1)*CDXTM1(IX,IX)
+     $                + G4M1(IX,1,IZ,IE) * CDYTM1(1,1,ifield)
+     $                * CDXTM1(IX,IX,ifield)
                  SDPCM1(IX,ly1,IZ,IE) = SDPCM1(IX,ly1,IZ,IE)
-     $          + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1)*CDXTM1(IX,IX)
+     $          + G4M1(IX,ly1,IZ,IE) * CDYTM1(ly1,ly1,ifield)
+     $          * CDXTM1(IX,IX,ifield)
   702         CONTINUE
            ENDIF
 
@@ -669,7 +690,8 @@ c
       N = lx1-1
       do e=1,nelt
          if (if3d) then
-            call local_grad3(ur,us,ut,u,N,e,cdxm1,cdxtm1)
+           call local_grad3(ur,us,ut,u,N,e,cdxm1(1,1,ifield)
+     $                      ,cdxtm1(1,1,ifield))
             do i=1,lxyz
                ux(i,e) = jacmi(i,e)*(ur(i)*rxm1(i,1,1,e)
      $                             + us(i)*sxm1(i,1,1,e)
@@ -683,7 +705,8 @@ c
             enddo
          else
             if (ifaxis) call setaxdy (ifrzer(e))
-            call local_grad2(ur,us,u,N,e,cdxm1,cdytm1)
+            call local_grad2(ur,us,u,N,e,cdxm1(1,1,ifield),
+     $                       cdytm1(1,1,ifield))
             do i=1,lxyz
                ux(i,e) =jacmi(i,e)*(ur(i)*rxm1(i,1,1,e)
      $                            + us(i)*sxm1(i,1,1,e) )
@@ -829,8 +852,8 @@ C
 
       do 100 e=1,nel
         IF (ldim.EQ.2) THEN
-          call mxm  (cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-          call mxm  (u(1,1,1,e),lx1,cdytm1,ly1,duds,ly1)
+          call mxm  (cdxm1(1,1,ifield),lx1,u(1,1,1,e),lx1,dudr,nyz)
+          call mxm  (u(1,1,1,e),lx1,cdytm1(1,1,ifield),ly1,duds,ly1)
 
           call col3 (tmp1,dudr,g1m1(1,1,1,e),nxyz)
           call col3 (tmp2,duds,g2m1(1,1,1,e),nxyz)
@@ -838,16 +861,17 @@ C
               call addcol3 (tmp1,duds,g4m1(1,1,1,e),nxyz)
               call addcol3 (tmp2,dudr,g4m1(1,1,1,e),nxyz)
            endif
-           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
-           call mxm  (tmp2,lx1,cdym1,ly1,tm2,ly1)
+           call mxm  (cdxtm1(1,1,ifield),lx1,tmp1,lx1,tm1,nyz)
+           call mxm  (tmp2,lx1,cdym1(1,1,ifield),ly1,tm2,ly1)
            call add2 (au(1,1,1,e),tm1,nxyz)
            call add2 (au(1,1,1,e),tm2,nxyz)
         else
-          call mxm(cdxm1,lx1,u(1,1,1,e),lx1,dudr,nyz)
-           do 10 iz=1,lz1
-              call mxm(u(1,1,iz,e),lx1,cdytm1,ly1,duds(1,1,iz),ly1)
-   10      continue
-           call mxm     (u(1,1,1,e),nxy,cdztm1,lz1,dudt,lz1)
+          call mxm(cdxm1(1,1,ifield),lx1,u(1,1,1,e),lx1,dudr,nyz)
+           do iz=1,lz1
+             call mxm(u(1,1,iz,e),lx1,cdytm1(1,1,ifield),ly1,
+     $        duds(1,1,iz),ly1)
+           enddo
+           call mxm     (u(1,1,1,e),nxy,cdztm1(1,1,ifield),lz1,dudt,lz1)
            call col3    (tmp1,dudr,g1m1(1,1,1,e),nxyz)
            call col3    (tmp2,duds,g2m1(1,1,1,e),nxyz)
            call col3    (tmp3,dudt,g3m1(1,1,1,e),nxyz)
@@ -859,11 +883,12 @@ C
               call addcol3 (tmp3,dudr,g5m1(1,1,1,e),nxyz)
               call addcol3 (tmp3,duds,g6m1(1,1,1,e),nxyz)
            endif
-           call mxm  (cdxtm1,lx1,tmp1,lx1,tm1,nyz)
-           do 20 iz=1,lz1
-              call mxm(tmp2(1,1,iz),lx1,cdym1,ly1,tm2(1,1,iz),ly1)
-   20      continue
-           call mxm  (tmp3,nxy,cdzm1,lz1,tm3,lz1)
+           call mxm  (cdxtm1(1,1,ifield),lx1,tmp1,lx1,tm1,nyz)
+           do iz=1,lz1
+             call mxm(tmp2(1,1,iz),lx1,cdym1(1,1,ifield),ly1,
+     $        tm2(1,1,iz),ly1)
+           enddo
+           call mxm  (tmp3,nxy,cdzm1(1,1,ifield),lz1,tm3,lz1)
            call add2 (au(1,1,1,e),tm1,nxyz)
            call add2 (au(1,1,1,e),tm2,nxyz)
            call add2 (au(1,1,1,e),tm3,nxyz)
