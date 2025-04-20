@@ -1230,7 +1230,7 @@ c-----------------------------------------------------------------------
 
       if(ix*iy*iz*e.eq.1)then
 
-        call deltals(t(1,1,1,1,ifld_tls-1),delta)
+        call deltals(t(1,1,1,1,ifld_cls-1),delta)
         call col2(delta,bm1,ntot)
         call dssum(delta,lx1,ly1,lz1)
         call col2(delta,binvm1,ntot)
@@ -1269,16 +1269,26 @@ c-----------------------------------------------------------------------
       real phi(1),delta(1)
       real eps
       real deltael
+      real phitemp
 
       ntot = lx1*ly1*lz1*nelv
 
       do i=1,ntot
-        eps = deltael(i,1,1,1)*eps_cls*4.0
-        if(abs(phi(i)).gt.eps)then
-          delta(i) = 0.0
-        else
-          delta(i) = 0.5*(1.0+cos(PI*phi(i)/eps))/eps
+        ! eps = deltael(i,1,1,1)*eps_cls*4.0
+        ! if(abs(phi(i)).gt.eps)then
+        !   delta(i) = 0.0
+        ! else
+        !   delta(i) = 0.5*(1.0+cos(PI*phi(i)/eps))/eps
+        ! endif
+        eps = deltael(i,1,1,1)*eps_cls
+        phitemp = 2.0*phi(i)-1.0
+        phitemp = min(1.0d0,phitemp)
+        phitemp = max(-1.0d0,phitemp)
+        phitemp = atanh(phitemp)
+        if(phitemp.ne.phitemp) then
+          write(*,*)"nan in delta function"
         endif
+        delta(i) = (1.0/4.0/eps)*(1.0/cosh(phitemp)**2.0)
       enddo
 
       return
