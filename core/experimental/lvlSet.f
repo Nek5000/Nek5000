@@ -1676,3 +1676,69 @@ c     field
 
       return
       end
+c---------------------------------------------------------------------
+      subroutine extrappr(pe,p,plag,plag1)
+C
+C     Pressure extrapolation
+C
+      INCLUDE 'SIZE'
+      INCLUDE 'SOLN'
+      INCLUDE 'TSTEP'
+
+      real  p    (lx2,ly2,lz2,1)
+     $     ,pe   (lx2,ly2,lz2,1)
+     $     ,plag (lx2,ly2,lz2,1)
+     $     ,plag1(lx2,ly2,lz2,1)
+
+      iord_ext = 1
+      istp_str = 10
+      ntot2 = lx2*ly2*lz2*nelv
+
+      dt0 = dtlag(1)
+      dt1 = dtlag(2)
+      dt2 = dtlag(3)
+
+      dts =  dt1 + dt2
+      dta =  dt0 / dt1
+      dtb =  dt1 / dt2
+      dtc =  dt0 / dt2
+      dtd =  dts / dt1
+      dte =  dt0 / dts
+C
+      if     (istep.le.istp_str.and. nbd.le.3 .or. iord_ext.eq.1) then
+
+         call copy(pe,  p,ntot2)
+
+      elseif (istep.gt.istp_str.and. nbd.le.3 .and. iord_ext.eq.2) then
+
+         const = dt0/dt1
+
+         do i=1,ntot2
+            pn            = p   (i,1,1,1)
+            pnm1          = plag(i,1,1,1)
+            pe  (i,1,1,1) = pn   + const*(pn  -pnm1)
+         enddo
+
+      elseif (istep.gt.10.and. nbd.le.3 .and. iord_ext.eq.3) then
+
+         const3=  dte*(dtb + dtc)
+         const2= -dta*(1.0 + dtb + dtc)
+         const1=  1.0 - const2 - const3
+
+         do i=1,ntot2
+            pn            = p    (i,1,1,1)
+            pnm1          = plag (i,1,1,1)
+            pnm2          = plag1(i,1,1,1)
+            pe  (i,1,1,1) = const1*pn + const2*pnm1 - const3*pnm2
+         enddo
+
+      elseif (nbd.gt.3) then
+         WRITE (6,*) 'Pressure extrapolation cannot be completed'
+         WRITE (6,*) 'Try a lower-order temporal scheme'
+         call exitt
+      endif
+
+  3   format(A,1p4e17.9,I4)
+
+      return
+      end
