@@ -7,11 +7,11 @@ c---------------------------------------------------------------------
       integer i
 
       svv_c0_fluid = 0.1
-      svvcut_fluid = (lx1-1.0)/2.0
+      svvcut_fluid = (lx1-1.0)
 
       do i=1,ldimt+1
         svv_c0(i) = 0.1
-        svvcut(i) = (lx1-1.0)/2.0
+        svvcut(i) = (lx1-1.0)
         ifnlsvv(i) = .false.
         ifupwindsvv(i) = .false.
 
