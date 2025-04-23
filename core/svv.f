@@ -934,9 +934,9 @@ c---------------------------------------------------------------------
         endif
       endif
 
-      svvx = auvx(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
-      svvy = auvy(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
-      svvz = auvz(ix,iy,iz,e) / vtrans(ix,iy,iz,e,1)
+      svvx = auvx(ix,iy,iz,e)
+      svvy = auvy(ix,iy,iz,e)
+      svvz = auvz(ix,iy,iz,e)
 
       return
       end
