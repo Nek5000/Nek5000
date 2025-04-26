@@ -1301,14 +1301,10 @@ c-----------------------------------------------------------------------
       include 'LVLSET'
       include 'CTIMER'
 
-      integer ftlsr       !freq of TLS re-distancing
-      integer fclsr       !freq of CLS re-initialization
+      real ftlsr       !freq of TLS re-distancing
+      real fclsr       !freq of CLS re-initialization
 
       integer ntot
-
-      integer nclsr
-      save nclsr
-      data nclsr /0/
 
       integer icalld2
       save icalld2
@@ -1317,12 +1313,19 @@ c-----------------------------------------------------------------------
       real glmin,glmax
       real dxmin,dxmax
 
+      real ftlsr_next
+      real fclsr_next
+      save ftlsr_next, fclsr_next
+      data ftlsr_next /0.0/
+      data fclsr_next /0.0/
+
       ntot = lx1*ly1*lz1*nelt
 
       ifcoupledls = .true.
 
       !re-distancing TLS every n steps
-      if(mod(istep,ftlsr).eq.0)then
+      if(time .ge. ftlsr_next)then
+        ftlsr_next = ftlsr_next + ftlsr
         call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
 
         call cadd(t(1,1,1,1,ifld_tlsr-1),-0.5,ntot)
@@ -1349,38 +1352,34 @@ c-----------------------------------------------------------------------
 
         call copy(t(1,1,1,1,ifld_tls-1),t(1,1,1,1,ifld_tlsr-1),ntot)
 
-        nclsr = 0
-
         ireset_ls = 0
       endif
 
-      call LS_CLS_driver(nclsr, fclsr)
+      if(time .ge. fclsr_next)then
+        fclsr_next = fclsr_next + fclsr
+        call LS_CLS_driver
+      endif
 
       return
       end
 c-----------------------------------------------------------------------
-      subroutine LS_CLS_driver(nclsr,fclsr)
+      subroutine LS_CLS_driver
       implicit none
       include 'SIZE'
       include 'TOTAL'
       include 'LVLSET'
       include 'CTIMER'
 
-      integer fclsr, nclsr
-
       integer ntot
 
       ntot = lx1*ly1*lz1*nelt
 
-      if(mod(nclsr,fclsr).eq.0)then
-        call copy(t(1,1,1,1,ifld_clsr-1),t(1,1,1,1,ifld_cls-1),ntot)
-        call ls_drive(ifld_clsr)
-        call copy(t(1,1,1,1,ifld_cls-1),t(1,1,1,1,ifld_clsr-1),ntot)
-        if(ifixCLSbdry .eq. 1)call fixCLSbdryI
-        ireset_ls = 0
-      endif
+      call copy(t(1,1,1,1,ifld_clsr-1),t(1,1,1,1,ifld_cls-1),ntot)
+      call ls_drive(ifld_clsr)
+      call copy(t(1,1,1,1,ifld_cls-1),t(1,1,1,1,ifld_clsr-1),ntot)
+      if(ifixCLSbdry .eq. 1)call fixCLSbdryI
+      ireset_ls = 0
 
-      nclsr = nclsr + 1
 
       return
       end
