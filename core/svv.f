@@ -63,7 +63,7 @@ c     Scale with advection velocity
       do i=1,ntot
          svvmu(i,1,1,1) = svvmu(i,1,1,1)**0.5
       enddo
-      
+
       call col2(svvmu,svvf,ntot)
       call cmult(svvmu,svv_c0(ifield),ntot)
       call copy(svvprec,svvmu,ntot)
@@ -397,7 +397,7 @@ c
       return
       end
 c---------------------------------------------------------------------
-      subroutine axhelm_svv (au,u,imsh,isd)
+      subroutine axhelm_svv_old (au,u,imsh,isd)
       include 'SIZE'
       include 'WZ'
       include 'DXYZ'
@@ -938,6 +938,114 @@ c---------------------------------------------------------------------
       svvy = auvy(ix,iy,iz,e)
       svvz = auvz(ix,iy,iz,e)
 
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine axhelm_svv (au,u,imsh,isd)
+      include 'SIZE'
+      include 'WZ'
+      include 'DXYZ'
+      include 'GEOM'
+      include 'MASS'
+      include 'INPUT'
+      include 'PARALLEL'
+      include 'CTIMER'
+      include 'TSTEP'
+      include 'SVV'
+      include 'SOLN'
+C
+      COMMON /FASTAX/ WDDX(LX1,LX1),WDDYT(LY1,LY1),WDDZT(LZ1,LZ1)
+      COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
+      LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
+C
+      REAL           AU    (LX1,LY1,LZ1,1)
+     $ ,             U     (LX1,LY1,LZ1,1)
+     $ ,             HELM1 (LX1,LY1,LZ1,1)
+     $ ,             HELM2 (LX1,LY1,LZ1,1)
+      COMMON /CTMPNEW/ DUDR  (LX1,LY1,LZ1,lelv)
+     $ ,             DUDS  (LX1,LY1,LZ1,lelv)
+     $ ,             DUDT  (LX1,LY1,LZ1,lelv)
+     $ ,             TMP1  (LX1,LY1,LZ1,lelv)
+     $ ,             TMP2  (LX1,LY1,LZ1,lelv)
+     $ ,             TMP3  (LX1,LY1,LZ1,lelv)
+
+      REAL           TM1   (LX1,LY1,LZ1)
+      REAL           TM2   (LX1,LY1,LZ1)
+      REAL           TM3   (LX1,LY1,LZ1)
+      REAL           DUAX  (LX1)
+      REAL           YSM1  (LX1)
+      EQUIVALENCE    (DUDR,TM1),(DUDS,TM2),(DUDT,TM3)
+
+      integer e
+
+      common /svvtemp/ svvau(lx1,ly1,lz1,lelt)
+      real svvau
+
+      common /svvtemp2/ gux(lx1,ly1,lz1,lelt),
+     $                  guy(lx1,ly1,lz1,lelt),
+     $                  guz(lx1,ly1,lz1,lelt),
+     $                  gdot(lx1,ly1,lz1,lelt)
+
+      naxhm = naxhm + 1
+      etime1 = dnekclock()
+
+      nel=nelt
+      if (imsh.eq.1) nel=nelv
+
+      NXY=lx1*ly1
+      NYZ=ly1*lz1
+      NXZ=lx1*lz1
+      NXYZ=lx1*ly1*lz1
+      NTOT=NXYZ*NEL
+
+      CALL RZERO (SVVAU,NTOT)
+
+      if(ifupwindsvv(ifield))then
+        call gradsvv(gux,guy,guz,u)
+        call svvbdryfix
+
+        if(if3d)then
+          call vdot3(gdot,gux,guy,guz,svvnx,svvny,svvnz,ntot)
+        else
+          call vdot2(gdot,gux,guy,svvnx,svvny,ntot)
+        endif
+      endif
+
+      do e=1,nel
+        call mxm(dxm1,lx1,u(1,1,1,e),lx1,dudr(1,1,1,e),nyz)
+      call mxm(u(1,1,1,e),lx1,dytm1,ly1,duds(1,1,1,e),ly1)
+      enddo
+
+      ! call opcolv(dudr,duds,dudt,bm1)
+      ! call opdssum(dudr,duds,dudt)
+      ! call opcolv(dudr,duds,dudt,binvm1)
+
+      do e=1,nel
+        call col3 (tmp1(1,1,1,e),dudr(1,1,1,e),g1m1(1,1,1,e),nxyz)
+        call col3 (tmp2(1,1,1,e),duds(1,1,1,e),g2m1(1,1,1,e),nxyz)
+        if (ifdfrm(e)) then
+          call addcol3 (tmp1(1,1,1,e),duds(1,1,1,e),g4m1(1,1,1,e),nxyz)
+          call addcol3 (tmp2(1,1,1,e),dudr(1,1,1,e),g4m1(1,1,1,e),nxyz)
+        endif
+      enddo
+
+      call opcolv(dudr,duds,dudt,bm1)
+      call opdssum(dudr,duds,dudt)
+      call opcolv(dudr,duds,dudt,binvm1)
+
+      do e=1,nel
+        call mxm  (dxtm1,lx1,tmp1(1,1,1,e),lx1,tm1,nyz)
+        call mxm  (tmp2(1,1,1,e),lx1,dym1,ly1,tm2,ly1)
+        call add2 (svvau(1,1,1,e),tm1,nxyz)
+        call add2 (svvau(1,1,1,e),tm2,nxyz)
+      enddo
+
+      call dsavg(svvau)
+
+      call col2(svvau,svvmu,ntot)
+
+      call add2(au,svvau,ntot)
+      taxhm=taxhm+(dnekclock()-etime1)
       return
       end
 
