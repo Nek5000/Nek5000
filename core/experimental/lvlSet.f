@@ -1224,7 +1224,9 @@ c-----------------------------------------------------------------------
       real stx,sty,stz,curv,delta
       real gamm
 
-      integer ntot
+      integer ntot,i
+      real glmax
+      real dmax
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -1239,6 +1241,13 @@ c-----------------------------------------------------------------------
         call opdiv(curv,clsnx,clsny,clsnz)
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
+
+        dmax = glmax(delta,ntot)
+        do i=1,ntot
+          if(delta(i,1,1,1)/dmax.lt.1e-1)then
+            curv(i,1,1,1) = 0.0
+          endif
+        enddo
 
         call col4(stx,curv,delta,clsnx,ntot)
         call col4(sty,curv,delta,clsny,ntot)
@@ -1319,12 +1328,18 @@ c-----------------------------------------------------------------------
       data ftlsr_next /0.0/
       data fclsr_next /0.0/
 
+      real starttime
+      save starttime
+      data starttime /0.0/
+
       ntot = lx1*ly1*lz1*nelt
 
       ifcoupledls = .true.
 
+      if(starttime.eq.0.0) starttime = time
+
       !re-distancing TLS every n steps
-      if(time .ge. ftlsr_next)then
+      if(time-starttime .ge. ftlsr_next)then
         ftlsr_next = ftlsr_next + ftlsr
         call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
 
@@ -1355,7 +1370,7 @@ c-----------------------------------------------------------------------
         ireset_ls = 0
       endif
 
-      if(time .ge. fclsr_next)then
+      if(time-starttime .ge. fclsr_next)then
         fclsr_next = fclsr_next + fclsr
         call LS_CLS_driver
       endif
