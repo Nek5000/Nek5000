@@ -1240,25 +1240,22 @@ c-----------------------------------------------------------------------
       if(ix*iy*iz*e.eq.1)then
 
         call deltals(t(1,1,1,1,ifld_cls-1),delta)
-        call col2(delta,bm1,ntot)
-        call dssum(delta,lx1,ly1,lz1)
-        call col2(delta,binvm1,ntot)
 
-        call cls_normals(clsnx,clsny,clsnz,ifld_tls)
+        call cls_normals_curv(clsnx,clsny,clsnz,ifld_tls)
+        call col3(stx,delta,clsnx,ntot)
+        call col3(sty,delta,clsny,ntot)
+        if(if3d) call col3(stz,delta,clsnz,ntot)
+
+        call prost(clsnx,delta)
+        call prost(clsny,delta)
+        if(if3d) call prost(clsnz,delta)
         call opdiv(curv,clsnx,clsny,clsnz)
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
 
-        ! dmax = glmax(delta,ntot)
-        ! do i=1,ntot
-        !   if(delta(i,1,1,1)/dmax.lt.1e-1)then
-        !     curv(i,1,1,1) = 0.0
-        !   endif
-        ! enddo
-
-        call col4(stx,curv,delta,clsnx,ntot)
-        call col4(sty,curv,delta,clsny,ntot)
-        if(if3d) call col4(stz,curv,delta,clsnz,ntot)
+        call col2(stx,curv,ntot)
+        call col2(sty,curv,ntot)
+        if(if3d) call col2(stz,curv,ntot)
 
         call cmult(stx,gamm,ntot)
         call cmult(sty,gamm,ntot)
@@ -1803,6 +1800,107 @@ c---------------------------------------------------------------------
       endif
 
       call col2(bq(1,1,1,1,ifld_tlsr-1),bm1,ntot)
+
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine cls_normals_curv(cnx,cny,cnz,ifld)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+
+      real cnx(lx1*ly1*lz1,1)
+      real cny(lx1*ly1*lz1,1)
+      real cnz(lx1*ly1*lz1,1)
+
+      common /cls_norm_temp/ cmag(lx1*ly1*lz1,lelv)
+      real cmag
+
+      integer ntot,ifld,i,ie
+
+      ntot = lx1*ly1*lz1*nelv
+
+      !must be calc from TLS field
+      do ie=1,nelv
+        call gradm11(cnx(1,ie),cny(1,ie),cnz(1,ie),
+     $   t(1,1,1,1,ifld-1),ie)
+      enddo
+
+      call col3(cmag,cnx,cnx,ntot)
+      call addcol3(cmag,cny,cny,ntot)
+      if(if3d) call addcol3(cmag,cnz,cnz,ntot)
+      call vsqrt(cmag,ntot)
+
+      do i=1,ntot
+        if(cmag(i,1).gt.1e-12)then
+          cnx(i,1) = cnx(i,1)/cmag(i,1)
+          cny(i,1) = cny(i,1)/cmag(i,1)
+          if(if3d)cnz(i,1) = cnz(i,1)/cmag(i,1)
+        else
+          cnx(i,1) = 0.0
+          cny(i,1) = 0.0
+          cnz(i,1) = 0.0
+        endif
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine prost(phin,delta)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      real phin(lx1,ly1,lz1,1)
+      real delta(lx1,ly1,lz1,1)
+
+      common /prostarr/ amat(lx1*ly1*lz1,6), 
+     $               amatt(6,lx1*ly1*lz1),
+     $               ata(6,6),
+     $               atai(6,6),
+     $               atp(6),
+     $               coeff(6),
+     $               phi(lx1*ly1*lz1),
+     $               indr(6),indv(6),ipiv(6),
+     $               rmult(6)
+
+      real amat,amatt,ata,atai,atp,coeff,phi
+      integer indr,indv,ipiv
+      real rmult
+
+      integer ntot,i,nxyz,ierr,ie
+      real dmax, vlmax
+
+      nxyz = lx1*ly1*lz1
+      ntot = lx1*ly1*lz1*nelv
+
+      do ie=1,nelv
+        dmax = vlmax(delta(1,1,1,ie),nxyz)
+        if(dmax.gt.0.01)then
+          call copy(phi,phin(1,1,1,ie),nxyz)
+          do i=1,nxyz
+            amat(i,1) = xm1(i,1,1,ie)**2.0
+            amat(i,2) = ym1(i,1,1,ie)**2.0
+            amat(i,3) = xm1(i,1,1,ie)*ym1(i,1,1,ie)
+            amat(i,4) = xm1(i,1,1,ie)
+            amat(i,5) = ym1(i,1,1,ie)
+            amat(i,6) = 1.0
+          enddo
+
+          call transpose(amatt,6,amat,nxyz)
+          call mxm(amatt,6,amat,nxyz,ata,6)
+          call mxm(amatt,6,phi,nxyz,atp,1)
+
+          call copy(atai,ata,6*6)
+          call gaujordf(atai,6,6,indr,indv,ipiv,ierr,rmult)
+
+          call mxm(atai,6,atp,6,coeff,1)
+
+          call mxm(amat,nxyz,coeff,6,phi,1)
+          call copy(phin(1,1,1,ie),phi,nxyz)
+        endif
+      enddo
 
       return
       end
