@@ -227,6 +227,8 @@ C----------------------------------------------------------------------
       if(ifld.eq.ifld_clsr) nsteps_in = nsteps_cls
       if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
 
+      iTLSRm = 1  !0 - conv based; 1 - src based
+
       do i=1,nsteps_in
         ! if(ifld.eq.ifld_tlsr)then
         !   dt = (0.5*(1.0 + tanh(2.0*PI*(3.*i/nsteps_in-0.5))))*dt_tls
@@ -556,7 +558,8 @@ C----------------------------------------------------------------------
       ntot = lx1*ly1*lz1*nelv
 
       !this is to add divergence and forcing term
-      call makeq_aux
+      if(ifield.eq.ifld_clsr) call makeq_aux
+      if(ifield.eq.ifld_tlsr) call makeq_tlsr
 
       !convop
       if(ifield.eq.ifld_clsr)then
@@ -1106,19 +1109,23 @@ c-----------------------------------------------------------------------
       !the local divergence should give a max of what this should be
       call cls_normals(clsnx,clsny,clsnz,ifld_tlsr)
 
-      do i=1,ntot
-        tb(i,1,1,1) = signls(i,1,1,1)
-      enddo
-      call col2(clsnx,tb,ntot)
-      call col2(clsny,tb,ntot)
-      if(if3d)call col2(clsnz,tb,ntot)
+      if(iTLSRm .eq. 0)then
+        do i=1,ntot
+          tb(i,1,1,1) = signls(i,1,1,1)
+        enddo
+        call col2(clsnx,tb,ntot)
+        call col2(clsny,tb,ntot)
+        if(if3d)call col2(clsnz,tb,ntot)
 
-      call bdry_tlsr_fix(clsnx,clsny,clsnz)
+        call bdry_tlsr_fix(clsnx,clsny,clsnz)
 
-      call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
+        call convect_new(ta,t(1,1,1,1,ifld_tlsr-1),.false.,
      $                    clsnx,clsny,clsnz,.false.)  
 
-      call invcol3(du,ta,bm1,ntot)
+        call invcol3(du,ta,bm1,ntot)
+      else
+        call rzero(du,ntot)
+      endif
 
       return
       end
@@ -1756,3 +1763,47 @@ C
 
       return
       end
+c---------------------------------------------------------------------
+      subroutine makeq_tlsr
+      INCLUDE 'SIZE'
+      INCLUDE 'TOTAL'
+      INCLUDE 'LVLSET'
+      
+      common /qtlsgrad/ gtx(lx1,ly1,lz1,lelv),
+     $                  gty(lx1,ly1,lz1,lelv), 
+     $                  gtz(lx1,ly1,lz1,lelv), 
+     $                  gt(lx1,ly1,lz1,lelv) 
+      real gtx,gty,gtz,gt
+
+      integer ntot,i
+
+      ntot = lx1*ly1*lz1*nelv
+
+      if(iTLSRm.eq.0)then
+        do i=1,ntot
+          bq(i,1,1,1,ifld_tlsr-1) = signls(i,1,1,1)
+        enddo
+      else
+        call gradm1(gtx,gty,gtz,t(1,1,1,1,ifld_tlsr-1))
+        call opcolv(gtx,gty,gtz,bm1)
+        call opdssum(gtx,gty,gtz)
+        call opcolv(gtx,gty,gtz,binvm1)
+
+        call col3(gt,gtx,gtx,ntot)
+        call addcol3(gt,gty,gty,ntot)
+        if(if3d) call addcol3(gt,gtz,gtz,ntot)
+        call vsqrt(gt,ntot)
+
+        call copy(bq(1,1,1,1,ifld_tlsr-1),gt,ntot)
+        call cadd(bq(1,1,1,1,ifld_tlsr-1),-1.0,ntot)
+        do i=1,ntot
+          bq(i,1,1,1,ifld_tlsr-1)=-bq(i,1,1,1,ifld_tlsr-1)*
+     $     signls(i,1,1,1)
+        enddo
+      endif
+
+      call col2(bq(1,1,1,1,ifld_tlsr-1),bm1,ntot)
+
+      return
+      end
+
