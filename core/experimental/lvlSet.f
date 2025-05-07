@@ -1249,12 +1249,12 @@ c-----------------------------------------------------------------------
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
 
-        dmax = glmax(delta,ntot)
-        do i=1,ntot
-          if(delta(i,1,1,1)/dmax.lt.1e-1)then
-            curv(i,1,1,1) = 0.0
-          endif
-        enddo
+        ! dmax = glmax(delta,ntot)
+        ! do i=1,ntot
+        !   if(delta(i,1,1,1)/dmax.lt.1e-1)then
+        !     curv(i,1,1,1) = 0.0
+        !   endif
+        ! enddo
 
         call col4(stx,curv,delta,clsnx,ntot)
         call col4(sty,curv,delta,clsny,ntot)
