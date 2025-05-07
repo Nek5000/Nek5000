@@ -227,7 +227,7 @@ C----------------------------------------------------------------------
       if(ifld.eq.ifld_clsr) nsteps_in = nsteps_cls
       if(ifld.eq.ifld_tlsr) nsteps_in = nsteps_tls
 
-      iTLSRm = 1  !0 - conv based; 1 - src based
+      iTLSRm = 0  !0 - conv based; 1 - src based
 
       do i=1,nsteps_in
         ! if(ifld.eq.ifld_tlsr)then
