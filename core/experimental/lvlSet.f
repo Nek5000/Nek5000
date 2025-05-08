@@ -1260,6 +1260,10 @@ c-----------------------------------------------------------------------
         call cmult(stx,gamm,ntot)
         call cmult(sty,gamm,ntot)
         if(if3d)call cmult(stz,gamm,ntot)
+
+        call opcolv(stx,sty,stz,bm1)
+        call opdssum(stx,sty,stz)
+        call opcolv(stx,sty,stz,binvm1)
       endif
 
       !BEWARE: forces are internally multiplied by density
