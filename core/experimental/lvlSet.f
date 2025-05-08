@@ -1855,15 +1855,15 @@ c---------------------------------------------------------------------
       real phin(lx1,ly1,lz1,1)
       real delta(lx1,ly1,lz1,1)
 
-      common /prostarr/ amat(lx1*ly1*lz1,6), 
-     $               amatt(6,lx1*ly1*lz1),
-     $               ata(6,6),
-     $               atai(6,6),
-     $               atp(6),
-     $               coeff(6),
+      common /prostarr/ amat(lx1*ly1*lz1,10), 
+     $               amatt(10,lx1*ly1*lz1),
+     $               ata(10,10),
+     $               atai(10,10),
+     $               atp(10),
+     $               coeff(10),
      $               phi(lx1*ly1*lz1),
-     $               indr(6),indv(6),ipiv(6),
-     $               rmult(6)
+     $               indr(10),indv(10),ipiv(10),
+     $               rmult(10)
 
       real amat,amatt,ata,atai,atp,coeff,phi
       integer indr,indv,ipiv
@@ -1871,6 +1871,7 @@ c---------------------------------------------------------------------
 
       integer ntot,i,nxyz,ierr,ie
       real dmax, vlmax
+      integer ncoeff
 
       nxyz = lx1*ly1*lz1
       ntot = lx1*ly1*lz1*nelv
@@ -1879,25 +1880,43 @@ c---------------------------------------------------------------------
         dmax = vlmax(delta(1,1,1,ie),nxyz)
         if(dmax.gt.0.01)then
           call copy(phi,phin(1,1,1,ie),nxyz)
-          do i=1,nxyz
-            amat(i,1) = xm1(i,1,1,ie)**2.0
-            amat(i,2) = ym1(i,1,1,ie)**2.0
-            amat(i,3) = xm1(i,1,1,ie)*ym1(i,1,1,ie)
-            amat(i,4) = xm1(i,1,1,ie)
-            amat(i,5) = ym1(i,1,1,ie)
-            amat(i,6) = 1.0
-          enddo
 
-          call transpose(amatt,6,amat,nxyz)
-          call mxm(amatt,6,amat,nxyz,ata,6)
-          call mxm(amatt,6,phi,nxyz,atp,1)
+          if(if3d)then
+            ncoeff = 10
+            do i=1,nxyz
+              amat(i,1) = xm1(i,1,1,ie)**2.0
+              amat(i,2) = ym1(i,1,1,ie)**2.0
+              amat(i,3) = zm1(i,1,1,ie)**2.0
+              amat(i,4) = xm1(i,1,1,ie)*ym1(i,1,1,ie)
+              amat(i,5) = ym1(i,1,1,ie)*zm1(i,1,1,ie)
+              amat(i,6) = zm1(i,1,1,ie)*xm1(i,1,1,ie)
+              amat(i,7) = xm1(i,1,1,ie)
+              amat(i,8) = ym1(i,1,1,ie)
+              amat(i,9) = zm1(i,1,1,ie)
+              amat(i,10) = 1.0
+            enddo
+          else
+            ncoeff = 6
+            do i=1,nxyz
+              amat(i,1) = xm1(i,1,1,ie)**2.0
+              amat(i,2) = ym1(i,1,1,ie)**2.0
+              amat(i,3) = xm1(i,1,1,ie)*ym1(i,1,1,ie)
+              amat(i,4) = xm1(i,1,1,ie)
+              amat(i,5) = ym1(i,1,1,ie)
+              amat(i,6) = 1.0
+            enddo
+          endif
 
-          call copy(atai,ata,6*6)
-          call gaujordf(atai,6,6,indr,indv,ipiv,ierr,rmult)
+          call transpose(amatt,ncoeff,amat,nxyz)
+          call mxm(amatt,ncoeff,amat,nxyz,ata,ncoeff)
+          call mxm(amatt,ncoeff,phi,nxyz,atp,1)
 
-          call mxm(atai,6,atp,6,coeff,1)
+          call copy(atai,ata,ncoeff*ncoeff)
+          call gaujordf(atai,ncoeff,ncoeff,indr,indv,ipiv,ierr,rmult)
 
-          call mxm(amat,nxyz,coeff,6,phi,1)
+          call mxm(atai,ncoeff,atp,ncoeff,coeff,1)
+
+          call mxm(amat,nxyz,coeff,ncoeff,phi,1)
           call copy(phin(1,1,1,ie),phi,nxyz)
         endif
       enddo
