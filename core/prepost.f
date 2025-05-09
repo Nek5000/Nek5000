@@ -2127,7 +2127,8 @@ c     check pressure format
       ! write global element numbering for this group
       if(nid.eq.pid0) then
         if(ifmpiio) then
-          ioff = iHeaderSize + 4 + nelB*isize
+          ioff = nelB ! cast to int*8
+          ioff = iHeaderSize + 4 + ioff*isize
           call byte_set_view (ioff,ifh_mbyte)
           call byte_write_mpi(lglist(1),lglist(0),-1,ifh_mbyte,ierr)
         else
