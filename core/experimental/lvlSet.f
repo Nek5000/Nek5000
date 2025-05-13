@@ -1287,6 +1287,10 @@ c-----------------------------------------------------------------------
       real eps
       real deltael
       real phitemp
+      real glmax
+      integer icalld
+      save icalld
+      data icalld /0/
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -1307,6 +1311,11 @@ c-----------------------------------------------------------------------
         endif
         delta(i) = (1.0/4.0/eps)*(1.0/cosh(phitemp)**2.0)
       enddo
+
+      if(icalld.eq.0)then
+        deltamax = glmax(delta,ntot)
+        icalld = 1
+      endif
 
       return
       end
@@ -1882,7 +1891,7 @@ c---------------------------------------------------------------------
 
       do ie=1,nelv
         dmax = vlmax(delta(1,1,1,ie),nxyz)
-        if(dmax.gt.0.01)then
+        if(dmax/deltamax.gt.0.01)then
           call copy(phi,phin(1,1,1,ie),nxyz)
 
           if(if3d)then
