@@ -537,6 +537,11 @@ C
       call col2(svvau,svvmu,ntot)
 
       call add2(au,svvau,ntot)
+
+      call col2(au,bm1,ntot)
+      call dssum(au,lx1,ly1,lz1)
+      call col2(au,binvm1,ntot)
+
       taxhm=taxhm+(dnekclock()-etime1)
       return
       end
