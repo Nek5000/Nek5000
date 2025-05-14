@@ -1241,7 +1241,7 @@ c-----------------------------------------------------------------------
 
         call deltals(t(1,1,1,1,ifld_cls-1),delta)
 
-        call cls_normals_curv(clsnx,clsny,clsnz,ifld_tls)
+        call cls_normals(clsnx,clsny,clsnz,ifld_tls)
         call col3(stx,delta,clsnx,ntot)
         call col3(sty,delta,clsny,ntot)
         if(if3d) call col3(stz,delta,clsnz,ntot)
