@@ -1246,9 +1246,9 @@ c-----------------------------------------------------------------------
         call col3(sty,delta,clsny,ntot)
         if(if3d) call col3(stz,delta,clsnz,ntot)
 
-        ! call prost(clsnx,delta)
-        ! call prost(clsny,delta)
-        ! if(if3d) call prost(clsnz,delta)
+        call prost(clsnx,delta)
+        call prost(clsny,delta)
+        if(if3d) call prost(clsnz,delta)
         call opdiv(curv,clsnx,clsny,clsnz)
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
