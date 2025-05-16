@@ -1938,12 +1938,14 @@ c---------------------------------------------------------------------
           call mxm(amatt,ncoeff,phi,nxyz,atp,1)
 
           call copy(atai,ata,ncoeff*ncoeff)
-          call gaujordf(atai,ncoeff,ncoeff,indr,indv,ipiv,ierr,rmult)
+          call gaujordfls(atai,ncoeff,ncoeff,indr,indv,ipiv,ierr,rmult)
 
-          call mxm(atai,ncoeff,atp,ncoeff,coeff,1)
+          if(ierr.eq.0)then
+            call mxm(atai,ncoeff,atp,ncoeff,coeff,1)
 
-          call mxm(amat,nxyz,coeff,ncoeff,phi,1)
-          call copy(phin(1,1,1,ie),phi,nxyz)
+            call mxm(amat,nxyz,coeff,ncoeff,phi,1)
+            call copy(phin(1,1,1,ie),phi,nxyz)
+          endif
         endif
       enddo
 
@@ -2010,6 +2012,122 @@ c---------------------------------------------------------------------
         endif
       enddo
 
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gaujordfls(a,m,n,indr,indc,ipiv,ierr,rmult)
+C
+C     Gauss-Jordan matrix inversion with full pivoting
+c
+c     Num. Rec. p. 30, 2nd Ed., Fortran
+c
+C
+C     a     is an m x n matrix
+C     rmult is a  work array of dimension m
+C
+c
+      real a(m,n),rmult(m)
+      integer indr(m),indc(n),ipiv(n)
+
+c     call outmat(a,m,n,'ab4',n)
+c     do i=1,m
+c        write(6,1) (a(i,j),j=1,n)
+c     enddo
+c 1   format('mat: ',1p6e12.4)
+
+      ierr = 0
+      eps = 1.e-6
+      call izero(ipiv,m)
+
+      do k=1,m
+         amx=0.
+         do i=1,m                    ! Pivot search
+            if (ipiv(i).ne.1) then
+               do j=1,m
+                  if (ipiv(j).eq.0) then
+                    if (abs(a(i,j)).ge.amx) then
+                       amx = abs(a(i,j))
+                       ir  = i
+                       jc  = j
+                    endif
+                 elseif (ipiv(j).gt.1) then
+                    ierr = -ipiv(j)
+                    return
+                 endif
+              enddo
+           endif
+        enddo
+        ipiv(jc) = ipiv(jc) + 1
+c
+c       Swap rows
+        if (ir.ne.jc) then
+           do j=1,n
+              tmp     = a(ir,j)
+              a(ir,j) = a(jc,j)
+              a(jc,j) = tmp
+           enddo
+        endif
+        indr(k)=ir
+        indc(k)=jc
+c       write(6 ,*) k,' Piv:',jc,a(jc,jc)
+c       write(28,*) k,' Piv:',jc,a(jc,jc)
+        if (abs(a(jc,jc)).lt.eps) then
+           ! write(*,*) 'small Gauss Jordan Piv:',jc,a(jc,jc)
+           ! write(*,*) 'small Gauss Jordan Piv:',jc,a(jc,jc)
+           ierr = jc
+           return
+        endif
+        piv = 1./a(jc,jc)
+        a(jc,jc)=1.
+        do j=1,n
+           a(jc,j) = a(jc,j)*piv
+        enddo
+c
+        do j=1,n
+           work    = a(jc,j)
+           a(jc,j) = a(1 ,j)
+           a(1 ,j) = work
+        enddo
+        do i=2,m
+           rmult(i) = a(i,jc)
+           a(i,jc)  = 0.
+        enddo
+c
+        do j=1,n
+        do i=2,m
+           a(i,j) = a(i,j) - rmult(i)*a(1,j)
+        enddo
+        enddo
+c
+        do j=1,n
+           work    = a(jc,j)
+           a(jc,j) = a(1 ,j)
+           a(1 ,j) = work
+        enddo
+c
+c       do i=1,m
+c          if (i.ne.jc) then
+c             rmult   = a(i,jc)
+c             a(i,jc) = 0.
+c             do j=1,n
+c                a(i,j) = a(i,j) - rmult*a(jc,j)
+c             enddo
+c          endif
+c       enddo
+c
+      enddo
+c
+c     Unscramble matrix
+      do j=m,1,-1
+         if (indr(j).ne.indc(j)) then
+            do i=1,m
+               tmp=a(i,indr(j))
+               a(i,indr(j))=a(i,indc(j))
+               a(i,indc(j))=tmp
+            enddo
+         endif
+      enddo
+c
       return
       end
 
