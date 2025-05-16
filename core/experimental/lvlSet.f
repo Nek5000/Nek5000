@@ -1253,6 +1253,8 @@ c-----------------------------------------------------------------------
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
 
+        call clearfarfieldcurv(curv,delta)
+
         call col2(stx,curv,ntot)
         call col2(sty,curv,ntot)
         if(if3d) call col2(stz,curv,ntot)
@@ -1349,6 +1351,13 @@ c-----------------------------------------------------------------------
       save starttime
       data starttime /0.0/
 
+      common /sforce/ stx(lx1,ly1,lz1,lelv),
+     $                sty(lx1,ly1,lz1,lelv), 
+     $                stz(lx1,ly1,lz1,lelv), 
+     $                curv(lx1,ly1,lz1,lelv),
+     $                delta(lx1,ly1,lz1,lelv)
+      real stx,sty,stz,curv,delta
+
       ntot = lx1*ly1*lz1*nelt
 
       ifcoupledls = .true.
@@ -1359,6 +1368,10 @@ c-----------------------------------------------------------------------
       if(time-starttime .ge. ftlsr_next)then
         ftlsr_next = ftlsr_next + ftlsr
         call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
+
+        call deltals(t(1,1,1,1,ifld_tlsr-1),delta)
+
+        call clearfarfield(t(1,1,1,1,ifld_tlsr-1),delta)
 
         call cadd(t(1,1,1,1,ifld_tlsr-1),-0.5,ntot)
 
@@ -1891,7 +1904,7 @@ c---------------------------------------------------------------------
 
       do ie=1,nelv
         dmax = vlmax(delta(1,1,1,ie),nxyz)
-        if(dmax/deltamax.gt.0.01)then
+        if(dmax/deltamax.gt.0.001)then
           call copy(phi,phin(1,1,1,ie),nxyz)
 
           if(if3d)then
@@ -1936,4 +1949,71 @@ c---------------------------------------------------------------------
 
       return
       end
+c---------------------------------------------------------------------
+      subroutine clearfarfield(phi,delta)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real phi(1), delta(1)
+
+      integer ntot
+
+      integer icalld
+      save icalld
+      data icalld /0/
+      real glmax
+      real dgmax
+      save dgmax
+
+      ntot = lx1*ly1*lz1*nelt
+
+      if(icalld.eq.0)then
+        dgmax = glmax(delta,ntot)
+        icalld = 1
+      endif
+
+      do i=1,ntot
+        if(delta(i)/dgmax .lt. 0.001)then
+          if(phi(i).gt.0.5) phi(i) = 1.0
+          if(phi(i).lt.0.5) phi(i) = 0.0
+        endif
+      enddo
+
+      return
+      end
+c---------------------------------------------------------------------
+      subroutine clearfarfieldcurv(curv,delta)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real curv(1), delta(1)
+
+      integer ntot
+
+      integer icalld
+      save icalld
+      data icalld /0/
+      real glmax
+      real dgmax
+      save dgmax
+
+      ntot = lx1*ly1*lz1*nelt
+
+      if(icalld.eq.0)then
+        dgmax = glmax(delta,ntot)
+        icalld = 1
+      endif
+
+      do i=1,ntot
+        if(delta(i)/dgmax .lt. 0.001)then
+          curv(i) = 0.0
+        endif
+      enddo
+
+      return
+      end
+
+
+
+
 
