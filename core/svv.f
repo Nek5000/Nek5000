@@ -538,9 +538,11 @@ C
 
       call add2(au,svvau,ntot)
 
-      call col2(au,bm1,ntot)
-      call dssum(au,lx1,ly1,lz1)
-      call col2(au,binvm1,ntot)
+      !dssum does not work well across elements
+      !with vastly different size for tlsr
+      ! call col2(au,bm1,ntot)
+      ! call dssum(au,lx1,ly1,lz1)
+      ! call col2(au,binvm1,ntot)
 
       taxhm=taxhm+(dnekclock()-etime1)
       return
@@ -902,9 +904,9 @@ C
 
       call col2(au,svvmu,ntot)
 
-      call col2(au,bm1,ntot)
-      call dssum(au,lx1,ly1,lz1)
-      call col2(au,binvm1,ntot)
+      ! call col2(au,bm1,ntot)
+      ! call dssum(au,lx1,ly1,lz1)
+      ! call col2(au,binvm1,ntot)
 
       taxhm=taxhm+(dnekclock()-etime1)
       return
