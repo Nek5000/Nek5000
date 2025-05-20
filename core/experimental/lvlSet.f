@@ -1242,10 +1242,6 @@ c-----------------------------------------------------------------------
         call deltals(t(1,1,1,1,ifld_cls-1),delta)
 
         call cls_normals(clsnx,clsny,clsnz,ifld_tls)
-        !Reverse the sign for correct computation of sf force
-        call cmult(clsnx,-1.0,ntot)
-        call cmult(clsny,-1.0,ntot)
-        if(if3d) call cmult(clsnz,-1.0,ntot)
         
         call col3(stx,delta,clsnx,ntot)
         call col3(sty,delta,clsny,ntot)
@@ -1271,6 +1267,10 @@ c-----------------------------------------------------------------------
         call opcolv(stx,sty,stz,bm1)
         call opdssum(stx,sty,stz)
         call opcolv(stx,sty,stz,binvm1)
+        !Reverse the sign for correct computation of sf force
+        call cmult(stx,-1.0,ntot)
+        call cmult(sty,-1.0,ntot)
+        if(if3d) call cmult(stz,-1.0,ntot)
       endif
 
       !BEWARE: forces are internally multiplied by density
