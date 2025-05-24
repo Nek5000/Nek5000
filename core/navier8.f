@@ -2445,7 +2445,7 @@ c     Assign a number (rank) to each unique edge
       do i=1,4*nel
          enum(i,1) = etuple(3,i)
       enddo
-      n_unique_edges = iglmax(enum,4*nel)
+      n_unique_edges = i8glmax(enum,4*nel)
 
 c= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 c     Assign global vertex numbers to SEM nodes on each edge
