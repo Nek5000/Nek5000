@@ -1247,9 +1247,9 @@ c-----------------------------------------------------------------------
         call col3(sty,delta,clsny,ntot)
         if(if3d) call col3(stz,delta,clsnz,ntot)
 
-        call prost(clsnx,delta)
-        call prost(clsny,delta)
-        if(if3d) call prost(clsnz,delta)
+        ! call prost(clsnx,delta)
+        ! call prost(clsny,delta)
+        ! if(if3d) call prost(clsnz,delta)
         call opdiv(curv,clsnx,clsny,clsnz)
         call dssum(curv,lx1,ly1,lz1)
         call col2(curv,binvm1,ntot)
@@ -1726,7 +1726,7 @@ c     field
       return
       end
 c---------------------------------------------------------------------
-      subroutine extrappr(pe,p,plag,plag1)
+      subroutine extrappr(pe,p,plag,plag1,iord_ext)
 C
 C     Pressure extrapolation
 C
@@ -1739,8 +1739,7 @@ C
      $     ,plag (lx2,ly2,lz2,1)
      $     ,plag1(lx2,ly2,lz2,1)
 
-      iord_ext = 1
-      istp_str = 10
+      istp_str = 2
       ntot2 = lx2*ly2*lz2*nelv
 
       dt0 = dtlag(1)
