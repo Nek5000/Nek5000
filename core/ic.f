@@ -2674,7 +2674,8 @@ c-----------------------------------------------------------------------
            if(i.eq.nid) nelr = nelr + 1
         enddo
         nelBr = igl_running_sum(nelr) - nelr 
-        offs = offs0 + nelBr*isize
+        offs = nelBr ! cast to int*8
+        offs = offs0 + offs*isize
 
         call addfid(hname,fid0r)
         call byte_open_mpi(hname,ifh_mbyte,.true.,ierr)
