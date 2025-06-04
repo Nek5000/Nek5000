@@ -43,12 +43,12 @@ c
          ! compute explicit contributions bfx,bfy,bfz 
          call makef 
 
-c         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
-c         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
-c         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
-         call copy (vx_e,vx,ntot1)
-         call copy (vy_e,vy,ntot1)
-         if (if3d) call copy (vz_e,vz,ntot1)
+         call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
+         call sumab(vy_e,vy,vylag,ntot1,ab,nab)
+         if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+         ! call copy (vx_e,vx,ntot1)
+         ! call copy (vy_e,vy,ntot1)
+         ! if (if3d) call copy (vz_e,vz,ntot1)
 
       else
 
