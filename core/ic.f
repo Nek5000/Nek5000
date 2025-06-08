@@ -1948,6 +1948,8 @@ c-----------------------------------------------------------------------
       real*4 w2
 
       integer vi(2+lrbs_loc,lelt) ! [nid,iel,(data real*8)] x nelt
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
 
       integer e,ei
       logical iskip
@@ -2000,6 +2002,7 @@ c-----------------------------------------------------------------------
 #ifdef MPI
             ! redistribute data based on the current el-proc map
             if (ifiocrystal) then
+              etime0 = dnekclock_sync()
               ! pack buffer
               l = 1
               iloc = 1
@@ -2010,16 +2013,20 @@ c-----------------------------------------------------------------------
                  iloc = iloc+1
                  l = l+nxyzr
               enddo
+              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
 
               ! crystal route nr real items of size lrs to rank vi(key,1:nr)
               nrmax = lelt
               n = nelrr
               li = 2+lrbs_loc ! offset
               key = 1
+              etime0 = dnekclock_sync()
               call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
      &                 vl,0,vr,0,key)
+              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
 
               ! unpack buffer
+              etime0 = dnekclock_sync()
               ierr = 0
               if (n.gt.nrmax) then
                  ierr = 1
@@ -2031,6 +2038,7 @@ c-----------------------------------------------------------------------
                  call icopy (wk(l),vi(3,iloc),nxyzr)
               enddo
               call nekgsync()
+              cr_etime3 = cr_etime3 + dnekclock() - etime0
 
             else
 
@@ -2124,6 +2132,8 @@ c-----------------------------------------------------------------------
       real*4 w2
 
       integer vi(2+lrbs_loc,lelt) ! [nid,iel,(data real*8)] x nelt
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
 
       integer e,ei
       integer*8 i8tmp
@@ -2173,6 +2183,7 @@ c-----------------------------------------------------------------------
 #ifdef MPI
             ! redistribute data based on the current el-proc map
             if (ifiocrystal) then
+              etime0 = dnekclock_sync()
               ! pack buffer
               l = 1
               iloc = 1
@@ -2183,16 +2194,20 @@ c-----------------------------------------------------------------------
                  iloc = iloc+1
                  l = l+nxyzr
               enddo
+              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
 
               ! crystal route nr real items of size lrs to rank vi(key,1:nr)
               nrmax = lelt
               n = nelrr
               li = 2+lrbs_loc ! offset
               key = 1
+              etime0 = dnekclock_sync()
               call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
      &                 vl,0,vr,0,key)
+              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
 
               ! unpack buffer
+              etime0 = dnekclock_sync()
               ierr = 0
               if (n.gt.nrmax) then
                  ierr = 1
@@ -2203,6 +2218,7 @@ c-----------------------------------------------------------------------
                  l = (iel-1) * nxyzr + 1
                  call icopy (wk(l),vi(3,iloc),nxyzr)
               enddo
+              cr_etime3 = cr_etime3 + dnekclock_sync() - etime0
               call nekgsync()
 
             else
@@ -2486,6 +2502,9 @@ c
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
+
       integer   disp_unit
       integer*8 win_size
 
@@ -2493,6 +2512,9 @@ c
 #ifdef MPI
       if (ifiocrystal) then
         call fgslib_crystal_setup(cr_mfi,nekcomm,np)
+        cr_etime1 = 0.0
+        cr_etime2 = 0.0
+        cr_etime3 = 0.0
       else
         disp_unit = 4
         win_size  = int(disp_unit,8)*size(wk)
@@ -2634,8 +2656,13 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
 #ifdef MPI
-      if (ifiocrystal) call fgslib_crystal_free(cr_mfi)
+      if (ifiocrystal) then
+        if(nio.eq.0) write(6,31) cr_etime1,cr_etime2,cr_etime3
+        call fgslib_crystal_free(cr_mfi)
+      endif
 #endif
+
+  31  format(3x,'mfi:pack/cr/unpack :',3(1e9.2))
 
       return
       end
