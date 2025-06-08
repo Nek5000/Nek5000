@@ -1976,7 +1976,7 @@ c-----------------------------------------------------------------------
       endif
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
-      if (ifiocrystal)
+      if (ifcrrs)
      $  call lim_chk(nxyzr,lrbs_loc,'     ','     ','mfi_gets c')
 
       call nekgsync()
@@ -2001,7 +2001,7 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             ! redistribute data based on the current el-proc map
-            if (ifiocrystal) then
+            if (ifcrrs) then
               etime0 = dnekclock_sync()
               ! pack buffer
               l = 1
@@ -2158,7 +2158,7 @@ c-----------------------------------------------------------------------
       endif
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
-      if (ifiocrystal)
+      if (ifcrrs)
      $  call lim_chk(nxyzr,lrbs_loc,'     ','     ','mfi_getv c')
 
       call nekgsync()
@@ -2182,7 +2182,7 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             ! redistribute data based on the current el-proc map
-            if (ifiocrystal) then
+            if (ifcrrs) then
               etime0 = dnekclock_sync()
               ! pack buffer
               l = 1
@@ -2508,9 +2508,8 @@ c
       integer   disp_unit
       integer*8 win_size
 
-      ifiocrystal = .true. ! use crystal router to distribute data
 #ifdef MPI
-      if (ifiocrystal) then
+      if (ifcrrs) then
         call fgslib_crystal_setup(cr_mfi,nekcomm,np)
         cr_etime1 = 0.0
         cr_etime2 = 0.0
@@ -2656,7 +2655,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
 
 #ifdef MPI
-      if (ifiocrystal) then
+      if (ifcrrs) then
         if(nio.eq.0) write(6,31) cr_etime1,cr_etime2,cr_etime3
         call fgslib_crystal_free(cr_mfi)
       endif
