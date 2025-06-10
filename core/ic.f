@@ -2526,6 +2526,7 @@ c
      $                        commrs,rsH,ierr)
 
           if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+          call rzero(wk,lwk) ! avoid unexpected FE_INVALID
         endif
       endif
 #endif
