@@ -1942,9 +1942,14 @@ c-----------------------------------------------------------------------
 
       real*4 wk(2*lwk) ! message buffer
 
-      parameter(lrbs=20*lx1*ly1*lz1*lelt)
+      parameter(lrbs_loc=20*lx1*ly1*lz1)
+      parameter(lrbs=lrbs_loc*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
+
+      integer vi(2+lrbs_loc,lelt) ! [nid,iel,(data real*8)] x nelt
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
 
       integer e,ei
       logical iskip
@@ -1971,6 +1976,8 @@ c-----------------------------------------------------------------------
       endif
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_gets b')
+      if (ifcrrs)
+     $  call lim_chk(nxyzr,lrbs_loc,'     ','     ','mfi_gets c')
 
       call nekgsync()
 
@@ -1994,19 +2001,62 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             ! redistribute data based on the current el-proc map
-            l = 1
-            call MPI_Win_lock_all(0,rsH,ierr)
-            do e = k+1,k+nelrr
-               jnid = gllnid(er(e))                ! where is er(e) now?
-               jeln = gllel(er(e))
+            if (ifcrrs) then
+              etime0 = dnekclock_sync()
+              ! pack buffer
+              l = 1
+              iloc = 1
+              do e = k+1,k+nelrr
+                 vi(1,iloc) = gllnid(er(e))
+                 vi(2,iloc) = er(e)
+                 call icopy(vi(3,iloc),w2(l),nxyzr)
+                 iloc = iloc+1
+                 l = l+nxyzr
+              enddo
+              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
 
-               disp = (jeln-1) * int(nxyzr,8)
-               call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
-     $                      disp,nxyzr,MPI_REAL4,rsH,ierr)
-               l = l+nxyzr
-            enddo
-            call MPI_Win_unlock_all(rsH,ierr)
-            call nekgsync()
+              ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+              nrmax = lelt
+              n = nelrr
+              li = 2+lrbs_loc ! offset
+              key = 1
+              etime0 = dnekclock_sync()
+              call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
+     &                 vl,0,vr,0,key)
+              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+
+              ! unpack buffer
+              etime0 = dnekclock_sync()
+              ierr = 0
+              if (n.gt.nrmax) then
+                 ierr = 1
+                 goto 100
+              endif
+              do iloc = 1,n
+                 iel = gllel(vi(2,iloc))
+                 l = (iel-1) * nxyzr + 1
+                 call icopy (wk(l),vi(3,iloc),nxyzr)
+              enddo
+              call nekgsync()
+              cr_etime3 = cr_etime3 + dnekclock() - etime0
+
+            else
+
+              l = 1
+              call MPI_Win_lock_all(0,rsH,ierr)
+              do e = k+1,k+nelrr
+                 jnid = gllnid(er(e))                ! where is er(e) now?
+                 jeln = gllel(er(e))
+
+                 disp = (jeln-1) * int(nxyzr,8)
+                 call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                        disp,nxyzr,MPI_REAL4,rsH,ierr)
+                 l = l+nxyzr
+              enddo
+              call MPI_Win_unlock_all(rsH,ierr)
+              call nekgsync()
+
+            endif
 #endif
             k  = k + nelrr
          enddo
@@ -2076,9 +2126,14 @@ c-----------------------------------------------------------------------
       logical iskip
 
       real*4 wk(2*lwk) ! message buffer
-      parameter(lrbs=20*lx1*ly1*lz1*lelt)
+      parameter(lrbs_loc=20*lx1*ly1*lz1)
+      parameter(lrbs=lrbs_loc*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
+
+      integer vi(2+lrbs_loc,lelt) ! [nid,iel,(data real*8)] x nelt
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
 
       integer e,ei
       integer*8 i8tmp
@@ -2103,6 +2158,8 @@ c-----------------------------------------------------------------------
       endif
       call bcast(nelrr,4)
       call lim_chk(nxyzr*nelrr,lrbs,'     ','     ','mfi_getv b')
+      if (ifcrrs)
+     $  call lim_chk(nxyzr,lrbs_loc,'     ','     ','mfi_getv c')
 
       call nekgsync()
 
@@ -2125,19 +2182,62 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             ! redistribute data based on the current el-proc map
-            l = 1
-            call MPI_Win_lock_all(0,rsH,ierr)
-            do e = k+1,k+nelrr
-               jnid = gllnid(er(e))                ! where is er(e) now?
-               jeln = gllel(er(e))
+            if (ifcrrs) then
+              etime0 = dnekclock_sync()
+              ! pack buffer
+              l = 1
+              iloc = 1
+              do e = k+1,k+nelrr
+                 vi(1,iloc) = gllnid(er(e))
+                 vi(2,iloc) = er(e)
+                 call icopy(vi(3,iloc),w2(l),nxyzr)
+                 iloc = iloc+1
+                 l = l+nxyzr
+              enddo
+              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
 
-               disp = (jeln-1) * int(nxyzr,8)
-               call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
-     $                      disp,nxyzr,MPI_REAL4,rsH,ierr)
-               l = l+nxyzr
-            enddo
-            call MPI_Win_unlock_all(rsH,ierr)
-            call nekgsync()
+              ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+              nrmax = lelt
+              n = nelrr
+              li = 2+lrbs_loc ! offset
+              key = 1
+              etime0 = dnekclock_sync()
+              call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
+     &                 vl,0,vr,0,key)
+              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+
+              ! unpack buffer
+              etime0 = dnekclock_sync()
+              ierr = 0
+              if (n.gt.nrmax) then
+                 ierr = 1
+                 goto 100
+              endif
+              do iloc = 1,n
+                 iel = gllel(vi(2,iloc))
+                 l = (iel-1) * nxyzr + 1
+                 call icopy (wk(l),vi(3,iloc),nxyzr)
+              enddo
+              cr_etime3 = cr_etime3 + dnekclock_sync() - etime0
+              call nekgsync()
+
+            else
+
+              l = 1
+              call MPI_Win_lock_all(0,rsH,ierr)
+              do e = k+1,k+nelrr
+                 jnid = gllnid(er(e))                ! where is er(e) now?
+                 jeln = gllel(er(e))
+
+                 disp = (jeln-1) * int(nxyzr,8)
+                 call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                        disp,nxyzr,MPI_REAL4,rsH,ierr)
+                 l = l+nxyzr
+              enddo
+              call MPI_Win_unlock_all(rsH,ierr)
+              call nekgsync()
+
+            endif
 #endif
             k  = k + nelrr
          enddo
@@ -2402,21 +2502,32 @@ c
 
       common /nekmpi/ nid_,np_,nekcomm,nekgroup,nekreal
 
+      real*8 cr_etime1,cr_etime2,cr_etime3,etime0,dnekclock_sync
+      common /cr_rst_tmr/ cr_etime1,cr_etime2,cr_etime3
+
       integer   disp_unit
       integer*8 win_size
 
 #ifdef MPI
-      disp_unit = 4 
-      win_size  = int(disp_unit,8)*size(wk)
-      if (commrs .eq. MPI_COMM_NULL) then
-        call mpi_comm_dup(nekcomm,commrs,ierr)
-        call MPI_Win_create(wk,
-     $                      win_size,
-     $                      disp_unit,
-     $                      MPI_INFO_NULL,
-     $                      commrs,rsH,ierr)
+      if (ifcrrs) then
+        call fgslib_crystal_setup(cr_mfi,nekcomm,np)
+        cr_etime1 = 0.0
+        cr_etime2 = 0.0
+        cr_etime3 = 0.0
+      else
+        disp_unit = 4
+        win_size  = int(disp_unit,8)*size(wk)
+        if (commrs .eq. MPI_COMM_NULL) then
+          call mpi_comm_dup(nekcomm,commrs,ierr)
+          call MPI_Win_create(wk,
+     $                        win_size,
+     $                        disp_unit,
+     $                        MPI_INFO_NULL,
+     $                        commrs,rsH,ierr)
 
-        if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+          if (ierr .ne. 0 ) call exitti('MPI_Win_allocate failed!$',0)
+          call rzero(wk,lwk) ! avoid unexpected FE_INVALID
+        endif
       endif
 #endif
 
@@ -2543,6 +2654,15 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 
       if (ifaxis) call axis_interp_ic(pm1)      ! Interpolate to axi mesh
       if (ifgetp) call map_pm1_to_pr(pm1,ifile) ! Interpolate pressure
+
+#ifdef MPI
+      if (ifcrrs) then
+        if(nio.eq.0) write(6,31) cr_etime1,cr_etime2,cr_etime3
+        call fgslib_crystal_free(cr_mfi)
+      endif
+#endif
+
+  31  format(3x,'mfi:pack/cr/unpack :',3(1e9.2))
 
       return
       end
