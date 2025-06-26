@@ -234,4 +234,36 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      real function enclosedVolInt(psi,a,direc)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      include 'LVLSET'
+
+      common /ls_err_arrs/ lstemp(lx1,ly1,lz1,lelv)
+      real lstemp
+
+      integer ntot,i
+      real glsum
+
+      integer direc
+      real psi(1),a(1)
+
+      ntot = lx1*ly1*lz1*nelv
+
+      if(direc.lt.0)then
+        call copy(lstemp,psi,ntot)
+        call cmult(lstemp,-1.0,ntot)
+        call cadd(lstemp,1.0,ntot)
+      else
+        call copy(lstemp,psi,ntot)
+      endif
+
+      call col2(lstemp,bm1,ntot)
+      call col2(lstemp,a,ntot)
+
+      enclosedVolInt = glsum(lstemp,ntot)
+
+      return
+      end
 
