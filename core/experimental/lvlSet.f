@@ -1370,7 +1370,7 @@ c-----------------------------------------------------------------------
       if(starttime.eq.0.0) starttime = time
 
       !re-distancing TLS every n steps
-      if(time-starttime .ge. ftlsr_next)then
+      if(time-starttime .ge. ftlsr_next .and. ftlsr.gt.0.0)then
         ftlsr_next = ftlsr_next + ftlsr
         call copy(t(1,1,1,1,ifld_tlsr-1),t(1,1,1,1,ifld_cls-1),ntot)
 
@@ -1405,7 +1405,7 @@ c-----------------------------------------------------------------------
         ireset_ls = 0
       endif
 
-      if(time-starttime .ge. fclsr_next)then
+      if(time-starttime .ge. fclsr_next .and. fclsr.gt.0.0)then
         fclsr_next = fclsr_next + fclsr
         call LS_CLS_driver
       endif
