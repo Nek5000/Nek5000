@@ -17,8 +17,8 @@
      $                  avmls(lx1,ly1,lz1,lelv)
 
       real clsnx,clsny,clsnz,clsnr,clsns,clsnt
-      real avmls
+      real avmls, farfield
 
       real dt_cls, dt_tls, eps_cls, gfac, deltamax
       common /lvlset_r/ dt_cls, dt_tls, eps_cls, gfac,
-     $                  deltamax
+     $                  deltamax, farfield

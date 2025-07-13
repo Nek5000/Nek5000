@@ -4,7 +4,7 @@ C----------------------------------------------------------------------
       subroutine ls_init_maxiter(ifld_cls_in, ifld_clsr_in,
      $                   ifld_tls_in, ifld_tlsr_in,
      $                   eps_in, ifdebug, ifixCLSbdry_in,
-     $                   ntls_max, ncls_max)
+     $                   ntls_max, ncls_max, farfield_in)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -26,6 +26,7 @@ C----------------------------------------------------------------------
 
       integer ntot,i
       real glmin, glmax
+      real farfield_in
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -53,14 +54,14 @@ C----------------------------------------------------------------------
      $              eps_in, dt_cls_in, dt_tls_in,
      $              ifld_cls_in, ifld_clsr_in,
      $              ifld_tls_in, ifld_tlsr_in,
-     $              ifdebug, ifixCLSbdry_in)
+     $              ifdebug, ifixCLSbdry_in, farfield_in)
 
       return
       end
 C----------------------------------------------------------------------     
       subroutine ls_init(ifld_cls_in, ifld_clsr_in,
      $                   ifld_tls_in, ifld_tlsr_in,
-     $                   eps_in, ifdebug, ifixCLSbdry_in)
+     $                   eps_in, ifdebug, ifixCLSbdry_in, farfield_in)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -81,6 +82,7 @@ C----------------------------------------------------------------------
 
       integer ntot,i
       real glmin, glmax
+      real farfield_in
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -108,7 +110,7 @@ C----------------------------------------------------------------------
      $              eps_in, dt_cls_in, dt_tls_in,
      $              ifld_cls_in, ifld_clsr_in,
      $              ifld_tls_in, ifld_tlsr_in,
-     $              ifdebug, ifixCLSbdry_in)
+     $              ifdebug, ifixCLSbdry_in, farfield_in)
 
       return
       end
@@ -117,7 +119,7 @@ C----------------------------------------------------------------------
      $                   eps_in,dt_cls_in,dt_tls_in,
      $                   ifld_cls_in,ifld_clsr_in,
      $                   ifld_tls_in,ifld_tlsr_in,
-     $                   ifdebug,ifixCLSbdry_in)
+     $                   ifdebug,ifixCLSbdry_in, farfield_in)
       implicit none
       include 'SIZE'
       include 'TOTAL'
@@ -129,6 +131,7 @@ C----------------------------------------------------------------------
       integer ifld_clsr_in, ifld_tlsr_in
       integer ntot, ifdebug
       integer ifixCLSbdry_in
+      real farfield_in
       
       ! multiple of element length
       eps_cls = eps_in
@@ -146,6 +149,7 @@ C----------------------------------------------------------------------
 
       ifls_debug = ifdebug
       ifixCLSbdry = ifixCLSbdry_in
+      farfield = farfield_in
 
       ntot = lx1*ly1*lz1*nelv
       !no natural BCs for LS fields
@@ -1959,6 +1963,7 @@ c---------------------------------------------------------------------
       subroutine clearfarfield(phi,delta)
       include 'SIZE'
       include 'TOTAL'
+      include 'LVLSET'
 
       real phi(1), delta(1)
 
@@ -1980,8 +1985,8 @@ c---------------------------------------------------------------------
 
       do i=1,ntot
         if(delta(i)/dgmax .lt. 0.001)then
-          if(phi(i).gt.0.5) phi(i) = 1.0
-          if(phi(i).lt.0.5) phi(i) = 0.0
+          if(phi(i).gt.0.5 .and. farfield.gt.0.5) phi(i) = 1.0
+          if(phi(i).lt.0.5 .and. farfield.lt.0.5) phi(i) = 0.0
         endif
       enddo
 
@@ -2002,6 +2007,7 @@ c---------------------------------------------------------------------
       real glmax
       real dgmax
       save dgmax
+      real psi
 
       ntot = lx1*ly1*lz1*nelt
 
@@ -2011,8 +2017,10 @@ c---------------------------------------------------------------------
       endif
 
       do i=1,ntot
+        psi = t(i,1,1,1,ifld_cls-1)
         if(delta(i)/dgmax .lt. 0.001)then
-          curv(i) = 0.0
+          if(psi.gt.0.5 .and. farfield.gt.0.5)curv(i) = 0.0
+          if(psi.lt.0.5 .and. farfield.lt.0.5)curv(i) = 0.0
         endif
       enddo
 
