@@ -1941,6 +1941,7 @@ c-----------------------------------------------------------------------
       real u(lx1*ly1*lz1,1)
 
       real*4 wk(2*lwk) ! message buffer
+      real*4 wkg(2*lwk) ! storage buffer
 
       parameter(lrbs_loc=20*lx1*ly1*lz1)
       parameter(lrbs=lrbs_loc*lelt)
@@ -2000,71 +2001,93 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            ! redistribute data based on the current el-proc map
-            if (ifcrrs) then
-              etime0 = dnekclock_sync()
-              ! pack buffer
-              l = 1
-              iloc = 1
-              do e = k+1,k+nelrr
-                 vi(1,iloc) = gllnid(er(e))
-                 vi(2,iloc) = er(e)
-                 call icopy(vi(3,iloc),w2(l),nxyzr)
-                 iloc = iloc+1
-                 l = l+nxyzr
-              enddo
-              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
+            nbatch = (nelrr - 1) / lbrst + 1
 
-              ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-              nrmax = lelt
-              n = nelrr
-              li = 2+lrbs_loc ! offset
-              key = 1
-              etime0 = dnekclock_sync()
-              call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
-     &                 vl,0,vr,0,key)
-              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+            do ibatch = 1,nbatch
 
-              ! unpack buffer
-              etime0 = dnekclock_sync()
-              ierr = 0
-              if (n.gt.nrmax) then
-                 ierr = 1
-                 goto 100
+              ! range for jeln in this batch
+              jeln1 = (ibatch-1)*lbrst+1
+              jeln2 = ibatch*lbrst
+
+              ! redistribute data based on the current el-proc map
+              if (ifcrrs) then
+                etime0 = dnekclock_sync()
+                ! pack buffer
+                l = 1
+                iloc = 1
+                do e = k+1,k+nelrr
+                  jeln = gllel(er(e))
+                  if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
+                    vi(1,iloc) = gllnid(er(e))
+                    vi(2,iloc) = er(e)
+                    call icopy(vi(3,iloc),w2(l),nxyzr)
+                    iloc = iloc+1
+                  endif
+                  l = l+nxyzr
+                enddo
+                cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
+
+                ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+                nrmax = lbrst
+                n = iloc
+                li = 2+lrbs_loc ! offset
+                key = 1
+                etime0 = dnekclock_sync()
+                call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
+     &                   vl,0,vr,0,key)
+                cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+
+                ! unpack buffer
+                etime0 = dnekclock_sync()
+                ierr = 0
+                if (n.gt.nrmax) then
+                  ierr = 1
+                  goto 100
+                endif
+                do iloc = 1,n
+                  iel = gllel(vi(2,iloc))
+                  l = (iel-1) * nxyzr + 1
+                  call icopy (wkg(l),vi(3,iloc),nxyzr)
+                enddo
+                call nekgsync()
+                cr_etime3 = cr_etime3 + dnekclock() - etime0
+
+              else
+
+                l = 1
+                call MPI_Win_lock_all(0,rsH,ierr)
+                do e = k+1,k+nelrr
+                  jnid = gllnid(er(e))                ! where is er(e) now?
+                  jeln = gllel(er(e))
+
+                  if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
+                    disp = (jeln-jeln1) * int(nxyzr,8)
+                    call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                           disp,nxyzr,MPI_REAL4,rsH,ierr)
+                    l = l+nxyzr
+                  endif
+                enddo
+                call MPI_Win_unlock_all(rsH,ierr)
+                call nekgsync()
+
+                l = 1
+                do e = jeln1,jeln2
+                  lg = (e-1) * nxyzr + 1
+                  call icopy (wkg(lg),wk(l),nxyzr)
+                  l = l+nxyzr
+                enddo
+
               endif
-              do iloc = 1,n
-                 iel = gllel(vi(2,iloc))
-                 l = (iel-1) * nxyzr + 1
-                 call icopy (wk(l),vi(3,iloc),nxyzr)
-              enddo
-              call nekgsync()
-              cr_etime3 = cr_etime3 + dnekclock() - etime0
 
-            else
-
-              l = 1
-              call MPI_Win_lock_all(0,rsH,ierr)
-              do e = k+1,k+nelrr
-                 jnid = gllnid(er(e))                ! where is er(e) now?
-                 jeln = gllel(er(e))
-
-                 disp = (jeln-1) * int(nxyzr,8)
-                 call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
-     $                        disp,nxyzr,MPI_REAL4,rsH,ierr)
-                 l = l+nxyzr
-              enddo
-              call MPI_Win_unlock_all(rsH,ierr)
-              call nekgsync()
-
-            endif
+            enddo ! batches
 #endif
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
          if(ifmpiio) then
-           call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
+           call byte_read_mpi(wkg,nxyzr*nelr,-1,ifh_mbyte,ierr)
          else
-           call byte_read(wk,nxyzr*nelr,ierr)
+           call byte_read(wkg,nxyzr*nelr,ierr)
          endif
       endif
 
@@ -2088,22 +2111,22 @@ c-----------------------------------------------------------------------
          endif
          if (if_byte_sw) then
             if(wdsizr.eq.8) then
-              call byte_reverse8(wk(l),nxyzv*2,ierr)
+              call byte_reverse8(wkg(l),nxyzv*2,ierr)
             else
-              call byte_reverse(wk(l),nxyzv,ierr)
+              call byte_reverse(wkg(l),nxyzv,ierr)
             endif
          endif
          if (nxr.eq.lx1.and.nyr.eq.ly1.and.nzr.eq.lz1) then
             if (wdsizr.eq.4) then         ! COPY
-               call copy4r(u(1,ei),wk(l        ),nxyzr)
+               call copy4r(u(1,ei),wkg(l        ),nxyzr)
             else
-               call copy  (u(1,ei),wk(l        ),nxyzr)
+               call copy  (u(1,ei),wkg(l        ),nxyzr)
             endif
          else                             ! INTERPOLATE
             if (wdsizr.eq.4) then
-               call mapab4r(u(1,ei),wk(l        ),nxr,1)
+               call mapab4r(u(1,ei),wkg(l        ),nxr,1)
             else
-               call mapab  (u(1,ei),wk(l        ),nxr,1)
+               call mapab  (u(1,ei),wkg(l        ),nxr,1)
             endif
          endif
          l = l+nxyzw
@@ -2126,6 +2149,7 @@ c-----------------------------------------------------------------------
       logical iskip
 
       real*4 wk(2*lwk) ! message buffer
+      real*4 wkg(2*lwk) ! storage buffer
       parameter(lrbs_loc=20*lx1*ly1*lz1)
       parameter(lrbs=lrbs_loc*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
@@ -2181,71 +2205,93 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            ! redistribute data based on the current el-proc map
-            if (ifcrrs) then
-              etime0 = dnekclock_sync()
-              ! pack buffer
-              l = 1
-              iloc = 1
-              do e = k+1,k+nelrr
-                 vi(1,iloc) = gllnid(er(e))
-                 vi(2,iloc) = er(e)
-                 call icopy(vi(3,iloc),w2(l),nxyzr)
-                 iloc = iloc+1
-                 l = l+nxyzr
-              enddo
-              cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
+            nbatch = (nelrr - 1) / lbrst + 1
 
-              ! crystal route nr real items of size lrs to rank vi(key,1:nr)
-              nrmax = lelt
-              n = nelrr
-              li = 2+lrbs_loc ! offset
-              key = 1
-              etime0 = dnekclock_sync()
-              call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
-     &                 vl,0,vr,0,key)
-              cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+            do ibatch = 1,nbatch
 
-              ! unpack buffer
-              etime0 = dnekclock_sync()
-              ierr = 0
-              if (n.gt.nrmax) then
-                 ierr = 1
-                 goto 100
+              ! range for jeln in this batch
+              jeln1 = (ibatch-1)*lbrst+1
+              jeln2 = ibatch*lbrst
+
+              ! redistribute data based on the current el-proc map
+              if (ifcrrs) then
+                etime0 = dnekclock_sync()
+                ! pack buffer
+                l = 1
+                iloc = 1
+                do e = k+1,k+nelrr
+                  jeln = gllel(er(e))
+                  if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
+                    vi(1,iloc) = gllnid(er(e))
+                    vi(2,iloc) = er(e)
+                    call icopy(vi(3,iloc),w2(l),nxyzr)
+                    iloc = iloc+1
+                  endif
+                  l = l+nxyzr
+                enddo
+                cr_etime1 = cr_etime1 + dnekclock_sync() - etime0
+
+                ! crystal route nr real items of size lrs to rank vi(key,1:nr)
+                nrmax = lbrst
+                n = iloc
+                li = 2+lrbs_loc ! offset
+                key = 1
+                etime0 = dnekclock_sync()
+                call fgslib_crystal_tuple_transfer(cr_mfi,n,nrmax,vi,li,
+     &                   vl,0,vr,0,key)
+                cr_etime2 = cr_etime2 + dnekclock_sync() - etime0
+
+                ! unpack buffer
+                etime0 = dnekclock_sync()
+                ierr = 0
+                if (n.gt.nrmax) then
+                  ierr = 1
+                  goto 100
+                endif
+                do iloc = 1,n
+                  iel = gllel(vi(2,iloc))
+                  l = (iel-1) * nxyzr + 1
+                  call icopy (wkg(l),vi(3,iloc),nxyzr)
+                enddo
+                call nekgsync()
+                cr_etime3 = cr_etime3 + dnekclock_sync() - etime0
+
+              else
+
+                l = 1
+                call MPI_Win_lock_all(0,rsH,ierr)
+                do e = k+1,k+nelrr
+                  jnid = gllnid(er(e))                ! where is er(e) now?
+                  jeln = gllel(er(e))
+
+                  if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
+                    disp = (jeln-jeln1) * int(nxyzr,8)
+                    call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
+     $                           disp,nxyzr,MPI_REAL4,rsH,ierr)
+                    l = l+nxyzr
+                  endif
+                enddo
+                call MPI_Win_unlock_all(rsH,ierr)
+                call nekgsync()
+
+                l = 1
+                do e = jeln1,jeln2
+                  lg = (e-1) * nxyzr + 1
+                  call icopy (wkg(lg),wk(l),nxyzr)
+                  l = l+nxyzr
+                enddo
+
               endif
-              do iloc = 1,n
-                 iel = gllel(vi(2,iloc))
-                 l = (iel-1) * nxyzr + 1
-                 call icopy (wk(l),vi(3,iloc),nxyzr)
-              enddo
-              cr_etime3 = cr_etime3 + dnekclock_sync() - etime0
-              call nekgsync()
 
-            else
-
-              l = 1
-              call MPI_Win_lock_all(0,rsH,ierr)
-              do e = k+1,k+nelrr
-                 jnid = gllnid(er(e))                ! where is er(e) now?
-                 jeln = gllel(er(e))
-
-                 disp = (jeln-1) * int(nxyzr,8)
-                 call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
-     $                        disp,nxyzr,MPI_REAL4,rsH,ierr)
-                 l = l+nxyzr
-              enddo
-              call MPI_Win_unlock_all(rsH,ierr)
-              call nekgsync()
-
-            endif
+            enddo ! batches
 #endif
             k  = k + nelrr
          enddo
       elseif (np.eq.1) then
          if(ifmpiio) then 
-           call byte_read_mpi(wk,nxyzr*nelr,-1,ifh_mbyte,ierr)
+           call byte_read_mpi(wkg,nxyzr*nelr,-1,ifh_mbyte,ierr)
          else
-           call byte_read(wk,nxyzr*nelr,ierr)
+           call byte_read(wkg,nxyzr*nelr,ierr)
          endif
       endif
 
@@ -2270,35 +2316,35 @@ c-----------------------------------------------------------------------
 
          if (if_byte_sw) then
             if(wdsizr.eq.8) then
-               call byte_reverse8(wk(l),nxyzv*2,ierr)
+               call byte_reverse8(wkg(l),nxyzv*2,ierr)
             else
-               call byte_reverse(wk(l),nxyzv,ierr)
+               call byte_reverse(wkg(l),nxyzv,ierr)
             endif
          endif
 
          if (nxr.eq.lx1.and.nyr.eq.ly1.and.nzr.eq.lz1) then
             if (wdsizr.eq.4) then         ! COPY
-               call copy4r(u(1,ei),wk(l        ),nxyzr)
-               call copy4r(v(1,ei),wk(l+  nxyzw),nxyzr)
+               call copy4r(u(1,ei),wkg(l        ),nxyzr)
+               call copy4r(v(1,ei),wkg(l+  nxyzw),nxyzr)
                if (if3d) 
-     $         call copy4r(w(1,ei),wk(l+2*nxyzw),nxyzr)
+     $         call copy4r(w(1,ei),wkg(l+2*nxyzw),nxyzr)
             else
-               call copy  (u(1,ei),wk(l        ),nxyzr)
-               call copy  (v(1,ei),wk(l+  nxyzw),nxyzr)
+               call copy  (u(1,ei),wkg(l        ),nxyzr)
+               call copy  (v(1,ei),wkg(l+  nxyzw),nxyzr)
                if (if3d) 
-     $         call copy  (w(1,ei),wk(l+2*nxyzw),nxyzr)
+     $         call copy  (w(1,ei),wkg(l+2*nxyzw),nxyzr)
             endif
          else                             ! INTERPOLATE
             if (wdsizr.eq.4) then
-               call mapab4r(u(1,ei),wk(l        ),nxr,1)
-               call mapab4r(v(1,ei),wk(l+  nxyzw),nxr,1)
+               call mapab4r(u(1,ei),wkg(l        ),nxr,1)
+               call mapab4r(v(1,ei),wkg(l+  nxyzw),nxr,1)
                if (if3d) 
-     $         call mapab4r(w(1,ei),wk(l+2*nxyzw),nxr,1)
+     $         call mapab4r(w(1,ei),wkg(l+2*nxyzw),nxr,1)
             else
-               call mapab  (u(1,ei),wk(l        ),nxr,1)
-               call mapab  (v(1,ei),wk(l+  nxyzw),nxr,1)
+               call mapab  (u(1,ei),wkg(l        ),nxr,1)
+               call mapab  (v(1,ei),wkg(l+  nxyzw),nxr,1)
                if (if3d) 
-     $         call mapab  (w(1,ei),wk(l+2*nxyzw),nxr,1)
+     $         call mapab  (w(1,ei),wkg(l+2*nxyzw),nxr,1)
             endif
          endif
          l = l+ldim*nxyzw
@@ -2516,7 +2562,12 @@ c
         cr_etime3 = 0.0
       else
         disp_unit = 4
-        win_size  = int(disp_unit,8)*size(wk)
+        win_size = int(disp_unit,8)*size(wk)
+        if (lbrst.lt.nelt) then
+          if(nio.eq.0) write(*,*)'Batched restart with lbrst',lbrst,nelt
+          win_size = int(disp_unit,8) * (7*lx1*ly1*lz1*lbrst)
+        endif
+
         if (commrs .eq. MPI_COMM_NULL) then
           call mpi_comm_dup(nekcomm,commrs,ierr)
           call MPI_Win_create(wk,
