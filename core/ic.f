@@ -2002,6 +2002,7 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             nbatch = (nelrr - 1) / lbrst + 1
+            nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
 
@@ -2206,10 +2207,11 @@ c-----------------------------------------------------------------------
 
 #ifdef MPI
             nbatch = (nelrr - 1) / lbrst + 1
+            nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
 
-              ! range for jeln in this batch
+              ! range for jeln in this batch, it's ok if it's out of nelrr
               jeln1 = (ibatch-1)*lbrst+1
               jeln2 = ibatch*lbrst
 
