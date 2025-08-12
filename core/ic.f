@@ -2270,8 +2270,8 @@ c-----------------------------------------------------------------------
                     disp = (jeln-jeln1) * int(nxyzr,8)
                     call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
      $                           disp,nxyzr,MPI_REAL4,rsH,ierr)
-                    l = l+nxyzr
                   endif
+                  l = l+nxyzr
                 enddo
                 call MPI_Win_unlock_all(rsH,ierr)
                 call nekgsync()
