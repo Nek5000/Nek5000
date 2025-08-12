@@ -2030,7 +2030,7 @@ c-----------------------------------------------------------------------
 
                 ! crystal route nr real items of size lrs to rank vi(key,1:nr)
                 nrmax = lbrst
-                n = iloc
+                n = iloc - 1
                 li = 2+lrbs_loc ! offset
                 key = 1
                 etime0 = dnekclock_sync()
@@ -2065,8 +2065,8 @@ c-----------------------------------------------------------------------
                     disp = (jeln-jeln1) * int(nxyzr,8)
                     call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
      $                           disp,nxyzr,MPI_REAL4,rsH,ierr)
-                    l = l+nxyzr
                   endif
+                  l = l+nxyzr
                 enddo
                 call MPI_Win_unlock_all(rsH,ierr)
                 call nekgsync()
@@ -2235,7 +2235,7 @@ c-----------------------------------------------------------------------
 
                 ! crystal route nr real items of size lrs to rank vi(key,1:nr)
                 nrmax = lbrst
-                n = iloc
+                n = iloc - 1
                 li = 2+lrbs_loc ! offset
                 key = 1
                 etime0 = dnekclock_sync()
@@ -2559,6 +2559,9 @@ c
 #ifdef MPI
       if (ifcrrs) then
         call fgslib_crystal_setup(cr_mfi,nekcomm,np)
+        if (lbrst.lt.nelt) then
+          if(nio.eq.0) write(*,*)'Batched restart with lbrst',lbrst,nelt
+        endif
         cr_etime1 = 0.0
         cr_etime2 = 0.0
         cr_etime3 = 0.0
