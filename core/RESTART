@@ -44,3 +44,6 @@ c
 
       integer rsH, commrs
       common /cbrewinh/ rsH, commrs
+
+      real*8 rst_etime(4)
+      common /rst_tmr/ rst_etime
