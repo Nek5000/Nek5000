@@ -1,17 +1,25 @@
       subroutine octuple_split_multirounds(n_rounds)
       use SIZE
       use OCTUPLESIZE
-      integer n_rounds,i_round,iflag
+      integer n_rounds,i_round,iflag,iflag_option
       integer flag
 
        write(6,*)  'export to separate files of a big mesh'
        write(6,*)  'witch file ?'
-       write(6,*)  ' (1 vertices, 2 edges, 3 bcs, 0 zero file)'
-       read (5,*) iflag
+       write(6,*)  ' (1 vertices, 2 edges, 3 bcs, 0 zero file (for linear mesh edge file), 4 for exporting all files sequentially )'
+       read (5,*) iflag_option
 
       do i_round = 1,n_rounds
        if (i_round.eq.n_rounds) then
+
+       if (iflag_option.eq.4) then
+	   do iflag = 1,3
        call octuple_split1(iflag) ! no allocate arrays, and exporting on-run
+       enddo
+       else
+       call octuple_split1(iflag_option)
+       endif
+
 	   else
        call octuple_split0()  ! allocate arrays, no exporting on-run
        endif
@@ -249,7 +257,8 @@
             call distance(xyz(1,1),xyz(1,3),dist0)
             call distance(mide(1),xyz(1,2),dist1)
 
-            if (dist1.gt.(1e-3*dist0)) then
+            if ((dist1.gt.(1e-3*dist0)).or.(iel_new.lt.100)) then
+            !if (dist1.gt.(1e-3*dist0)) then
 
             ncurve = ncurve + 1
             
@@ -265,6 +274,8 @@
       rcurve = ncurve
       call byte_write(rcurve,2, ierr)
       write(6,*) 'curves: ',ncurve
+
+      if(ncurve.gt.0) then
 
       iel_new = 0
       do iel_old=1,etot
@@ -314,7 +325,8 @@
             call distance(xyz(1,1),xyz(1,3),dist0)
             call distance(mide(1),xyz(1,2),dist1)
 
-            if (dist1.gt.(1e-3*dist0)) then
+            if ((dist1.gt.(1e-3*dist0)).or.(iel_new.lt.100)) then
+            !if (dist1.gt.(1e-3*dist0)) then
 
             curve3(1) = xm3(edge_mid(iedge),1,1)
             curve3(2) = ym3(edge_mid(iedge),1,1)
@@ -336,6 +348,8 @@
 
       enddo !       do iel_old=1,etot
 
+      endif
+
       endif !       if (iflag.eq.2) then  
 
 ! done writing edges	
@@ -351,12 +365,14 @@
       nface = 2*num_dim
       do iel=1,eftot
         do ifc=1,nface
-          if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+          !if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+		  if (bc(5,ifc,iel).gt.0)  nbc = nbc + 1
         enddo
       enddo
       nbc = nbc*4
       rbc = nbc
       call byte_write(rbc,2, ierr)
+      write(6,*) 'velocity boundary faces(rbc): ',rbc
       write(6,*) 'velocity boundary faces: ',nbc
 
       iel_new = 0
@@ -379,6 +395,9 @@
           iel_new = iel_new + 1
 
           !call rzero(bc3(1,1),30)
+          do i = 1,30
+          bc3(i,1) = 0
+          enddo
 
           do ifc=1,6
              cbc3(ifc) = '   '
@@ -391,7 +410,8 @@
 
           do ifc = 1,2*num_dim
           ch3 = cbc3(ifc) 
-          if (ch3.ne.'   ') then
+          !if (ch3.ne.'   ') then
+		  if (bc3(5,ifc) .gt.0) then
             buf2(1)=iel_new
             buf2(2)=ifc
             call copy   (buf2(3),bc3(1,ifc),5)
@@ -421,12 +441,16 @@
       nface = 2*num_dim
       do iel=1,etot
         do ifc=1,nface
-          if (cbc(ifc,iel).ne.'   ')  nbct = nbct + 1
+          !if (cbc(ifc,iel).ne.'   ')  nbct = nbct + 1
+		  if (bc(5,ifc,iel).gt.0)   nbct = nbct + 1
         enddo
       enddo
       nbct = nbct*4
-      rbct = nbct
-      call byte_write (rbct,2, ierr)
+      !rbct = nbct
+      !call byte_write (rbct,2, ierr)
+      rbc = nbct
+      call byte_write (rbc,2, ierr)
+      write(6,*) 'thermal boundary faces(rbc): ',rbc
       write(6,*) 'thermal boundary faces: ',nbct
 
       iel_new = 0
@@ -447,7 +471,12 @@
 
        do ihex = 1,8
           iel_new = iel_new + 1
-          !call rzero(bc3(1,1),30)
+          
+		  !call rzero(bc3(1,1),30)
+          do i = 1,30
+          bc3(i,1) = 0
+          enddo
+
 		  
           do ifc=1,6
              cbc3(ifc) = '   '
@@ -460,7 +489,8 @@
 
           do ifc = 1,2*num_dim
           ch3 = cbc3(ifc) 
-          if (ch3.ne.'   ') then
+          !if (ch3.ne.'   ') then
+		  if (bc3(5,ifc) .gt.0) then
             buf2(1)=iel_new
             buf2(2)=ifc
             call copy   (buf2(3),bc3(1,ifc),5)
@@ -498,9 +528,9 @@
       write(6,*) 'Done: closing re2 file'
 
 
-      deallocate (xm1,ym1,zm1)
-      deallocate (ccurve,curve)
-      deallocate (cbc,bc)
+!      deallocate (xm1,ym1,zm1)
+!      deallocate (ccurve,curve)
+!      deallocate (cbc,bc)
 
       return
       end

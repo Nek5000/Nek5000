@@ -10,7 +10,7 @@
 !-----------------------------------------------------------
 
       etot_est = 0
-
+      tot_num_side_sets = 0
       write(6,*) 'please input number of fluid exo files:'
       read (5,*) fnexo
 
@@ -80,7 +80,7 @@
       flag = 1
       call trasnfer_exo_name(flag) ! copy fluidexo to exoname
       call exodus_read_new  ! actual read exodus file
-
+      tot_num_side_sets = tot_num_side_sets + num_side_sets
       eacc_old = eacc
       if (num_dim.eq.2) then
          call convert_new
@@ -133,14 +133,13 @@
       flag = 2
       call trasnfer_exo_name(flag)  ! copy fluidexo to exoname
       call exodus_read_new
-	  
+      tot_num_side_sets = tot_num_side_sets + num_side_sets
       eacc_old = eacc
 
       if (num_dim.eq.2) then
          call convert_new
       else if (num_dim.eq.3) then
          if(converting_option.EQ.1) then
-         write(6,*) 'Converting pure hex20 mesh'
          call convert_new
          elseif(converting_option.EQ.2) then
 
@@ -150,7 +149,7 @@
 		 
        elseif (converting_option.EQ.3) then ! for quadratic tet2hex
 
-      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15+hex20) mesh'
+      write(6,*) 'Doing quadratic tet2hex conversion for hybrid (tet10+wedge15) mesh'
 
       ! this is to fix some wedge element, which maybe too thin
       quadratic_option = 1
@@ -183,21 +182,31 @@
       etot = eacc
       num_elem = etot
 
-!      write(6,*) 'EXPERIMENTAL feature: do you want to try shell feature? (1 for yes)'
-!      write(6,*) 'this is only for fluid_only mesh 3D'
-!      write(6,*) 'extrude a solid shell region with given thickness and on given sideset' 
-!      read (5,*) shell_input
-!	  if (shell_input.eq.1)  call shell_wall()
+      !write(6,*) 'EXPERIMENTAL feature: do you want to try shell feature? (1 for yes)'
+      !write(6,*) 'this is only for fluid_only mesh 3D'
+      !write(6,*) 'extrude a solid shell region with given thickness and on given sideset' 
+      !read (5,*) shell_input
+	  !if (shell_input.eq.1)  call shell_wall()
 
-!      write(6,*) 'EXPERIMENTAL feature: do you want to try octuple splitting? (1 for yes)'
-!      read (5,*) oct_input1
-!	  if (oct_input1.eq.1)  then
-!        write(6,*)  'how many rounds of octuple splitting? (2 most)'
-!        read (5,*) oct_input2
-!        call octuple_split_multirounds(oct_input2)
-!        STOP
-!        !call octuple_split0()  ! allocate arrays, no exporting on-run
-!      endif
+      !write(6,*) 'EXPERIMENTAL feature: do you want to try octuple splitting? (1 for yes)'
+      !read (5,*) oct_input1
+	  !if (oct_input1.eq.1)  then
+
+      !cht_input1 = 0
+      !write(6,*) 'EXPERIMENTAL feature: do you want to reset nelv  for cht mesh (1 for yes)'
+      !read (5,*) cht_input1
+	  !if (cht_input1.eq.1)  then
+      !  write(6,*)  'nelv = ?'
+      !  read (5,*) nelvnew
+      !  eftot = nelvnew
+      !endif
+
+      !  write(6,*)  'how many rounds of octuple splitting? (2 most)'
+      !  read (5,*) oct_input2
+      !  call octuple_split_multirounds(oct_input2)
+      !  STOP
+      !  !call octuple_split0()  ! allocate arrays, no exporting on-run
+      !endif
 
       ne_nrh = 0
       call right_hand_check(ne_nrh) ! check non-right-hand element here
@@ -206,11 +215,20 @@
       call fix_left_hand_elements_3d
       endif
 
-      call gather_bc_info
+      if(num_side_sets.ne.0) call gather_bc_info
 
       call set_periodicity(1)
       if (eftot.ne.num_elem)  call set_periodicity(2)
-	  
+
+      !cht_input1 = 0
+      !write(6,*) 'EXPERIMENTAL feature: do you want to reset nelv (1 for yes)'
+      !read (5,*) cht_input1
+	  !if (cht_input1.eq.1)  then
+      !  write(6,*)  'nelv = ?'
+      !  read (5,*) nelvnew
+      !  eftot = nelvnew
+      !endif
+
       write(6,*) 'please give re2 file name:'
       call read_re2_name
       call gen_re2
@@ -512,9 +530,7 @@
             STOP
           endif
         endif
-		
 
-!     etot_est = 0
 
       do i = 1, num_elem_blk
         call exgelb (exoid, idblk(i), typ, num_elem_in_block(i), &
@@ -935,7 +951,6 @@
 !
       write(6,'(a)') ''
       write(6,'(a)') 'Converting SideSets ...'
-
       do iss=1,num_side_sets
         write(6,'(a)') ''
         write(6,'(a,i0,a)') 'Sideset ',idss(iss), ' ...'
@@ -957,7 +972,7 @@
            bc (4,jfc,iel+eacc_old) = iexo
         enddo
 
-        write(6,'(a,i0)') 'done :: Sideset ',idss(iss)
+      write(6,'(a,i0)') 'done :: Sideset ',idss(iss)
       enddo
 
       deallocate (x_exo,y_exo,z_exo,connect)
@@ -1585,7 +1600,9 @@
       integer*8 iel,jfc
       integer bcID2
 
-      allocate (bcID (100)) ! assuming there is no more than 100 sidesets in total
+
+      allocate (bcID (tot_num_side_sets))
+      !allocate (bcID (100)) ! assuming there is no more than 100 sidesets in total
 	  
       ibc = 0
       do iel= eacc_old+1,eacc
@@ -1896,6 +1913,13 @@
                     1,10,19,    3,12,21,    9,18,27,    7,16,25  /
 
 
+      nedge = 4 + 8*(num_dim-2)
+      do iel=1,num_elem
+        do iedge=1,nedge
+          ccurve(iedge,iel) = ' '
+        enddo
+      enddo
+
       do iel=1,num_elem
          call gen_rea_midside_e(iel)
       enddo
@@ -2003,7 +2027,9 @@
       character(1) chdum
       data         chdum /' '/
 
-      if (num_side_sets.eq.0) return
+
+      if (tot_num_side_sets.eq.0) return
+      !if (num_side_sets.eq.0) return
 
       !rbc = num_sides_tot
       !call byte_write (rbc,2,ierr)
@@ -2012,7 +2038,8 @@
       nface = 2*num_dim
       do iel=1,eftot
         do ifc=1,nface
-          if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+          !if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+          if (bc(5,ifc,iel).gt.0)  nbc = nbc + 1		 		  
         enddo
       enddo
       rbc = nbc
@@ -2023,7 +2050,8 @@
       do iel = 1,eftot
         do ifc = 1,2*num_dim
           ch3 = cbc(ifc,iel)
-          if (ch3.ne.'   ') then
+          !if (ch3.ne.'   ') then
+		   if (bc(5,ifc,iel).gt.0) then
             buf2(1)=iel
             buf2(2)=ifc
             call copy   (buf2(3),bc(1,ifc,iel),5)
@@ -2045,7 +2073,8 @@
       nface = 2*num_dim
       do iel=1,num_elem
         do ifc=1,nface
-          if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+          !if (cbc(ifc,iel).ne.'   ')  nbc = nbc + 1
+		  if (bc(5,ifc,iel).gt.0)  nbc = nbc + 1	
         enddo
       enddo
       rbc = nbc
@@ -2055,7 +2084,8 @@
       do iel = 1,num_elem
         do ifc = 1,2*num_dim
           ch3 = cbc(ifc,iel)
-          if (ch3.ne.'   ') then
+          !if (ch3.ne.'   ') then
+		  if (bc(5,ifc,iel).gt.0) then
             buf2(1)=iel
             buf2(2)=ifc
             call copy   (buf2(3),bc(1,ifc,iel),5)
@@ -2401,23 +2431,23 @@
       subroutine rzero8(A,N)
       integer*8 N,I
       real*8 A(1)
-      DO 100 I = 1, N
- 100     A(I ) = 0.0
+      DO 200 I = 1, N
+ 200     A(I ) = 0.0
       return
       END
 !-----------------------------------------------------------------------
       subroutine rzero_int(A,N)
       integer*8 N,I
       integer A(1)
-      DO 100 I = 1, N
- 100     A(I) = 0
+      DO 300 I = 1, N
+ 300     A(I) = 0
       return
       END
 !-----------------------------------------------------------------------
       subroutine rzero_int2(A,N)
       integer N,I
       integer A(1)
-      DO 100 I = 1, N
- 100     A(I) = 0
+      DO 400 I = 1, N
+ 400     A(I) = 0
       return
       END

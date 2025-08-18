@@ -784,7 +784,7 @@
       write(6,'(A)') 'Done :: Converting elements '
 
       deallocate(x_exo,y_exo,z_exo,connect)
-      deallocate (elem_list,side_list)
+      if (num_side_sets.ne.0)  deallocate (elem_list,side_list)
       deallocate ( idblk )
       deallocate ( num_nodes_per_elem )
       deallocate ( num_attr           )

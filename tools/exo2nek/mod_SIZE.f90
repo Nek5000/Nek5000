@@ -20,9 +20,9 @@ module SIZE
 	  integer,save,allocatable,dimension(:,:,:)   :: parray
       
       integer*8  num_dim, num_elem, num_elem_blk, nvert
-      integer*8  num_side_sets, num_sides_tot
+      integer*8  num_side_sets,tot_num_side_sets, num_sides_tot
       save     num_dim, num_elem, num_elem_blk, nvert
-      save     num_side_sets, num_sides_tot
+      save     num_side_sets, tot_num_side_sets,num_sides_tot
 	  
       integer*8  etot,etot_est,eacc,eacc_old,eftot
       save     etot,etot_est,eacc,eacc_old,eftot
