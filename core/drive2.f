@@ -54,6 +54,8 @@ c     Set default logicals
       if (lx1.eq.lx2) ifsplit=.true.
 
       if_full_pres = .false.
+      ifcrrs = .false. ! crystal router restart
+      lbrst = min(1024, lelt) ! batch size for restart
 
       CALL RZERO (PARAM,200)
 

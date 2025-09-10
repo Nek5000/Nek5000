@@ -39,8 +39,11 @@ c
       integer         fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00
       common /cmfi_p/ fid0,fid0r,pid0,pid1,pid0r,pid1r,pid00 
 
-      integer          ifh_mbyte
-      common /i4mpiio/ ifh_mbyte
+      integer          ifh_mbyte,cr_mfi
+      common /i4mpiio/ ifh_mbyte,cr_mfi
 
       integer rsH, commrs
       common /cbrewinh/ rsH, commrs
+
+      real*8 rst_etime(4)
+      common /rst_tmr/ rst_etime
