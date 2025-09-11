@@ -5,7 +5,7 @@ function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
      printf "\nFATAL ERROR occured during compilation!\n"
-     for TOOL in $LIST_ERR ; do 
+     for TOOL in $LIST_ERR ; do
        printf "Check $TOOL/build.log for details\n"
      done
   fi
@@ -18,6 +18,12 @@ function onexit() {
 
 if [ $# -eq 0 ] || [ $1 == '-h' ] || [ $1 == '--help' ]; then
    echo "Usage: maketools [clean|all|core|tool(s)]"
+   echo "Examples:"
+   echo "  ./maketool all                    # build all tools"
+   echo "  ./maketool core                   # build commonly used tools"
+   echo "  ./maketool n2to3 reatore2         # only build listed tools"
+   echo "  ./maketool clean n2to3 reatore2   # only clean listed tools"
+   echo "  ./maketool clean                  # clean all tools"
    exit 0
 fi
 
@@ -116,9 +122,9 @@ cat > test_underscore.f << _ACEOF
       end
 _ACEOF
 
-$FC -c test_underscore.f 2>&1 >/dev/null 
+$FC -c test_underscore.f 2>&1 >/dev/null
 nm test_underscore.o | grep byte_write_ 1>/dev/null
-if [ $? -eq 0 ]; then 
+if [ $? -eq 0 ]; then
   US="-DUNDERSCORE"
 fi
 \rm test_underscore.* 2>/dev/null
@@ -216,7 +222,7 @@ if [ "$1" == "clean" ]; then
      rm -rf ./$i/build.log
      rm -rf ../bin/$i
      printf "done\n"
-   done 
+   done
 else
    LIST=""
    if [ "$1" == "core" ]; then
@@ -237,7 +243,7 @@ else
        exit 12
      fi
 
-     export FFLAGS="${NEK_FFLAGS}" 
+     export FFLAGS="${NEK_FFLAGS}"
      export FFLAGS+=" ${CPPF}"
      export FFLAGS+=" ${BIGMEM}"
      export CFLAGS="${NEK_CFLAGS}"
@@ -256,11 +262,11 @@ else
      if [ "$TOOL" == "nekamg_setup" ]; then
         chk_web $TOOL
         chk_cmake $TOOL
-     fi 
+     fi
      if [ "$TOOL" == "gmsh2nek" ]; then
         export FFLAGS+=" ${R8}"
-     fi	 
-     if [ "$TOOL" == "n2to3" ]; then 
+     fi
+     if [ "$TOOL" == "n2to3" ]; then
         export FFLAGS+=" ${R8}"
      fi
      if [ "$TOOL" == "genmap" ]; then
@@ -276,7 +282,7 @@ else
         export CFLAGS+=" -Dr8"
         chk_x11 $TOOL
      fi
-     if [ "$TOOL" == "n2to3co2" ]; then 
+     if [ "$TOOL" == "n2to3co2" ]; then
         export FFLAGS+=" ${R8}"
      fi
      printf "building $TOOL ... "
@@ -295,5 +301,5 @@ else
       exit 1
    fi
 
-   set +o pipefail 
+   set +o pipefail
 fi
