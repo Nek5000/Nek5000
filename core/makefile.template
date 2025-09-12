@@ -50,7 +50,7 @@ vprops.o makeq_aux.o \
 papi.o nek_in_situ.o \
 reader_rea.o reader_par.o reader_re2.o \
 finiparser.o iniparser.o dictionary.o \
-hpf.o \
+hpf.o hrefine.o \
 fcrs.o crs_xxt.o crs_amg.o \
 fem_amg_preco.o crs_hypre.o \
 partitioner.o
@@ -213,6 +213,7 @@ $(OBJDIR)/reader_rea.o	:$S/core/reader_rea.f;	 	        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/core/reader_par.f $S/core/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/core/reader_re2.f;		        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hpf.o	       	:$S/core/hpf.f;         		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/hrefine.o		:$S/core/hrefine.f;         		$(FC) -c $(FL2) $< -o $@
 
 # MXM       ############################################################################
 $(OBJDIR)/mxm_wrapper.o	  :$S/core/mxm_wrapper.f;	$(FC) -c $(FL2) $< -o $@ 
