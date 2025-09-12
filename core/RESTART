@@ -47,3 +47,6 @@ c
 
       real*8 rst_etime(4)
       common /rst_tmr/ rst_etime
+
+      integer nhrefrs, hrefcutsrs(lhref)
+      common /hrefinersi/ nhrefrs, hrefcutsrs

@@ -99,6 +99,11 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       if (ifmvbd) call setup_mesh_dssum ! Set mesh dssum (needs geom)
 
       if(nio.eq.0) write(6,*) 'call usrdat2'
+      do iref=1,nhref
+         call usrdat2_oct(hrefcuts(iref))
+         call fix_geom
+      enddo
+
       call usrdat2
       if(nio.eq.0) write(6,'(A,/)') ' done :: usrdat2' 
 

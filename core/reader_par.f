@@ -170,6 +170,11 @@ C
         cbc_imap(i)=i !sequential IDs as default
       enddo
 
+      nhref = 0
+      do i=1,lhref
+        hrefcuts(i) = 0 ! h-refinement schedule
+      enddo
+
       ifflow    = .false.
       ifheat    = .false.  
       iftran    = .true.   
@@ -937,6 +942,22 @@ c read BoundaryID map
         enddo
       endif
 
+c read h-refinement schedule
+      call finiparser_findTokens('mesh:hrefine', ',' ,ifnd)
+      if(ifnd.gt.lhref) then
+        write(6,'(a)')"Too many h-refine layers specified in par"
+        write(6,'(a,i3)')"  Nek5000 only supports up to ",lnref
+        write(6,'(a)')"  Increase the value if needed"
+        ierr = 1
+        ifnd = 0
+      else if(ifnd.ge.1) then
+        nhref = ifnd
+        do i = 1,ifnd
+          call finiparser_getToken(c_out,i)
+          read(c_out,'(i132)') hrefcuts(i)
+        enddo
+      endif
+
 c read BC map for velocity
       call finiparser_findTokens('velocity:boundarytypemap', ',' , ifnd)
       if(ifnd.gt.lbid) then
@@ -1143,6 +1164,9 @@ C
       call bcast(ifbmap,         ldimt1*lsize)
       call bcast(cbc_imap,  lbid*       isize)
       call bcast(cbc_bmap,3*lbid*ldimt1*csize)
+
+      call bcast(nhref,          isize)
+      call bcast(hrefcuts, lhref*isize)
 
       call bcast(timeioe,sizeof(timeioe))
 
