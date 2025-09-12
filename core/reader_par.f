@@ -956,6 +956,16 @@ c read h-refinement schedule
           call finiparser_getToken(c_out,i)
           read(c_out,'(i132)') hrefcuts(i)
         enddo
+
+        ncut = 1 ! quick check
+        do i = 1,nhref
+          ncut = ncut * hrefcuts(i)
+        enddo
+        if (ncut.lt.2) then
+          write(6,'(a,i3)')"Invalid h-refine schedule: ncut_total=",ncut
+          nhref = 0
+          call izero(hrefcuts,lhref)
+        endif
       endif
 
 c read BC map for velocity

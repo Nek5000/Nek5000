@@ -261,6 +261,7 @@ c
 c-----------------------------------------------------------------------
       subroutine h_refine(glo_num,ncut)
 
+c                                   ncut = 1 --> do nothing
 c     Here we do an "ncut" refine:  ncut = 2 --> oct-refine (8x number of elements)
 c                                   ncut = 3 --> 27x number of elements
 c                                   ncut = 4 --> 64x number of elements
@@ -292,6 +293,12 @@ c                                   ncut = 4 --> 64x number of elements
       nnew = nblk - 1
       lxyc = 2**ldim
       nvrt = ncut+1
+
+      if (ncut.lt.2) then
+         if (nio.eq.0) write(6,12) ncut
+ 11      format('h-refine: ncut < 2, do nothing!  ncut=',I3)
+         return
+      endif
 
       if (nio.eq.0) write(6,12) nblk
  12      format('h-refine: split each element into',I12)
@@ -543,6 +550,7 @@ c-----------------------------------------------------------------------
         ncut_total = ncut_total * refine(iref)
       enddo
       nblk_total = ncut_total**ldim
+      if (ncut_total.lt.2) return
 
       ierr = 0
       if (nid.eq.0) then
@@ -588,6 +596,7 @@ c      implicit none
         ncut_total = ncut_total * refine(iref)
       enddo
       nblk_total = ncut_total**ldim
+      if (ncut_total.lt.2) return
 
       if (np.gt.1) then
         nelt0 = nelt
