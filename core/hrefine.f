@@ -300,6 +300,10 @@ c                                   ncut = 4 --> 64x number of elements
          return
       endif
 
+      if (ifaxis) then
+         call exitti('hrefine does not support ifaxis=T$',ncut)
+      endif
+
       if (nio.eq.0) write(6,12) nblk
  12      format('h-refine: split each element into',I12)
 c     CHECK limit sizes
@@ -578,7 +582,8 @@ c-----------------------------------------------------------------------
      $                         ,pm1_,t_,ps_, refine, refineSize)
       implicit none
       include 'SIZE'
-      include 'PARALLEL'
+      include 'INPUT' ! ifaxis
+      include 'PARALLEL' ! np
       include 'RESTART'
 
       real xm1_(lx1,ly1,lz1,*), ym1_(lx1,ly1,lz1,*), zm1_(lx1,ly1,lz1,*)
@@ -599,6 +604,10 @@ c-----------------------------------------------------------------------
       if (nio.eq.0) write(*,31) ncut_total,nblk_total
   31  format(3x,'mfi:href rs ref_e ncut/nblk:',2(1I8))
       if (refineSize.eq.0.OR.ncut_total.lt.2) return
+
+      if (ifaxis) then
+         call exitti('hrefine does not support ifaxis=T$',ncut)
+      endif
 
       if (np.gt.1) then
         nelt0 = nelt
