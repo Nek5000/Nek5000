@@ -513,6 +513,9 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
+         if (nhrefrs.gt.0) then
+            call exitti('href rs only supports p67=6$',nhrefrs)
+         endif
         ierr = 0
         if (nid.eq.0) then
 
@@ -2739,7 +2742,8 @@ c
          call refine_map_elements(hrefcutsrs,nhrefrs)
       endif
 
-      offs0   = iHeadersize + 4 + isize*nelgr
+      offs0   = nelgr ! cast to int*8
+      offs0   = iHeadersize + 4 + isize*offs0
       nxyzr8  = nxr*nyr*nzr
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
@@ -2830,10 +2834,19 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
       if (nhrefrs.gt.0) then
+         if (if_full_pres) then ! skip pr to avoid extra interp
+            ifgetp = .false.
+            if (nio.eq.0) write(6,32) if_full_pres
+         endif
          k = 1
          if (ldimt.gt.1) k = 2
-         call refine_readfld(xm1,ym1,zm1,vx,vy,vz
-     $                      ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         if (ifmhd.and.ifile.eq.2) then
+            call refine_readfld(xm1,ym1,zm1,bx,by,bz
+     $                         ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         else
+            call refine_readfld(xm1,ym1,zm1,vx,vy,vz
+     $                         ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         endif
       endif
 
       if (tio.eq.0) tio=1
@@ -2858,6 +2871,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 #endif
 
   31  format(3x,'mfi:rd/pk/xfer/unpk/tot:',5(1e9.2))
+  32  format(3x,'mfi:href skip pr when pnpn-2 and if_full_pres',L2)
 
       return
       end

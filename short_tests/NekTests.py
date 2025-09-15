@@ -1883,21 +1883,46 @@ class IO_Test(NekTestCase):
             lx1="6",
             lxd="9",
             lx2="lx1-2",
-            lelg="100",
+            lelg="36*64",
             ldimt="3",
             lelr="lelg",
             lx1m="lx1",
         )
         self.config_size()
 
+        # read write tests
         self.build_nek(usr_file="io_test")
+        self.config_parfile({"MESH": {"hrefine": "1"}})
         self.run_nek(step_limit=None)
         phrase = self.get_phrase_from_log("All I/O tests PASSED")
         self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
         self.assertDelayedFailures()
 
+        # h-refine restart, test 1
+        self.config_parfile({"MESH": {"hrefine": "2"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # h-refine restart, test 2
+        self.config_parfile({"MESH": {"hrefine": "3"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # h-refine restart, test 3
+        self.config_parfile({"MESH": {"hrefine": "2;2"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # full restart
         self.run_genmap(rea_file="io_test_rs")
         self.build_nek(usr_file="io_test_rs")
+        self.config_parfile({"MESH": {"hrefine": "1"}})
 
         cls = self.__class__
         path = os.path.join(self.examples_root, cls.example_subdir + "/")

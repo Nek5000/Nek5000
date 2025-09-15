@@ -408,6 +408,9 @@ c         Note - we also should extract midside nodes.
       ! Update lglel, gllel, gllnid
 #if defined(DPROCMAP)
       call dProcMapClearCache()
+#else
+      call izero(gllnid,lelg)
+      call izero(gllel,lelg)
 #endif
 
       do e=nelt0,1,-1
@@ -426,7 +429,7 @@ c         Note - we also should extract midside nodes.
           call dProcmapPut(ibuf,2,0,egn)
 #else
           gllel(egn) = en
-          gllnid(eg) = nid
+          gllnid(egn) = nid
 #endif
         enddo
       enddo
@@ -480,11 +483,9 @@ c     CHECK limit sizes
 
         call get_rst_m1_fld(x0,ncut,u(1,1,1,e),pc,pt)
 
-        en = nblk*(e - 1)
-
         do el=1,ncut**ldim
 
-          en = en+1
+          en = nblk*(e-1) + el
           call copy(u(1,1,1,en),x0(1,el),lxyz)
 
         enddo
@@ -519,20 +520,16 @@ c-----------------------------------------------------------------------
       real ubak(lx1,ly1,lz1,lelt)
       integer ncut, nblk
 
-      integer icalld
-      save icalld
-      data icalld / 0 /
-
       nblk = ncut**ldim
       nxyz = lx1*ly1*lz1
+      call rzero(ubak,nxyz*lelt)
       call copy(ubak,u,nxyz*lelt)
+      call rzero(u,nxyz*lelt)
 
       do ie=1,nel
         ien = ie_map_c2f(ie,nblk)
         call copy(u(1,1,1,ie),ubak(1,1,1,ien),nxyz)
       enddo
-
-      icalld = icalld + 1
 
       return
       end
@@ -550,7 +547,9 @@ c-----------------------------------------------------------------------
         ncut_total = ncut_total * refine(iref)
       enddo
       nblk_total = ncut_total**ldim
-      if (ncut_total.lt.2) return
+      if (nio.eq.0) write(*,31) ncut_total,nblk_total
+  31  format(3x,'mfi:href rs map_e ncut/nblk:',2(1I8))
+      if (refineSize.eq.0.OR.ncut_total.lt.2) return
 
       ierr = 0
       if (nid.eq.0) then
@@ -565,7 +564,7 @@ c-----------------------------------------------------------------------
         ncut = refine(iref)
         nblk = ncut**ldim
         do i=1,nelr                       ! go through elem in file
-          iegr = er(i)                    ! global id of thie elem
+          iegr = er(i)                    ! global id of this elem
           iegnr = ie_map_c2f(iegr,nblk)   ! map to the global id of the refined elem
           er(i) = iegnr                   ! put it back to the list
         enddo
@@ -577,9 +576,9 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine refine_readfld(xm1_,ym1_,zm1_,vx_,vy_,vz_
      $                         ,pm1_,t_,ps_, refine, refineSize)
-c      implicit none
+      implicit none
       include 'SIZE'
-      include 'TOTAL'
+      include 'PARALLEL'
       include 'RESTART'
 
       real xm1_(lx1,ly1,lz1,*), ym1_(lx1,ly1,lz1,*), zm1_(lx1,ly1,lz1,*)
@@ -590,13 +589,16 @@ c      implicit none
 
       integer refineSize
       integer refine(refineSize)
+      integer iref,k,ncut,nblk,ncut_total,nblk_total,nelt0
 
       ncut_total = 1
       do iref=1,refineSize
         ncut_total = ncut_total * refine(iref)
       enddo
       nblk_total = ncut_total**ldim
-      if (ncut_total.lt.2) return
+      if (nio.eq.0) write(*,31) ncut_total,nblk_total
+  31  format(3x,'mfi:href rs ref_e ncut/nblk:',2(1I8))
+      if (refineSize.eq.0.OR.ncut_total.lt.2) return
 
       if (np.gt.1) then
         nelt0 = nelt
@@ -605,24 +607,26 @@ c      implicit none
           nblk = ncut**ldim
           nelt0 = nelt0 / nblk
 
-          if (ifgetxr) then
+          if (ifgetxr.AND.ifgetx) then
             call h_refine_copy(xm1_,nelt0,ncut)
             call h_refine_copy(ym1_,nelt0,ncut)
             call h_refine_copy(zm1_,nelt0,ncut)
           endif
-          if (ifgetur) then
+          if (ifgetur.AND.ifgetu) then
             call h_refine_copy(vx_,nelt0,ncut)
             call h_refine_copy(vy_,nelt0,ncut)
             call h_refine_copy(vz_,nelt0,ncut)
           endif
-          if (ifgetpr) then
+          if (ifgetpr.AND.ifgetp) then
             call h_refine_copy(pm1_,nelt0,ncut)
           endif
-          if (ifgettr) then
+          if (ifgettr.AND.ifgett) then
             call h_refine_copy(t_,nelt0,ncut)
           endif
           do k=1,npsr
-            call h_refine_copy(ps_(1,1,1,1,k),nelt0,ncut)
+            if (ifgtpsr(k).AND.ifgtps(k))then
+              call h_refine_copy(ps_(1,1,1,1,k),nelt0,ncut)
+            endif
           enddo
         enddo
       endif
@@ -631,24 +635,26 @@ c      implicit none
       do iref=1,refineSize
         ncut = refine(iref)
         nblk = ncut**ldim
-        if (ifgetxr) then
+        if (ifgetxr.AND.ifgetx) then
           call h_refine_fld(xm1_,nelt0,ncut)
           call h_refine_fld(ym1_,nelt0,ncut)
           call h_refine_fld(zm1_,nelt0,ncut)
         endif
-        if (ifgetur) then
+        if (ifgetur.AND.ifgetu) then
           call h_refine_fld(vx_,nelt0,ncut)
           call h_refine_fld(vy_,nelt0,ncut)
           call h_refine_fld(vz_,nelt0,ncut)
         endif
-        if (ifgetpr) then
+        if (ifgetpr.AND.ifgetp) then
           call h_refine_fld(pm1_,nelt0,ncut)
         endif
-        if (ifgettr) then
+        if (ifgettr.AND.ifgett) then
           call h_refine_fld(t_,nelt0,ncut)
         endif
         do k=1,npsr
-          call h_refine_fld(ps_(1,1,1,1,k),nelt0,ncut)
+          if (ifgtpsr(k).AND.ifgtps(k))then
+            call h_refine_fld(ps_(1,1,1,1,k),nelt0,ncut)
+          endif
         enddo
         nelt0 = nelt0 * nblk
       enddo

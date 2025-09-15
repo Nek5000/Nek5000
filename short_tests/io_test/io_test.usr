@@ -80,25 +80,31 @@ c     local variables
       parameter (eps4=1.0E-06,eps8=1.0E-12,eps_map=5.0E-04)
       character*132 fstring
       character*5 nstring
-      
+
       time_test = pi
       ifvcor = .false.
       call fields_init
       ierr = 0
 
-      call read_old_file_test(eps4,eps8,eps_map,ierr)
+      if (nhref.gt.0) then ! read-only for h-refine
+         ifile = 0
+         call read_hrefine_mpiio_file_test(ifile,eps4,eps8,ierr)
+      else ! normal runs
+         call read_old_file_test(eps4,eps8,eps_map,ierr)
 
-      ifile = 0
-      call write_read_mpiio_file_test(ifile,eps4,eps8,ierr)
+         ifile = 0
+         call write_read_mpiio_file_test(ifile,eps4,eps8,ierr)
 
-      if (mod(NP,2).eq.0) then
-         call write_read_multipe_file_test(ifile,eps4,eps8,ierr)
+         if (mod(NP,2).eq.0) then
+            call write_read_multipe_file_test(ifile,eps4,eps8,ierr)
+         endif
+
+         ifile = 0
+         call write_read_fld_file_test(ifile,eps4,eps8,ierr)
+
+         call read_gfldr_test(eps4,eps8,eps_map,ierr)
+
       endif
-      
-      ifile = 0
-      call write_read_fld_file_test(ifile,eps4,eps8,ierr)
-
-      call read_gfldr_test(eps4,eps8,eps_map,ierr)
 
       if (NIO.eq.0) then
          write(*,*) ' '
@@ -228,6 +234,39 @@ c     local variables
       return
       end
 c-----------------------------------------------------------------------
+c     routine to clean fields in SOLN arrays
+      subroutine fields_clean
+
+      include 'SIZE'
+      include 'INPUT'
+      include 'TSTEP'
+      include 'GEOM'
+      include 'SOLN'
+
+c     local variables
+      integer il, nn
+
+c      nn =nx1*ny1*nz1*nelt
+c      call rzero(xm1,nn)
+c      call rzero(ym1,nn)
+c      if (IF3D) call rzero(zm1,nn)
+
+      nn =nx1*ny1*nz1*nelv
+      call rzero(vx,nn)
+      call rzero(vy,nn)
+      if (IF3D) call rzero(vz,nn)
+
+      nn =nx2*ny2*nz2*nelv
+      call rzero(pr,nn)
+
+      do il = 1 , 1 + npscal
+         nn =nx1*ny1*nz1*nelfld(il+1)
+         call rzero(t(1,1,1,1,il),nn)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
 c     routine to restore fields in SOLN arrays
       subroutine fields_restore
 
@@ -266,7 +305,7 @@ c     local variables
 c-----------------------------------------------------------------------
 c     compare fields and wite out L2 norms
 c     I compare only the fileds present in the file
-      subroutine fields_compare(eps)
+      subroutine fields_compare(epsx,epsu,test_pass)
 
       include 'SIZE'
       include 'INPUT'
@@ -276,7 +315,7 @@ c     I compare only the fileds present in the file
       include 'RESTART'
 
 c     argument list
-      real eps
+      real epsx, epsu
       
 c     local variables
       integer il, nn
@@ -285,6 +324,8 @@ c     local variables
       common /CTMP0/ rdiff
       character*7 fieldname
       character*2 snum
+
+      logical test_pass
       
       real cmp_v(lx1*ly1*lz1*lelv,ldim),cmp_t(lx1*ly1*lz1*lelt,ldimt),
      $     cmp_pr(lx2*ly2*lz2*lelv), cmp_x(lx1*ly1*lz1*lelv,ldim)
@@ -298,21 +339,30 @@ c     functions
          
          call sub3(rdiff,cmp_x(1,1),xm1,nn)
          l2rdiff = gl2norm(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'coord x',l2rdiff
+         if (l2rdiff.gt.epsx) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'coord x',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'coord x',l2rdiff
          endif
          
          call sub3(rdiff,cmp_x(1,2),ym1,nn)
          l2rdiff = gl2norm(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'coord y',l2rdiff
+         if (l2rdiff.gt.epsx) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'coord y',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'coord y',l2rdiff
          endif
 
          if (IF3D) then
             call sub3(rdiff,cmp_x(1,ndim),zm1,nn)
             l2rdiff = gl2norm(rdiff,nn)
-            if (l2rdiff.gt.eps.and.NIO.eq.0) then
-               write(*,10) 'coord z',l2rdiff
+            if (l2rdiff.gt.epsx) then
+               test_pass = .false.
+               if (nio.eq.0) write(*,10) 'coord z',l2rdiff
+            else
+               if (nio.eq.0) write(*,11) 'coord z',l2rdiff
             endif
          endif
       endif
@@ -322,21 +372,30 @@ c     functions
          
          call sub3(rdiff,cmp_v(1,1),vx,nn)
          l2rdiff = gl2norm(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'vel x  ',l2rdiff
+         if (l2rdiff.gt.epsu) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'vel x  ',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'vel x  ',l2rdiff
          endif
          
          call sub3(rdiff,cmp_v(1,2),vy,nn)
          l2rdiff = gl2norm(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'vel y  ',l2rdiff
+         if (l2rdiff.gt.epsu) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'vel y  ',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'vel y  ',l2rdiff
          endif
 
          if (IF3D) then
             call sub3(rdiff,cmp_v(1,ndim),vz,nn)
             l2rdiff = gl2norm(rdiff,nn)
-            if (l2rdiff.gt.eps.and.NIO.eq.0) then
-               write(*,10) 'vel z  ',l2rdiff
+            if (l2rdiff.gt.epsu) then
+               test_pass = .false.
+               if (nio.eq.0) write(*,10) 'vel z  ',l2rdiff
+            else
+               if (nio.eq.0) write(*,11) 'vel z  ',l2rdiff
             endif
          endif
       endif
@@ -346,8 +405,11 @@ c     functions
 csk         
          call sub3(rdiff,cmp_pr,pr,nn)
          l2rdiff = gl2norm2(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'pres   ',l2rdiff
+         if (l2rdiff.gt.epsu) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'pres   ',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'pres   ',l2rdiff
          endif
       endif
 
@@ -356,8 +418,11 @@ csk
          
          call sub3(rdiff,cmp_t,t,nn)
          l2rdiff = gl2norm(rdiff,nn)
-         if (l2rdiff.gt.eps.and.NIO.eq.0) then
-            write(*,10) 'temp   ',l2rdiff
+         if (l2rdiff.gt.epsu) then
+            test_pass = .false.
+            if (nio.eq.0) write(*,10) 'temp   ',l2rdiff
+         else
+            if (nio.eq.0) write(*,11) 'temp   ',l2rdiff
          endif
       endif
 
@@ -367,15 +432,21 @@ csk
             
             call sub3(rdiff,cmp_t(1,il),t(1,1,1,1,il),nn)
             l2rdiff = gl2norm(rdiff,nn)
-            if (l2rdiff.gt.eps.and.NIO.eq.0) then
+            if (l2rdiff.gt.epsu) then
+               test_pass = .false.
                write(snum,'(i2.2)') il-1
                fieldname = 'psc'//snum//'  '
-               write(*,10) fieldname,l2rdiff
+               if (nio.eq.0) write(*,10) fieldname,l2rdiff
+            else
+               write(snum,'(i2.2)') il-1
+               fieldname = 'psc'//snum//'  '
+               if (nio.eq.0) write(*,11) fieldname,l2rdiff
             endif 
          endif
       enddo
 
  10   format ('ERROR: field ',a7,' diff l2 norm = ',E15.7)
+ 11   format ('PASSED:field ',a7,' diff l2 norm = ',E15.7)
 
       return
       end
@@ -409,7 +480,7 @@ c     local variables
       time = 0.0
       fstring='m12io_test0.f00001 '
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -514,7 +585,7 @@ c     multiple files
       time = 0.0
       fstring='m22io_test?.f00001 '
       call load_fld(fstring)
-      call fields_compare(eps_map)
+      call fields_compare(eps_map,eps_map,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -618,7 +689,7 @@ c     multiple file single precision with byte swap
       time = 0.0
       fstring ='m22io_test?.f00002'
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -722,7 +793,7 @@ c     multiple files double precision with byte swap
       time = 0.0
       fstring ='m22io_test?.f00003'
       call load_fld(fstring)
-      call fields_compare(eps8)
+      call fields_compare(eps8,eps8,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -825,7 +896,7 @@ c     fld binary
       time = 0.0
       fstring='fb2io_test.fld01 '
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps4) then
@@ -887,7 +958,7 @@ c     fld ASCII
       time = 0.0
       fstring='fa2io_test.fld01 '
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps4) then
@@ -987,7 +1058,7 @@ c     mpiio single precision
       write(nstring,'(i5.5)') ifile
       fstring='io_test0.f'//nstring
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1093,7 +1164,7 @@ c     check string restart options
       call blank  (initc(1),132)
       initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'
       call setics
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-5.0).gt.eps8) then
@@ -1207,7 +1278,7 @@ c     mpiio double precision
       write(nstring,'(i5.5)') ifile
       fstring='io_test0.f'//nstring
       call load_fld(fstring)
-      call fields_compare(eps8)
+      call fields_compare(eps8,eps8,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1348,7 +1419,7 @@ c     multiple file single precision
       write(nstring,'(i5.5)') ifile
       fstring='io_test?.f'//nstring
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1461,7 +1532,7 @@ c     multiple files double precision
       write(nstring,'(i5.5)') ifile
       fstring='io_test?.f'//nstring
       call load_fld(fstring)
-      call fields_compare(eps8)
+      call fields_compare(eps8,eps8,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1600,7 +1671,7 @@ c     fld binary
       write(nstring,'(i2.2)') ifile
       fstring='io_test.fld'//nstring
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps4) then
@@ -1672,7 +1743,7 @@ c     fld ascii
       write(nstring,'(i2.2)') ifile
       fstring='io_test.fld'//nstring
       call load_fld(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps4) then
@@ -1759,7 +1830,7 @@ c     mpiio
       time = 0.0
       fstring='m12io_test0.f00001 '
       call gfldr(fstring)
-      call fields_compare(eps4)
+      call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1827,6 +1898,398 @@ c     for mpiio number of files is equal number of processes
  11   format ('ERROR: param ',a12,I10)
  12   format ('ERROR: param ',a12,L1)
       
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine read_hrefine_mpiio_file_test(ifile,eps4,eps8,ierr)
+c     read (mpiio) after h-refine
+      include 'SIZE'            !
+      include 'INPUT'           ! PARAM, NPSCAL
+      include 'TSTEP'           ! ISTEP, PI, IF_FULL_PRES
+      include 'RESTART'
+      include 'PARALLEL'
+      include 'SOLN' ! vx, dbg
+
+c     argument list
+      integer ifile,il
+      real eps4, eps8, eps_intp
+
+c     local variables
+      logical test_pass
+      real time_test
+      character*132 fstring
+      character*5 nstring
+      character*10 refstring
+
+      eps_intp = 2e-3
+      time_test = pi
+c      ifcrrs = .true.
+
+      call blank(refstring, 10)
+      if (nhref.eq.1) then
+         ncut = hrefcuts(1)
+         nblk = ncut**ldim
+         if (ncut.eq.2) refstring = ' href=2 '
+         if (ncut.eq.3) refstring = ' href=3 '
+         if (ncut.eq.4) refstring = ' href=4 '
+      elseif (nhref.eq.2) then
+         ncut = 4
+         nblk = ncut**ldim
+         refstring = ' href=2;2 '
+      else
+         return
+      endif
+
+c     mpiio single precision
+      test_pass = .true.
+      if (NIO.eq.0) then
+         write(*,*) ' '
+         write(*,*) 'Testing reading of single .f file'
+         write(*,*) 'Testing hrefine',refstring
+         write(*,*) 'Testing single precision'
+         write(*,*) ' '
+      endif
+      ifile = ifile +1
+
+      if_full_pres = .false.    ! pressure writing format
+      param(67) = 6.0           ! file format
+      time = 0.0
+      write(nstring,'(i5.5)') ifile
+      fstring='io_test0.f'//nstring//refstring
+      call fields_clean
+      call load_fld(fstring)
+      call fields_compare(eps4,eps_intp,test_pass)
+
+      call outpost2(vx,vy,vz,pr,t,npscal+1,'ttt')
+c     check reading options (only master)
+      if (NID.eq.0) then
+         if (abs(time-time_test).gt.eps8) then
+            test_pass = .false.
+            write(*,10) 'time      : ',time
+         endif
+c     for mpiio number of files is equal number of processes
+         if (nfiler.ne.np) then
+            test_pass = .false.
+            write(*,11) 'nfiler    : ',nfiler
+         endif
+         if (nelgr*nblk.ne.nelgt) then
+            test_pass = .false.
+            write(*,11) 'nelgt     : ',nelgt
+            write(*,11) 'nelgr     : ',nelgr
+         endif
+         if (wdsizr.ne.4) then
+            test_pass = .false.
+            write(*,11) 'wdsizr    : ',wdsizr
+         endif
+         if (if_byte_sw) then
+            test_pass = .false.
+            write(*,12) 'if_byte_sw: ',if_byte_sw
+         endif
+         if (.not.ifgtim) then
+            test_pass = .false.
+            write(*,12) 'ifgtim    : ',ifgtim
+         endif
+         if (.not.ifgetx) then
+            test_pass = .false.
+            write(*,12) 'ifgetx    : ',ifgetx
+         endif
+         if (.not.ifgetxr) then
+            test_pass = .false.
+            write(*,12) 'ifgetxr   : ',ifgetxr
+         endif
+         if (.not.ifgetu) then
+            test_pass = .false.
+            write(*,12) 'ifgetu    : ',ifgetu
+         endif
+         if (.not.ifgetur) then
+            test_pass = .false.
+            write(*,12) 'ifgetur   : ',ifgetur
+         endif
+         if (.not.ifgetp) then
+            test_pass = .false.
+            write(*,12) 'ifgetp    : ',ifgetp
+         endif
+         if (.not.ifgetpr) then
+            test_pass = .false.
+            write(*,12) 'ifgetpr   : ',ifgetpr
+         endif
+         if (.not.ifgett) then
+            test_pass = .false.
+            write(*,12) 'ifgett    : ',ifgett
+         endif
+         if (.not.ifgettr) then
+            test_pass = .false.
+            write(*,12) 'ifgettr   : ',ifgettr
+         endif
+         if (.not.ifgtps(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps1   : ',ifgtps(1)
+         endif
+         if (.not.ifgtpsr(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr1  : ',ifgtpsr(1)
+         endif
+         if (.not.ifgtps(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps2   : ',ifgtps(2)
+         endif
+         if (.not.ifgtpsr(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr2  : ',ifgtpsr(2)
+         endif
+         if (if_full_pres) then
+            test_pass = .false.
+            write(*,12) 'if_full_pres : ',if_full_pres
+         endif
+
+         write(*,*) ' '
+         if (test_pass) then
+            write(*,*) 'PASSED'
+         else
+            write(*,*) 'FAILED'
+            ierr = ierr + 1
+         endif
+         write(*,*) ' '
+      endif
+
+c     check string restart options
+      test_pass = .true.
+      if (NIO.eq.0) then
+         write(*,*) ' '
+         write(*,*) 'Testing reading of single .f file'
+         write(*,*) 'Testing hrefine',refstring
+         write(*,*) 'Testing restart flags'
+         write(*,*) ' '
+      endif
+      if_full_pres = .false.    ! pressure writing format
+      param(67) = 6.0           ! file format
+      time = 0.0
+      write(nstring,'(i5.5)') ifile
+      call blank  (initc(1),132)
+      initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'//refstring
+      call fields_clean
+      call setics
+      call fields_compare(eps4,eps_intp,test_pass)
+c     check reading options (only master)
+      if (NID.eq.0) then
+         if (abs(time-5.0).gt.eps8) then
+            test_pass = .false.
+            write(*,10) 'time      : ',time
+         endif
+c     for mpiio number of files is equal number of processes
+         if (nfiler.ne.np) then
+            test_pass = .false.
+            write(*,11) 'nfiler    : ',nfiler
+         endif
+         if (nelgr*nblk.ne.nelgt) then
+            test_pass = .false.
+            write(*,11) 'nelgt     : ',nelgt
+            write(*,11) 'nelgr     : ',nelgr
+         endif
+         if (wdsizr.ne.4) then
+            test_pass = .false.
+            write(*,11) 'wdsizr    : ',wdsizr
+         endif
+         if (if_byte_sw) then
+            test_pass = .false.
+            write(*,12) 'if_byte_sw: ',if_byte_sw
+         endif
+         if (ifgtim) then
+            test_pass = .false.
+            write(*,12) 'ifgtim    : ',ifgtim
+         endif
+         if (ifgetx) then
+            test_pass = .false.
+            write(*,12) 'ifgetx    : ',ifgetx
+         endif
+         if (.not.ifgetxr) then
+            test_pass = .false.
+            write(*,12) 'ifgetxr   : ',ifgetxr
+         endif
+         if (.not.ifgetu) then
+            test_pass = .false.
+            write(*,12) 'ifgetu    : ',ifgetu
+         endif
+         if (.not.ifgetur) then
+            test_pass = .false.
+            write(*,12) 'ifgetur   : ',ifgetur
+         endif
+         if (ifgetp) then
+            test_pass = .false.
+            write(*,12) 'ifgetp    : ',ifgetp
+         endif
+         if (.not.ifgetpr) then
+            test_pass = .false.
+            write(*,12) 'ifgetpr   : ',ifgetpr
+         endif
+         if (ifgett) then
+            test_pass = .false.
+            write(*,12) 'ifgett    : ',ifgett
+         endif
+         if (.not.ifgettr) then
+            test_pass = .false.
+            write(*,12) 'ifgettr   : ',ifgettr
+         endif
+         if (.not.ifgtps(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps1   : ',ifgtps(1)
+         endif
+         if (.not.ifgtpsr(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr1  : ',ifgtpsr(1)
+         endif
+         if (ifgtps(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps2   : ',ifgtps(2)
+         endif
+         if (.not.ifgtpsr(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr2  : ',ifgtpsr(2)
+         endif
+         if (if_full_pres) then
+            test_pass = .false.
+            write(*,12) 'if_full_pres',if_full_pres
+         endif
+
+         write(*,*) ' '
+         if (test_pass) then
+            write(*,*) 'PASSED'
+         else
+            write(*,*) 'FAILED'
+            ierr = ierr + 1
+         endif
+         write(*,*) ' '
+      endif
+
+c     mpiio double precision
+      test_pass = .true.
+      if (NIO.eq.0) then
+         write(*,*) ' '
+         write(*,*) 'Testing writing/reading of single .f file'
+         write(*,*) 'Testing hrefine',refstring
+         write(*,*) 'Testing double precision'
+         write(*,*) ' '
+      endif
+
+      ifile = ifile +1
+
+      if_full_pres = .false.    ! pressure writing format
+      param(67) = 6.0           ! file format
+      time = 0.0
+      write(nstring,'(i5.5)') ifile
+      fstring='io_test0.f'//nstring//refstring
+      call fields_clean
+      call load_fld(fstring)
+      call fields_compare(eps8,eps_intp,test_pass)
+c     check reading options (only master)
+      if (NID.eq.0) then
+         if (abs(time-time_test).gt.eps8) then
+            test_pass = .false.
+            write(*,10) 'time      : ',time
+         endif
+c     for mpiio number of files is equal number of processes
+         if (nfiler.ne.np) then
+            test_pass = .false.
+            write(*,11) 'nfiler    : ',nfiler
+         endif
+         if (nelgr*nblk.ne.nelgt) then
+            test_pass = .false.
+            write(*,11) 'nelgt     : ',nelgt
+            write(*,11) 'nelgr     : ',nelgr
+         endif
+         if (wdsizr.ne.8) then
+            test_pass = .false.
+            write(*,11) 'wdsizr    : ',wdsizr
+         endif
+         if (if_byte_sw) then
+            test_pass = .false.
+            write(*,12) 'if_byte_sw: ',if_byte_sw
+         endif
+         if (.not.ifgtim) then
+            test_pass = .false.
+            write(*,12) 'ifgtim    : ',ifgtim
+         endif
+         if (.not.ifgetx) then
+            test_pass = .false.
+            write(*,12) 'ifgetx    : ',ifgetx
+         endif
+         if (.not.ifgetxr) then
+            test_pass = .false.
+            write(*,12) 'ifgetxr   : ',ifgetxr
+         endif
+         if (.not.ifgetu) then
+            test_pass = .false.
+            write(*,12) 'ifgetu    : ',ifgetu
+         endif
+         if (.not.ifgetur) then
+            test_pass = .false.
+            write(*,12) 'ifgetur   : ',ifgetur
+         endif
+         if (ifsplit) then
+            if (.not.ifgetp) then
+               test_pass = .false.
+               write(*,12) 'ifgetp    : ',ifgetp
+            endif
+         else
+            if (ifgetp) then ! don't read pr when PnPn-2 + href + if_full_pres
+               test_pass = .false.
+               write(*,12) 'ifgetp    : ',ifgetp
+            endif
+         endif
+         if (.not.ifgetpr) then
+            test_pass = .false.
+            write(*,12) 'ifgetpr   : ',ifgetpr
+         endif
+         if (.not.ifgett) then
+            test_pass = .false.
+            write(*,12) 'ifgett    : ',ifgett
+         endif
+         if (.not.ifgettr) then
+            test_pass = .false.
+            write(*,12) 'ifgettr   : ',ifgettr
+         endif
+         if (.not.ifgtps(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps1   : ',ifgtps(1)
+         endif
+         if (.not.ifgtpsr(1)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr1  : ',ifgtpsr(1)
+         endif
+         if (.not.ifgtps(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtps2   : ',ifgtps(2)
+         endif
+         if (.not.ifgtpsr(2)) then
+            test_pass = .false.
+            write(*,12) 'ifgtpsr2  : ',ifgtpsr(2)
+         endif
+         if (ifsplit) then
+            if (if_full_pres) then
+               test_pass = .false.
+               write(*,12) 'if_full_pres : ',if_full_pres
+            endif
+         else
+            if (.not.if_full_pres) then
+               test_pass = .false.
+               write(*,12) 'if_full_pres : ',if_full_pres
+            endif
+         endif
+
+         write(*,*) ' '
+         if (test_pass) then
+            write(*,*) 'PASSED'
+         else
+            write(*,*) 'FAILED'
+            ierr = ierr + 1
+         endif
+         write(*,*) ' '
+      endif
+
+ 10   format ('ERROR: param ',a12,E15.7)
+ 11   format ('ERROR: param ',a12,I10)
+ 12   format ('ERROR: param ',a12,L1)
+
       return
       end
 c-----------------------------------------------------------------------
