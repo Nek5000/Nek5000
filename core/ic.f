@@ -513,6 +513,9 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
+         if (nhrefrs.gt.0) then
+            call exitti('href rs only supports p67=6$',nhrefrs)
+         endif
         ierr = 0
         if (nid.eq.0) then
 
@@ -967,7 +970,7 @@ C
 
       character*132 rsopts,fname
       character*2  s2
-      logical ifgtrl
+      logical ifgtrl,ifgtisl
 
 C     Scratch variables..
       logical ifdeft,ifanyc
@@ -1008,6 +1011,13 @@ C
       ifgtim=.true.
       ndumps=0
       ifgfldr=.false.
+
+c     href restart
+      nhrefrs = 0
+      do iref=1,lhref
+         hrefcutsrs(iref) = 0
+      enddo
+
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
@@ -1041,6 +1051,32 @@ C           remove the user specified time from the RS options line.
             ITB=132-IT1+1
             CALL CHCOPY(RSOPT1(ITO),LINE1(IT1),ITB)
          ENDIF
+c
+c        Check for h-refine schedule on the top of the file
+c
+         IRO=INDX_CUT(RSOPT,'HREF',4)
+         IFHREF=.TRUE.
+         IF (IRO.NE.0) THEN
+            IR1=INDX_CUT(RSOPT,'=',1)
+            IR8=132-IR1
+            CALL BLANK(LINE,132)
+            CALL CHCOPY(LINE,RSOPT1(IR1),IR8)
+            IF (.not.IFGTISL(NHREFRS,HREFCUTSRS,LHREF,LINE)) THEN
+               IF (NHREFRS.GT.LHREF) THEN
+                  call exitti('nhref rs > lref$',HREFRS)
+               ELSE
+                  call exitti('Invalid href restart options$',NHREFRS)
+               ENDIF
+            ENDIF
+C           remove the user specified time from the RS options line.
+            IRA=132-IRO+1
+            CALL BLANK(RSOPT1(IRO),IRA)
+            CALL LJUST(LINE)
+            IR1=INDX1(LINE,' ',1)
+            IRB=132-IR1+1
+            CALL CHCOPY(RSOPT1(IRO),LINE1(IR1),IRB)
+         ENDIF
+
 
 C        Parse field specifications.
 
@@ -1735,6 +1771,87 @@ C
       ENDIF
 C
   100 CONTINUE
+      return
+      END
+c-----------------------------------------------------------------------
+      LOGICAL FUNCTION IFGTISL(NVAR,IVAR,NMAX,LINE)
+C
+C     Read IVAL(I) from LINE and set IFGTISL to .TRUE. if successful,
+C                                    IFGTISL to .FALSE. otherwise.
+C     It reads until the frist space. List of integer are separated by ";"
+C     NMAX is used to make sure it won't access outside the allocation
+C
+      CHARACTER*132 LINE
+      CHARACTER*132 WORK
+      CHARACTER*1 WORK1(132)
+      CHARACTER*8  FMAT
+      EQUIVALENCE (WORK,WORK1)
+
+      INTEGER NVAR, NMAX, IVAR(NMAX)
+      INTEGER ILOC(NMAX), ILEN(NMAX), ISTART, NTMP
+C
+      IFGTISL=.FALSE.
+      NVAR=0
+C
+      WORK = LINE
+      CALL LJUST(WORK)
+      IFLDW=INDX1(WORK,' ',1)-1
+      if (IFLDW.LE.0) goto 100
+
+C     replace ';' with space
+      DO I=1,IFLDW
+         IF (WORK1(I).EQ.';') WORK1(I) = ' '
+      ENDDO
+
+c     remove trailing spaces
+      NTMP = 0
+      DO I=IFLDW,1,-1
+         IF (WORK1(I).NE.' ') goto 90
+         NTMP = NTMP + 1
+      ENDDO
+   90 CONTINUE
+      IFLDW = IFLDW - NTMP
+      if (IFLDW.LE.0) goto 100
+
+c     count integers, and record start position
+      NVAR = 1
+      ISTART = 1
+      DO I=1,IFLDW
+         IF (WORK1(I).EQ.' ') THEN
+            ILOC(NVAR) = ISTART
+            ILEN(NVAR) = I - ISTART
+            IF (ILEN(NVAR).LT.1) goto 100
+
+            ISTART = 0 ! reset
+            NVAR = NVAR + 1
+            if (NVAR.GT.NMAX) goto 110
+         ELSE
+            IF (ISTART.EQ.0) ISTART = I
+         ENDIF
+      ENDDO
+      ILOC(NVAR) = ISTART
+      ILEN(NVAR) = I - ISTART
+      IF (NVAR.GT.NMAX) goto 110
+
+      DO I=1,NVAR
+         I0 = ILOC(I)
+         I1 = I0 + ILEN(I) - 1
+
+         WRITE(FMAT,10) ILEN(I)
+         READ(WORK(I0:I1),FMAT,ERR=100,END=100) TVAL
+         IVAR(I) = INT(TVAL)
+      ENDDO
+
+      IFGTISL = .TRUE.
+      return ! success
+   10 FORMAT('(F',I3.3,'.0)')
+
+  100 CONTINUE ! incorrect format
+      NVAR = 0
+      return
+
+  110 CONTINUE ! nvar > nmax
+      NVAR = NMAX + 1
       return
       END
 c-----------------------------------------------------------------------
@@ -2621,7 +2738,12 @@ c
       if(.not. ifmpiio) nid_r = pid0r
       if(nid.eq.nid_r) write(6,*) '      FILE:', fname
 
-      offs0   = iHeadersize + 4 + isize*nelgr
+      if (nhrefrs.gt.0) then
+         call refine_map_elements(hrefcutsrs,nhrefrs)
+      endif
+
+      offs0   = nelgr ! cast to int*8
+      offs0   = iHeadersize + 4 + isize*offs0
       nxyzr8  = nxr*nyr*nzr
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
@@ -2711,6 +2833,22 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = glsum(dnbyte,1)
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
+      if (nhrefrs.gt.0) then
+         if (if_full_pres) then ! skip pr to avoid extra interp
+            ifgetp = .false.
+            if (nio.eq.0) write(6,32) if_full_pres
+         endif
+         k = 1
+         if (ldimt.gt.1) k = 2
+         if (ifmhd.and.ifile.eq.2) then
+            call refine_readfld(xm1,ym1,zm1,bx,by,bz
+     $                         ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         else
+            call refine_readfld(xm1,ym1,zm1,vx,vy,vz
+     $                         ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         endif
+      endif
+
       if (tio.eq.0) tio=1
       if (nio.eq.0) write(6,7) istep,time,
      &             nbyte/tio/1e9/10,
@@ -2733,6 +2871,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 #endif
 
   31  format(3x,'mfi:rd/pk/xfer/unpk/tot:',5(1e9.2))
+  32  format(3x,'mfi:href skip pr when pnpn-2 and if_full_pres',L2)
 
       return
       end
