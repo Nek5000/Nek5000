@@ -1243,6 +1243,8 @@ c
 c
       real w(0:2*n+1)
 c
+      if (n.lt.1) call exitti('semhat requires polyn. order >=1$',n)
+c
       np = n+1
       nm = n-1
       n2 = n-2
@@ -1255,16 +1257,6 @@ c
             d(i,j) = w(j+np)                   !  Derivative matrix
          enddo
       enddo
-
-      if (n.eq.1) return                       !  No interpolation for n=1
-
-      do i=0,n
-         call fd_weights_full(z(i),z(1),n2,1,w(1))
-         do j=1,nm
-            jgll(i,j) = w(j   )                  !  Interpolation matrix
-            dgll(i,j) = w(j+nm)                  !  Derivative    matrix
-         enddo
-      enddo
 c
       call rzero(a,np*np)
       do j=0,n
@@ -1274,6 +1266,16 @@ c
          enddo
          c(i,j) = b(i)*d(i,j)
       enddo
+      enddo
+c
+      if (n.eq.1) return                       !  No interpolation for n=1
+c
+      do i=0,n
+         call fd_weights_full(z(i),z(1),n2,1,w(1))
+         do j=1,nm
+            jgll(i,j) = w(j   )                  !  Interpolation matrix
+            dgll(i,j) = w(j+nm)                  !  Derivative    matrix
+         enddo
       enddo
 c
       call zwgl (zgl,bgl,nm)
