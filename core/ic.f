@@ -2002,7 +2002,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelgt - 1) / lbrst + 1
+            nbatch = (nelt - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
@@ -2213,7 +2213,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelgt - 1) / lbrst + 1
+            nbatch = (nelt - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
