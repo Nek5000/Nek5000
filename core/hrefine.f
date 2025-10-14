@@ -6,9 +6,13 @@ c     Note that lelt and lelg need to be LARGE enough
       include 'SIZE'
       include 'TOTAL'
 
-      parameter(lxyz=lx1*ly1*lz1)
+      parameter (lxyz=lx1*ly1*lz1)
       common /c_is1/ glo_num(lxyz*lelt)
       integer*8 glo_num
+
+      integer icalld
+      save icalld
+      data icalld /0/
 
       ncut_o = ncut
       nelv_o = nelv
@@ -23,6 +27,8 @@ c
 c     call h_refine_fld(t,nelt_o,ncut_o)
 
 c     call outpost(xm1,ym1,zm1,pr,t,'   ')
+
+      icalld = 1
 
       return
       end
@@ -64,34 +70,51 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine set_interp_mat(ncut,pc,pt)
+      subroutine set_interp_mat(nx,ncut,pc,pt,ifrecomp)
+c     interp mat for h-refine, GLL
+c        nx: npts in 1 direction
+c        ncut: new nel in 1 direction
+      implicit none
       include 'SIZE'
-      include 'TOTAL'
 
-      real pc(lx1*lx1,ncut) ! Interpolation matrix
-      real pt(lx1*lx1,ncut)
+      logical ifrecomp
+      integer nx,ncut
+      real pc(nx*nx,ncut) ! Interpolation matrix
+      real pt(nx*nx,ncut) ! Transpose
 
-      common /qtmp0/ z_out(lx1),wk(lx1*lx1),wk2(lx1*lx1)
+      integer k, i, ncut_save, nx_save
+      real z_out, z_hat, r0, dr,  wk, wk2
+      common /qtmp0/ z_out(lx1),z_hat(lx1),wk(lx1*lx1),wk2(lx1*lx1)
 
-      save ncut_save
+      save ncut_save, nx_save
       data ncut_save /0/
+      data nx_save /0/
 
-      if (ncut.le.1)
-     $  call exitti('invalid ncut in set_interp_mat$',ncut)
+      if (ncut.le.1) call exitti('invalid ncut in set_interp_mat$',ncut)
+      if (nx.lt.2) call exitti('invalid nx in set_interp_mat$',nx)
+      call lim_chk(nx,lx1,'nx   ','lx1  ',' set_intp ')
 
-      if (ncut.ne.ncut_save) then
+      if (ifrecomp) then ! recompute
+         ncut_save = 0
+         nx_save = 0
+      endif
+
+      if (ncut.ne.ncut_save.OR.nx.ne.nx_save) then
+
+        call zwgll(z_hat,wk,nx)
 
         dr = 2./ncut
         do k=1,ncut
           r0 = -1. + (k-1)*dr
-          do i=1,lx1
-            z_out(i) = r0 + dr*(zgm1(i,1)+1)/2.
+          do i=1,nx
+            z_out(i) = r0 + dr*(z_hat(i)+1)/2.
           enddo
-          call interp_mat(pc(1,k),z_out,lx1,zgm1,lx1,wk,wk2)
-          call transpose (pt(1,k),lx1,pc(1,k),lx1)
+          call interp_mat(pc(1,k),z_out,nx,z_hat,nx,wk,wk2)
+          call transpose (pt(1,k),nx,pc(1,k),nx)
         enddo
 
         ncut_save = ncut
+        nx_save = nx
 
       endif
 
@@ -114,7 +137,7 @@ c    $                 ,xm1(1,1,1,e),ym1(1,1,1,e),zm1(1,1,1,e),pc,pt)
       real pc(lx1*lx1,ncut) ! Interpolation matrix
       real pt(lx1*lx1,ncut) ! Interpolation matrix
 
-      common /qtmp0/ z_out(lx1),wk(lx1*lx1),wk2(lx1*lx1)
+      common /qtmp0/ z_out(lx1),z_hat(lx1),wk(lx1*lx1),wk2(lx1*lx1)
 
       if (ldim.eq.3) then
 
@@ -157,7 +180,7 @@ c-----------------------------------------------------------------------
       real pc(lx1*lx1,ncut) ! Interpolation matrix
       real pt(lx1*lx1,ncut) ! Interpolation matrix
 
-      common /qtmp0/ z_out(lx1),wk(lx1*lx1),wk2(lx1*lx1)
+      common /qtmp0/ z_out(lx1),z_hat(lx1),wk(lx1*lx1),wk2(lx1*lx1)
 
       kcut=ncut
       if (ldim.eq.2) kcut=1
@@ -178,8 +201,6 @@ c-----------------------------------------------------------------------
       subroutine elcopy(en,e)
       include 'SIZE'
       include 'TOTAL'
-
-c     ADD MORE ITEMS, as needed
 
       integer e,en,eg
 
@@ -273,8 +294,8 @@ c                                   ncut = 4 --> 64x number of elements
       integer*8 glo_num(ncut+1,ncut+1,ncut*(ldim-2)+1,lelt)
       integer e,eg,egn,el,en,er,es,et
 
-      parameter(lxyz=lx1*ly1*lz1,mxnew=500)
-      common /qcrmg/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
+      parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
+      common /scrns/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
      $             , pc(lx1*lx1,mxnew),pt(lx1*lx1,mxnew)
       real pc,pt
 
@@ -316,7 +337,7 @@ c     CHECK limit sizes
       nelgt_new = nblk*nelgt
       call lim_chk(nelgt_new,lelg,'ngnew','lelg ',' h_refine ')
 
-      call set_interp_mat(ncut,pc,pt)
+      call set_interp_mat(lx1,ncut,pc,pt,.false.)
 
       call set_vert(glo_num,ngv,nvrt,nelt,vertex,.true.) ! Get new vertex set
 
@@ -349,9 +370,6 @@ c     CHECK limit sizes
           call copy(xm1(1,1,1,en),x0(1,el),lxyz)
           call copy(ym1(1,1,1,en),y0(1,el),lxyz)
           call copy(zm1(1,1,1,en),z0(1,el),lxyz)
-
-c         Note - we need to update xc,yc,zc
-c         Note - we also should extract midside nodes.
 
           k0=1 + (et-1)
           j0=1 + (es-1)
@@ -391,6 +409,10 @@ c         Note - we also should extract midside nodes.
              if (et.gt.1)    call fczero(5,en)  ! t-boundaries (face=5,6)
              if (et.lt.ncut) call fczero(6,en)
           endif
+
+          ! remove curves as it's not updated correspondingly
+          call rzero(curve(1,1,en),72)
+          call blank(ccurve(1,en),12)
 
         enddo
         enddo
@@ -464,8 +486,8 @@ c     Interpolate field onto the refined mesh 1
       real u(lx1,ly1,lz1,lelt)
       integer e,eg,egn,el,en,er,es,et
 
-      parameter(lxyz=lx1*ly1*lz1,mxnew=500)
-      common /qcrmg/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
+      parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
+      common /scrns/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
      $             , pc(lx1*lx1,mxnew),pt(lx1*lx1,mxnew)
       real pc,pt
 
@@ -481,7 +503,7 @@ c     CHECK limit sizes
       nelg_new = iglsum(nblk*nel,1)
       call lim_chk(nelg_new,lelg,'ngnew','lelg ',' h_refine_fld ')
 
-      call set_interp_mat(ncut,pc,pt)
+      call set_interp_mat(lx1,ncut,pc,pt,.false.)
 
       do e=nel,1,-1  ! REPLICATE EACH ELEMENT, working backward
 
@@ -538,7 +560,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine refine_map_elements(refine, refineSize)
+      subroutine hrefine_map_elements(refine, refineSize)
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
@@ -578,8 +600,8 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine refine_readfld(xm1_,ym1_,zm1_,vx_,vy_,vz_
-     $                         ,pm1_,t_,ps_, refine, refineSize)
+      subroutine hrefine_readfld(xm1_,ym1_,zm1_,vx_,vy_,vz_
+     $                          ,pm1_,t_,ps_, refine, refineSize)
       implicit none
       include 'SIZE'
       include 'INPUT' ! ifaxis
@@ -668,6 +690,99 @@ c-----------------------------------------------------------------------
         nelt0 = nelt0 * nblk
       enddo
 
+      return
+      end
+c-----------------------------------------------------------------------
+c     extra settings to recover original mesh info, for hMG
+c-----------------------------------------------------------------------
+      subroutine hrefine_r2o_nel(nelv_o,nelt_o,ncut)
+      implicit none
+      include 'SIZE'
+      integer nelv_o,nelt_o,ncut,nblk
+
+      nblk = ncut**ldim
+
+      if (mod(nelv,nblk).ne.0)
+     $   call exitti('ref_r2o nelv not divisible$',nblk)
+      if (mod(nelt,nblk).ne.0)
+     $   call exitti('ref_r2o nelt not divisible$',nblk)
+
+      nelv_o = nelv / nblk
+      nelt_o = nelt / nblk
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hrefine_r2o_vertex(vtxo,vtxr,nelo,ncut)
+      implicit none
+      include 'SIZE'
+      integer*8 vtxo(2**ldim,1), vtxr(2**ldim,1)
+      integer nelo, ncut, nblk
+      integer e, en, e1,e2,e3,e4,e5,e6,e7,e8
+
+      nblk = ncut**ldim
+
+      e1 = 1
+      e2 = ncut
+      e3 = (ncut-1)*ncut+1
+      e4 = ncut*ncut
+      e5 = e1 + ncut*ncut
+      e6 = e2 + ncut*ncut
+      e7 = e3 + ncut*ncut
+      e8 = e4 + ncut*ncut
+
+      do e=1,nelo
+         en = (e-1) * nblk
+         vtxo(1,e) = vtxr(1,en+e1)
+         vtxo(2,e) = vtxr(2,en+e2)
+         vtxo(3,e) = vtxr(3,en+e3)
+         vtxo(4,e) = vtxr(4,en+e4)
+
+         if (ldim.eq.3) then
+            vtxo(5,e) = vtxr(5,en+e5)
+            vtxo(6,e) = vtxr(6,en+e6)
+            vtxo(7,e) = vtxr(7,en+e7)
+            vtxo(8,e) = vtxr(8,en+e8)
+         endif
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hrefine_r2o_cbc(CBCo,CBCr,nelo,ncut)
+      implicit none
+      include 'SIZE'
+      integer e,el,er,nelo,ncut,kcut,nblk
+      integer ic,jc,kc
+      character*3 CBCo(6,1), CBCr(6,1)
+
+      nblk = ncut**ldim
+
+      kcut = ncut
+      if (ldim.eq.2) kcut = 1
+
+      do e=1,nelo
+
+         el = 0
+         do kc=1,kcut
+         do jc=1,ncut
+         do ic=1,ncut
+            el = el + 1
+            er = (e-1) * nblk + el
+
+            if (ic.eq.1)         CBCo(4,e) = CBCr(4,er)
+            if (ic.eq.ncut)      CBCo(2,e) = CBCr(2,er)
+            if (jc.eq.1)         CBCo(1,e) = CBCr(1,er)
+            if (jc.eq.ncut)      CBCo(3,e) = CBCr(3,er)
+            if (ldim.eq.3) then
+               if (kc.eq.1)      CBCo(5,e) = CBCr(5,er)
+               if (kc.eq.ncut)   CBCo(6,e) = CBCr(6,er)
+            endif
+         enddo
+         enddo
+         enddo
+
+      enddo
       return
       end
 c-----------------------------------------------------------------------
