@@ -100,7 +100,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
 
       if(nio.eq.0) write(6,*) 'call usrdat2'
       do iref=1,nhref
-         call usrdat2_oct(hrefcuts(iref))
+         call h_refine_usrdat2(hrefcuts(iref))
          call fix_geom
       enddo
 
