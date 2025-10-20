@@ -57,6 +57,10 @@ c
          ! add user defined divergence to qtl 
          call add2 (qtl,usrdiv,ntot1)
 
+         ! add surface tension term
+         call opcolv     (abfx,abfy,abfz,bm1)
+         call opadd2     (bfx,bfy,bfz,abfx,abfy,abfz)
+
          if (igeom.eq.2) call lagvel
 
          ! mask Dirichlet boundaries
