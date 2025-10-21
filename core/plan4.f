@@ -40,12 +40,13 @@ c
 
       if (igeom.eq.1) then
 
-         ! compute explicit contributions bfx,bfy,bfz 
-         call makef 
-
          call sumab(vx_e,vx,vxlag,ntot1,ab,nab)
          call sumab(vy_e,vy,vylag,ntot1,ab,nab)
          if (if3d) call sumab(vz_e,vz,vzlag,ntot1,ab,nab)
+
+         ! compute explicit contributions bfx,bfy,bfz 
+         call makef 
+
          ! call copy (vx_e,vx,ntot1)
          ! call copy (vy_e,vy,ntot1)
          ! if (if3d) call copy (vz_e,vz,ntot1)
