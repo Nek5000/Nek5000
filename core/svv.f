@@ -932,18 +932,18 @@ c---------------------------------------------------------------------
       if(ix*iy*iz*e .eq. 1)then
         ntot = lx1*ly1*lz1*lelv
         call rone(dummy,ntot)
-        call setmu_svv(dummy,vx_e,vy_e,vz_e)
+        call setmu_svv(dummy,vx,vy,vz)
 
-        call axhelm_svv_fluid(auvx,vx_e,1,1)
-        call axhelm_svv_fluid(auvy,vy_e,1,1)
+        call axhelm_svv_fluid(auvx,vx,1,1)
+        call axhelm_svv_fluid(auvy,vy,1,1)
         if(if3d)then
-          call axhelm_svv_fluid(auvz,vz_e,1,1)
+          call axhelm_svv_fluid(auvz,vz,1,1)
         endif
       endif
 
-      svvx = auvx(ix,iy,iz,e) * vtrans(ix,iy,iz,e,1)
-      svvy = auvy(ix,iy,iz,e) * vtrans(ix,iy,iz,e,1)
-      svvz = auvz(ix,iy,iz,e) * vtrans(ix,iy,iz,e,1)
+      svvx = auvx(ix,iy,iz,e)
+      svvy = auvy(ix,iy,iz,e)
+      svvz = auvz(ix,iy,iz,e)
 
       return
       end
