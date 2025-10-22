@@ -1382,6 +1382,9 @@ c-----------------------------------------------------------------------
 
       param(63) = 1 ! Enforce 64-bit output
       if_full_pres = .true. !Preserve mesh 2 pressure
+      if (lx1.ne.lx2) if_full_pres = .false. ! avoid unecessary zero pressure 
+                                             ! values to be published (and read)
+                                             ! in rs_* files.
 
       if (lastep.ne.1) call restart_save(iosave,nfld_save)
 
