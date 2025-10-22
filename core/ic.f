@@ -2529,8 +2529,10 @@ c     set if_full_pres flag
       if (.not.ifsplit) if_full_pres = if_press_mesh
 
 c     read href schedule of a file
-      call hrefcuts_c2i(chrefcutsrs) ! decode
-      call hrefcuts_chkdiff          ! send it into RESTART option
+      if (nhref.gt.0) then
+        call hrefcuts_c2i(chrefcutsrs) ! decode
+        call hrefcuts_chkdiff          ! send it into RESTART option
+      endif
 
 c      ifgtim  = .true.  ! always get time
       ifgetxr = .false.

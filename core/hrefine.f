@@ -897,6 +897,8 @@ c
       integer nblk, nblk_rs, ncut, ncut_rs, i, j, ierr
       integer nelgr0, nelgt0
 
+      if (nhref.eq.0) return
+
       if (nio.eq.0) then
          write(*,*)'href schdule, sim: ', (hrefcuts(i),i=1,nhref)
          write(*,*)'href schdule, fld: ', (hrefcutsrs(i),i=1,nhrefrs)
