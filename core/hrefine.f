@@ -755,3 +755,204 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
+      subroutine hrefcuts_i2c(cout) ! convert integer to base 62 alphabet
+      implicit none
+      include 'SIZE'
+      include 'INPUT'
+
+      character*4 cout, ctmp
+      character*1 c4(4)
+      equivalence (c4,ctmp)
+
+c     Base 62 alphabet
+      character*62 B62a
+      character*1  B62b(62)
+      equivalence (B62a,B62b)
+      save B62a
+
+      integer i, nround, ncut, ierr
+
+      B62a = '0123456789'
+     &    // 'abcdefghijklmnopqrstuvwxyz'
+     &    // 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+      ierr = 0
+      cout = '0000'
+      if (nhref.eq.0) return
+
+      call blank(ctmp,4)
+
+      nround = min(nhref,4)
+      do i=1,nround
+         ncut = hrefcuts(i)
+         if (ncut.gt.61.OR.ncut.lt.1) then
+            if (nio.eq.0) write(6,20) ncut
+            ierr = 1
+         else
+            c4(i) = B62b(ncut+1)
+         endif
+      enddo
+
+      if (nhref.gt.4) then
+         if (nio.eq.0) write(6,21) nhref
+         ierr = 2
+      endif
+
+      cout = ctmp
+
+   20 format('WARN: href i2c only support ncut in [1,61] ncut=',i3)
+   21 format('WARN: href i2c only support upto 4 rounds nhref=',i3)
+
+      if (ierr.ne.0) then
+        if(nio.eq.0)write(*,*) 'WARN: href i2c fallback to empty string'
+        cout = '    '
+      endif
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hrefcuts_c2i(cin) ! convert string to int list
+      implicit none
+      include 'SIZE'
+      include 'RESTART'
+
+      character*4 cin
+      character*4 cout, ctmp
+      character*1 c4(4)
+      equivalence (c4,ctmp)
+
+c     Base 61 alphabet
+      character*62 B62
+      parameter (B62 = '0123456789'
+     &              // 'abcdefghijklmnopqrstuvwxyz'
+     &              // 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+      integer i, nround, ncut, pos, ierr
+
+      if (cin.eq.'    ') return ! do nothing for legacy format to allow overwrite
+
+      nhrefrs = 0
+      call izero(hrefcutsrs, lhref)
+      if (cin.eq.'0000') return ! empty schedule
+
+      ierr = 0
+      call chcopy(ctmp,cin,4)
+
+c     convert all characters into integers
+      nround = min(4, lhref)
+      do i=1,nround
+         pos = index(B62, c4(i))
+         if (c4(i).eq.' ') then
+            hrefcutsrs(i) = 0
+         elseif (pos.gt.0) then
+            hrefcutsrs(i) = pos - 1
+         else
+            hrefcutsrs(i) = 0
+            goto 90 ! err
+         endif
+      enddo
+
+c     use first zero to determine the length
+      nhrefrs = nround
+      do i=1,nround
+         if (hrefcutsrs(i).eq.0) then
+            nhrefrs = i - 1
+            goto 40
+         endif
+      enddo
+   40 continue
+
+c     zero out the rest
+      do i=1,lhref
+         if (i.gt.nhrefrs) hrefcutsrs(i) = 0
+      enddo
+      return
+
+c     zero everything when error
+   90 continue
+      if (nio.eq.0)
+     $  write(*,*)'WARN: href c2i invalid fmt, zero hrefcutsrs|',cin,'|'
+
+      nhrefrs = 0
+      call izero(hrefcutsrs, lhref)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine hrefcuts_chkdiff
+c
+c     Input:
+c        hrefcuts:      h-refine schedule from INPUT, e.g. par
+c        hrefcutsrs:    h-refine schedule from RESTART, e.g., checkpoint hdr
+c     This subroutine return the ordered diffeference
+c        hrefcutsrs = hrefcuts \ hrefcutsrs
+c     which is the extra refinement on the top of checkpoint to match simulation
+c
+      implicit none
+      include 'SIZE'
+      include 'INPUT'
+      include 'RESTART'
+      include 'PARALLEL' ! nelgt
+
+      integer nblk, nblk_rs, ncut, ncut_rs, i, j, ierr
+      integer nelgr0, nelgt0
+
+      if (nio.eq.0) then
+         write(*,*)'href schdule, sim: ', (hrefcuts(i),i=1,nhref)
+         write(*,*)'href schdule, fld: ', (hrefcutsrs(i),i=1,nhrefrs)
+      endif
+
+      ncut_rs = 1
+      do i=1,nhrefrs
+         ncut_rs = ncut_rs * hrefcutsrs(i)
+      enddo
+      nblk_rs = ncut_rs**ldim
+
+      ncut = 1
+      do i=1,nhref
+         ncut = ncut * hrefcuts(i)
+      enddo
+      nblk = ncut**ldim
+
+      nelgr0 = nelgr / nblk_rs
+      nelgt0 = nelgt / nblk
+
+      if (nelgr0.ne.nelgt0)
+     $  call exitti('href schdule diff initial mesh mismatched$',nelgr0)
+
+      if (nhrefrs.gt.nhref) then
+         ierr = nhrefrs
+         goto 90
+      endif
+
+      ierr = 0
+      do i=1,nhrefrs
+         if (hrefcuts(i).ne.hrefcutsrs(i)) then
+            ierr = i
+            goto 90
+         endif
+      enddo
+
+      ! set new schedule to be applied
+      call izero(hrefcutsrs, lhref)
+      j = 0
+      do i = nhrefrs+1,nhref
+         j = j + 1
+         hrefcutsrs(j) = hrefcuts(i)
+      enddo
+      nhrefrs = j;
+
+      if (nhrefrs.GT.lhref) call exitti('nhref rs > lhref$',nhrefrs)
+
+      if (nio.eq.0) then
+         write(*,*)'href schdule, dif: ', (hrefcutsrs(i),i=1,nhrefrs)
+      endif
+
+      return
+
+   90 continue
+      call exitti('href rs schedule is not a subset$',ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------

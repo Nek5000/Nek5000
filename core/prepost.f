@@ -2046,6 +2046,7 @@ c-----------------------------------------------------------------------
       include 'TSTEP'
 
       character varcode(10)
+      character*4 chrefcuts
 
       real*4 test_pattern
       common /ctmp0/ lglist(0:lelt)
@@ -2094,11 +2095,13 @@ c     check pressure format
       if_press_mesh = .false.
       if (.not.ifsplit.and.if_full_pres) if_press_mesh = .true.
 
+      call hrefcuts_i2c(chrefcuts)           ! record h-refine schedule
+
       nelog = cntg 
       write(hdr,1) wdsizo,nxo,nyo,nzo,nelo,nelog,time,istep,fid0,nfileoo
-     $            ,(varcode(i),i=1,10),p0th,if_press_mesh
+     $            ,(varcode(i),i=1,10),p0th,if_press_mesh,chrefcuts
     1 format('#std',1x,i1,1x,i2,1x,i2,1x,i2,1x,i10,1x,i10,1x,e20.13,
-     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1)
+     &       1x,i9,1x,i6,1x,i6,1x,10a,1pe15.7,1x,l1,1x,a4)
 
       test_pattern = 6.54321           ! write test pattern for byte swap
 

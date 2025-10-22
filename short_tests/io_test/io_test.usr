@@ -80,6 +80,7 @@ c     local variables
       parameter (eps4=1.0E-06,eps8=1.0E-12,eps_map=5.0E-04)
       character*132 fstring
       character*5 nstring
+      logical valid_hr
 
       time_test = pi
       ifvcor = .false.
@@ -87,13 +88,38 @@ c     local variables
       ierr = 0
 
       if (nhref.gt.0) then ! read-only for h-refine
+         valid_hr = .false.
+         if (nhref.eq.1) then
+           if (hrefcuts(1).gt.2.OR.hrefcuts(1).le.4) valid_hr = .true.
+         elseif (nhref.eq.2) then
+           if (hrefcuts(1).eq.2.AND.hrefcuts(2).eq.2) valid_hr = .true.
+         endif
+         if (.not.valid_hr) then
+           if (nio.eq.0) write(*,*)'href schedule is not in tests'
+           call exitt
+         endif
+
+         ! read fld from orig re2
          ifile = 0
-         call read_hrefine_mpiio_file_test(ifile,eps4,eps8,ierr)
+         call read_hrefine_mpiio_file_test('   ',ifile,eps4,eps8,ierr)
+
+         ! read fld from prev hrefine
+         if (nhref.eq.2) then
+           ifile = 0
+           call read_hrefine_mpiio_file_test('hr2',ifile,eps4,eps8,ierr)
+         endif
+
+         ! write/read test and write fld for future hrefine tests
+         if (nhref.eq.1.AND.hrefcuts(1).eq.2) then
+           ifile = 0
+           call write_read_mpiio_file_test('hr2',ifile,eps4,eps8,ierr)
+         endif
+
       else ! normal runs
          call read_old_file_test(eps4,eps8,eps_map,ierr)
 
          ifile = 0
-         call write_read_mpiio_file_test(ifile,eps4,eps8,ierr)
+         call write_read_mpiio_file_test('   ',ifile,eps4,eps8,ierr)
 
          if (mod(NP,2).eq.0) then
             call write_read_multipe_file_test(ifile,eps4,eps8,ierr)
@@ -105,6 +131,7 @@ c     local variables
          call read_gfldr_test(eps4,eps8,eps_map,ierr)
 
       endif
+
 
       if (NIO.eq.0) then
          write(*,*) ' '
@@ -1016,7 +1043,7 @@ c     check reading options (only master)
       end
 c-----------------------------------------------------------------------
 c     Writing and reading tests for mpiio
-      subroutine write_read_mpiio_file_test(ifile,eps4,eps8,ierr)
+      subroutine write_read_mpiio_file_test(prefix,ifile,eps4,eps8,ierr)
       include 'SIZE'            !
       include 'INPUT'           ! PARAM, NPSCAL
       include 'TSTEP'           ! ISTEP, PI, IF_FULL_PRES
@@ -1032,6 +1059,7 @@ c     local variables
       real time_test
       character*132 fstring
       character*5 nstring
+      character*3 prefix
       
       time_test = pi
       
@@ -1049,14 +1077,14 @@ c     mpiio single precision
       param(66) = 6.0           ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,'   ')
+      call prepost (.true.,prefix)
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
       param(67) = 6.0           ! file format
       time = 0.0
       write(nstring,'(i5.5)') ifile
-      fstring='io_test0.f'//nstring
+      fstring=prefix//'io_test0.f'//nstring
       call load_fld(fstring)
       call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
@@ -1162,7 +1190,11 @@ c     check string restart options
       time = 0.0
       write(nstring,'(i5.5)') ifile
       call blank  (initc(1),132)
-      initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'
+      if (prefix.eq.'   ') then
+         initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'
+      else
+         initc(1)=prefix//'io_test0.f'//nstring//' U S1 TIME=5.0'
+      endif
       call setics
       call fields_compare(eps4,eps4,test_pass)
 c     check reading options (only master)
@@ -1269,14 +1301,19 @@ c     mpiio double precision
       param(66) = 6.0           ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,'   ')
+      call prepost (.true.,prefix)
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
       param(67) = 6.0           ! file format
       time = 0.0
       write(nstring,'(i5.5)') ifile
-      fstring='io_test0.f'//nstring
+
+      if (prefix.eq.'   ') then
+         fstring='io_test0.f'//nstring
+      else
+         fstring=prefix//'io_test0.f'//nstring
+      endif
       call load_fld(fstring)
       call fields_compare(eps8,eps8,test_pass)
 c     check reading options (only master)
@@ -1662,7 +1699,7 @@ c     fld binary
       param(66) = 4.0           ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,'   ')
+      call prepost (.true.,prefix)
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
@@ -1734,7 +1771,7 @@ c     fld ascii
       param(66) = -4.0          ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,'   ')
+      call prepost (.true.,prefix)
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
@@ -1901,14 +1938,14 @@ c     for mpiio number of files is equal number of processes
       return
       end
 c-----------------------------------------------------------------------
-      subroutine read_hrefine_mpiio_file_test(ifile,eps4,eps8,ierr)
+      subroutine read_hrefine_mpiio_file_test(prefix,ifile
+     $                                       ,eps4,eps8,ierr)
 c     read (mpiio) after h-refine
       include 'SIZE'            !
       include 'INPUT'           ! PARAM, NPSCAL
       include 'TSTEP'           ! ISTEP, PI, IF_FULL_PRES
       include 'RESTART'
       include 'PARALLEL'
-      include 'SOLN' ! vx, dbg
 
 c     argument list
       integer ifile,il
@@ -1920,6 +1957,7 @@ c     local variables
       character*132 fstring
       character*5 nstring
       character*10 refstring
+      character*3 prefix
 
       eps_intp = 2e-3
       time_test = pi
@@ -1928,15 +1966,13 @@ c      ifcrrs = .true.
       call blank(refstring, 10)
       if (nhref.eq.1) then
          ncut = hrefcuts(1)
-         nblk = ncut**ldim
          if (ncut.eq.2) refstring = ' href=2 '
          if (ncut.eq.3) refstring = ' href=3 '
          if (ncut.eq.4) refstring = ' href=4 '
       elseif (nhref.eq.2) then
          ncut = 4
-         nblk = ncut**ldim
          refstring = ' href=2;2 '
-      else
+      Else
          return
       endif
 
@@ -1955,12 +1991,15 @@ c     mpiio single precision
       param(67) = 6.0           ! file format
       time = 0.0
       write(nstring,'(i5.5)') ifile
-      fstring='io_test0.f'//nstring//refstring
+      if (prefix.eq.'   ') then
+         fstring='io_test0.f'//nstring
+      else
+         fstring=prefix//'io_test0.f'//nstring
+      endif
       call fields_clean
       call load_fld(fstring)
       call fields_compare(eps4,eps_intp,test_pass)
 
-      call outpost2(vx,vy,vz,pr,t,npscal+1,'ttt')
 c     check reading options (only master)
       if (NID.eq.0) then
          if (abs(time-time_test).gt.eps8) then
@@ -1972,10 +2011,17 @@ c     for mpiio number of files is equal number of processes
             test_pass = .false.
             write(*,11) 'nfiler    : ',nfiler
          endif
+
+         ncut = 1
+         do i=1,nhrefrs
+            ncut = ncut * hrefcutsrs(i)
+         enddo
+         nblk = ncut**ldim
          if (nelgr*nblk.ne.nelgt) then
             test_pass = .false.
             write(*,11) 'nelgt     : ',nelgt
             write(*,11) 'nelgr     : ',nelgr
+            write(*,11) 'nblk      : ',nblk
          endif
          if (wdsizr.ne.4) then
             test_pass = .false.
@@ -2066,7 +2112,13 @@ c     check string restart options
       time = 0.0
       write(nstring,'(i5.5)') ifile
       call blank  (initc(1),132)
-      initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'//refstring
+
+      if (prefix.eq.'   ') then
+         initc(1)='io_test0.f'//nstring//' U S1 TIME=5.0'
+      else
+         initc(1)=prefix//'io_test0.f'//nstring//' U S1 TIME=5.0'
+      endif
+
       call fields_clean
       call setics
       call fields_compare(eps4,eps_intp,test_pass)
@@ -2081,10 +2133,16 @@ c     for mpiio number of files is equal number of processes
             test_pass = .false.
             write(*,11) 'nfiler    : ',nfiler
          endif
+         ncut = 1
+         do i=1,nhrefrs
+            ncut = ncut * hrefcutsrs(i)
+         enddo
+         nblk = ncut**ldim
          if (nelgr*nblk.ne.nelgt) then
             test_pass = .false.
             write(*,11) 'nelgt     : ',nelgt
             write(*,11) 'nelgr     : ',nelgr
+            write(*,11) 'nblk      : ',nblk
          endif
          if (wdsizr.ne.4) then
             test_pass = .false.
@@ -2165,7 +2223,7 @@ c     mpiio double precision
       test_pass = .true.
       if (NIO.eq.0) then
          write(*,*) ' '
-         write(*,*) 'Testing writing/reading of single .f file'
+         write(*,*) 'Testing reading of single .f file'
          write(*,*) 'Testing hrefine',refstring
          write(*,*) 'Testing double precision'
          write(*,*) ' '
@@ -2177,7 +2235,11 @@ c     mpiio double precision
       param(67) = 6.0           ! file format
       time = 0.0
       write(nstring,'(i5.5)') ifile
-      fstring='io_test0.f'//nstring//refstring
+      if (prefix.eq.'   ') then
+         fstring=prefix//'io_test0.f'//nstring
+      else
+         fstring='io_test0.f'//nstring
+      endif
       call fields_clean
       call load_fld(fstring)
       call fields_compare(eps8,eps_intp,test_pass)
@@ -2192,10 +2254,16 @@ c     for mpiio number of files is equal number of processes
             test_pass = .false.
             write(*,11) 'nfiler    : ',nfiler
          endif
+         ncut = 1
+         do i=1,nhrefrs
+            ncut = ncut * hrefcutsrs(i)
+         enddo
+         nblk = ncut**ldim
          if (nelgr*nblk.ne.nelgt) then
             test_pass = .false.
             write(*,11) 'nelgt     : ',nelgt
             write(*,11) 'nelgr     : ',nelgr
+            write(*,11) 'nblk      : ',nblk
          endif
          if (wdsizr.ne.8) then
             test_pass = .false.

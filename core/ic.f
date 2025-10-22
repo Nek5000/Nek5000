@@ -1051,32 +1051,6 @@ C           remove the user specified time from the RS options line.
             ITB=132-IT1+1
             CALL CHCOPY(RSOPT1(ITO),LINE1(IT1),ITB)
          ENDIF
-c
-c        Check for h-refine schedule on the top of the file
-c
-         IRO=INDX_CUT(RSOPT,'HREF',4)
-         IFHREF=.TRUE.
-         IF (IRO.NE.0) THEN
-            IR1=INDX_CUT(RSOPT,'=',1)
-            IR8=132-IR1
-            CALL BLANK(LINE,132)
-            CALL CHCOPY(LINE,RSOPT1(IR1),IR8)
-            IF (.not.IFGTISL(NHREFRS,HREFCUTSRS,LHREF,LINE)) THEN
-               IF (NHREFRS.GT.LHREF) THEN
-                  call exitti('nhref rs > lref$',HREFRS)
-               ELSE
-                  call exitti('Invalid href restart options$',NHREFRS)
-               ENDIF
-            ENDIF
-C           remove the user specified time from the RS options line.
-            IRA=132-IRO+1
-            CALL BLANK(RSOPT1(IRO),IRA)
-            CALL LJUST(LINE)
-            IR1=INDX1(LINE,' ',1)
-            IRB=132-IR1+1
-            CALL CHCOPY(RSOPT1(IRO),LINE1(IR1),IRB)
-         ENDIF
-
 
 C        Parse field specifications.
 
@@ -2513,16 +2487,27 @@ c-----------------------------------------------------------------------
 
       character*132 hdr
       character*4 dummy
+      character*4 chrefcutsrs ! hrefine
       logical if_press_mesh
 
       p0thr = -1
       if_press_mesh = .false.
+      chrefcutsrs = '    '    ! read hrefine schedule
 
       read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr, if_press_mesh ! +1+13 + 2 = 110
+     $         ,  chrefcutsrs ! +1+4
+
+      if (ierr.gt.0) then ! try again without hrefine
+        read(hdr,*,iostat=ierr) dummy
+     $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! 74+20=94
      $         ,  p0thr, if_press_mesh
+      endif
 
       if (ierr.gt.0) then ! try again without pressure format flag
         read(hdr,*,iostat=ierr) dummy
@@ -2542,6 +2527,10 @@ c-----------------------------------------------------------------------
 c     set if_full_pres flag
       if_full_pres = .false.
       if (.not.ifsplit) if_full_pres = if_press_mesh
+
+c     read href schedule of a file
+      call hrefcuts_c2i(chrefcutsrs) ! decode
+      call hrefcuts_chkdiff          ! send it into RESTART option
 
 c      ifgtim  = .true.  ! always get time
       ifgetxr = .false.
