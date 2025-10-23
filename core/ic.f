@@ -513,6 +513,9 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
+         if (nhrefrs.gt.0) then
+            call exitti('href rs only supports p67=6$',nhrefrs)
+         endif
         ierr = 0
         if (nid.eq.0) then
 
@@ -2444,11 +2447,7 @@ c     set if_full_pres flag
       if_full_pres = .false.
       if (.not.ifsplit) if_full_pres = if_press_mesh
 
-c     read href schedule of a file
-      if (nhref.gt.0) then
-        call hrefcuts_c2i(chrefcutsrs) ! decode
-        call hrefcuts_chkdiff          ! send it into RESTART option
-      endif
+      call hrefcuts_c2i(chrefcutsrs) ! decode h-refine schedule
 
 c      ifgtim  = .true.  ! always get time
       ifgetxr = .false.
@@ -2644,6 +2643,7 @@ c
       if(.not. ifmpiio) nid_r = pid0r
       if(nid.eq.nid_r) write(6,*) '      FILE:', fname
 
+      call hrefcuts_chkdiff         ! chk and set h-refine restart schedule
       if (nhrefrs.gt.0) then
          call h_refine_remap_elem(hrefcutsrs,nhrefrs)
       endif

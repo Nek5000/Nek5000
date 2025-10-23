@@ -536,12 +536,7 @@ c     restart, modify er to re-distribute elements
   31  format(3x,'mfi:href rs map_e ncut/nblk:',2(1I8))
       if (refineSize.eq.0.OR.ncut_total.lt.2) return
 
-      ierr = 0
-      if (nid.eq.0) then
-        if (nelgr*nblk_total.ne.nelgt) ierr = 1
-      endif
-      ierr = iglsum(ierr,1)
-      if (ierr.ne.0)
+      if (nelgr*nblk_total.ne.nelgt)
      $  call exitti('h_refine_map nel mismstched$',nelgr)
 
       if (np.gt.1) then
