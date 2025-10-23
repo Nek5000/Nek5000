@@ -513,9 +513,6 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
-         if (nhrefrs.gt.0) then
-            call exitti('href rs only supports p67=6$',nhrefrs)
-         endif
         ierr = 0
         if (nid.eq.0) then
 
@@ -970,7 +967,7 @@ C
 
       character*132 rsopts,fname
       character*2  s2
-      logical ifgtrl,ifgtisl
+      logical ifgtrl
 
 C     Scratch variables..
       logical ifdeft,ifanyc
@@ -1745,87 +1742,6 @@ C
       ENDIF
 C
   100 CONTINUE
-      return
-      END
-c-----------------------------------------------------------------------
-      LOGICAL FUNCTION IFGTISL(NVAR,IVAR,NMAX,LINE)
-C
-C     Read IVAL(I) from LINE and set IFGTISL to .TRUE. if successful,
-C                                    IFGTISL to .FALSE. otherwise.
-C     It reads until the frist space. List of integer are separated by ";"
-C     NMAX is used to make sure it won't access outside the allocation
-C
-      CHARACTER*132 LINE
-      CHARACTER*132 WORK
-      CHARACTER*1 WORK1(132)
-      CHARACTER*8  FMAT
-      EQUIVALENCE (WORK,WORK1)
-
-      INTEGER NVAR, NMAX, IVAR(NMAX)
-      INTEGER ILOC(NMAX), ILEN(NMAX), ISTART, NTMP
-C
-      IFGTISL=.FALSE.
-      NVAR=0
-C
-      WORK = LINE
-      CALL LJUST(WORK)
-      IFLDW=INDX1(WORK,' ',1)-1
-      if (IFLDW.LE.0) goto 100
-
-C     replace ';' with space
-      DO I=1,IFLDW
-         IF (WORK1(I).EQ.';') WORK1(I) = ' '
-      ENDDO
-
-c     remove trailing spaces
-      NTMP = 0
-      DO I=IFLDW,1,-1
-         IF (WORK1(I).NE.' ') goto 90
-         NTMP = NTMP + 1
-      ENDDO
-   90 CONTINUE
-      IFLDW = IFLDW - NTMP
-      if (IFLDW.LE.0) goto 100
-
-c     count integers, and record start position
-      NVAR = 1
-      ISTART = 1
-      DO I=1,IFLDW
-         IF (WORK1(I).EQ.' ') THEN
-            ILOC(NVAR) = ISTART
-            ILEN(NVAR) = I - ISTART
-            IF (ILEN(NVAR).LT.1) goto 100
-
-            ISTART = 0 ! reset
-            NVAR = NVAR + 1
-            if (NVAR.GT.NMAX) goto 110
-         ELSE
-            IF (ISTART.EQ.0) ISTART = I
-         ENDIF
-      ENDDO
-      ILOC(NVAR) = ISTART
-      ILEN(NVAR) = I - ISTART
-      IF (NVAR.GT.NMAX) goto 110
-
-      DO I=1,NVAR
-         I0 = ILOC(I)
-         I1 = I0 + ILEN(I) - 1
-
-         WRITE(FMAT,10) ILEN(I)
-         READ(WORK(I0:I1),FMAT,ERR=100,END=100) TVAL
-         IVAR(I) = INT(TVAL)
-      ENDDO
-
-      IFGTISL = .TRUE.
-      return ! success
-   10 FORMAT('(F',I3.3,'.0)')
-
-  100 CONTINUE ! incorrect format
-      NVAR = 0
-      return
-
-  110 CONTINUE ! nvar > nmax
-      NVAR = NMAX + 1
       return
       END
 c-----------------------------------------------------------------------
