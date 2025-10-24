@@ -463,15 +463,16 @@ c     h refine + restart
 c-----------------------------------------------------------------------
       subroutine h_refine_copy(u,nel,ncut)
       include 'SIZE'
-      real u(lx1,ly1,lz1,lelt)
+      real u(lx1,ly1,lz1,*)
       real ubak(lx1,ly1,lz1,lelt)
       integer ncut, nblk
 
       nblk = ncut**ldim
       nxyz = lx1*ly1*lz1
+
       call rzero(ubak,nxyz*lelt)
-      call copy(ubak,u,nxyz*lelt)
-      call rzero(u,nxyz*lelt)
+      call copy(ubak,u,nxyz*nel*nblk)
+      call rzero(u,nxyz*nel*nblk)
 
       do ie=1,nel
         ien = ie_map_o2r(ie,nblk)
@@ -485,7 +486,7 @@ c-----------------------------------------------------------------------
 c     apply one round of refinement to a field
       include 'SIZE'
 
-      real u(lx1,ly1,lz1,lelt)
+      real u(lx1,ly1,lz1,*)
       integer e,eg,egn,el,en,er,es,et
 
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
