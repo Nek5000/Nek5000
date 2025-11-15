@@ -1297,6 +1297,98 @@ class Ethier(NekTestCase):
         self.assertDelayedFailures()
 
 
+class EthierRefine(NekTestCase):
+    example_subdir = "ethier"
+    case_name = "ethierRefine"
+
+    def setUp(self):
+        self.mkSIZE()
+        self.size_params = dict(
+            ldim="3",
+            lx1="6",
+            lxd="8",
+            lx2="lx1-2",
+            lelg="2048",
+            lhis="1",
+        )
+        self.config_size()
+
+        self.build_tools(["genmap"])
+        self.run_genmap()
+
+    def run_tests(self, PnPn=True):
+        self.config_parfile({"GENERAL": {"numSteps": "10", "dt": "9e-5"}})
+        self.config_parfile({"MESH": {"hrefine": "1"}})
+        self.run_nek()
+        vxerr0 = self.get_value_from_log(label="L2 err", column=-4, row=-1)
+
+        self.config_parfile({"GENERAL": {"numSteps": "20", "dt": "4.5e-5"}})
+        self.config_parfile({"MESH": {"hrefine": "2"}})
+        self.run_nek()
+        vxerr2 = self.get_value_from_log(label="L2 err", column=-4, row=-1)
+
+        self.config_parfile({"GENERAL": {"numSteps": "30", "dt": "3e-5"}})
+        self.config_parfile({"MESH": {"hrefine": "3"}})
+        self.run_nek()
+        vxerr3 = self.get_value_from_log(label="L2 err", column=-4, row=-1)
+
+        self.config_parfile({"GENERAL": {"numSteps": "40", "dt": "2.25e-5"}})
+        self.config_parfile({"MESH": {"hrefine": "2,2"}})
+        self.run_nek()
+        vxerr22 = self.get_value_from_log(label="L2 err", column=-4, row=-1)
+
+        self.config_parfile({"GENERAL": {"numSteps": "40", "dt": "2.25e-5"}})
+        self.config_parfile({"MESH": {"hrefine": "4"}})
+        self.run_nek()
+        vxerr4 = self.get_value_from_log(label="L2 err", column=-4, row=-1)
+
+        if PnPn:
+            self.assertAlmostEqualDelayed(
+                vxerr0, target_val=1.11e-04, delta=1e-04, label="Base    VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr2, target_val=1.74e-06, delta=1e-05, label="hRef2   VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr3, target_val=1.63e-07, delta=1e-06, label="hRef3   VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr22, target_val=2.63e-08, delta=1e-07, label="hRef22  VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr4, target_val=2.63e-08, delta=1e-07, label="hRef4   VX err"
+            )
+        else:
+            self.assertAlmostEqualDelayed(
+                vxerr0, target_val=4.92e-05, delta=1e-04, label="Base    VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr2, target_val=1.07e-05, delta=1e-05, label="hRef2   VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr3, target_val=3.39e-06, delta=1e-06, label="hRef3   VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr22, target_val=1.39e-06, delta=1e-06, label="hRef22  VX err"
+            )
+            self.assertAlmostEqualDelayed(
+                vxerr4, target_val=1.39e-06, delta=1e-06, label="hRef4   VX err"
+            )
+
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
+        self.size_params["lx2"] = "lx1-2"
+        self.config_size()
+        self.build_nek()
+        self.run_tests(False)
+
+    @pn_pn_parallel
+    def test_PnPn_Parallel(self):
+        self.size_params["lx2"] = "lx1"
+        self.config_size()
+        self.build_nek()
+        self.run_tests()
+
 ####################################################################
 
 
@@ -1791,21 +1883,46 @@ class IO_Test(NekTestCase):
             lx1="6",
             lxd="9",
             lx2="lx1-2",
-            lelg="100",
+            lelg="36*64",
             ldimt="3",
             lelr="lelg",
             lx1m="lx1",
         )
         self.config_size()
 
+        # read write tests
         self.build_nek(usr_file="io_test")
+        self.config_parfile({"MESH": {"hrefine": "1"}})
         self.run_nek(step_limit=None)
         phrase = self.get_phrase_from_log("All I/O tests PASSED")
         self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
         self.assertDelayedFailures()
 
+        # h-refine restart, test 1
+        self.config_parfile({"MESH": {"hrefine": "2"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # h-refine restart, test 2
+        self.config_parfile({"MESH": {"hrefine": "3"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # h-refine restart, test 3
+        self.config_parfile({"MESH": {"hrefine": "2;2"}})
+        self.run_nek(step_limit=None)
+        phrase = self.get_phrase_from_log("All I/O tests PASSED")
+        self.assertIsNotNullDelayed(phrase, label="All I/O tests PASSED")
+        self.assertDelayedFailures()
+
+        # full restart
         self.run_genmap(rea_file="io_test_rs")
         self.build_nek(usr_file="io_test_rs")
+        self.config_parfile({"MESH": {"hrefine": "1"}})
 
         cls = self.__class__
         path = os.path.join(self.examples_root, cls.example_subdir + "/")
@@ -2186,6 +2303,7 @@ if __name__ == "__main__":
         CmtInviscidVortex,
         DoubleShear,
         Ethier,
+        EthierRefine,
         LinCav_Dir,
         LinCav_Adj,
         IO_Test,

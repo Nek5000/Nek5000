@@ -513,6 +513,9 @@ c use old reader (for ASCII + old binary support)
 
       do 6000 ifile=1,nfiles
         call sioflag(ndumps,fname,initc(ifile))
+         if (nhrefrs.gt.0) then
+            call exitti('href rs only supports p67=6$',nhrefrs)
+         endif
         ierr = 0
         if (nid.eq.0) then
 
@@ -1008,6 +1011,13 @@ C
       ifgtim=.true.
       ndumps=0
       ifgfldr=.false.
+
+c     href restart
+      nhrefrs = 0
+      do iref=1,lhref
+         hrefcutsrs(iref) = 0
+      enddo
+
 C
 C     Check for default case - just a filename given, no i/o options specified
 C
@@ -2221,7 +2231,6 @@ c-----------------------------------------------------------------------
               ! range for jeln in this batch, it's ok if it's out of nelrr
               jeln1 = (ibatch-1)*lbrst+1
               jeln2 = ibatch*lbrst
-
               ! redistribute data based on the current el-proc map
               if (ifcrrs) then
                 etime0 = dnekclock_sync()
@@ -2397,16 +2406,27 @@ c-----------------------------------------------------------------------
 
       character*132 hdr
       character*4 dummy
+      character*4 chrefcutsrs ! hrefine
       logical if_press_mesh
 
       p0thr = -1
       if_press_mesh = .false.
+      chrefcutsrs = '    '    ! read hrefine schedule
 
       read(hdr,*,iostat=ierr) dummy
      $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
      $         ,  ifiler,nfiler
      $         ,  rdcode      ! 74+20=94
+     $         ,  p0thr, if_press_mesh ! +1+13 + 2 = 110
+     $         ,  chrefcutsrs ! +1+4
+
+      if (ierr.gt.0) then ! try again without hrefine
+        read(hdr,*,iostat=ierr) dummy
+     $         ,  wdsizr,nxr,nyr,nzr,nelr,nelgr,timer,istpr
+     $         ,  ifiler,nfiler
+     $         ,  rdcode      ! 74+20=94
      $         ,  p0thr, if_press_mesh
+      endif
 
       if (ierr.gt.0) then ! try again without pressure format flag
         read(hdr,*,iostat=ierr) dummy
@@ -2426,6 +2446,8 @@ c-----------------------------------------------------------------------
 c     set if_full_pres flag
       if_full_pres = .false.
       if (.not.ifsplit) if_full_pres = if_press_mesh
+
+      call hrefcuts_c2i(chrefcutsrs) ! decode h-refine schedule
 
 c      ifgtim  = .true.  ! always get time
       ifgetxr = .false.
@@ -2621,7 +2643,13 @@ c
       if(.not. ifmpiio) nid_r = pid0r
       if(nid.eq.nid_r) write(6,*) '      FILE:', fname
 
-      offs0   = iHeadersize + 4 + isize*nelgr
+      call hrefcuts_chkdiff         ! chk and set h-refine restart schedule
+      if (nhrefrs.gt.0) then
+         call h_refine_remap_elem(hrefcutsrs,nhrefrs)
+      endif
+
+      offs0   = nelgr ! cast to int*8
+      offs0   = iHeadersize + 4 + isize*offs0
       nxyzr8  = nxr*nyr*nzr
       strideB = nelBr* nxyzr8*wdsizr
       stride  = nelgr* nxyzr8*wdsizr
@@ -2711,6 +2739,22 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
       nbyte = glsum(dnbyte,1)
       nbyte = nbyte + iHeaderSize + 4 + isize*nelgr
 
+      if (nhrefrs.gt.0) then
+         if (if_full_pres) then ! skip pr to avoid extra interp
+            ifgetp = .false.
+            if (nio.eq.0) write(6,32) if_full_pres
+         endif
+         k = 1
+         if (ldimt.gt.1) k = 2
+         if (ifmhd.and.ifile.eq.2) then
+            call h_refine_readfld(xm1,ym1,zm1,bx,by,bz
+     $                           ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         else
+            call h_refine_readfld(xm1,ym1,zm1,vx,vy,vz
+     $                           ,pm1,t,t(1,1,1,1,k),hrefcutsrs,nhrefrs)
+         endif
+      endif
+
       if (tio.eq.0) tio=1
       if (nio.eq.0) write(6,7) istep,time,
      &             nbyte/tio/1e9/10,
@@ -2733,6 +2777,7 @@ c               if(nid.eq.0) write(6,'(A,I2,A)') ' Reading ps',k,' field'
 #endif
 
   31  format(3x,'mfi:rd/pk/xfer/unpk/tot:',5(1e9.2))
+  32  format(3x,'mfi:href skip pr when pnpn-2 and if_full_pres',L2)
 
       return
       end

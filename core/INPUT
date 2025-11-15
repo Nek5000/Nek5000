@@ -138,3 +138,8 @@ c
 
       integer out_mask(lelt)
       common /cbout_mask/ out_mask
+c
+c h refinement
+c
+      integer nhref, hrefcuts(lhref)
+      common /hrefinei/ nhref, hrefcuts

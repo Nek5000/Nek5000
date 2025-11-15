@@ -101,6 +101,10 @@ c - - SIZE internals
       parameter (nfldmax_nn=
      $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))
 
+      ! h-refine
+      integer lhref
+      parameter (lhref=10)
+
       integer loglevel,optlevel
       common /lolevels/ loglevel,optlevel
 

@@ -600,6 +600,11 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      echo 'c automatically added by makenek' >>SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
+  if ! cat SIZE | grep -qi 'lhref' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      parameter (lhref=10)' >> SIZE
+  fi
 fi
 
 declare -a varlist=(
