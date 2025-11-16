@@ -67,6 +67,8 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
         my_env["CC"] = _opts.get("CC")
     if _opts.get("PPLIST"):
         my_env["PPLIST"] = _opts.get("PPLIST")
+    if _opts.get("FFLAGS"):
+        my_env["FFLAGS"] = _opts.get("FFLAGS")
 
     makenek_in = Path(source_root) / "bin" / "makenek"
     logfile = Path(cwd) / "build.log"

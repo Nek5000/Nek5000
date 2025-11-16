@@ -1891,7 +1891,7 @@ class IO_Test(NekTestCase):
         self.config_size()
 
         # read write tests
-        self.build_nek(usr_file="io_test")
+        self.build_nek(usr_file="io_test", opts={"FFLAGS": "-mcmodel=medium"})
         self.config_parfile({"MESH": {"hrefine": "1"}})
         self.run_nek(step_limit=None)
         phrase = self.get_phrase_from_log("All I/O tests PASSED")
@@ -1920,8 +1920,7 @@ class IO_Test(NekTestCase):
         self.assertDelayedFailures()
 
         # full restart
-        self.run_genmap(rea_file="io_test_rs")
-        self.build_nek(usr_file="io_test_rs")
+        self.build_nek(usr_file="io_test_rs", opts={"FFLAGS": "-mcmodel=medium"})
         self.config_parfile({"MESH": {"hrefine": "1"}})
 
         cls = self.__class__
@@ -1947,7 +1946,7 @@ class IO_Test(NekTestCase):
 
         self.size_params["lx2"] = "lx1-0"
         self.config_size()
-        self.build_nek(usr_file="io_test_rs")
+        self.build_nek(usr_file="io_test_rs", opts={"FFLAGS": "-mcmodel=medium"})
 
         self.config_parfile({"GENERAL": {"timestepper": "bdf3"}})
         self.config_parfile({"GENERAL": {"numsteps": "200"}})
