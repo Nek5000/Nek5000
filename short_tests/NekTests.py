@@ -1874,7 +1874,8 @@ class IO_Test(NekTestCase):
 
     def setUp(self):
         self.build_tools(["genmap"])
-        self.run_genmap()
+        self.run_genmap(rea_file="io_test")
+        self.run_genmap(rea_file="io_test_rs")
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
