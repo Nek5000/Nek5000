@@ -63,7 +63,7 @@ def config_parfile(opts, infile, outfile):
     """
     import configparser
 
-    parfile = configparser.SafeConfigParser()
+    parfile = configparser.ConfigParser()
     parfile.read(infile)
 
     for section, name_vals in list(opts.items()):
