@@ -1206,6 +1206,11 @@ class Ethier(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
+        np_err = self.get_value_from_log(label="Number of MPI ranks :", column=-1, row=0)
+        self.assertAlmostEqualDelayed(
+            np_err, target_val=self.parallel_procs, delta=0, label="np err"
+        )
+
         herr = self.get_value_from_log(label="hpts err", column=-1, row=-1)
         self.assertAlmostEqualDelayed(
             herr, target_val=1.3776e-08, delta=1e-08, label="hpts err"
@@ -1255,6 +1260,11 @@ class Ethier(NekTestCase):
         self.config_parfile({"PRESSURE": {"preconditioner": "semg_amg"}})
 
         self.run_nek(step_limit=1000)
+
+        np_err = self.get_value_from_log(label="Number of MPI ranks :", column=-1, row=0)
+        self.assertAlmostEqualDelayed(
+            np_err, target_val=self.parallel_procs, delta=0, label="np err"
+        )
 
         gmres = self.get_value_from_log("gmres ", column=-7)
         self.assertAlmostEqualDelayed(
