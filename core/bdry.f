@@ -151,9 +151,11 @@ C-------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
-C
-C     Single or double precision???
-C
+c
+
+      call chk_axis
+
+c     Single or double precision???
       DELTA = 1.E-9
       X     = 1.+DELTA
       Y     = 1.
@@ -2229,3 +2231,87 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine chk_axis
+      include 'SIZE'
+      include 'TOTAL'
+
+      integer e,f,eg
+
+      logical on_axis
+
+      if (.not.ifaxis) return
+
+      nface  = 4
+      istart = 2
+      if (ifflow) istart=1
+
+      ymx = glmax(yc,4*nelt)
+
+      epsy = 1.e-5*ymx
+      
+      do ifld=istart,nfield
+
+       if (nid.eq.0) write(6,*) 'Checking axisymmetry BCs:'
+       itest = iglmax(ifld,1) ! easy barrier
+
+       nel    = nelfld(ifld)
+       ierr   = 0
+
+       do e=1,nel
+          eg = lglel(e)
+
+c         Check for minimal y values and 'A  ' (axis) BC
+
+          on_axis = .false.
+          if (yc(1,e).lt.epsy .or. yc(2,e).lt.epsy) on_axis = .true.
+
+c         write(6,9) eg,yc(1,e),yc(2,e),epsy,on_axis
+c   9     format(i8,1p3e14.5,1x,l4,' axis check')
+
+          if (on_axis .and.  cbc(1,e,ifld).ne.'A  ') then
+              write(6,1) eg
+              ierr = 1
+          endif
+    1     format('IFAXIS Error: '
+     $          ,'BC must be 'A  ' for Face 1, Elem',i9,'.')
+             
+
+c         Make sure axis face is not curved
+
+          if (on_axis .and. ccurve(1,e).ne.' ') then
+              write(6,2) eg
+              ierr = 2
+          endif
+    2     format('IFAXIS Error: '
+     $          ,'Axis boundary cannot be curved: Face 1, Elem',i9,'.')
+
+c         Make sure axis BC is on axis
+
+          if (.not. on_axis .and.  cbc(1,e,ifld).eq.'A  ') then
+              write(6,3) eg
+              ierr = 3
+          endif
+    3     format('IFAXIS Error: ',
+     $    'Axis Boundary condition requires y=0. Face 1, Elem',i9,'.')
+
+c         Make sure A BC is only on face 1
+
+          do f=2,4
+             if (cbc(f,e,ifld).eq.'A  ') then
+              eg = lglel(e)
+              write(6,4) f,eg
+              ierr = 4
+             endif
+          enddo
+    4     format('IFAXIS Error: ',
+     $    'Only Face 1 supports Axis BC. Check Face',i2,', Elem',i9,'.')
+             
+       enddo
+       ierr = iglmax(ierr,1)
+       if (ierr.gt.0) call exitti('ABORT in chk_axis. ifld = $',ifld)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
