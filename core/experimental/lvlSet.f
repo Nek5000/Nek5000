@@ -1978,6 +1978,8 @@ c---------------------------------------------------------------------
 
       ntot = lx1*ly1*lz1*nelt
 
+      if(farfield.lt.0.0) return
+
       if(icalld.eq.0)then
         dgmax = glmax(delta,ntot)
         icalld = 1
@@ -2010,6 +2012,8 @@ c---------------------------------------------------------------------
       real psi
 
       ntot = lx1*ly1*lz1*nelt
+
+      if(farfield.lt.0.0) return
 
       if(icalld.eq.0)then
         dgmax = glmax(delta,ntot)
