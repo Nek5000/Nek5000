@@ -83,7 +83,7 @@ c-----------------------------------------------------------------------
 
       ntot = lx1*ly1*lz1*nelv
 
-      call sub3(lstemp,exact,bm1,ntot)
+      call col3(lstemp,exact,bm1,ntot)
 
       tmp = glsum(lstemp,ntot)
 
