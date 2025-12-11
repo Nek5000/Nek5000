@@ -627,6 +627,12 @@ c-----------------------------------------------------------------------
 
       if(wdsize.eq.4.and.wdsizi.eq.8) 
      $   call exitti('wdsize=4 & wdsizi(re2)=8 not compatible$',wdsizi)
+      if(nelgt.le.0)
+     $   call exitti('read_re2_hdr: invalid nelgt$',nelgt)
+      if(nelgv.le.0.OR.nelgv.gt.nelgt) 
+     $   call exitti('read_re2_hdr: invalid nelgv$',nelgv)
+      if(ldimr.lt.2.OR.ldimr.gt.3)
+     $   call exitti('read_re2_hdr: invalid ldimr$',ldimr)
 
       return
       end
