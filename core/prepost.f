@@ -1154,7 +1154,7 @@ c-----------------------------------------------------------------------
       data        slash,dot  / '/' , '.' /
 
       integer nopen(1000,2)
-      save    nopen
+      common /nopenf2/ nopen
       data    nopen  / 2000*0 /
 
       call blank(fname,132)
