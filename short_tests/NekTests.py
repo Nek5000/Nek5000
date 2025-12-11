@@ -1206,10 +1206,12 @@ class Ethier(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
-        np_err = self.get_value_from_log(label="Number of MPI ranks :", column=-1, row=0)
-        self.assertAlmostEqualDelayed(
-            np_err, target_val=self.parallel_procs, delta=0, label="np err"
+        np_err = int(
+            self.get_value_from_log(
+                label="Number of MPI ranks :", column=-1, row=0
+            )
         )
+        self.assertEqual(np_err, self.parallel_procs, "Number of MPI ranks mismatch")
 
         herr = self.get_value_from_log(label="hpts err", column=-1, row=-1)
         self.assertAlmostEqualDelayed(
@@ -1261,10 +1263,12 @@ class Ethier(NekTestCase):
 
         self.run_nek(step_limit=1000)
 
-        np_err = self.get_value_from_log(label="Number of MPI ranks :", column=-1, row=0)
-        self.assertAlmostEqualDelayed(
-            np_err, target_val=self.parallel_procs, delta=0, label="np err"
+        np_err = int(
+            self.get_value_from_log(
+                label="Number of MPI ranks :", column=-1, row=0
+            )
         )
+        self.assertEqual(np_err, self.parallel_procs, "Number of MPI ranks mismatch")
 
         gmres = self.get_value_from_log("gmres ", column=-7)
         self.assertAlmostEqualDelayed(
