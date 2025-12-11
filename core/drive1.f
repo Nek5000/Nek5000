@@ -110,7 +110,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
       call count_bdry   ! count the number of faces with assigned BCs
       call fix_geom
 
-      call vr_ifaxis        ! verify axisymmetric mesh/BC requirements
+      call chk_axis         ! verify axisymmetric mesh/BC requirements
       call vrdsmsh          ! verify mesh topology
       call mesh_metrics     ! print some metrics
 
