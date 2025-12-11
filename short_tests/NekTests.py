@@ -1206,6 +1206,13 @@ class Ethier(NekTestCase):
         self.build_nek()
         self.run_nek(step_limit=1000)
 
+        np_err = int(
+            self.get_value_from_log(
+                label="Number of MPI ranks :", column=-1, row=0
+            )
+        )
+        self.assertEqual(np_err, self.parallel_procs, "Number of MPI ranks mismatch")
+
         herr = self.get_value_from_log(label="hpts err", column=-1, row=-1)
         self.assertAlmostEqualDelayed(
             herr, target_val=1.3776e-08, delta=1e-08, label="hpts err"
@@ -1255,6 +1262,13 @@ class Ethier(NekTestCase):
         self.config_parfile({"PRESSURE": {"preconditioner": "semg_amg"}})
 
         self.run_nek(step_limit=1000)
+
+        np_err = int(
+            self.get_value_from_log(
+                label="Number of MPI ranks :", column=-1, row=0
+            )
+        )
+        self.assertEqual(np_err, self.parallel_procs, "Number of MPI ranks mismatch")
 
         gmres = self.get_value_from_log("gmres ", column=-7)
         self.assertAlmostEqualDelayed(
@@ -1874,7 +1888,8 @@ class IO_Test(NekTestCase):
 
     def setUp(self):
         self.build_tools(["genmap"])
-        self.run_genmap()
+        self.run_genmap(rea_file="io_test")
+        self.run_genmap(rea_file="io_test_rs")
 
     @pn_pn_2_parallel
     def test_PnPn2_Parallel(self):
@@ -1891,7 +1906,7 @@ class IO_Test(NekTestCase):
         self.config_size()
 
         # read write tests
-        self.build_nek(usr_file="io_test")
+        self.build_nek(usr_file="io_test", opts={"FFLAGS": "-mcmodel=medium"})
         self.config_parfile({"MESH": {"hrefine": "1"}})
         self.run_nek(step_limit=None)
         phrase = self.get_phrase_from_log("All I/O tests PASSED")
@@ -1920,8 +1935,7 @@ class IO_Test(NekTestCase):
         self.assertDelayedFailures()
 
         # full restart
-        self.run_genmap(rea_file="io_test_rs")
-        self.build_nek(usr_file="io_test_rs")
+        self.build_nek(usr_file="io_test_rs", opts={"FFLAGS": "-mcmodel=medium"})
         self.config_parfile({"MESH": {"hrefine": "1"}})
 
         cls = self.__class__
@@ -1947,7 +1961,7 @@ class IO_Test(NekTestCase):
 
         self.size_params["lx2"] = "lx1-0"
         self.config_size()
-        self.build_nek(usr_file="io_test_rs")
+        self.build_nek(usr_file="io_test_rs", opts={"FFLAGS": "-mcmodel=medium"})
 
         self.config_parfile({"GENERAL": {"timestepper": "bdf3"}})
         self.config_parfile({"GENERAL": {"numsteps": "200"}})

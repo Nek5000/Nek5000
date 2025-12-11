@@ -552,6 +552,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'lxo' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lxo' >> SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'ax1' ; then
@@ -564,6 +565,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      cat SIZE | grep -iv lxs > SIZE.x; mv SIZE.x SIZE  # Clean existing SIZE file of old version
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lxs,lys,lzs' >> SIZE
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
@@ -576,33 +578,39 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'lfdm' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lfdm' >> SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
   if ! cat SIZE | grep -qi 'nsessmax' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nsessmax' >> SIZE
      echo '      parameter (nsessmax=1)  ! max sessions to NEKNEK' >> SIZE
   fi
   if ! cat SIZE | grep -qi 'nmaxl_nn' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nmaxl_nn' >> SIZE
      echo '      parameter (nmaxl_nn=' >> SIZE
      echo '     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'nfldmax_nn' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nfldmax_nn' >> SIZE
      echo '      parameter (nfldmax_nn=' >> SIZE
      echo '     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nio' >> SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
   fi
   if ! cat SIZE | grep -qi 'lhref' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lhref' >> SIZE
      echo '      parameter (lhref=10)' >> SIZE
   fi
 fi

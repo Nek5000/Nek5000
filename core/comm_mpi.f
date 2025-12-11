@@ -116,8 +116,10 @@ c-----------------------------------------------------------------------
          do n=0,nsessions-1
             npall=npall+npsess(n)
          enddo
-         if (npall.ne.np_global) 
-     &      call exitti('Number of ranks does not match!$',npall)
+         if (npall.ne.np_global) then
+           write(6,*) 'Number of ranks does not match!',npall,np_global
+           call exitt
+         endif
   
          ! Assign key for splitting into multiple groups
          nid_global_root_next=0

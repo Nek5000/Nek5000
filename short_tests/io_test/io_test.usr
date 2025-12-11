@@ -1699,7 +1699,7 @@ c     fld binary
       param(66) = 4.0           ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,prefix)
+      call prepost (.true.,'   ')
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
@@ -1771,7 +1771,7 @@ c     fld ascii
       param(66) = -4.0          ! file format
       time = time_test
       call fields_restore
-      call prepost (.true.,prefix)
+      call prepost (.true.,'   ')
       ifile = ifile +1
 
       if_full_pres = .false.    ! pressure writing format
