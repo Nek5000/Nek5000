@@ -75,7 +75,7 @@ set +x
 make install -j4
 
 cd $ROOT
-ln -s $DIR/ $PREFIX
+ln -sfn $DIR/ $PREFIX
 
 if [ "$?" -eq 0 ]; then
   cd $ROOT

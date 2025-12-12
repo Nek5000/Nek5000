@@ -54,7 +54,7 @@ make lib install $PARRSB_OPT
 set +x
 
 cd $ROOT
-ln -s $DIR/ $PREFIX
+ln -sfn $DIR/ $PREFIX
 
 if [ "$?" -eq 0 ]; then
   cd $ROOT

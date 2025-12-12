@@ -68,7 +68,7 @@ cp ./metis/include/metis.h ../include
 cp ./libparmetis/defs.h ../include
 
 cd $ROOT
-ln -s $DIR/ $PREFIX
+ln -sfn $DIR/ $PREFIX
 
 if [ "$?" -eq 0 ]; then
   cd $ROOT
