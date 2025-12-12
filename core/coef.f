@@ -565,9 +565,9 @@ c        call outxm3j(xm3,ym3,jacm3)
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
-         ifto  = .false.
+         ifto  = .true.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
+         call outpost(vx,vy,vz,pr,jacm3,'xyz')
          if (nid.eq.0) write(6,*) 
      &     'Jac error 3 in ',kerr,' elements, setting p66=4, ifxyo=t'
          call exitt
@@ -667,9 +667,9 @@ C
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
-         ifto  = .false.
+         ifto  = .true.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
+         call outpost(vx,vy,vz,pr,jacm1,'xyz')
          if (nid.eq.0) write(6,*) 
      &     'Jac error 1 in ',kerr,' elements, setting p66=4, ifxyo=t'
          call exitt
@@ -1038,9 +1038,9 @@ c
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
-         ifto  = .false.
+         ifto  = .true.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
+         call outpost(vx,vy,vz,pr,jacm1,'xyz')
          if (nid.eq.0) write(6,*)
      &     'Jac error 1 in ',kerr,' elements, setting p66=4, ifxyo=t'
          call exitt
