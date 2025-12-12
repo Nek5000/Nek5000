@@ -9,7 +9,18 @@ STAMP_FILE=install.stamp
 ROOT=$PWD
 
 clean() {
-  rm -rf "$DIR/build" lib include bin $PREFIX $STAMP_FILE 2>/dev/null || true
+  rm -rf "$DIR/build" lib include bin $PREFIX $STAMP_FILE 2>/dev/null
+}
+
+distclean() {
+  clean
+  rm -rf ${PREFIX}_v* *.tar.gz 2>/dev/null
+}
+
+fetch() {
+  rm -rf $DIR 2>/dev/null
+  wget --no-check-certificate -O v$VER.tar.gz https://karypis.github.io/glaros/files/sw/parmetis/parmetis-$VER.tar.gz
+#  wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
 }
 
 if [ "$1" == "clean" ]; then
@@ -18,8 +29,13 @@ if [ "$1" == "clean" ]; then
 fi
 
 if [ "$1" == "distclean" ]; then
-  clean
-  rm -rf ${PREFIX}_v* *.tar.gz 2>/dev/null || true
+  distclean
+  exit 0
+fi
+
+if [ "$1" == "fetch" ]; then
+  distclean
+  fetch
   exit 0
 fi
 
@@ -39,9 +55,7 @@ if [ -f ./lib/libparmetis.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  rm -rf $DIR
-  wget --no-check-certificate -O v$VER.tar.gz https://karypis.github.io/glaros/files/sw/parmetis/parmetis-$VER.tar.gz
-#  wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
+  fetch
 fi
 
 if [ ! -d $DIR ]; then
