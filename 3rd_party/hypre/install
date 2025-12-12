@@ -3,9 +3,35 @@ set -e
 
 VER=2.15.1
 
+PREFIX=hypre
+DIR=${PREFIX}_v${VER}
+STAMP_FILE=install.stamp
+ROOT=$PWD
+
+clean() {
+  rm -rf "$DIR/build" lib include $PREFIX $STAMP_FILE 2>/dev/null || true
+}
+
 if [ "$1" == "clean" ]; then
-  rm -rf hypre lib include 2>/dev/null
+   clean
+   exit 0
+fi
+
+if [ "$1" == "distclean" ]; then
+  clean
+  rm -rf ${PREFIX}_v* *.tar.gz 2>/dev/null || true
   exit 0
+fi
+
+if [ -f $STAMP_FILE ]; then
+  stamp_ver=$(head -n 1 $STAMP_FILE)
+  if [ "$stamp_ver" != "$VER" ]; then
+    echo "Detected previously installed version: $stamp_ver (expected $VER)"
+    echo "Cleaning and rebuilding..."
+    clean
+  fi
+else
+  clean
 fi
 
 if [ -f ./lib/libHYPRE.a ]; then
@@ -13,14 +39,16 @@ if [ -f ./lib/libHYPRE.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
+  rm -rf $DIR
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/hypre-space/hypre/archive/v$VER.tar.gz 
 fi
 
-rm -rf hypre 2>/dev/null
-mkdir hypre
+if [ ! -d $DIR ]; then
+  mkdir $DIR
+  tar -zxvf v$VER.tar.gz -C $DIR --strip-components=1
+fi
 
-tar -zxvf v$VER.tar.gz -C ./hypre --strip-components=1
-cd hypre
+cd $DIR
 mkdir -p build
 cd build
 
@@ -35,3 +63,12 @@ cmake \
 set +x
 
 make -j4 install
+
+cd $ROOT
+ln -s $DIR/ $PREFIX
+
+if [ "$?" -eq 0 ]; then
+  cd $ROOT
+  echo $VER > $STAMP_FILE
+  echo "Successfully installed at $(date +"%Y-%m-%d %H:%M:%S %Z")" >> $STAMP_FILE
+fi

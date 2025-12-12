@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if [ "$1" == "clean" ]; then
+if [[ $1 == "clean" || $1 == "distclean" ]]; then
   make clean
   exit 0
 fi

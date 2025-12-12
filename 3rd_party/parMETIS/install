@@ -3,30 +3,75 @@ set -e
 
 VER=4.0.3
 
+PREFIX=parMETIS
+DIR=${PREFIX}_v${VER}
+STAMP_FILE=install.stamp
+ROOT=$PWD
+
+clean() {
+  rm -rf "$DIR/build" lib include bin $PREFIX $STAMP_FILE 2>/dev/null || true
+}
+
 if [ "$1" == "clean" ]; then
-  rm -rf parMETIS bin lib include 2>/dev/null 
+   clean
+   exit 0
+fi
+
+if [ "$1" == "distclean" ]; then
+  clean
+  rm -rf ${PREFIX}_v* *.tar.gz 2>/dev/null || true
   exit 0
 fi
 
-if [ -f ./lib/libparmetis.a ]; then
-echo h
-#  exit 0
+if [ -f $STAMP_FILE ]; then
+  stamp_ver=$(head -n 1 $STAMP_FILE)
+  if [ "$stamp_ver" != "$VER" ]; then
+    echo "Detected previously installed version: $stamp_ver (expected $VER)"
+    echo "Cleaning and rebuilding..."
+    clean
+  fi
+else
+  clean
 fi
 
-wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
+if [ -f ./lib/libparmetis.a ]; then
+  exit 0
+fi
 
-rm -rf parMETIS 2>/dev/null
-mkdir parMETIS
-tar -zxvf v$VER.tar.gz -C ./parMETIS --strip-components=1
-cd parMETIS
+if [ ! -f v$VER.tar.gz ]; then
+  rm -rf $DIR
+  wget --no-check-certificate -O v$VER.tar.gz https://karypis.github.io/glaros/files/sw/parmetis/parmetis-$VER.tar.gz
+#  wget --no-check-certificate -O v$VER.tar.gz http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-$VER.tar.gz
+fi
+
+if [ ! -d $DIR ]; then
+  mkdir $DIR
+  tar -zxvf v$VER.tar.gz -C $DIR --strip-components=1
+  set -x
+  cd $DIR
+  patch metis/include/metis.h < ../p_idx64
+  patch Makefile < ../p_makefile
+  cd $ROOT
+  set +x
+fi
+
+cd $DIR
 
 set -x
-patch metis/include/metis.h < ../p_idx64
-patch Makefile < ../p_makefile
 make config cc=`which $CC` prefix=`pwd`/..
 set +x
+
 mkdir -p ../include
 make install 
 find . -name "libmetis.a" -exec cp {} ../lib \;
 cp ./metis/include/metis.h ../include
 cp ./libparmetis/defs.h ../include
+
+cd $ROOT
+ln -s $DIR/ $PREFIX
+
+if [ "$?" -eq 0 ]; then
+  cd $ROOT
+  echo $VER > $STAMP_FILE
+  echo "Successfully installed at $(date +"%Y-%m-%d %H:%M:%S %Z")" >> $STAMP_FILE
+fi

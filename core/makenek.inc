@@ -48,17 +48,26 @@ function build_3rdparty() {
 }
 
 function clean_3rdparty() {
-  cd $SOURCE_ROOT_BLAS; ./install clean 2>/dev/null
+  if [[ $1 = "clean" ]]; then
+    act="clean"
+  elif [[ $1 = "distclean" ]]; then
+    act="distclean"
+  else
+    echo "clean_3rdparty: Invalid clean mode $1"
+    exit 1
+  fi
+
+  cd $SOURCE_ROOT_BLAS; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_GSLIB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARRSB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARMETIS; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_CVODE; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_HYPRE; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_HYPRE; ./install $act 2>/dev/null
   cd $CASEDIR
 }
 
@@ -79,6 +88,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "Options and arguments:"
   echo "  <casename>    name of usr file without extension"
   echo "  clean         cleanup build environment"
+  echo "  distclean     cleanup build environment and remove tar files"
   echo "  -build-dep    build dependencies"
   echo ""
   echo "PPLIST config options:" 
@@ -126,12 +136,12 @@ if [ "$1" == "-build-dep" ]; then
   nargs=0
 fi 
 
-if [[ $1 = "clean" ]]; then
+if [[ $1 = "clean" || $1 = "distclean" ]]; then
   while true; do
     read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rdparty; 
+        clean_3rdparty "$1";
         if [ -f makefile ]; then make clean; fi
         break ;;
       * ) 
@@ -636,7 +646,7 @@ if [ -f .state ]; then
         read -p "do you want to rebuild all 3rd party dependencies too? [N]" yn
         case $yn in
           [Yy]* )
-            clean_3rdparty;
+            clean_3rdparty "clean";
             break ;;
           * )
            break ;;
