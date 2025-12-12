@@ -57,6 +57,8 @@ c     Set default logicals
       ifcrrs = .true. ! crystal router restart
       lbrst = min(1024, lelt) ! batch size for restart
 
+      ifjac0_abort = .true. ! abort if initial mesh (rea/re2) is invalid
+
       CALL RZERO (PARAM,200)
 
       CALL BLANK(CCURVE ,12*LELT)

@@ -146,7 +146,7 @@ c      COMMON /SCRCG/ DUMM10(LX1,LY1,LZ1,LELT,1)
          call userchk
          if(nio.eq.0) write(6,'(A,/)') ' done :: userchk' 
       endif
-
+      call mesh_check   ! mesh can be changed in setics or userchk
       call setprop      ! call again because input has changed in userchk
 
       if (ifcvode .and. nsteps.gt.0) call cv_init

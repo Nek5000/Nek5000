@@ -431,6 +431,7 @@ C
       DIMENSION XM3(LX3,LY3,LZ3,1)
      $        , YM3(LX3,LY3,LZ3,1)
      $        , ZM3(LX3,LY3,LZ3,1)
+      logical ifprint
 C
 C
       NXY3  = lx3*ly3
@@ -531,14 +532,18 @@ C
       ENDIF
 C
       kerr = 0
+      ifprint = .true.
       DO 400 ie=1,NELT
 
 c        write(6,*) 'chkj1'
 c        call outxm3j(xm3,ym3,jacm3)
 
          CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
-     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ierr)
-         if (ierr.eq.1) kerr = kerr+1
+     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ifprint,ierr)
+         if (ierr.eq.1) then
+            kerr = kerr+1
+            ifprint = .false.
+         endif
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
          CALL MAP31 (SXM1(1,1,1,ie),SXM3(1,1,1,ie),ie)
@@ -556,7 +561,7 @@ c        call outxm3j(xm3,ym3,jacm3)
          CALL MAP31 (ZM1(1,1,1,ie),ZM3(1,1,1,ie),ie)
  400  CONTINUE
       kerr = iglsum(kerr,1)
-      if (kerr.gt.0) then
+      if (kerr.gt.0.AND.ifjac0_abort) then
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
@@ -604,6 +609,8 @@ C
      $ ,             ZRM1(LX1,LY1,LZ1,LELT)
       COMMON /CTMP1/ ZSM1(LX1,LY1,LZ1,LELT)
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
+
+      logical ifprint
 C
       NXY1  = lx1*ly1
       NYZ1  = ly1*lz1
@@ -646,13 +653,17 @@ C
       ENDIF
 C
       kerr = 0
+      ifprint = .true.
       DO 500 ie=1,NELT
          CALL CHKJAC(JACM1(1,1,1,ie),NXYZ1,ie,xm1(1,1,1,ie),
-     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ierr)
-         if (ierr.ne.0) kerr = kerr+1
+     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ifprint,ierr)
+         if (ierr.ne.0) then
+            kerr = kerr+1
+            ifprint = .false.
+         endif
   500 CONTINUE
       kerr = iglsum(kerr,1)
-      if (kerr.gt.0) then
+      if (kerr.gt.0.AND.ifjac0_abort) then
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
@@ -963,7 +974,7 @@ C
 C
       RETURN
       END
-      subroutine chkjac(jac,n,iel,X,Y,Z,ND,IERR)
+      subroutine chkjac(jac,n,iel,X,Y,Z,ND,IFPRINT,IERR)
 c
       include 'SIZE'
       include 'PARALLEL'
@@ -971,21 +982,24 @@ C
 C     Check the array JAC for a change in sign.
 C
       REAL JAC(N),x(1),y(1),z(1)
+      LOGICAL IFPRINT ! print error location
 c
       ierr = 1
       SIGN = JAC(1)
       DO 100 I=2,N
          IF (SIGN*JAC(I).LE.0.0) THEN
-            ieg = lglel(iel)
-            WRITE(6,101) nid,I,ieg
-            write(6,*) jac(i-1),jac(i)
-            if (ldim.eq.3) then
-               write(6,7) nid,x(i-1),y(i-1),z(i-1)
-               write(6,7) nid,x(i),y(i),z(i)
-            else
-               write(6,7) nid,x(i-1),y(i-1)
-               write(6,7) nid,x(i),y(i)
-            endif
+            IF (IFPRINT) then
+               ieg = lglel(iel)
+               WRITE(6,101) nid,I,ieg
+               write(6,*) jac(i-1),jac(i)
+               if (ldim.eq.3) then
+                  write(6,7) nid,x(i-1),y(i-1),z(i-1)
+                  write(6,7) nid,x(i),y(i),z(i)
+               else
+                  write(6,7) nid,x(i-1),y(i-1)
+                  write(6,7) nid,x(i),y(i)
+               endif
+            ENDIF
     7       format(i5,' xyz:',1p3e14.5)
 c           if (np.eq.1) call out_xyz_el(x,y,z,iel)
 c           ierr=0
@@ -1000,6 +1014,42 @@ c
       ierr = 0
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine mesh_check
+c
+c     Manually check mesh after fix_geom (or any geom_reset)
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'SOLN'
+
+      nxyz = lx1*ly1*lz1
+
+      kerr = 0
+      do ie=1,nelt
+         call chkjac(jacm1(1,1,1,ie),nxyz,ie,xm1(1,1,1,ie),
+     $               ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,.true.,ierr)
+         if (ierr.ne.0) kerr = kerr+1
+      enddo
+      kerr = iglsum(kerr,1)
+
+      if (kerr.gt.0) then
+         ifxyo = .true.
+         ifvo  = .false.
+         ifpo  = .false.
+         ifto  = .false.
+         param(66) = 4
+         call outpost(vx,vy,vz,pr,t,'xyz')
+         if (nid.eq.0) write(6,*)
+     &     'Jac error 1 in ',kerr,' elements, setting p66=4, ifxyo=t'
+         call exitt
+      endif
+
+      call mesh_metrics
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine volume
 C
