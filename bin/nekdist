@@ -36,22 +36,11 @@ sed -e "s/# Release.*/# Release $VER/g" RELEASE.md >.tmp; mv .tmp RELEASE.md
 #rm -rf *.py lib
 #cd ..
 
-
-cd 3rd_party/gslib
-wget -O v1.0.5.tar.gz https://github.com/gslib/gslib/archive/v1.0.5.tar.gz
-cd ../../
-
-cd 3rd_party/parRSB
-wget -O v0.2.tar.gz https://github.com/Nek5000/parRSB/archive/v0.2.tar.gz
-cd ../../
-
-cd 3rd_party/hypre
-wget -O v2.15.1.tar.gz https://github.com/LLNL/hypre/archive/v2.15.1.tar.gz
-cd ../../
-
-cd 3rd_party/cvode
-wget -O v2.7.0.tar.gz https://github.com/LLNL/sundials/releases/download/v2.7.0/sundials-2.7.0.tar.gz 
-cd ../../
+for d in gslib parRSB hypre cvode; do
+  cd 3rd_party/$d
+  ./install fetch
+  cd ../..
+done
 
 cd tools/exo2nek/3rd_party
 wget -O netcdf-4.6.1.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz

@@ -163,22 +163,22 @@ c-----------------------------------------------------------------------
       common /scrcg/ xyz(ldim*lelt*2**ldim)
 
       integer cnt, algo
-      integer opt_parrsb(3), opt_parmetis(10)
+      integer opt_parrsb(3)
 
       logical ifbswap, ifread_con
 
       real tol
 
-#if !defined(PARRSB) && !defined(PARMETIS)
+#if !defined(PARRSB)
 #if defined(DPROCMAP)
-      call exitti('DPROCMAP requires PARRSB or PARMETIS!$',0)
+      call exitti('DPROCMAP requires PARRSB!$',0)
 #else
       call read_map(vertex,nlv,wk4,mdw,ndw)
       return
 #endif      
 #endif
 
-#if defined(PARRSB) || defined(PARMETIS)
+#if defined(PARRSB)
       neli = nelt
       ifread_con = .true.
       call read_con(wk4,size(wk),neli,nlv,ierr)
@@ -664,7 +664,7 @@ C
 
       REAL*8 dnekclock,t0
 
-#if defined(PARRSB) || defined(PARMETIS) || defined(DPROCMAP)
+#if defined(PARRSB) || defined(DPROCMAP)
       call exitti(' DPROCMAP/PARRSB not supported for rea files$',0)
 #else      
       t0 = dnekclock()

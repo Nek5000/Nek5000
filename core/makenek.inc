@@ -25,12 +25,6 @@ function build_3rdparty() {
   fi
   cd $CASEDIR
 
-  if [ $PARMETIS -ne 0 ]; then
-     cd $SOURCE_ROOT_PARMETIS
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  fi
-  cd $CASEDIR
-
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
      CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
@@ -48,17 +42,24 @@ function build_3rdparty() {
 }
 
 function clean_3rdparty() {
-  cd $SOURCE_ROOT_BLAS; ./install clean 2>/dev/null
+  if [[ $1 = "clean" ]]; then
+    act="clean"
+  elif [[ $1 = "distclean" ]]; then
+    act="distclean"
+  else
+    echo "clean_3rdparty: Invalid clean mode $1"
+    exit 1
+  fi
+
+  cd $SOURCE_ROOT_BLAS; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_GSLIB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARRSB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_CVODE; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
-  cd $CASEDIR
-  cd $SOURCE_ROOT_HYPRE; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_HYPRE; ./install $act 2>/dev/null
   cd $CASEDIR
 }
 
@@ -79,6 +80,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "Options and arguments:"
   echo "  <casename>    name of usr file without extension"
   echo "  clean         cleanup build environment"
+  echo "  distclean     cleanup build environment and remove tar files"
   echo "  -build-dep    build dependencies"
   echo ""
   echo "PPLIST config options:" 
@@ -113,8 +115,6 @@ SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
 export SOURCE_ROOT_GSLIB
 SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
-SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
-export SOURCE_ROOT_PARMETIS
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
@@ -126,12 +126,12 @@ if [ "$1" == "-build-dep" ]; then
   nargs=0
 fi 
 
-if [[ $1 = "clean" ]]; then
+if [[ $1 = "clean" || $1 = "distclean" ]]; then
   while true; do
     read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rdparty; 
+        clean_3rdparty "$1";
         if [ -f makefile ]; then make clean; fi
         break ;;
       * ) 
@@ -305,7 +305,6 @@ PPLIST="${PPLIST}"
 MPIIO=1
 DPROCMAP=0
 PARRSB=0
-PARMETIS=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
@@ -325,11 +324,6 @@ do
      PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
-   fi
-   if [ "$i" == "PARMETIS" ]; then
-     PARMETIS=1
-     USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
-     METIS_INC="$SOURCE_ROOT_PARMETIS/include"
    fi
    if [ "$i" == "CVODE" ]; then 
      CVODE=1
@@ -470,14 +464,6 @@ fi
 
 if [ $HYPRE -ne 0 ]; then
   sed -e "s:^HYPRE_IFLAGS[ ]*=.*:HYPRE_IFLAGS\:=-I${HYPRE_INC}:" \
-      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
-      .makefile > .makefile.tmp
-
-  mv .makefile.tmp .makefile
-fi
-
-if [ $PARMETIS -ne 0 ]; then
-  sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${METIS_INC}:" \
       -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
       .makefile > .makefile.tmp
 
@@ -636,7 +622,7 @@ if [ -f .state ]; then
         read -p "do you want to rebuild all 3rd party dependencies too? [N]" yn
         case $yn in
           [Yy]* )
-            clean_3rdparty;
+            clean_3rdparty "clean";
             break ;;
           * )
            break ;;
