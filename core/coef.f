@@ -559,7 +559,7 @@ c        call outxm3j(xm3,ym3,jacm3)
          CALL MAP31 (YM1(1,1,1,ie),YM3(1,1,1,ie),ie)
          CALL MAP31 (ZM1(1,1,1,ie),ZM3(1,1,1,ie),ie)
  400  CONTINUE
-
+      kerr = iglsum(kerr,1)
       if (kerr.gt.0.AND.ifjac0_abort) then
          ifxyo = .true.
          ifvo  = .false.
