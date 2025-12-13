@@ -1434,12 +1434,16 @@ c     it too should be updated.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mesh_metrics
+      subroutine mesh_metrics(ifprint)
       include 'SIZE'
       include 'TOTAL'
 
       parameter(nedge = 4 + 8*(ldim-2))
       real ledg(nedge)
+      logical ifprint
+
+      real elem_metric
+      common /msh_metrics/ elem_metric(3,3)
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelt
@@ -1503,7 +1507,17 @@ c-----------------------------------------------------------------------
       dxmax = glmax(ddmax,1)
       dxavg = glsum(ddavg,1)/nelgt 
 
-      if (nid.eq.0) then
+      elem_metric(1,1) = dxmin
+      elem_metric(2,1) = dxmax
+      elem_metric(3,1) = 0.0
+      elem_metric(1,2) = dsjmin
+      elem_metric(2,2) = dsjmax
+      elem_metric(3,2) = dsjavg
+      elem_metric(1,3) = darmin
+      elem_metric(2,3) = darmax
+      elem_metric(3,3) = daravg
+
+      if (nid.eq.0.AND.ifprint) then
          write(6,*) 'mesh metrics:'
          write(6,'(A,1p2E9.2)') ' GLL grid spacing min/max    :',
      $   dxmin,dxmax
