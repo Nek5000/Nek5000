@@ -537,8 +537,8 @@ C
 
 c        write(6,*) 'chkj1'
 c        call outxm3j(xm3,ym3,jacm3)
-         CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie)
-     $              ,ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ierr)
+         CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
+     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ifprint,ierr)
          if (ierr.eq.1) then
             kerr = kerr+1
             ifprint = .false.
