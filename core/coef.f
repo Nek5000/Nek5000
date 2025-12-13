@@ -431,6 +431,7 @@ C
       DIMENSION XM3(LX3,LY3,LZ3,1)
      $        , YM3(LX3,LY3,LZ3,1)
      $        , ZM3(LX3,LY3,LZ3,1)
+      logical ifprint
 C
 C
       NXY3  = lx3*ly3
@@ -531,14 +532,17 @@ C
       ENDIF
 C
       kerr = 0
+      ifprint = .true.
       DO 400 ie=1,NELT
 
 c        write(6,*) 'chkj1'
 c        call outxm3j(xm3,ym3,jacm3)
-
          CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
-     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ierr)
-         if (ierr.eq.1) kerr = kerr+1
+     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ifprint,ierr)
+         if (ierr.eq.1) then
+            kerr = kerr+1
+            ifprint = .false.
+         endif
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
          CALL MAP31 (SXM1(1,1,1,ie),SXM3(1,1,1,ie),ie)
@@ -556,14 +560,14 @@ c        call outxm3j(xm3,ym3,jacm3)
          CALL MAP31 (ZM1(1,1,1,ie),ZM3(1,1,1,ie),ie)
  400  CONTINUE
       kerr = iglsum(kerr,1)
-      if (kerr.gt.0) then
+      if (kerr.gt.0.AND.ifjac0_abort) then
          ifxyo = .true.
          ifvo  = .false.
          ifpo  = .false.
-         ifto  = .false.
+         ifto  = .true.
          param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
-         if (nid.eq.0) write(6,*) 
+         call outpost(vx,vy,vz,pr,jacm3,'xyz')
+         if (nid.eq.0) write(6,*)
      &     'Jac error 3 in ',kerr,' elements, setting p66=4, ifxyo=t'
          call exitt
       endif
@@ -645,25 +649,7 @@ C
          CALL ASCOL5  (TZM1,XRM1,YSM1,XSM1,YRM1,NTOT1)
       ENDIF
 C
-      kerr = 0
-      DO 500 ie=1,NELT
-         CALL CHKJAC(JACM1(1,1,1,ie),NXYZ1,ie,xm1(1,1,1,ie),
-     $ ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ierr)
-         if (ierr.ne.0) kerr = kerr+1
-  500 CONTINUE
-      kerr = iglsum(kerr,1)
-      if (kerr.gt.0) then
-         ifxyo = .true.
-         ifvo  = .false.
-         ifpo  = .false.
-         ifto  = .false.
-         param(66) = 4
-         call outpost(vx,vy,vz,pr,t,'xyz')
-         if (nid.eq.0) write(6,*) 
-     &     'Jac error 1 in ',kerr,' elements, setting p66=4, ifxyo=t'
-         call exitt
-      endif
-
+      call mesh_check(.false.,0)
       call invers2(jacmi,jacm1,ntot1)
 
       RETURN
@@ -963,7 +949,7 @@ C
 C
       RETURN
       END
-      subroutine chkjac(jac,n,iel,X,Y,Z,ND,IERR)
+      subroutine chkjac(jac,n,iel,X,Y,Z,ND,IFPRINT,IERR)
 c
       include 'SIZE'
       include 'PARALLEL'
@@ -971,21 +957,24 @@ C
 C     Check the array JAC for a change in sign.
 C
       REAL JAC(N),x(1),y(1),z(1)
+      LOGICAL IFPRINT ! print error location
 c
       ierr = 1
       SIGN = JAC(1)
       DO 100 I=2,N
          IF (SIGN*JAC(I).LE.0.0) THEN
-            ieg = lglel(iel)
-            WRITE(6,101) nid,I,ieg
-            write(6,*) jac(i-1),jac(i)
-            if (ldim.eq.3) then
-               write(6,7) nid,x(i-1),y(i-1),z(i-1)
-               write(6,7) nid,x(i),y(i),z(i)
-            else
-               write(6,7) nid,x(i-1),y(i-1)
-               write(6,7) nid,x(i),y(i)
-            endif
+            IF (IFPRINT) then
+               ieg = lglel(iel)
+               WRITE(6,101) nid,I,ieg
+               write(6,*) jac(i-1),jac(i)
+               if (ldim.eq.3) then
+                  write(6,7) nid,x(i-1),y(i-1),z(i-1)
+                  write(6,7) nid,x(i),y(i),z(i)
+               else
+                  write(6,7) nid,x(i-1),y(i-1)
+                  write(6,7) nid,x(i),y(i)
+               endif
+            ENDIF
     7       format(i5,' xyz:',1p3e14.5)
 c           if (np.eq.1) call out_xyz_el(x,y,z,iel)
 c           ierr=0
@@ -1000,6 +989,86 @@ c
       ierr = 0
       RETURN
       END
+c-----------------------------------------------------------------------
+      subroutine mesh_check(ifabort,imetric)
+c
+c     Check mesh consistency after fix_geom (or any geom_reset).
+c
+c     ifabort : .true.     abort run if an error is detected
+c               .false.    report error and continue
+c     imetric : 0          do not compute/print metrics
+c               1          compute and always print metrics
+c               2          compute but only print when metrics change
+c
+      include 'SIZE'
+      include 'INPUT'
+      include 'GEOM'
+      include 'SOLN'
+
+      logical ifabort, ifprint
+
+      real elem_metric
+      common /msh_metrics/ elem_metric(3,3)
+      real elem_metric_prev(9), tmp(9)
+      data elem_metric_prev /9*0.0/
+      save elem_metric_prev
+
+      nxyz = lx1*ly1*lz1
+
+c     Check Jacobians
+      kerr = 0
+      ifprint = .true.
+      do ie=1,nelt
+        call chkjac(jacm1(1,1,1,ie),nxyz,ie,xm1(1,1,1,ie)
+     $             ,ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ifprint,ierr)
+        if (ierr.ne.0) then
+          kerr    = kerr+1
+          ifprint = .false. ! only prints first element per rank
+        endif
+      enddo
+      kerr = iglsum(kerr,1)
+
+      if (kerr.gt.0) then
+        ifxyo = .true.
+        ifvo  = .false.
+        ifpo  = .false.
+        ifto  = .true.
+        param(66) = 4
+        call outpost(vx,vy,vz,pr,jacm1,'xyz')
+        if (nid.eq.0) write(6,1) kerr
+        if (ifabort) call exitt
+      endif
+    1 format('Jac error mesh 1 in ', I2,' elements, dump jac in temp')
+
+c     Compute mesh metrics
+      if (imetric.eq.1) then
+
+        call mesh_metrics(.true.) ! compute and print
+        call copy(elem_metric_prev,elem_metric,9)
+
+      elseif (imetric.eq.2) then
+
+        call mesh_metrics(.false.) ! compute silently
+        call sub3(tmp,elem_metric_prev,elem_metric,9)
+        diff = vlamax(tmp,9)
+
+        if (diff.gt.1e-10) then
+          call copy(elem_metric_prev,elem_metric,9)
+          if (nid.eq.0) then
+            write(6,*) 'mesh metrics:'
+            write(6,'(A,1p2E9.2)') ' GLL grid spacing min/max    :',
+     $      elem_metric(1,1), elem_metric(2,1)
+            write(6,'(A,1p3E9.2)') ' scaled Jacobian  min/max/avg:',
+     $      elem_metric(1,2), elem_metric(2,2), elem_metric(3,2)
+            write(6,'(A,1p3E9.2)') ' aspect ratio     min/max/avg:',
+     $      elem_metric(1,3), elem_metric(2,3), elem_metric(3,3)
+            write(6,*)
+          endif
+        endif
+      endif
+
+      return
+      end
 c-----------------------------------------------------------------------
       subroutine volume
 C

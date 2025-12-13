@@ -908,7 +908,6 @@ C
 C
             ieg=lglel(ie)
             WRITE(6,800) IEG,C1,C2,C3,C4
-            call exitt
   800       FORMAT(/,2X,'WARNINGa: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  C1-4:',4E12.4)
             IFCSTT=.FALSE.
@@ -940,7 +939,6 @@ C
 C
             ieg=lglel(ie)
             WRITE(6,1800) IEG,V1,V2,V3,V4,V5,V6,V7,V8
-            call exitt
  1800       FORMAT(/,2X,'WARNINGb: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  V1-8:',4E12.4
      $      /,2X,'      ',4X,'       ',4E12.4)
@@ -961,16 +959,18 @@ C
 C
       IF (.NOT.IFCSTT) THEN
          IF (NID.EQ.0) WRITE(6,2003) NELGT
-         call exitt
+         if (ifjac0_abort) then
+            IF (NID.EQ.0) WRITE(6,2004)
+            call exitt
+         endif
       ELSE
          IF (NIO.EQ.0) WRITE(6,2002) NELGT
       ENDIF
 C
- 2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
-     $      ,' in routine VERRHE.')
+ 2001 FORMAT(//,'  Elemental geometry not right-handed')
  2002 FORMAT('   Right-handed check complete for',I12,' elements. OK.')
- 2003 FORMAT('   Right-handed check failed for',I12,' elements.'
-     $      ,'   Exiting in routine VERRHE.')
+ 2003 FORMAT('   Right-handed check failed for',I12,' elements.')
+ 2004 FORMAT('   Exiting in routine VERRHE.')
       RETURN
       END
 c-----------------------------------------------------------------------

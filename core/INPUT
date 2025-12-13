@@ -51,7 +51,7 @@ c
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld(ldimt1),ifdp0dt
      $               ,ifmpiio,ifcrrs,ifrich,ifvvisp
-     $               ,ifbmap(ldimt1)
+     $               ,ifbmap(ldimt1),ifjac0_abort
 
       common /input3/ if3d,ifflow,ifheat,iftran,ifaxis,ifstrs,ifsplit
      $               ,ifmgrid 
@@ -67,7 +67,7 @@ c
      $               ,ifcyclic,ifmoab,ifcoup, ifvcoup, ifusermv,ifreguo
      $               ,ifxyo_,ifaziv,ifneknek,ifneknekm,ifneknekc
      $               ,ifcvfld,ifdp0dt
-     $               ,ifmpiio,ifcrrs,ifrich,ifvvisp,ifbmap
+     $               ,ifmpiio,ifcrrs,ifrich,ifvvisp,ifbmap,ifjac0_abort
 
       logical         ifnav
       equivalence    (ifnav, ifadvc(1))
