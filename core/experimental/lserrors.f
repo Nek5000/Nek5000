@@ -19,6 +19,7 @@ c-----------------------------------------------------------------------
       real enclosedVol
       real glmax,glmin
       real tmax,tmin
+      real glsum, perimeter
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -34,7 +35,13 @@ c-----------------------------------------------------------------------
 
       vol = enclosedVol(lstemp,1)
 
-      ls_shapeerr = vol/vole
+      !compute perimeter
+      call deltals(exact,lstemp)
+      call col2(lstemp,bm1,ntot)
+      perimeter = glsum(lstemp,ntot)
+      if(nio.eq.0)write(*,*)"Exact perimeter",perimeter
+
+      ls_shapeerr = vol/vole/(2.0*perimeter)
 
       return
       end
@@ -88,6 +95,32 @@ c-----------------------------------------------------------------------
       tmp = glsum(lstemp,ntot)
 
       ls_relerr = ls_l1norm(ifld,exact)/tmp
+
+      return
+      end
+c-----------------------------------------------------------------------
+      real function ls_rel2err(ifld,exact)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
+      common /ls_err_arrs/ lstemp(lx1,ly1,lz1,lelv)
+      real lstemp
+
+      real exact(1)
+
+      integer ntot,i
+      integer ifld
+
+      real ls_l2norm
+      real glsc3, tmp
+
+      ntot = lx1*ly1*lz1*nelv
+
+      call copy(lstemp,exact,ntot)
+
+      tmp = glsc3(lstemp,lstemp,bm1,ntot)
+
+      ls_rel2err = ls_l2norm(ifld,exact)/tmp
 
       return
       end
@@ -190,12 +223,12 @@ c-----------------------------------------------------------------------
 
       call copy(heavi,psi,ntot)
 
-      call cadd(heavi,-0.5,ntot)
+      call cadd(heavi,-0.5d0,ntot)
 
       do i=1,ntot
-        if(heavi(i).ge.0.0)then
+        if(heavi(i).ge.0.0d0)then
           heavi(i) = 1.0
-        elseif(heavi(i).lt.0.0)then
+        elseif(heavi(i).lt.0.0d0)then
           heavi(i) = 0.0
         endif
       enddo
