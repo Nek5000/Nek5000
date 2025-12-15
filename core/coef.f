@@ -431,8 +431,6 @@ C
       DIMENSION XM3(LX3,LY3,LZ3,1)
      $        , YM3(LX3,LY3,LZ3,1)
      $        , ZM3(LX3,LY3,LZ3,1)
-      logical ifprint
-C
 C
       NXY3  = lx3*ly3
       NYZ3  = ly3*lz3
@@ -534,15 +532,6 @@ C
       kerr = 0
       ifprint = .true.
       DO 400 ie=1,NELT
-
-c        write(6,*) 'chkj1'
-c        call outxm3j(xm3,ym3,jacm3)
-         CALL CHKJAC(JACM3(1,1,1,ie),NXYZ3,ie,xm3(1,1,1,ie),
-     $ ym3(1,1,1,ie),zm3(1,1,1,ie),ldim,ifprint,ierr)
-         if (ierr.eq.1) then
-            kerr = kerr+1
-            ifprint = .false.
-         endif
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
          CALL MAP31 (SXM1(1,1,1,ie),SXM3(1,1,1,ie),ie)
@@ -559,19 +548,8 @@ c        call outxm3j(xm3,ym3,jacm3)
          CALL MAP31 (YM1(1,1,1,ie),YM3(1,1,1,ie),ie)
          CALL MAP31 (ZM1(1,1,1,ie),ZM3(1,1,1,ie),ie)
  400  CONTINUE
-      kerr = iglsum(kerr,1)
-      if (kerr.gt.0.AND.ifjac0_abort) then
-         ifxyo = .true.
-         ifvo  = .false.
-         ifpo  = .false.
-         ifto  = .true.
-         param(66) = 4
-         call outpost(vx,vy,vz,pr,jacm3,'xyz')
-         if (nid.eq.0) write(6,*)
-     &     'Jac error 3 in ',kerr,' elements, setting p66=4, ifxyo=t'
-         call exitt
-      endif
 
+      call mesh_check(ifjac0_abort,1)
       call invers2(jacmi,jacm1,ntot1)
 
       RETURN
