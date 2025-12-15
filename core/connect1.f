@@ -893,6 +893,7 @@ C
       LOGICAL IFYES,IFCSTT
 C
       IFCSTT=.TRUE.
+      nnr = 0
       IF (.NOT.IF3D) THEN
       DO 1000 IE=1,NELT
 C
@@ -907,8 +908,9 @@ C
      $       C3.LE.0.0.OR.C4.LE.0.0 ) THEN
 C
             ieg=lglel(ie)
+            nnr = nnr+1
             WRITE(6,800) IEG,C1,C2,C3,C4
-  800       FORMAT(/,2X,'WARNINGa: Detected non-right-handed element.',
+  800       FORMAT(/,2X,'WARNING: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  C1-4:',4E12.4)
             IFCSTT=.FALSE.
 C           CALL QUERY(IFYES,'Proceed                                 ')
@@ -938,10 +940,11 @@ C
      $       V7.LE.0.0.OR.V8.LE.0.0    ) THEN
 C
             ieg=lglel(ie)
+            nnr = nnr+1
             WRITE(6,1800) IEG,V1,V2,V3,V4,V5,V6,V7,V8
- 1800       FORMAT(/,2X,'WARNINGb: Detected non-right-handed element.',
+ 1800       FORMAT(/,2X,'WARNING: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  V1-8:',4E12.4
-     $      /,2X,'      ',4X,'       ',4E12.4)
+     $      /,2X,'      ',8X,'       ',4E12.4)
             IFCSTT=.FALSE.
          ENDIF
  2000 CONTINUE
@@ -958,7 +961,8 @@ C
       CALL GLLOG(IFCSTT,.FALSE.)
 C
       IF (.NOT.IFCSTT) THEN
-         IF (NID.EQ.0) WRITE(6,2003) NELGT
+         nnr = iglsum(nnr,1)
+         IF (NID.EQ.0) WRITE(6,2003) nnr !print out number of non-right handed elements
          if (ifjac0_abort) then
             IF (NID.EQ.0) WRITE(6,2004)
             call exitt
