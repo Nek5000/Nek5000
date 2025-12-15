@@ -547,7 +547,7 @@ C
          CALL MAP31 (ZM1(1,1,1,ie),ZM3(1,1,1,ie),ie)
  400  CONTINUE
 
-      call mesh_check(ifjac0_abort,1)
+      call mesh_check(.false.,0,0)
       call invers2(jacmi,jacm1,ntot1)
 
       RETURN
@@ -625,7 +625,7 @@ C
          CALL ASCOL5  (TZM1,XRM1,YSM1,XSM1,YRM1,NTOT1)
       ENDIF
 C
-      call mesh_check(.false.,0)
+      call mesh_check(.false.,0,0)
       call invers2(jacmi,jacm1,ntot1)
 
       RETURN
@@ -966,22 +966,101 @@ c
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine mesh_check(ifabort,imetric)
+      subroutine xm1toxc
+      include 'SIZE'
+      include 'GEOM'  ! xm1
+      include 'INPUT' ! xc
+
+      do ie = 1,nelt
+         ! x
+         xc(1,ie) = XM1(1  ,1  ,1  ,ie)
+         xc(2,ie) = XM1(lx1,1  ,1  ,ie)
+         xc(3,ie) = XM1(lx1,ly1,1  ,ie)
+         xc(4,ie) = XM1(1  ,ly1,1  ,ie)
+         xc(5,ie) = XM1(1  ,1  ,lz1,ie)
+         xc(6,ie) = XM1(lx1,1  ,lz1,ie)
+         xc(7,ie) = XM1(lx1,ly1,lz1,ie)
+         xc(8,ie) = XM1(1  ,ly1,lz1,ie)
+         ! y
+         yc(1,ie) = YM1(1  ,1  ,1  ,ie)
+         yc(2,ie) = YM1(lx1,1  ,1  ,ie)
+         yc(3,ie) = YM1(lx1,ly1,1  ,ie)
+         yc(4,ie) = YM1(1  ,ly1,1  ,ie)
+         yc(5,ie) = YM1(1  ,1  ,lz1,ie)
+         yc(6,ie) = YM1(lx1,1  ,lz1,ie)
+         yc(7,ie) = YM1(lx1,ly1,lz1,ie)
+         yc(8,ie) = YM1(1  ,ly1,lz1,ie)
+         ! z
+         zc(1,ie) = ZM1(1  ,1  ,1  ,ie)
+         zc(2,ie) = ZM1(lx1,1  ,1  ,ie)
+         zc(3,ie) = ZM1(lx1,ly1,1  ,ie)
+         zc(4,ie) = ZM1(1  ,ly1,1  ,ie)
+         zc(5,ie) = ZM1(1  ,1  ,lz1,ie)
+         zc(6,ie) = ZM1(lx1,1  ,lz1,ie)
+         zc(7,ie) = ZM1(lx1,ly1,lz1,ie)
+         zc(8,ie) = ZM1(1  ,ly1,lz1,ie)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine xctoxyz
+      include 'SIZE'
+      include 'INPUT' ! xc
+      include 'SCRCT' ! xyz
+
+      integer indx(8)
+      data indx /1,2,4,3,5,6,8,7/
+
+      if (ldim.eq.2) then
+        do ie=1,nelt
+          do j=1,8
+            ivtx = indx(j)
+            xyz(1,ivtx,ie) = xc(j,ie)
+            xyz(2,ivtx,ie) = yc(j,ie)
+            xyz(3,ivtx,ie) = zc(j,ie)
+          enddo
+        enddo
+      else
+        do ie=1,nelt
+          do j=1,4
+            ivtx = indx(j)
+            xyz(1,ivtx,ie) = xc(j,ie)
+            xyz(2,ivtx,ie) = yc(j,ie)
+            xyz(3,ivtx,ie) = 0.0
+          enddo
+        enddo
+      endif
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine mesh_check(ifabort,iverb,idbg)
 c
-c     Check mesh consistency after fix_geom (or any geom_reset).
+c     Check mesh 1 consistency after fix_geom (or any geom_reset).
 c
 c     ifabort : .true.     abort run if an error is detected
 c               .false.    report error and continue
-c     imetric : 0          do not compute/print metrics
-c               1          compute and always print metrics
-c               2          compute but only print when metrics change
+c
+c     iverb   : 0          do not print unless an error occurs (then use idbg)
+c               1          short summary; print metrics only when they change
+c               2          summary + always print mesh metrics
+c
+c     When bad elements detected:
+c     idbg    : 0          only print summarized results
+c             : 1          also dump xyz file
+c                             pr = err type (0=ok, 1=rhs, 2=jac, 3=both)
+c                             temp = jacobian
+c             : 2          print all bad elements and dump xyz file
 c
       include 'SIZE'
+      include 'PARALLEL'
       include 'INPUT'
       include 'GEOM'
       include 'SOLN'
+      include 'SCRCT'! xyz
 
-      logical ifabort, ifprint
+      logical ifabort, print_bad_e
+      integer bad_elem(lelt)
 
       real elem_metric
       common /msh_metrics/ elem_metric(3,3)
@@ -990,39 +1069,68 @@ c
       save elem_metric_prev
 
       nxyz = lx1*ly1*lz1
+      nxyz2 = lx2*ly2*lz2
+
+      print_bad_e = .false.
+      if (idbg.eq.2) print_bad_e = .true. ! this can print a lot
+
+c     Check right-handedness
+      call xm1toxc
+      call xctoxyz
+      call verrhe(print_bad_e,bad_elem) ! tag LHS e with bad_elem(ie) = 1
+      kerr1 = iglsum(bad_elem,nelt)
 
 c     Check Jacobians
-      kerr = 0
-      ifprint = .true.
+      kerr2 = 0
       do ie=1,nelt
         call chkjac(jacm1(1,1,1,ie),nxyz,ie,xm1(1,1,1,ie)
-     $             ,ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,ifprint,ierr)
+     $             ,ym1(1,1,1,ie),zm1(1,1,1,ie),ldim,print_bad_e,ierr)
         if (ierr.ne.0) then
-          kerr    = kerr+1
-          ifprint = .false. ! only prints first element per rank
+          kerr2 = kerr2 + 1
+          bad_elem(ie) = bad_elem(ie) + 2 ! add 2 for neg-jac, so 2 or 3
         endif
       enddo
-      kerr = iglsum(kerr,1)
+      kerr2 = iglsum(kerr2,1)
 
-      if (kerr.gt.0) then
-        ifxyo = .true.
-        ifvo  = .false.
-        ifpo  = .false.
-        ifto  = .true.
-        param(66) = 4
-        call outpost(vx,vy,vz,pr,jacm1,'xyz')
-        if (nid.eq.0) write(6,1) kerr
-        if (ifabort) call exitt
+c     Short summary
+      kerr = max(kerr1,kerr2)
+      if (nid.eq.0) then
+        if (kerr1.gt.0) write(6,2001) kerr1
+        if (kerr2.gt.0) write(6,2002) kerr2
+        if (iverb.gt.0.AND.kerr.eq.0) write(6,2003) nelgt
       endif
-    1 format('Jac error mesh 1 in ', I2,' elements, dump jac in temp')
+ 2001 format('Right-handed check failed for',I12,' elements.')
+ 2002 format('Neg-Jacobian check failed for',I12,' elements.')
+ 2003 format('Mesh check complete for',I12,' elements. OK.')
+
+c     Error behavior
+      if (kerr.ne.0) then
+
+        if (idbg.gt.0) then ! dump xyz
+          if (nid.eq.0) write(6,2004)
+          ifxyo = .true.
+          ifvo  = .false.
+          ifpo  = .true.    ! 0=ok, 1=lhs, 2=neg-jac, 3=both (pr)
+          ifto  = .true.    ! pointwise jacobian (temp)
+          call rzero(pr,nxyz2*nelt)
+          do ie=1,nelt
+            call cfill(pr(1,1,1,ie),1.0*bad_elem(ie),nxyz2)
+          enddo
+          call outpost(vx,vy,vz,pr,jacm1,'xyz')
+        endif
+
+        if (ifabort) then
+          if (nid.eq.0) write(6,2005)
+          call exitt
+        endif
+
+      endif
+
+ 2004 format('Dump xyz: pr = error type, temp = Jacobian')
+ 2005 format('Mesh check failed. Abort!')
 
 c     Compute mesh metrics
-      if (imetric.eq.1) then
-
-        call mesh_metrics(.true.) ! compute and print
-        call copy(elem_metric_prev,elem_metric,9)
-
-      elseif (imetric.eq.2) then
+      if (iverb.eq.1) then
 
         call mesh_metrics(.false.) ! compute silently
         call sub3(tmp,elem_metric_prev,elem_metric,9)
@@ -1041,6 +1149,12 @@ c     Compute mesh metrics
             write(6,*)
           endif
         endif
+
+      elseif (iverb.eq.2) then
+
+        call mesh_metrics(.true.) ! compute and print
+        call copy(elem_metric_prev,elem_metric,9)
+
       endif
 
       return
