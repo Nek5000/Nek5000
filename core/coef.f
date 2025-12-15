@@ -530,7 +530,6 @@ C
       ENDIF
 C
       kerr = 0
-      ifprint = .true.
       DO 400 ie=1,NELT
          CALL MAP31 (RXM1(1,1,1,ie),RXM3(1,1,1,ie),ie)
          CALL MAP31 (RYM1(1,1,1,ie),RYM3(1,1,1,ie),ie)
