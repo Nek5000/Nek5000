@@ -1014,7 +1014,7 @@ c-----------------------------------------------------------------------
 
       if (ldim.eq.2) then
         do ie=1,nelt
-          do j=1,8
+          do j=1,4
             ivtx = indx(j)
             xyz(1,ivtx,ie) = xc(j,ie)
             xyz(2,ivtx,ie) = yc(j,ie)
@@ -1023,7 +1023,7 @@ c-----------------------------------------------------------------------
         enddo
       else
         do ie=1,nelt
-          do j=1,4
+          do j=1,8
             ivtx = indx(j)
             xyz(1,ivtx,ie) = xc(j,ie)
             xyz(2,ivtx,ie) = yc(j,ie)
@@ -1034,7 +1034,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mesh_check(ifabort,iverb,idbg)
+      subroutine mesh_check(ifabort,iverb,idbg_in)
 c
 c     Check mesh 1 consistency after fix_geom (or any geom_reset).
 c
@@ -1071,11 +1071,13 @@ c
       nxyz = lx1*ly1*lz1
       nxyz2 = lx2*ly2*lz2
 
+      idbg = idbg_in
+      if (ifabort) idbg = max(1,idbg_in)
+
       print_bad_e = .false.
       if (idbg.eq.2) print_bad_e = .true. ! this can print a lot
 
 c     Check right-handedness
-      call xm1toxc
       call xctoxyz
       call verrhe(print_bad_e,bad_elem) ! tag LHS e with bad_elem(ie) = 1
       kerr1 = iglsum(bad_elem,nelt)
