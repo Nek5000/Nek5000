@@ -1856,36 +1856,7 @@ c
       CALL SETINVM
       CALL SETDEF
       CALL SFASTAX
-c
-      do ie = 1,nelt
-         ! x
-         xc(1,ie) = XM1(1  ,1  ,1  ,ie)
-         xc(2,ie) = XM1(lx1,1  ,1  ,ie)
-         xc(3,ie) = XM1(lx1,ly1,1  ,ie)
-         xc(4,ie) = XM1(1  ,ly1,1  ,ie)
-         xc(5,ie) = XM1(1  ,1  ,lz1,ie)
-         xc(6,ie) = XM1(lx1,1  ,lz1,ie)
-         xc(7,ie) = XM1(lx1,ly1,lz1,ie)
-         xc(8,ie) = XM1(1  ,ly1,lz1,ie)
-         ! y
-         yc(1,ie) = YM1(1  ,1  ,1  ,ie)
-         yc(2,ie) = YM1(lx1,1  ,1  ,ie)
-         yc(3,ie) = YM1(lx1,ly1,1  ,ie)
-         yc(4,ie) = YM1(1  ,ly1,1  ,ie)
-         yc(5,ie) = YM1(1  ,1  ,lz1,ie)
-         yc(6,ie) = YM1(lx1,1  ,lz1,ie)
-         yc(7,ie) = YM1(lx1,ly1,lz1,ie)
-         yc(8,ie) = YM1(1  ,ly1,lz1,ie)
-         ! z 
-         zc(1,ie) = ZM1(1  ,1  ,1  ,ie)
-         zc(2,ie) = ZM1(lx1,1  ,1  ,ie)
-         zc(3,ie) = ZM1(lx1,ly1,1  ,ie)
-         zc(4,ie) = ZM1(1  ,ly1,1  ,ie)
-         zc(5,ie) = ZM1(1  ,1  ,lz1,ie)
-         zc(6,ie) = ZM1(lx1,1  ,lz1,ie)
-         zc(7,ie) = ZM1(lx1,ly1,lz1,ie)
-         zc(8,ie) = ZM1(1  ,ly1,lz1,ie)
-      enddo
+      CALL XM1TOXC
 
       if(nio.eq.0) then
         write(6,*) 'done :: regenerate geometry data',icall

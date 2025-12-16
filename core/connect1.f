@@ -800,8 +800,18 @@ C
       include 'PARALLEL'
       include 'INPUT'
       include 'SCRCT'
- 
-      call verrhe
+      integer iwk(lelt)
+
+      call verrhe(xyz,.false.,iwk)
+
+      ierr = iglsum(iwk,nelt)
+      if (ierr.eq.0) then
+        if (nio.eq.0) write(6,2002) nelgt
+      else
+        if (nid.eq.0) write(6,2003) ierr
+      endif
+ 2002 format('   Right-handed check complete for',I12,' elements. OK.')
+ 2003 format('   Right-handed check failed for',I12,' elements.')
 
       return
       end
@@ -880,7 +890,7 @@ c     call exitt
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine verrhe
+      subroutine verrhe(xyz,ifprint,bad_elem)
 C
 C     8 Mar 1989 21:58:26   PFF
 C     Verify right-handedness of given elements. 
@@ -888,11 +898,13 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
-      INCLUDE 'SCRCT'
       INCLUDE 'TOPOL'
-      LOGICAL IFYES,IFCSTT
+      logical ifprint
+      integer bad_elem(lelt)
+      real xyz(3,8,1)
 C
-      IFCSTT=.TRUE.
+      call izero(bad_elem,lelt)
+
       IF (.NOT.IF3D) THEN
       DO 1000 IE=1,NELT
 C
@@ -906,14 +918,12 @@ C
          IF (C1.LE.0.0.OR.C2.LE.0.0.OR.
      $       C3.LE.0.0.OR.C4.LE.0.0 ) THEN
 C
-            ieg=lglel(ie)
-            WRITE(6,800) IEG,C1,C2,C3,C4
-            call exitt
-  800       FORMAT(/,2X,'WARNINGa: Detected non-right-handed element.',
+            ieg = lglel(ie)
+            bad_elem(ie) = 1
+
+            if (ifprint) WRITE(6,800) IEG,C1,C2,C3,C4
+  800       FORMAT(/,2X,'WARNING: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  C1-4:',4E12.4)
-            IFCSTT=.FALSE.
-C           CALL QUERY(IFYES,'Proceed                                 ')
-C           IF (.NOT.IFYES) GOTO 9000
          ENDIF
  1000 CONTINUE
 C
@@ -938,39 +948,17 @@ C
      $       V5.LE.0.0.OR.V6.LE.0.0.OR.
      $       V7.LE.0.0.OR.V8.LE.0.0    ) THEN
 C
-            ieg=lglel(ie)
-            WRITE(6,1800) IEG,V1,V2,V3,V4,V5,V6,V7,V8
-            call exitt
- 1800       FORMAT(/,2X,'WARNINGb: Detected non-right-handed element.',
+            ieg = lglel(ie)
+            bad_elem(ie) = 1
+
+            if (ifprint) WRITE(6,1800) IEG,V1,V2,V3,V4,V5,V6,V7,V8
+ 1800       FORMAT(/,2X,'WARNING: Detected non-right-handed element.',
      $      /,2X,'Number',I8,'  V1-8:',4E12.4
-     $      /,2X,'      ',4X,'       ',4E12.4)
-            IFCSTT=.FALSE.
+     $      /,2X,'      ',8X,'       ',4E12.4)
          ENDIF
  2000 CONTINUE
       ENDIF
-C
- 9000 CONTINUE
-C
-C     Print out results from right-handed check
-C
-      IF (.NOT.IFCSTT) WRITE(6,2001)
-C
-C     Check consistency accross all processors.
-C
-      CALL GLLOG(IFCSTT,.FALSE.)
-C
-      IF (.NOT.IFCSTT) THEN
-         IF (NID.EQ.0) WRITE(6,2003) NELGT
-         call exitt
-      ELSE
-         IF (NIO.EQ.0) WRITE(6,2002) NELGT
-      ENDIF
-C
- 2001 FORMAT(//,'  Elemental geometry not right-handed, ABORTING'
-     $      ,' in routine VERRHE.')
- 2002 FORMAT('   Right-handed check complete for',I12,' elements. OK.')
- 2003 FORMAT('   Right-handed check failed for',I12,' elements.'
-     $      ,'   Exiting in routine VERRHE.')
+
       RETURN
       END
 c-----------------------------------------------------------------------
