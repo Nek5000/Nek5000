@@ -802,7 +802,7 @@ C
       include 'SCRCT'
       integer iwk(lelt)
 
-      call verrhe(.false.,iwk)
+      call verrhe(xyz,.false.,iwk)
 
       ierr = iglsum(iwk,nelt)
       if (ierr.eq.0) then
@@ -890,7 +890,7 @@ c     call exitt
       RETURN
       END
 c-----------------------------------------------------------------------
-      subroutine verrhe(ifprint,bad_elem)
+      subroutine verrhe(xyz,ifprint,bad_elem)
 C
 C     8 Mar 1989 21:58:26   PFF
 C     Verify right-handedness of given elements. 
@@ -898,10 +898,10 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'PARALLEL'
-      INCLUDE 'SCRCT'
       INCLUDE 'TOPOL'
       logical ifprint
       integer bad_elem(lelt)
+      real xyz(3,8,1)
 C
       call izero(bad_elem,lelt)
 

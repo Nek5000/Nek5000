@@ -1004,17 +1004,19 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine xctoxyz
+      subroutine xctoxyz(xyz)
       include 'SIZE'
       include 'INPUT' ! xc
-      include 'SCRCT' ! xyz
 
+      real xyz(3,8,1)
       integer indx(8)
       data indx /1,2,4,3,5,6,8,7/
 
-      if (ldim.eq.2) then
+      call rzero(xyz,24*nelt)
+
+      if (ldim.eq.3) then
         do ie=1,nelt
-          do j=1,4
+          do j=1,8
             ivtx = indx(j)
             xyz(1,ivtx,ie) = xc(j,ie)
             xyz(2,ivtx,ie) = yc(j,ie)
@@ -1023,7 +1025,7 @@ c-----------------------------------------------------------------------
         enddo
       else
         do ie=1,nelt
-          do j=1,8
+          do j=1,4
             ivtx = indx(j)
             xyz(1,ivtx,ie) = xc(j,ie)
             xyz(2,ivtx,ie) = yc(j,ie)
@@ -1031,6 +1033,7 @@ c-----------------------------------------------------------------------
           enddo
         enddo
       endif
+
       return
       end
 c-----------------------------------------------------------------------
@@ -1057,10 +1060,11 @@ c
       include 'INPUT'
       include 'GEOM'
       include 'SOLN'
-      include 'SCRCT'! xyz
 
       logical ifabort, print_bad_e
       integer bad_elem(lelt)
+
+      real xyz(3,8,lelt)
 
       real elem_metric
       common /msh_metrics/ elem_metric(3,3)
@@ -1078,8 +1082,8 @@ c
       if (idbg.eq.2) print_bad_e = .true. ! this can print a lot
 
 c     Check right-handedness
-      call xctoxyz
-      call verrhe(print_bad_e,bad_elem) ! tag LHS e with bad_elem(ie) = 1
+      call xctoxyz(xyz)
+      call verrhe(xyz,print_bad_e,bad_elem) ! tag LHS e with bad_elem(ie) = 1
       kerr1 = iglsum(bad_elem,nelt)
 
 c     Check Jacobians
