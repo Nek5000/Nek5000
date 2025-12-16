@@ -299,4 +299,37 @@ c-----------------------------------------------------------------------
 
       return
       end
+c-----------------------------------------------------------------------
+      real function meanIntThickness(ifld)
+      implicit none
+      include 'SIZE'
+      include 'TOTAL'
 
+      common /ls_err_arrs2/ lstemp2(lx1,ly1,lz1,lelv),
+     $                      lstemp3(lx1,ly1,lz1,lelv) 
+      real lstemp2,lstemp3
+
+      integer ifld
+
+      real psi
+      integer ntot,i
+      real glsum
+
+      ntot = lx1*ly1*lz1*nelv
+
+      call rone(lstemp2,ntot)
+      do i=1,ntot
+        psi = t(i,1,1,1,ifld-1)
+        if(psi.lt.0.05) lstemp2(i,1,1,1) = 0.0
+        if(psi.gt.0.95) lstemp2(i,1,1,1) = 0.0
+      enddo
+
+      call deltals(t(1,1,1,1,ifld-1),lstemp3)
+
+      call col2(lstemp2,bm1,ntot)
+      call col2(lstemp3,bm1,ntot)
+
+      meanIntThickness = glsum(lstemp2,ntot)/glsum(lstemp3,ntot)
+
+      return
+      end
