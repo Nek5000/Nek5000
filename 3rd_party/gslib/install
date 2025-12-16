@@ -21,7 +21,7 @@ distclean() {
 
 fetch() {
   rm -rf $DIR 2>/dev/null
-  wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  wget --no-check-certificate -O v$VER.tar.gz https://github.com/gslib/gslib/archive/v$VER.tar.gz
 }
 
 if [ "$1" == "clean" ]; then
