@@ -334,6 +334,22 @@ class NekTestCase(unittest.TestCase):
             verbose=self.verbose,
         )
 
+    def run_gencon(self, rea_file=None, tol="0.5"):
+
+        from lib.nekBinRun import run_meshgen
+
+        cls = self.__class__
+
+        if not rea_file:
+            rea_file = cls.case_name
+
+        run_meshgen(
+            command=os.path.join(self.tools_bin, "gencon"),
+            stdin=[rea_file, tol],
+            cwd=os.path.join(self.examples_root, cls.example_subdir),
+            verbose=self.verbose,
+        )
+
     def run_genbox(self, box_file=None):
         from lib.nekBinRun import run_meshgen
 
@@ -451,6 +467,15 @@ class NekTestCase(unittest.TestCase):
             dest_prefix,
             cwd=os.path.join(self.examples_root, cls.example_subdir),
         )
+
+    def remove_file(self, filename):
+        print(f"Removing file: {filename}")
+        try:
+            os.remove(filename)
+        except FileNotFoundError:
+            print("    (file not found, nothing to do)")
+        except IsADirectoryError:
+            print("    (this is a directory, not removing)")
 
     def get_value_from_log(self, label, column, row=0, logfile=None):
         cls = self.__class__

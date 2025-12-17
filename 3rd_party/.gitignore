@@ -2,3 +2,6 @@
 *
 # Except this file
 !.gitignore
+# and keep track install scripts
+!*/
+!*/install

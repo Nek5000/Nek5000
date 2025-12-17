@@ -1196,11 +1196,11 @@ class Ethier(NekTestCase):
             lhis="1000",
         )
 
+    @pn_pn_2_parallel
+    def test_PnPn2_Parallel(self):
         self.build_tools(["genmap"])
         self.run_genmap()
 
-    @pn_pn_2_parallel
-    def test_PnPn2_Parallel(self):
         self.size_params["lx2"] = "lx1-2"
         self.config_size()
         self.build_nek()
@@ -1255,10 +1255,14 @@ class Ethier(NekTestCase):
 
     @pn_pn_parallel
     def test_PnPn_Parallel(self):
+        self.remove_file(self.case_name + ".ma2")
+        self.build_tools(["gencon"])
+        self.run_gencon()
+
         self.size_params["lx2"] = "lx1"
         self.config_size()
         self.mkSIZE()
-        self.build_nek(opts={"PPLIST": "HYPRE"})
+        self.build_nek(opts={"PPLIST": "HYPRE PARRSB"})
         self.config_parfile({"PRESSURE": {"preconditioner": "semg_amg"}})
 
         self.run_nek(step_limit=1000)
@@ -1270,9 +1274,13 @@ class Ethier(NekTestCase):
         )
         self.assertEqual(np_err, self.parallel_procs, "Number of MPI ranks mismatch")
 
-        gmres = self.get_value_from_log("gmres ", column=-7)
+        gmres0 = self.get_value_from_log("gmres ", column=-7, row=0)
         self.assertAlmostEqualDelayed(
-            gmres, target_val=0.0, delta=14.0, label="gmres"
+            gmres0, target_val=0.0, delta=17.0, label="gmres"
+        )
+        gmres1 = self.get_value_from_log("gmres ", column=-7, row=-1)
+        self.assertAlmostEqualDelayed(
+            gmres1, target_val=0.0, delta=14.0, label="gmres"
         )
 
         vxerr = self.get_value_from_log(label="L2 err", column=-4, row=-1)
