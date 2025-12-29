@@ -1,0 +1,100 @@
+name: CI LLVM
+
+on:
+  # allows us to run workflows manually
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LLVM_VER: "21"
+
+jobs:
+  main:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        test_case: [ 
+            "Tools",
+            "Axi::test_PnPn_Parallel",
+            "ConjHt::test_PnPn_Parallel",
+            "Eddy_EddyUv::test_PnPn_Parallel",
+            "Eddy_LegacySize::test_PnPn2_Parallel",
+            "Eddy_Neknek::test_PnPn2_Parallel",
+            "Eddy_Neknek::test_PnPn_Parallel",
+            "Eddy_Neknek_mv::test_PnPn2_Parallel",
+            "Eddy_Neknek_mv::test_PnPn_Parallel",
+            "Eddy_Rich::test_PnPn2_Parallel",
+            "Ethier::test_PnPn2_Parallel",
+            "Ethier::test_PnPn_Parallel",
+            "FsHydro::test_PnPn2_Parallel",
+            "InclDef::test_PnPn_Serial",
+            "IO_Test::test_PnPn2_Parallel",
+            "KovStokes::test_PnPn2_Parallel",
+            "KovStokes::test_PnPn_Parallel",
+            "LowMachTest::test_PnPn_Parallel",
+            "MvCylCvode::test_PnPn_Parallel",
+            "chan2d::test_PnPn_Parallel",
+            "eddy_mv::test_PnPn_Parallel",
+            "lpm_one::test_PnPn_Parallel",
+            "lpm_two::test_PnPn_Parallel",
+            "impsrc_scalar::test_PnPn_Parallel",
+            "bcid_test_3D::test_PnPn_Parallel",
+            "bcid_test_2D::test_PnPn_Serial" 
+        ]
+        include:
+          - test_case: "Tools"
+            mpi: no
+      fail-fast: false
+
+    name: "${{ matrix.test_case }}"
+
+    env:
+      TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
+      FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
+      MPICH_CC: clang-21
+      MPICH_FC: flang-21
+      OMPI_CC: clang-21
+      OMPI_FC: flang-21
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: apt dependencies
+        shell: bash
+        run: |
+          sudo apt -y update
+          sudo apt-get install -y wget gnupg lsb-release ca-certificates
+          wget -q https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh "${LLVM_VER}" all
+          sudo apt-get install -y flang-${LLVM_VER}
+          #sudo apt install -y mpich libmpich-dev python3-pytest
+          sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
+
+          set -x
+          # check
+          command -v flang-${LLVM_VER} || true
+          flang-${LLVM_VER} --version || true
+          clang-${LLVM_VER} --version || true
+
+          # Sanity prints (don’t fail the job if flang isn't used yet)
+          "${CC}" --version
+          "${FC}" --version
+          mpicc -show || true
+          mpifort -show || true
+          pytest-3 --version
+          set +x
+
+      - name: test
+        shell: bash
+        run: |
+          pytest-3 -s -v short_tests/NekTests.py::$TEST_CASE
