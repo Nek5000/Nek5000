@@ -15,7 +15,6 @@ on:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LLVM_VER: "21.1.0"
-  LLVM_VER_MAJOR: "21"
 
 jobs:
   prepare-llvm:
@@ -92,10 +91,10 @@ jobs:
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       #CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
       #FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
-      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', env.LLVM_VER_MAJOR) || 'mpicc' }}
-      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', env.LLVM_VER_MAJOR) || 'mpif77' }}
-      OMPI_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
-      OMPI_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
+      CC: ${{ matrix.mpi == 'no' && 'clang' || 'mpicc' }}
+      FC: ${{ matrix.mpi == 'no' && 'flang' || 'mpif77' }}
+      OMPI_CC: clang
+      OMPI_FC: flang
 
     steps:
       - uses: actions/checkout@v4
@@ -130,11 +129,11 @@ jobs:
           echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
           echo "=== toolchain ==="
-          command -v clang-${LLVM_VER_MAJOR} || true
-          command -v flang-${LLVM_VER_MAJOR} || true
-          clang-${LLVM_VER_MAJOR} --version
-          flang-${LLVM_VER_MAJOR} --version
-          find "$(dirname "$(command -v clang-${LLVM_VER_MAJOR})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+          command -v clang || true
+          command -v flang || true
+          clang --version
+          flang --version
+          find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
 
           echo "=== wrappers ==="
           mpicc -show || true
