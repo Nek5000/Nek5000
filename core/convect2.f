@@ -149,15 +149,16 @@ c
 
 c           Interpolate z+ and z- into fine mesh, translate to r-s-t coords
 
+            i4 = 4
             call intp_rstd(rx(1,1,e),rxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
             call intp_rstd(rx(1,2,e),rym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
             call intp_rstd(rx(1,3,e),rzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,4,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,5,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,6,e),szm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,7,e),txm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,8,e),tym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
-            call intp_rstd(rx(1,9,e),tzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+0,e),sxm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+1,e),sym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+2,e),szm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+3,e),txm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+4,e),tym1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
+            call intp_rstd(rx(1,i4+5,e),tzm1(1,1,1,e),lx1,lxd,if3d,0) ! 0 --> fwd
 
             l = 0
             do k=1,lzd

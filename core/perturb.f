@@ -356,26 +356,27 @@ c     AM DING DING
             
             call intp_rstd(uf3,udz(iu),lx1,lxd,if3d,0) 
             call grad_rst(urz,usz,utz,uf3,lxd,if3d)
-            
+           
+            i4 = 4 
             do i=1,nxyzd        ! mass matrix included, per DFM (4.8.5)
-               uf4(i)=fx(i)*(rx(i,1,e)*urx(i)+rx(i,4,e)*usx(i)
-     $              +rx(i,7,e)*utx(i))+
-     $              fy(i)*(rx(i,1,e)*ury(i)+rx(i,4,e)*usy(i)
-     $              +rx(i,7,e)*uty(i))+
-     $              fz(i)*(rx(i,1,e)*urz(i)+rx(i,4,e)*usz(i)
-     $              +rx(i,7,e)*utz(i))
-               uf5(i)=fx(i)*(rx(i,2,e)*urx(i)+rx(i,5,e)*usx(i)
-     $              +rx(i,8,e)*utx(i))+
-     $              fy(i)*(rx(i,2,e)*ury(i)+rx(i,5,e)*usy(i)
-     $              +rx(i,8,e)*uty(i))+
-     $              fz(i)*(rx(i,2,e)*urz(i)+rx(i,5,e)*usz(i)
-     $              +rx(i,8,e)*utz(i))
-               uf6(i)=fx(i)*(rx(i,3,e)*urx(i)+rx(i,6,e)*usx(i)
-     $              +rx(i,9,e)*utx(i))+
-     $              fy(i)*(rx(i,3,e)*ury(i)+rx(i,6,e)*usy(i)
-     $              +rx(i,9,e)*uty(i))+
-     $              fz(i)*(rx(i,3,e)*urz(i)+rx(i,6,e)*usz(i)
-     $              +rx(i,9,e)*utz(i))
+               uf4(i)=fx(i)*(rx(i,1,e)*urx(i)+rx(i,i4+0,e)*usx(i)
+     $              +rx(i,i4+3,e)*utx(i))+
+     $              fy(i)*(rx(i,1,e)*ury(i)+rx(i,i4+0,e)*usy(i)
+     $              +rx(i,i4+3,e)*uty(i))+
+     $              fz(i)*(rx(i,1,e)*urz(i)+rx(i,i4+0,e)*usz(i)
+     $              +rx(i,i4+3,e)*utz(i))
+               uf5(i)=fx(i)*(rx(i,2,e)*urx(i)+rx(i,i4+1,e)*usx(i)
+     $              +rx(i,i4+4,e)*utx(i))+
+     $              fy(i)*(rx(i,2,e)*ury(i)+rx(i,i4+1,e)*usy(i)
+     $              +rx(i,i4+4,e)*uty(i))+
+     $              fz(i)*(rx(i,2,e)*urz(i)+rx(i,i4+1,e)*usz(i)
+     $              +rx(i,i4+4,e)*utz(i))
+               uf6(i)=fx(i)*(rx(i,3,e)*urx(i)+rx(i,i4+2,e)*usx(i)
+     $              +rx(i,i4+5,e)*utx(i))+
+     $              fy(i)*(rx(i,3,e)*ury(i)+rx(i,i4+2,e)*usy(i)
+     $              +rx(i,i4+5,e)*uty(i))+
+     $              fz(i)*(rx(i,3,e)*urz(i)+rx(i,i4+2,e)*usz(i)
+     $              +rx(i,i4+5,e)*utz(i))
             enddo
 
             call intp_rstd(bdux(ib),uf4,lx1,lxd,if3d,1) ! Project back to coarse

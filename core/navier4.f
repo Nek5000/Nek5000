@@ -674,7 +674,7 @@ c     keeping the number of vectors, m, small.
       include 'CTIMER'
 
       real b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
-      integer ivar(1)
+      integer ivar(*)
       character*6 name6
       logical ifwt,ifvec
 
@@ -1131,7 +1131,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
       real x(n),b(n),rvar(n,1),h1(n),h2(n),w(n),msk(n)
-      integer ivar(1)
+      integer ivar(*)
       character*6 name6
       logical ifwt,ifvec
 

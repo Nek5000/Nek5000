@@ -365,7 +365,7 @@ c     JL's routine to find which points these procs are on
      &                    dist_all,1,
      &                    rsend(1),ldim,
      &                    rsend(2),ldim,
-     &                    rsend(3),ldim,nbp)
+     &                    rsend(ndim),ldim,nbp)
 
       call neknekgsync()
 
@@ -438,15 +438,17 @@ c-----------------------------------------------------------------------
       call mappr(pm1,pr,wk1,wk2)  ! Map pressure to pm1 
       nv = lx1*ly1*lz1*nelv
       nt = lx1*ly1*lz1*nelt
+      
+      ione = 1
 
 c     Interpolate using findpts_eval
-      call field_eval(fieldout(1,1),1,vx)
-      call field_eval(fieldout(1,2),1,vy)
-      if (ldim.eq.3) call field_eval(fieldout(1,ldim),1,vz)
-      call field_eval(fieldout(1,ldim+1),1,pm1)
+      call field_eval(fieldout(1,ione),1,vx)
+      call field_eval(fieldout(1,ione+1),1,vy)
+      if (ldim.eq.3) call field_eval(fieldout(1,ndim),1,vz)
+      call field_eval(fieldout(1,ndim+1),1,pm1)
       if (nfld_neknek.gt.ldim+1) then 
         do i=ldim+2,nfld_neknek
-          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ldim-1))
+          call field_eval(fieldout(1,i),1,t(1,1,1,1,i-ndim-1))
         enddo
       endif
          
