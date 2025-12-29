@@ -14,7 +14,8 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  LLVM_VER: "21"
+  LLVM_VER: "21.1.0"
+  LLVM_VER_MAJOR: "21"
 
 jobs:
   prepare-llvm:
@@ -89,12 +90,20 @@ jobs:
     env:
       TEST_CASE: ${{ matrix.test_case }}
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
-      CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
-      FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
-      MPICH_CC: clang-21
-      MPICH_FC: flang-21
-      OMPI_CC: clang-21
-      OMPI_FC: flang-21
+      #CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
+      #FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
+      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', env.LLVM_VER_MAJOR) || 'mpicc' }}
+      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', env.LLVM_VER_MAJOR) || 'mpif77' }}
+
+      #MPICH_CC: clang-${{ env.LLVM_VER_MAJOR }}
+      #MPICH_FC: flang-${{ env.LLVM_VER_MAJOR }}
+      #OMPI_CC: clang-${{ env.LLVM_VER_MAJOR }}
+      #OMPI_FC: flang-${{ env.LLVM_VER_MAJOR }}
+
+      MPICH_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
+      MPICH_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
+      OMPI_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
+      OMPI_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -142,11 +151,11 @@ jobs:
           echo "LIBRARY_PATH=$PWD/$LLVM_DIR/lib:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
           echo "=== toolchain ==="
-          command -v clang-${LLVM_VER} || true
-          command -v flang-${LLVM_VER} || true
-          clang-${LLVM_VER} --version
-          flang-${LLVM_VER} --version
-          find "$(dirname "$(command -v clang-${LLVM_VER})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+          command -v clang-${LLVM_VER_MAJOR} || true
+          command -v flang-${LLVM_VER_MAJOR} || true
+          clang-${LLVM_VER_MAJOR} --version
+          flang-${LLVM_VER_MAJOR} --version
+          find "$(dirname "$(command -v clang-${LLVM_VER_MAJOR})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
 
           echo "=== wrappers ==="
           mpicc -show || true
