@@ -26,7 +26,6 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # pick arch tarball
           case "${{ runner.arch }}" in
             X64)   LLVM_ARCH="Linux-X64" ;;
             ARM64) LLVM_ARCH="Linux-AArch64" ;;
@@ -43,9 +42,10 @@ jobs:
       - name: Upload LLVM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llvm-${{ vars.LLVM_VER }}-${{ runner.arch }}
-          path: LLVM-${{ vars.LLVM_VER }}-Linux-*
+          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
+          path: LLVM-${{ env.LLVM_VER }}-Linux-*
           retention-days: 1
+          if-no-files-found: error
 
   main:
     needs: prepare-llvm
@@ -92,18 +92,10 @@ jobs:
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       #CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
       #FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
-      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', vars.LLVM_VER_MAJOR) || 'mpicc' }}
-      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', vars.LLVM_VER_MAJOR) || 'mpif77' }}
-
-      #MPICH_CC: clang-${{ env.LLVM_VER_MAJOR }}
-      #MPICH_FC: flang-${{ env.LLVM_VER_MAJOR }}
-      #OMPI_CC: clang-${{ env.LLVM_VER_MAJOR }}
-      #OMPI_FC: flang-${{ env.LLVM_VER_MAJOR }}
-
-      MPICH_CC:  ${{ format('clang-{0}', vars.LLVM_VER_MAJOR) }}
-      MPICH_FC:  ${{ format('flang-{0}', vars.LLVM_VER_MAJOR) }}
-      OMPI_CC:  ${{ format('clang-{0}', vars.LLVM_VER_MAJOR) }}
-      OMPI_FC:  ${{ format('flang-{0}', vars.LLVM_VER_MAJOR) }}
+      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', env.LLVM_VER_MAJOR) || 'mpicc' }}
+      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', env.LLVM_VER_MAJOR) || 'mpif77' }}
+      OMPI_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
+      OMPI_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +103,7 @@ jobs:
       - name: Download LLVM artifact
         uses: actions/download-artifact@v4
         with:
-          name: llvm-${{ vars.LLVM_VER }}-${{ runner.arch }}
+          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
           path: .
 
       - name: apt dependencies
@@ -126,29 +118,16 @@ jobs:
           #sudo apt install -y mpich libmpich-dev python3-pytest
           sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
 
-          #set -x
-          #pytest-3 --version
-
-          #echo "=== toolchain ==="
-          #command -v clang-${LLVM_VER} || true
-          #command -v flang-${LLVM_VER} || true
-          #clang-${LLVM_VER} --version
-          #flang-${LLVM_VER} --version
-          #find "$(dirname "$(command -v clang-${LLVM_VER})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
-
-          #echo "=== wrappers ==="
-          #mpicc -show || true
-          #mpif77 -show || true
-          #set +x
-
       - name: Add LLVM to PATH
         shell: bash
         run: |
           set -x
           LLVM_DIR="$(ls -d LLVM-${LLVM_VER}-Linux-* | head -n 1)"
-          echo "$PWD/$LLVM_DIR/bin" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$PWD/$LLVM_DIR/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$PWD/$LLVM_DIR/lib:$LIBRARY_PATH" >> "$GITHUB_ENV"
+          LLVM_BIN="$PWD/$LLVM_DIR/bin"
+          LLVM_LIB="$PWD/$LLVM_DIR/lib"
+          echo "$LLVM_BIN" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
           echo "=== toolchain ==="
           command -v clang-${LLVM_VER_MAJOR} || true
