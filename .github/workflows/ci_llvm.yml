@@ -43,8 +43,8 @@ jobs:
       - name: Upload LLVM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
-          path: LLVM-${{ env.LLVM_VER }}-Linux-*
+          name: llvm-${{ vars.LLVM_VER }}-${{ runner.arch }}
+          path: LLVM-${{ vars.LLVM_VER }}-Linux-*
           retention-days: 1
 
   main:
@@ -92,18 +92,18 @@ jobs:
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       #CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
       #FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
-      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', env.LLVM_VER_MAJOR) || 'mpicc' }}
-      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', env.LLVM_VER_MAJOR) || 'mpif77' }}
+      CC: ${{ matrix.mpi == 'no' && format('clang-{0}', vars.LLVM_VER_MAJOR) || 'mpicc' }}
+      FC: ${{ matrix.mpi == 'no' && format('flang-{0}', vars.LLVM_VER_MAJOR) || 'mpif77' }}
 
       #MPICH_CC: clang-${{ env.LLVM_VER_MAJOR }}
       #MPICH_FC: flang-${{ env.LLVM_VER_MAJOR }}
       #OMPI_CC: clang-${{ env.LLVM_VER_MAJOR }}
       #OMPI_FC: flang-${{ env.LLVM_VER_MAJOR }}
 
-      MPICH_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
-      MPICH_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
-      OMPI_CC:  ${{ format('clang-{0}', env.LLVM_VER_MAJOR) }}
-      OMPI_FC:  ${{ format('flang-{0}', env.LLVM_VER_MAJOR) }}
+      MPICH_CC:  ${{ format('clang-{0}', vars.LLVM_VER_MAJOR) }}
+      MPICH_FC:  ${{ format('flang-{0}', vars.LLVM_VER_MAJOR) }}
+      OMPI_CC:  ${{ format('clang-{0}', vars.LLVM_VER_MAJOR) }}
+      OMPI_FC:  ${{ format('flang-{0}', vars.LLVM_VER_MAJOR) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +111,7 @@ jobs:
       - name: Download LLVM artifact
         uses: actions/download-artifact@v4
         with:
-          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
+          name: llvm-${{ vars.LLVM_VER }}-${{ runner.arch }}
           path: .
 
       - name: apt dependencies
