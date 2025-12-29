@@ -1,4 +1,4 @@
-name: CI LLVM
+name: CI (flang)
 
 on:
   # allows us to run workflows manually
@@ -17,7 +17,37 @@ env:
   LLVM_VER: "21"
 
 jobs:
+  prepare-llvl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download + extract LLVM once
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # pick arch tarball
+          case "${{ runner.arch }}" in
+            X64)   LLVM_ARCH="Linux-X64" ;;
+            ARM64) LLVM_ARCH="Linux-AArch64" ;;
+            *) echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
+          esac
+
+          LLVM_DIR="LLVM-${LLVM_VER}-${LLVM_ARCH}"
+          LLVM_TAR="${LLVM_DIR}.tar.xz"
+          LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/${LLVM_TAR}"
+
+          wget -q "$LLVM_URL" -O llvm.tar.xz
+          tar -xf llvm.tar.xz
+
+      - name: Upload LLVM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
+          path: LLVM-${{ env.LLVM_VER }}-Linux-*
+          retention-days: 1
+
   main:
+    needs: prepare-llvm
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -67,32 +97,60 @@ jobs:
       OMPI_FC: flang-21
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Download LLVM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
+          path: .
 
       - name: apt dependencies
         shell: bash
         run: |
           sudo apt -y update
-          sudo apt-get install -y wget gnupg lsb-release ca-certificates
-          wget -q https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh "${LLVM_VER}" all
-          sudo apt-get install -y flang-${LLVM_VER}
+          #sudo apt-get install -y wget gnupg lsb-release ca-certificates
+          #wget -q https://apt.llvm.org/llvm.sh
+          #chmod +x llvm.sh
+          #sudo ./llvm.sh "${LLVM_VER}" all
+          #sudo apt-get install -y flang-${LLVM_VER}
           #sudo apt install -y mpich libmpich-dev python3-pytest
           sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
 
-          set -x
-          # check
-          command -v flang-${LLVM_VER} || true
-          flang-${LLVM_VER} --version || true
-          clang-${LLVM_VER} --version || true
+          #set -x
+          #pytest-3 --version
 
-          # Sanity prints (don’t fail the job if flang isn't used yet)
-          "${CC}" --version
-          "${FC}" --version
+          #echo "=== toolchain ==="
+          #command -v clang-${LLVM_VER} || true
+          #command -v flang-${LLVM_VER} || true
+          #clang-${LLVM_VER} --version
+          #flang-${LLVM_VER} --version
+          #find "$(dirname "$(command -v clang-${LLVM_VER})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+
+          #echo "=== wrappers ==="
+          #mpicc -show || true
+          #mpif77 -show || true
+          #set +x
+
+      - name: Add LLVM to PATH
+        shell: bash
+        run: |
+          set -x
+          LLVM_DIR="$(ls -d LLVM-${LLVM_VER}-Linux-* | head -n 1)"
+          echo "$PWD/$LLVM_DIR/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$PWD/$LLVM_DIR/lib:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$PWD/$LLVM_DIR/lib:$LIBRARY_PATH" >> "$GITHUB_ENV"
+
+          echo "=== toolchain ==="
+          command -v clang-${LLVM_VER} || true
+          command -v flang-${LLVM_VER} || true
+          clang-${LLVM_VER} --version
+          flang-${LLVM_VER} --version
+          find "$(dirname "$(command -v clang-${LLVM_VER})")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+
+          echo "=== wrappers ==="
           mpicc -show || true
-          mpifort -show || true
-          pytest-3 --version
+          mpif77 -show || true
           set +x
 
       - name: test
