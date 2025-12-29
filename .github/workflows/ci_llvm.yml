@@ -17,7 +17,7 @@ env:
   LLVM_VER: "21"
 
 jobs:
-  prepare-llvl:
+  prepare-llvm:
     runs-on: ubuntu-22.04
     steps:
       - name: Download + extract LLVM once
