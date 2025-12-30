@@ -674,7 +674,7 @@
       real quadNode(3,4),quadArea
       real*8 triArea
       real center(3)
-      real*8 vec1(1),vec2(3),prod_v(3)
+      real*8 vec1(3),vec2(3),prod_v(3)
   
       quadArea = 0.0
       call rzero(center,3)
