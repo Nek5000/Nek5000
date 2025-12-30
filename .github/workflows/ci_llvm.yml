@@ -16,22 +16,36 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LLVM_VER: "21.1.0"
   MPICH_VER: "4.2.2"
-  CACHE_KEY: ${{ github.runner_os }}-llvm-21.1.0-mpich-4.2.2
 
 jobs:
   prepare-llvm:
     runs-on: ubuntu-22.04
     outputs:
       cache_hit: ${{ steps.cache.outputs.cache-hit }}
+      cache_key: ${{ steps.key.outputs.cache_key }}
+
     steps:
+      - name: Compute cache key
+        id: key
+        shell: bash
+        run: |
+          set -eux
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch_tag="x64" ;;
+            aarch64|arm64) arch_tag="arm64" ;;
+            *) arch_tag="$arch" ;;
+          esac
+          echo "cache_key=${{ runner.os }}-${arch_tag}-llvm-${LLVM_VER}-mpich-${MPICH_VER}" >> "$GITHUB_OUTPUT"
+
       - name: Restore cache (LLVM tar.zst + MPICH install tar.zst)
         id: cache
         uses: actions/cache@v4
         with:
           path: |
-            llvm-${{ env.LLVM_VER }}.tar.zst
-            mpich-install-${{ env.MPICH_VER }}.tar.zst
-          key: ${{ env.CACHE_KEY }}
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ steps.key.outputs.cache_key }}
 
       - name: Build & pack LLVM + MPICH (only on cache miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
@@ -49,9 +63,9 @@ jobs:
 
           LLVM_SRC="LLVM-${LLVM_VER}-${LLVM_ARCH}"
           LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/${LLVM_SRC}.tar.xz"
-          LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
-          LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
-          LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
+          LLVM_TAR="llvm-${LLVM_VER}.tar.xz"
+          LLVM_TAR_ZST="llvm.tar.zst"
+          LLVM_DIR="LLVM-${LLVM_VER}"
 
           LLVM_BIN="$PWD/$LLVM_DIR/bin"
           LLVM_LIB="$PWD/$LLVM_DIR/lib"
@@ -84,10 +98,10 @@ jobs:
 
           # ===== MPICH install tar.zst =====
           MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
-          MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
-          MPICH_DIR="mpich-${{ env.MPICH_VER }}"
-          MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
-          MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
+          MPICH_TAR="mpich-${MPICH_VER}.tar.gz"
+          MPICH_DIR="mpich-${MPICH_VER}"
+          MPICH_INSTALL="$PWD/mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ZST="mpich-install.tar.zst"
 
           if [ ! -f "$MPICH_INSTALL_ZST" ]; then
             curl -L -o "${MPICH_TAR}" "${MPICH_URL}"
@@ -127,12 +141,21 @@ jobs:
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: toolchain-${{ env.CACHE_KEY }}
+          name: toolchain-${{ steps.key.outputs.cache_key }}
           path: |
-            llvm-${{ env.LLVM_VER }}.tar.zst
-            mpich-install-${{ env.MPICH_VER }}.tar.zst
+            llvm.tar.zst
+            mpich-install.tar.zst
           if-no-files-found: error
           retention-days: 1
+
+      - name: Save cache (only if miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ steps.key.outputs.cache_key }}
 
   main:
     needs: prepare-llvm
@@ -207,15 +230,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            llvm-${{ env.LLVM_VER }}.tar.zst
-            mpich-install-${{ env.MPICH_VER }}.tar.zst
-          key: ${{ env.CACHE_KEY }}
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ needs.prepare-llvm.outputs.cache_key }}
 
       - name: Download artifacts (fallback when cache miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: toolchain-${{ env.CACHE_KEY }}
+          name: toolchain-${{ needs.prepare-llvm.outputs.cache_key }}
           path: .
 
       - name: Extract & export LLVM
@@ -223,8 +246,8 @@ jobs:
         run: |
           set -eux
 
-          LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
-          LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
+          LLVM_DIR="LLVM-${LLVM_VER}"
+          LLVM_TAR_ZST="llvm.tar.zst"
           if [ ! -d "$LLVM_DIR" ]; then
             tar --use-compress-program=zstd -xf $LLVM_TAR_ZST
           fi
@@ -243,7 +266,7 @@ jobs:
         run: |
           set -eux
           MPICH_INSTALL="mpich-install-${MPICH_VER}"
-          MPICH_INSTALL_ZST="${MPICH_INSTALL}.tar.zst"
+          MPICH_INSTALL_ZST="mpich-install.tar.zst"
           if [ ! -d "${MPICH_INSTALL}" ]; then
             tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}"
           fi
