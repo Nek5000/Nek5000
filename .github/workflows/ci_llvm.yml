@@ -65,29 +65,24 @@ jobs:
           LLVM_TAR="llvm-${LLVM_VER}.tar.xz"
           LLVM_TAR_ZST="llvm.tar.zst"
           LLVM_DIR="LLVM-${LLVM_VER}"
-
-          LLVM_BIN="$PWD/$LLVM_DIR/bin"
-          LLVM_LIB="$PWD/$LLVM_DIR/lib"
+          LLVM_DIR_ABS="$HOME/${LLVM_DIR}"
 
           if [ ! -f "$LLVM_TAR_ZST" ]; then
             if [ ! -f "$LLVM_TAR" ]; then
               wget -q "$LLVM_URL" -O "$LLVM_TAR"
             fi
 
-            rm -rf "${LLVM_SRC}" "${LLVM_DIR}"
+            rm -rf "${LLVM_SRC}" "${LLVM_DIR_ABS}"
             tar -xf "${LLVM_TAR}"
-            mv "${LLVM_SRC}" "${LLVM_DIR}"
+            mv "${LLVM_SRC}" "${LLVM_DIR_ABS}"
             rm -f "${LLVM_TAR}"
-            tar -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
+            # Pack RELATIVE to $HOME but destined for $HOME on extract
+            tar -C "$HOME" -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
           fi
 
-          export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
-          export LD_LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}"
-
-          echo "=== path ==="
-          ls -ltra $LLVM_BIN |grep clang
-          ls -ltra $LLVM_BIN |grep flang
+          export PATH="${LLVM_DIR_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}"
 
           echo "=== toolchain ==="
           command -v clang || true
@@ -100,12 +95,13 @@ jobs:
           MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
           MPICH_TAR="mpich-${MPICH_VER}.tar.gz"
           MPICH_DIR="mpich-${MPICH_VER}"
-          MPICH_INSTALL="$PWD/mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_DIR="mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ABS="$HOME/${MPICH_INSTALL_DIR}"
           MPICH_INSTALL_ZST="mpich-install.tar.zst"
 
           if [ ! -f "$MPICH_INSTALL_ZST" ]; then
             curl -L -o "${MPICH_TAR}" "${MPICH_URL}"
-            rm -rf "${MPICH_DIR}" "${MPICH_INSTALL}"
+            rm -rf "${MPICH_DIR}" "${MPICH_INSTALL_ABS}"
             tar -xf "${MPICH_TAR}"
             rm -f "${MPICH_TAR}"
 
@@ -117,23 +113,25 @@ jobs:
               --disable-fortran-optional-args \
               --enable-shared --disable-static \
               --disable-cxx \
-              --prefix="$MPICH_INSTALL"
+              --prefix="$MPICH_INSTALL_ABS"
             make -j"$(nproc)"
             make install
             popd
 
             rm -rf "${MPICH_DIR}"
-            tar -cf - "${MPICH_INSTALL}" | zstd -T0 -6 -o "${MPICH_INSTALL_ZST}"
-            rm -rf "${MPICH_INSTALL}"
+
+            # Pack RELATIVE to $HOME but destined for $HOME on extract
+            tar -C "$HOME" -cf - "${MPICH_INSTALL_DIR}" | zstd -T0 -6 -o "${MPICH_INSTALL_ZST}"
+            rm -rf "${MPICH_INSTALL_ABS}"
           fi
 
-          export PATH="${MPICH_INSTALL}/bin:$PATH"
-          export LD_LIBRARY_PATH="${MPICH_INSTALL}/lib:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="${MPICH_INSTALL}/lib:${LIBRARY_PATH:-}"
+          export PATH="${MPICH_INSTALL_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
 
           echo "=== wrappers ==="
-          mpicc -show || true
-          mpif77 -show || true
+          mpicc -show
+          mpif77 -show
           set +x
 
       - name: Upload artifacts (fallback for same-run cache miss) # 1m16s (if miss)
@@ -199,12 +197,8 @@ jobs:
     env:
       TEST_CASE: ${{ matrix.test_case }}
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
-      #CC: "${{ matrix.mpi == 'no' && 'clang-21' || 'mpicc' }}"
-      #FC: "${{ matrix.mpi == 'no' && 'flang-21' || 'mpif77' }}"
       CC: ${{ matrix.mpi == 'no' && 'clang' || 'mpicc' }}
       FC: ${{ matrix.mpi == 'no' && 'flang' || 'mpif77' }}
-      OMPI_CC: clang
-      OMPI_FC: flang
       MPICH_CC: clang
       MPICH_FC: flang
 
@@ -246,22 +240,19 @@ jobs:
           set -eux
 
           LLVM_DIR="LLVM-${LLVM_VER}"
+          LLVM_DIR_ABS="$HOME/${LLVM_DIR}"
           LLVM_TAR_ZST="llvm.tar.zst"
-          if [ ! -d "$LLVM_DIR" ]; then
-            tar --use-compress-program=zstd -xf $LLVM_TAR_ZST
+
+          if [ ! -d "$LLVM_DIR_ABS" ]; then
+            tar --use-compress-program=zstd -xf "${LLVM_TAR_ZST}" -C "$HOME"
           fi
 
-          export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
-          export LD_LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}"
-          echo "$PWD/${LLVM_DIR}/bin" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-
-          echo "=== path ==="
-          LLVM_BIN="$PWD/$LLVM_DIR/bin"
-          ls -ltra $LLVM_BIN |grep clang
-          ls -ltra $LLVM_BIN |grep flang
+          export PATH="${LLVM_DIR_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}"
+          echo "${LLVM_DIR_ABS}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           echo "=== toolchain ==="
           clang --version
@@ -272,20 +263,21 @@ jobs:
         shell: bash
         run: |
           set -eux
-          MPICH_INSTALL="mpich-install-${MPICH_VER}"
-          MPICH_INSTALL_ZST="mpich-install.tar.zst"
-          if [ ! -d "${MPICH_INSTALL}" ]; then
-            tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}"
-          fi
-          export PATH="$PWD/${MPICH_INSTALL}/bin:$PATH"
-          export LD_LIBRARY_PATH="$PWD/${MPICH_INSTALL}/lib:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$PWD/${MPICH_INSTALL}/lib:${LIBRARY_PATH:-}"
-          echo "$PWD/${MPICH_INSTALL}/bin" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$PWD/${MPICH_INSTALL}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$PWD/${MPICH_INSTALL}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
-          pwd
-          ls -ltra
+          MPICH_INSTALL_DIR="mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ABS="$HOME/${MPICH_INSTALL_DIR}"
+          MPICH_INSTALL_ZST="mpich-install.tar.zst"
+
+          if [ ! -d "${MPICH_INSTALL_ABS}" ]; then
+            tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}" -C "$HOME"
+          fi
+
+          export PATH="${MPICH_INSTALL_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
+          echo "${MPICH_INSTALL_ABS}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           echo "=== wrappers ==="
           mpicc -show
