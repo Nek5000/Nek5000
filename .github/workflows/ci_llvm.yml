@@ -25,7 +25,7 @@ jobs:
         with:
           path: |
             llvm-${{ env.LLVM_VER }}.tar.xz
-            LLVM-${{ env.LLVM_VER }}
+            #LLVM-${{ env.LLVM_VER }}
           key: llvm-${{ env.LLVM_VER }}-${{ runner.os }}-${{ runner.arch }}
 
       - name: Download + extract LLVM (cache-aware)
@@ -151,6 +151,10 @@ jobs:
           echo "$LLVM_BIN" >> "$GITHUB_PATH"
           echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
+
+          echo "=== path ==="
+          ls -ltra $LLVM_BIN |grep clang
+          ls -ltra $LLVM_BIN |grep flang
 
           echo "=== toolchain ==="
           command -v clang || true
