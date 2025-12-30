@@ -16,28 +16,31 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LLVM_VER: "21.1.0"
   MPICH_VER: "4.2.2"
+  CACHE_KEY: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
+
 jobs:
   prepare-llvm:
     runs-on: ubuntu-22.04
+    outputs:
+      cache_hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
-      - name: Restore LLVM cache
+      - name: Restore cache (LLVM tar.zst + MPICH install tar.zst)
+        id: cache
         uses: actions/cache@v4
         with:
           path: |
-            #llvm-${{ env.LLVM_VER }}.tar.xz
-            #LLVM-${{ env.LLVM_VER }} # 10.5GB, too large, not fit in cache
-            llvm-${{ env.LLVM_VER }}.tar.zst  # 2.4GB
-            #mpich-${{ env.MPICH_VER }}.tar.gz
-            #mpich-install-${{ env.MPICH_VER }}
+            llvm-${{ env.LLVM_VER }}.tar.zst
             mpich-install-${{ env.MPICH_VER }}.tar.zst
-          key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
+          key: ${{ env.CACHE_KEY }}
 
-      - name: Download & untar LLVM (cache-aware) # 3min 35s if not in cache
+      - name: Build & pack LLVM + MPICH (only on cache miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
           set -euxo pipefail
           set -x
 
+          # ===== LLVM tar.zst =====
           case "${{ runner.arch }}" in
             X64)   LLVM_ARCH="Linux-X64" ;;
             ARM64) LLVM_ARCH="Linux-AArch64" ;;
@@ -46,69 +49,28 @@ jobs:
 
           LLVM_SRC="LLVM-${LLVM_VER}-${LLVM_ARCH}"
           LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/${LLVM_SRC}.tar.xz"
-
           LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
           LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
-
           LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
+
           LLVM_BIN="$PWD/$LLVM_DIR/bin"
           LLVM_LIB="$PWD/$LLVM_DIR/lib"
 
           if [ ! -f "$LLVM_TAR_ZST" ]; then
-
-            # download tar
             if [ ! -f "$LLVM_TAR" ]; then
               wget -q "$LLVM_URL" -O "$LLVM_TAR"
             fi
 
-            # extract
-            if [ ! -d "$LLVM_DIR" ]; then
-              rm -rf "$LLVM_SRC"
-              tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
-              mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
-              rm -f $LLVM_TAR
-            fi
-
-            # prepare zst for fast compression
-            tar -cf - $LLVM_DIR | zstd -T0 -12 -o $LLVM_TAR_ZST
+            rm -rf "${LLVM_SRC}" "${LLVM_DIR}"
+            tar -xf "${LLVM_TAR}"
+            mv "${LLVM_SRC}" "${LLVM_DIR}"
+            rm -f "${LLVM_TAR}"
+            tar -cf - "${LLVM_DIR}" | zstd -T0 -12 -o "${LLVM_TAR_ZST}"
             # -6: 3m35s, 2.4 GiB
             # -9: 4m10s, 2.35 GiB,
-          fi
-          set +x
-
-      - name: Extract & add LLVM into PATH
-        shell: bash
-        run: |
-          set -x
-
-          case "${{ runner.arch }}" in
-            X64)   LLVM_ARCH="Linux-X64" ;;
-            ARM64) LLVM_ARCH="Linux-AArch64" ;;
-            *) echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
-          esac
-
-          LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
-          LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
-
-          LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
-          LLVM_BIN="$PWD/$LLVM_DIR/bin"
-          LLVM_LIB="$PWD/$LLVM_DIR/lib"
-
-          if [ ! -d "$LLVM_DIR" ]; then
-            tar --use-compress-program=zstd -xf $LLVM_TAR_ZST
+            # -12: 5m41s, 2.33 GiB,
           fi
 
-          # For THIS step
-          export PATH="$LLVM_BIN:$PATH"
-          export LD_LIBRARY_PATH="$LLVM_LIB:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$LLVM_LIB:${LIBRARY_PATH:-}"
-
-          # For LATER steps
-          echo "$LLVM_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$LLVM_LIB:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$LLVM_LIB:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-
-          # sanity check
           echo "=== path ==="
           ls -ltra $LLVM_BIN |grep clang
           ls -ltra $LLVM_BIN |grep flang
@@ -119,12 +81,8 @@ jobs:
           clang --version
           flang --version
           find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
-          set +x
 
-      - name: Build MPI (cache-aware) # 10min 35s if not in cache
-        shell: bash
-        run: |
-          set -x
+          # ===== MPICH install tar.zst =====
           MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
           MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
           MPICH_DIR="mpich-${{ env.MPICH_VER }}"
@@ -132,44 +90,49 @@ jobs:
           MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
 
           if [ ! -f "$MPICH_INSTALL_ZST" ]; then
+            curl -L -o "${MPICH_TAR}" "${MPICH_URL}"
+            rm -rf "${MPICH_DIR}" "${MPICH_INSTALL}"
+            tar -xf "${MPICH_TAR}"
+            rm -f "${MPICH_TAR}"
 
-            # download tar
-            if [ ! -f "$MPICH_TAR" ]; then
-              curl -L -o $MPICH_TAR $MPICH_URL
-            fi
+            # Use LLVM as toolchain
+            export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
+            export LD_LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}"
+            export LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}"
 
-            # build
-            if [ ! -d "$MPICH_DIR" ]; then
-              tar -xf $MPICH_TAR
-              rm -f $MPICH_TAR
-            fi
+            pushd "${MPICH_DIR}"
+            ./configure \
+              CC=clang CXX=clang++ FC=flang F77=flang \
+              CFLAGS="-O2" CXXFLAGS="-O2" FFLAGS="-O2" FCFLAGS="-O2" \
+              LDFLAGS="-fuse-ld=lld" \
+              --disable-fortran-optional-args \
+              --enable-shared --disable-static \
+              --disable-cxx \
+              --prefix="$MPICH_INSTALL"
+            make -j"$(nproc)"
+            make install
+            popd
 
-            if [ ! -d "$MPICH_INSTALL" ]; then
-              cd $MPICH_DIR
-              ./configure \
-                CC=clang CXX=clang++ FC=flang F77=flang \
-                CFLAGS="-O2" CXXFLAGS="-O2" FFLAGS="-O2" FCFLAGS="-O2" \
-                LDFLAGS="-fuse-ld=lld" \
-                --disable-fortran-optional-args \
-                --enable-shared --disable-static \
-                --disable-cxx \
-                --prefix="$MPICH_INSTALL"
-              make -j8
-              make install
-              cd ..
-
-              rm -rf $MPICH_DIR
-            fi
-
-            # compress
-            tar -cf - $MPICH_INSTALL | zstd -T0 -12 -o $MPICH_INSTALL_ZST
-
+            rm -rf "${MPICH_DIR}"
+            tar -cf - "${MPICH_INSTALL}" | zstd -T0 -12 -o "${MPICH_INSTALL_ZST}"
+            rm -rf "${MPICH_INSTALL}"
           fi
 
           echo "=== wrappers ==="
           mpicc -show || true
           mpif77 -show || true
           set +x
+
+      - name: Upload artifacts (fallback for same-run cache miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-${{ env.CACHE_KEY }}
+          path: |
+            llvm-${{ env.LLVM_VER }}.tar.zst
+            mpich-install-${{ env.MPICH_VER }}.tar.zst
+          if-no-files-found: error
+          retention-days: 1
 
   main:
     needs: prepare-llvm
@@ -226,18 +189,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Restore LLVM cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            #llvm-${{ env.LLVM_VER }}.tar.xz
-            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
-            llvm-${{ env.LLVM_VER }}.tar.zst
-            #mpich-${{ env.MPICH_VER }}.tar.gz
-            #mpich-install-${{ env.MPICH_VER }}
-            mpich-install-${{ env.MPICH_VER }}.tar.zst
-          key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
-
       - name: apt dependencies
         shell: bash
         run: |
@@ -251,73 +202,54 @@ jobs:
           #sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
           sudo apt-get install -y python3-pytest
 
-      - name: Extract & add LLVM into PATH
+      - name: Restore cache (preferred)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            llvm-${{ env.LLVM_VER }}.tar.zst
+            mpich-install-${{ env.MPICH_VER }}.tar.zst
+          key: ${{ env.CACHE_KEY }}
+
+      - name: Download artifacts (fallback when cache miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-${{ env.CACHE_KEY }}
+          path: .
+
+      - name: Extract & export LLVM
         shell: bash
         run: |
-          set -x
-
-          case "${{ runner.arch }}" in
-            X64)   LLVM_ARCH="Linux-X64" ;;
-            ARM64) LLVM_ARCH="Linux-AArch64" ;;
-            *) echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
-          esac
-
-          LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
-          LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
+          set -eux
 
           LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
-          LLVM_BIN="$PWD/$LLVM_DIR/bin"
-          LLVM_LIB="$PWD/$LLVM_DIR/lib"
-
+          LLVM_TAR_ZST="llvm-${{ env.LLVM_VER }}.tar.zst"
           if [ ! -d "$LLVM_DIR" ]; then
             tar --use-compress-program=zstd -xf $LLVM_TAR_ZST
           fi
 
-          # For THIS step
-          export PATH="$LLVM_BIN:$PATH"
-          export LD_LIBRARY_PATH="$LLVM_LIB:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$LLVM_LIB:${LIBRARY_PATH:-}"
-
-          # For LATER steps
-          echo "$LLVM_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$LLVM_LIB:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$LLVM_LIB:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-
-          # sanity check
-          echo "=== path ==="
-          ls -ltra $LLVM_BIN |grep clang
-          ls -ltra $LLVM_BIN |grep flang
+          echo "$PWD/${LLVM_DIR}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           echo "=== toolchain ==="
-          command -v clang || true
-          command -v flang || true
           clang --version
           flang --version
-          find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
           set +x
 
-      - name: Extract & add MPICH to PATH
+      - name: Extract & export MPICH
         shell: bash
         run: |
-          set -x
-          MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
-          MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
-          MPICH_BIN="$MPICH_INSTALL/bin"
-          MPICH_LIB="$MPICH_INSTALL/lib"
-
-          if [ ! -d "$MPICH_INSTALL" ]; then
-            tar --use-compress-program=zstd -xf $MPICH_INSTALL_ZST
+          set -eux
+          MPICH_INSTALL="mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ZST="${MPICH_INSTALL}.tar.zst"
+          if [ ! -d "${MPICH_INSTALL}" ]; then
+            tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}"
           fi
-
-          # For THIS step
-          export PATH="$MPICH_BIN:$PATH"
-          export LD_LIBRARY_PATH="$MPICH_LIB:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="$MPICH_LIB:${LIBRARY_PATH:-}"
-
-          # For LATER steps
-          echo "$MPICH_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$MPICH_LIB:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$MPICH_LIB:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "$PWD/${MPICH_INSTALL}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$PWD/${MPICH_INSTALL}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$PWD/${MPICH_INSTALL}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           echo "=== wrappers ==="
           mpicc -show || true
