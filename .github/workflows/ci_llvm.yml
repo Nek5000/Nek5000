@@ -32,7 +32,7 @@ jobs:
             mpich-install-${{ env.MPICH_VER }}.tar.zst
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
-      - name: Download & extract LLVM (cache-aware) # 3min 35s if not in cache
+      - name: Download & untar LLVM (cache-aware) # 3min 35s if not in cache
         shell: bash
         run: |
           set -euxo pipefail
@@ -66,15 +66,17 @@ jobs:
               rm -rf "$LLVM_SRC"
               tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
               mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
+              rm -f $LLVM_TAR
             fi
 
             # prepare zst for fast compression
-            tar -cf - $LLVM_DIR | zstd -T0 -9 -o $LLVM_TAR_ZST
-
+            tar -cf - $LLVM_DIR | zstd -T0 -12 -o $LLVM_TAR_ZST
+            # -6: 3m35s, 2.4 GiB
+            # -9: 4m10s, 2.35 GiB,
           fi
           set +x
 
-      - name: Extract LLVM and add into PATH
+      - name: Extract & add LLVM into PATH
         shell: bash
         run: |
           set -x
@@ -137,20 +139,30 @@ jobs:
             fi
 
             # build
-            if [ ! -d "$MPICH_INSTALL" ]; then
+            if [ ! -d "$MPICH_DIR" ]; then
               tar -xf $MPICH_TAR
+              rm -f $MPICH_TAR
+            fi
+
+            if [ ! -d "$MPICH_INSTALL" ]; then
               cd $MPICH_DIR
               ./configure \
                 CC=clang CXX=clang++ FC=flang F77=flang \
+                CFLAGS="-O2" CXXFLAGS="-O2" FFLAGS="-O2" FCFLAGS="-O2" \
+                LDFLAGS="-fuse-ld=lld" \
                 --disable-fortran-optional-args \
+                --enable-shared --disable-static \
+                --disable-cxx \
                 --prefix="$MPICH_INSTALL"
               make -j8
               make install
               cd ..
+
+              rm -rf $MPICH_DIR
             fi
 
             # compress
-            tar -cf - $MPICH_INSTALL | zstd -T0 -9 -o $MPICH_INSTALL_ZST
+            tar -cf - $MPICH_INSTALL | zstd -T0 -12 -o $MPICH_INSTALL_ZST
 
           fi
 
@@ -158,14 +170,6 @@ jobs:
           mpicc -show || true
           mpif77 -show || true
           set +x
-
-#      - name: Upload LLVM artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
-#          path: LLVM-${{ env.LLVM_VER }}-Linux-*
-#          retention-days: 1
-#          if-no-files-found: error
 
   main:
     needs: prepare-llvm
@@ -222,12 +226,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-#      - name: Download LLVM artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
-#          path: .
-
       - name: Restore LLVM cache
         uses: actions/cache@v4
         with:
@@ -253,7 +251,7 @@ jobs:
           #sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
           sudo apt-get install -y python3-pytest
 
-      - name: Extract LLVM and add into PATH
+      - name: Extract & add LLVM into PATH
         shell: bash
         run: |
           set -x
@@ -298,7 +296,7 @@ jobs:
           find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
           set +x
 
-      - name: Add MPICH to PATH
+      - name: Extract & add MPICH to PATH
         shell: bash
         run: |
           set -x
