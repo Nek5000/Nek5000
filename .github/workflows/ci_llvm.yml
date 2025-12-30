@@ -76,6 +76,7 @@ jobs:
             tar -xf "${LLVM_TAR}"
             mv "${LLVM_SRC}" "${LLVM_DIR_ABS}"
             rm -f "${LLVM_TAR}"
+
             # Pack RELATIVE to $HOME but destined for $HOME on extract
             tar -C "$HOME" -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
           fi
@@ -118,20 +119,20 @@ jobs:
             make install
             popd
 
+            export PATH="${MPICH_INSTALL_ABS}/bin:$PATH:-}"
+            export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
+            export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
+
+            echo "=== wrappers ==="
+            mpicc -show
+            mpif77 -show
+
             rm -rf "${MPICH_DIR}"
 
             # Pack RELATIVE to $HOME but destined for $HOME on extract
             tar -C "$HOME" -cf - "${MPICH_INSTALL_DIR}" | zstd -T0 -6 -o "${MPICH_INSTALL_ZST}"
             rm -rf "${MPICH_INSTALL_ABS}"
           fi
-
-          export PATH="${MPICH_INSTALL_ABS}/bin:$PATH"
-          export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
-          export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
-
-          echo "=== wrappers ==="
-          mpicc -show
-          mpif77 -show
           set +x
 
       - name: Upload artifacts (fallback for same-run cache miss) # 1m16s (if miss)
@@ -253,6 +254,8 @@ jobs:
           echo "${LLVM_DIR_ABS}/bin" >> "$GITHUB_PATH"
           echo "LD_LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+
+          ls -ltra $HOME
 
           echo "=== toolchain ==="
           clang --version
