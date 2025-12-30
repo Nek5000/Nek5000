@@ -25,7 +25,7 @@ jobs:
         with:
           path: |
             llvm-${{ env.LLVM_VER }}.tar.xz
-            #LLVM-${{ env.LLVM_VER }}
+            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
           key: llvm-${{ env.LLVM_VER }}-${{ runner.os }}-${{ runner.arch }}
 
       - name: Download + extract LLVM (cache-aware)
@@ -49,11 +49,11 @@ jobs:
             wget -q "$LLVM_URL" -O "$LLVM_TAR"
           fi
       
-          if [ ! -d "$LLVM_DIR" ]; then
-            rm -rf "$LLVM_SRC"
-            tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
-            mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
-          fi
+          #if [ ! -d "$LLVM_DIR" ]; then
+          #  rm -rf "$LLVM_SRC"
+          #  tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
+          #  mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
+          #fi
 
 #      - name: Upload LLVM artifact
 #        uses: actions/upload-artifact@v4
@@ -133,6 +133,14 @@ jobs:
           #sudo apt-get install -y flang-${LLVM_VER}
           #sudo apt install -y mpich libmpich-dev python3-pytest
           sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
+
+      - name: Restore LLVM cache 
+        uses: actions/cache@v4
+        with:
+          path: |
+            llvm-${{ env.LLVM_VER }}.tar.xz
+            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
+          key: llvm-${{ env.LLVM_VER }}-${{ runner.os }}-${{ runner.arch }}
 
       - name: Add LLVM to PATH
         shell: bash
