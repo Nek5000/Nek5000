@@ -15,7 +15,7 @@ on:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LLVM_VER: "21.1.0"
-
+  MPICH_VER: "4.2.2"
 jobs:
   prepare-llvm:
     runs-on: ubuntu-22.04
@@ -26,7 +26,9 @@ jobs:
           path: |
             llvm-${{ env.LLVM_VER }}.tar.xz
             #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
-          key: llvm-${{ env.LLVM_VER }}-${{ runner.os }}-${{ runner.arch }}
+            mpich-${{ env.MPICH_VER }}.tar.gz
+            mpich-install-${{ env.MPICH_VER }}
+          key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
       - name: Download + extract LLVM (cache-aware)
         shell: bash
@@ -48,12 +50,30 @@ jobs:
           if [ ! -f "$LLVM_TAR" ]; then
             wget -q "$LLVM_URL" -O "$LLVM_TAR"
           fi
-      
-          #if [ ! -d "$LLVM_DIR" ]; then
-          #  rm -rf "$LLVM_SRC"
-          #  tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
-          #  mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
-          #fi
+
+          if [ ! -d "$LLVM_DIR" ]; then
+            rm -rf "$LLVM_SRC"
+            tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
+            mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
+          fi
+
+          MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
+          MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
+          MPICH_DIR="mpich-${{ env.MPICH_VER }}"
+          MPICH_INSTALL="mpich-install-${{ env.MPICH_VER }}"
+
+          if [ ! -f "MPICH_TAR" ]; then
+            curl -L -o $MPICH_TAR $MPICH_URL
+          fi
+
+          if [ ! -d "$MPICH_INSTALL" ]; then
+            tar -xf $MPICH_TAR
+            cd MPICH_DIR
+            ./configure \
+              CC=clang CXX=clang++ FC=flang F77=flang \
+              --disable-fortran-optional-args \
+              --prefix="$MPICH_INSTALL"
+          fi
 
 #      - name: Upload LLVM artifact
 #        uses: actions/upload-artifact@v4
@@ -68,7 +88,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        test_case: [ 
+        test_case: [
             "Tools",
             "Axi::test_PnPn_Parallel",
             "ConjHt::test_PnPn_Parallel",
@@ -94,7 +114,7 @@ jobs:
             "lpm_two::test_PnPn_Parallel",
             "impsrc_scalar::test_PnPn_Parallel",
             "bcid_test_3D::test_PnPn_Parallel",
-            "bcid_test_2D::test_PnPn_Serial" 
+            "bcid_test_2D::test_PnPn_Serial"
         ]
         include:
           - test_case: "Tools"
@@ -112,6 +132,8 @@ jobs:
       FC: ${{ matrix.mpi == 'no' && 'flang' || 'mpif77' }}
       OMPI_CC: clang
       OMPI_FC: flang
+      MPICH_CC: clang
+      MPICH_FC: flang
 
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +143,15 @@ jobs:
 #        with:
 #          name: llvm-${{ env.LLVM_VER }}-${{ runner.arch }}
 #          path: .
+
+      - name: Restore LLVM cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            llvm-${{ env.LLVM_VER }}.tar.xz
+            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
+            mpich-${{ env.MPICH_VER }}.tar.gz
+          key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
       - name: apt dependencies
         shell: bash
@@ -132,15 +163,8 @@ jobs:
           #sudo ./llvm.sh "${LLVM_VER}" all
           #sudo apt-get install -y flang-${LLVM_VER}
           #sudo apt install -y mpich libmpich-dev python3-pytest
-          sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
-
-      - name: Restore LLVM cache 
-        uses: actions/cache@v4
-        with:
-          path: |
-            llvm-${{ env.LLVM_VER }}.tar.xz
-            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
-          key: llvm-${{ env.LLVM_VER }}-${{ runner.os }}-${{ runner.arch }}
+          #sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
+          sudo apt-get install -y python3-pytest
 
       - name: Add LLVM to PATH
         shell: bash
@@ -166,16 +190,6 @@ jobs:
             mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
           fi
 
-          # For THIS step
-          export PATH="$LLVM_BIN:$PATH"
-          export LD_LIBRARY_PATH="$LLVM_LIB:$LD_LIBRARY_PATH"
-          export LIBRARY_PATH="$LLVM_LIB:$LIBRARY_PATH"
-          
-          # For LATER steps
-          echo "$LLVM_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
-
           # sanity check
           echo "=== path ==="
           ls -ltra $LLVM_BIN |grep clang
@@ -187,6 +201,36 @@ jobs:
           clang --version
           flang --version
           find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+          set +x
+
+      - name: Add MPICH to PATH
+        shell: bash
+        run: |
+          set -x
+          #MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
+          #MPICH_DIR="mpich-${{ env.MPICH_VER }}"
+
+          MPICH_INSTALL="mpich-install-${{ env.MPICH_VER }}"
+          MPICH_BIN="$PWD/$MPICH_INSTALL/bin"
+          MPICH_LIB="$PWD/$MPICH_INSTALL/lib"
+          #if [ ! -d "$MPICH_INSTALL" ]; then
+          #  tar -xf $MPICH_TAR
+          #  cd MPICH_DIR
+          #  ./configure \
+          #    CC=clang CXX=clang++ FC=flang F77=flang \
+          #    --disable-fortran-optional-args \
+          #    --prefix="$MPICH_INSTALL"
+          #fi
+
+          # For THIS step
+          export PATH="$MPICH_BIN:$PATH"
+          export LD_LIBRARY_PATH="$MPICH_LIB:$LD_LIBRARY_PATH"
+          export LIBRARY_PATH="$MPICH_LIB:$LIBRARY_PATH"
+
+          # For LATER steps
+          echo "$MPICH_BIN" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$MPICH_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$MPICH_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
           echo "=== wrappers ==="
           mpicc -show || true
