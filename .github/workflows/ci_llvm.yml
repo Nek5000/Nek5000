@@ -24,10 +24,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            llvm-${{ env.LLVM_VER }}.tar.xz
+            #llvm-${{ env.LLVM_VER }}.tar.xz
             #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
             llvm-${{ env.LLVM_VER }}.tar.zst
-            mpich-${{ env.MPICH_VER }}.tar.gz
+            #mpich-${{ env.MPICH_VER }}.tar.gz
             mpich-install-${{ env.MPICH_VER }}
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
@@ -222,9 +222,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            llvm-${{ env.LLVM_VER }}.tar.xz
+            #llvm-${{ env.LLVM_VER }}.tar.xz
             #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
-            mpich-${{ env.MPICH_VER }}.tar.gz
+            llvm-${{ env.LLVM_VER }}.tar.zst
+            #mpich-${{ env.MPICH_VER }}.tar.gz
             mpich-install-${{ env.MPICH_VER }}
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
