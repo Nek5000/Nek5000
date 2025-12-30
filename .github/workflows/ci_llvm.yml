@@ -28,7 +28,8 @@ jobs:
             #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
             llvm-${{ env.LLVM_VER }}.tar.zst
             #mpich-${{ env.MPICH_VER }}.tar.gz
-            mpich-install-${{ env.MPICH_VER }}
+            #mpich-install-${{ env.MPICH_VER }}
+            mpich-install-${{ env.MPICH_VER }}.tar.zst
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
       - name: Download & extract LLVM (cache-aware)
@@ -128,12 +129,13 @@ jobs:
           MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
           MPICH_DIR="mpich-${{ env.MPICH_VER }}"
           MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
+          MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
 
           if [ ! -f "$MPICH_TAR" ]; then
             curl -L -o $MPICH_TAR $MPICH_URL
           fi
 
-          if [ ! -d "$MPICH_INSTALL" ]; then
+          if [ ! -d "$MPICH_INSTALL_ZST" ]; then
             tar -xf $MPICH_TAR
             cd $MPICH_DIR
             ./configure \
@@ -142,6 +144,9 @@ jobs:
               --prefix="$MPICH_INSTALL"
             make -j$(nproc)
             make install
+            cd ..
+
+            tar -cf - $MPICH_INSTALL | zstd -T0 -6 -o $MPICH_INSTALL_ZST
           fi
 
           echo "=== wrappers ==="
@@ -226,7 +231,8 @@ jobs:
             #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
             llvm-${{ env.LLVM_VER }}.tar.zst
             #mpich-${{ env.MPICH_VER }}.tar.gz
-            mpich-install-${{ env.MPICH_VER }}
+            #mpich-install-${{ env.MPICH_VER }}
+            mpich-install-${{ env.MPICH_VER }}.tar.zst
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
       - name: apt dependencies
@@ -292,8 +298,13 @@ jobs:
         run: |
           set -x
           MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
+          MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
           MPICH_BIN="$MPICH_INSTALL/bin"
           MPICH_LIB="$MPICH_INSTALL/lib"
+
+          if [ ! -d "$MPICH_INSTALL" ]; then
+            tar --use-compress-program=zstd -xf $MPICH_INSTALL_ZST
+          fi
 
           # For THIS step
           export PATH="$MPICH_BIN:$PATH"
