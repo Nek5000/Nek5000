@@ -69,7 +69,7 @@ jobs:
 
             # prepare zst for fast compression
             if [ ! -f "$LLVM_TAR_ZST" ]; then
-              tar -cf - $LLVM_DIR | zstd -T0 -3 -o $LLVM_TAR_ZST
+              tar -cf - $LLVM_DIR | zstd -T0 -6 -o $LLVM_TAR_ZST
             fi
 
           fi
