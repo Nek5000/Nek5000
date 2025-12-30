@@ -25,14 +25,14 @@ jobs:
         with:
           path: |
             #llvm-${{ env.LLVM_VER }}.tar.xz
-            #LLVM-${{ env.LLVM_VER }} # too large, not fit in cache
-            llvm-${{ env.LLVM_VER }}.tar.zst
+            #LLVM-${{ env.LLVM_VER }} # 10.5GB, too large, not fit in cache
+            llvm-${{ env.LLVM_VER }}.tar.zst  # 2.4GB
             #mpich-${{ env.MPICH_VER }}.tar.gz
             #mpich-install-${{ env.MPICH_VER }}
             mpich-install-${{ env.MPICH_VER }}.tar.zst
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
-      - name: Download & extract LLVM (cache-aware)
+      - name: Download & extract LLVM (cache-aware) # 3min 35s if not in cache
         shell: bash
         run: |
           set -euxo pipefail
@@ -69,9 +69,7 @@ jobs:
             fi
 
             # prepare zst for fast compression
-            if [ ! -f "$LLVM_TAR_ZST" ]; then
-              tar -cf - $LLVM_DIR | zstd -T0 -6 -o $LLVM_TAR_ZST
-            fi
+            tar -cf - $LLVM_DIR | zstd -T0 -9 -o $LLVM_TAR_ZST
 
           fi
           set +x
@@ -121,7 +119,7 @@ jobs:
           find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
           set +x
 
-      - name: Build MPI (cache-aware)
+      - name: Build MPI (cache-aware) # 10min 35s if not in cache
         shell: bash
         run: |
           set -x
@@ -131,22 +129,29 @@ jobs:
           MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
           MPICH_INSTALL_ZST="$PWD/mpich-install-${{ env.MPICH_VER }}.tar.zst"
 
-          if [ ! -f "$MPICH_TAR" ]; then
-            curl -L -o $MPICH_TAR $MPICH_URL
-          fi
+          if [ ! -f "$MPICH_INSTALL_ZST" ]; then
 
-          if [ ! -d "$MPICH_INSTALL_ZST" ]; then
-            tar -xf $MPICH_TAR
-            cd $MPICH_DIR
-            ./configure \
-              CC=clang CXX=clang++ FC=flang F77=flang \
-              --disable-fortran-optional-args \
-              --prefix="$MPICH_INSTALL"
-            make -j$(nproc)
-            make install
-            cd ..
+            # download tar
+            if [ ! -f "$MPICH_TAR" ]; then
+              curl -L -o $MPICH_TAR $MPICH_URL
+            fi
 
-            tar -cf - $MPICH_INSTALL | zstd -T0 -6 -o $MPICH_INSTALL_ZST
+            # build
+            if [ ! -d "$MPICH_INSTALL" ]; then
+              tar -xf $MPICH_TAR
+              cd $MPICH_DIR
+              ./configure \
+                CC=clang CXX=clang++ FC=flang F77=flang \
+                --disable-fortran-optional-args \
+                --prefix="$MPICH_INSTALL"
+              make -j8
+              make install
+              cd ..
+            fi
+
+            # compress
+            tar -cf - $MPICH_INSTALL | zstd -T0 -9 -o $MPICH_INSTALL_ZST
+
           fi
 
           echo "=== wrappers ==="
