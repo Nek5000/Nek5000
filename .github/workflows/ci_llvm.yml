@@ -138,9 +138,25 @@ jobs:
         shell: bash
         run: |
           set -x
+
+          case "${{ runner.arch }}" in
+            X64)   LLVM_ARCH="Linux-X64" ;;
+            ARM64) LLVM_ARCH="Linux-AArch64" ;;
+            *) echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
+          esac
+
+          LLVM_SRC="LLVM-${LLVM_VER}-${LLVM_ARCH}"
+          LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
+
           LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
           LLVM_BIN="$PWD/$LLVM_DIR/bin"
           LLVM_LIB="$PWD/$LLVM_DIR/lib"
+
+          if [ ! -d "$LLVM_DIR" ]; then
+            rm -rf "$LLVM_SRC"
+            tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
+            mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
+          fi
 
           # For THIS step
           export PATH="$LLVM_BIN:$PATH"
@@ -152,6 +168,7 @@ jobs:
           echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
+          # sanity check
           echo "=== path ==="
           ls -ltra $LLVM_BIN |grep clang
           ls -ltra $LLVM_BIN |grep flang
