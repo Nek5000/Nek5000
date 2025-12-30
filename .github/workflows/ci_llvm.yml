@@ -60,8 +60,8 @@ jobs:
           fi
 
           export PATH="$LLVM_BIN:$PATH"
-          export LD_LIBRARY_PATH="$LLVM_LIB:$LD_LIBRARY_PATH"
-          export LIBRARY_PATH="$LLVM_LIB:$LIBRARY_PATH"
+          export LD_LIBRARY_PATH="$LLVM_LIB:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="$LLVM_LIB:${LIBRARY_PATH:-}"
 
           # sanity check
           set -x
@@ -82,7 +82,7 @@ jobs:
           MPICH_DIR="mpich-${{ env.MPICH_VER }}"
           MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
 
-          if [ ! -f "MPICH_TAR" ]; then
+          if [ ! -f "$MPICH_TAR" ]; then
             curl -L -o $MPICH_TAR $MPICH_URL
           fi
 
@@ -212,13 +212,13 @@ jobs:
 
           # For THIS step
           export PATH="$LLVM_BIN:$PATH"
-          export LD_LIBRARY_PATH="$LLVM_LIB:$LD_LIBRARY_PATH"
-          export LIBRARY_PATH="$LLVM_LIB:$LIBRARY_PATH"
+          export LD_LIBRARY_PATH="$LLVM_LIB:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="$LLVM_LIB:${LIBRARY_PATH:-}"
 
           # For LATER steps
           echo "$LLVM_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$LLVM_LIB:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$LLVM_LIB:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           # sanity check
           echo "=== path ==="
@@ -254,13 +254,13 @@ jobs:
 
           # For THIS step
           export PATH="$MPICH_BIN:$PATH"
-          export LD_LIBRARY_PATH="$MPICH_LIB:$LD_LIBRARY_PATH"
-          export LIBRARY_PATH="$MPICH_LIB:$LIBRARY_PATH"
+          export LD_LIBRARY_PATH="$MPICH_LIB:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="$MPICH_LIB:${LIBRARY_PATH:-}"
 
           # For LATER steps
           echo "$MPICH_BIN" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=$MPICH_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
-          echo "LIBRARY_PATH=$MPICH_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$MPICH_LIB:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$MPICH_LIB:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
           echo "=== wrappers ==="
           mpicc -show || true
