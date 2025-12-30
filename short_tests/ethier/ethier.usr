@@ -146,8 +146,6 @@ c      if (mod(istep,100).ne.0) return
               z = hxyz(ndim,i)
               read(50,*) tt, ux,uy,uz
               call exactu(uxe,uye,uze,x,y,z,1)
-           write(6,*) 'hpts_err_dbg:', i,tt,time,x,y,z,uxe,uye,uze
-     $,abs(ux-uxe(1)), abs(uy-uye(1)), abs(uz-uze(1))
               err = max(abs(ux-uxe(1)),err)
               err = max(abs(uy-uye(1)),err)
               err = max(abs(uz-uze(1)),err)
