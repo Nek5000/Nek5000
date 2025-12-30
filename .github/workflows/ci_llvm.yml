@@ -57,6 +57,24 @@ jobs:
             mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
           fi
 
+          export PATH="$LLVM_BIN:$PATH"
+          export LD_LIBRARY_PATH="$LLVM_LIB:$LD_LIBRARY_PATH"
+          export LIBRARY_PATH="$LLVM_LIB:$LIBRARY_PATH"
+
+          # sanity check
+          set -x
+          echo "=== path ==="
+          ls -ltra $LLVM_BIN |grep clang
+          ls -ltra $LLVM_BIN |grep flang
+
+          echo "=== toolchain ==="
+          command -v clang || true
+          command -v flang || true
+          clang --version
+          flang --version
+          find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+          set +x
+
           MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
           MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
           MPICH_DIR="mpich-${{ env.MPICH_VER }}"
@@ -189,6 +207,16 @@ jobs:
             tar -xf "$LLVM_TAR"          # creates "$LLVM_SRC"
             mv "$LLVM_SRC" "$LLVM_DIR"   # normalize directory name
           fi
+
+          # For THIS step
+          export PATH="$LLVM_BIN:$PATH"
+          export LD_LIBRARY_PATH="$LLVM_LIB:$LD_LIBRARY_PATH"
+          export LIBRARY_PATH="$LLVM_LIB:$LIBRARY_PATH"
+
+          # For LATER steps
+          echo "$LLVM_BIN" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=$LLVM_LIB:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$LLVM_LIB:$LIBRARY_PATH" >> "$GITHUB_ENV"
 
           # sanity check
           echo "=== path ==="
