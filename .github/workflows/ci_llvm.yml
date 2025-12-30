@@ -290,4 +290,5 @@ jobs:
       - name: test
         shell: bash
         run: |
+          ulimit -s unlimited
           pytest-3 -s -v short_tests/NekTests.py::$TEST_CASE
