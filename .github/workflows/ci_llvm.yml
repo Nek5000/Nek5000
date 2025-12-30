@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - master
-      - flang-wip
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -247,6 +246,7 @@ jobs:
           if [ ! -d "$LLVM_DIR_ABS" ]; then
             tar --use-compress-program=zstd -xf "${LLVM_TAR_ZST}" -C "$HOME"
           fi
+          ls -ltra $HOME
 
           export PATH="${LLVM_DIR_ABS}/bin:$PATH"
           export LD_LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}"
@@ -254,8 +254,6 @@ jobs:
           echo "${LLVM_DIR_ABS}/bin" >> "$GITHUB_PATH"
           echo "LD_LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-
-          ls -ltra $HOME
 
           echo "=== toolchain ==="
           clang --version
@@ -274,6 +272,7 @@ jobs:
           if [ ! -d "${MPICH_INSTALL_ABS}" ]; then
             tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}" -C "$HOME"
           fi
+          ls -ltra $HOME
 
           export PATH="${MPICH_INSTALL_ABS}/bin:$PATH"
           export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
