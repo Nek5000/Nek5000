@@ -46,6 +46,8 @@ jobs:
 
           LLVM_TAR="llvm-${{ env.LLVM_VER }}.tar.xz"
           LLVM_DIR="LLVM-${{ env.LLVM_VER }}"
+          LLVM_BIN="$PWD/$LLVM_DIR/bin"
+          LLVM_LIB="$PWD/$LLVM_DIR/lib"
 
           if [ ! -f "$LLVM_TAR" ]; then
             wget -q "$LLVM_URL" -O "$LLVM_TAR"
