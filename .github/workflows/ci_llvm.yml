@@ -16,7 +16,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   LLVM_VER: "21.1.0"
   MPICH_VER: "4.2.2"
-  CACHE_KEY: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
+  CACHE_KEY: ${{ github.runner_os }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
 jobs:
   prepare-llvm:
