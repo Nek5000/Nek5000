@@ -93,6 +93,8 @@ jobs:
               CC=clang CXX=clang++ FC=flang F77=flang \
               --disable-fortran-optional-args \
               --prefix="$MPICH_INSTALL"
+            make -j8
+            make install
           fi
 
 #      - name: Upload LLVM artifact
@@ -250,6 +252,9 @@ jobs:
           #    CC=clang CXX=clang++ FC=flang F77=flang \
           #    --disable-fortran-optional-args \
           #    --prefix="$MPICH_INSTALL"
+          #
+          #  make -j8
+          #  make install
           #fi
 
           # For THIS step
