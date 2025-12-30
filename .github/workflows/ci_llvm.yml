@@ -21,7 +21,6 @@ jobs:
   prepare-llvm:
     runs-on: ubuntu-22.04
     outputs:
-      cache_hit: ${{ steps.cache.outputs.cache-hit }}
       cache_key: ${{ steps.key.outputs.cache_key }}
 
     steps:
@@ -47,7 +46,7 @@ jobs:
             mpich-install.tar.zst
           key: ${{ steps.key.outputs.cache_key }}
 
-      - name: Build & pack LLVM + MPICH (only on cache miss)
+      - name: Build & pack LLVM + MPICH (only on cache miss) # 11m30s (if miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
@@ -80,9 +79,6 @@ jobs:
             mv "${LLVM_SRC}" "${LLVM_DIR}"
             rm -f "${LLVM_TAR}"
             tar -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
-            # -6: 3m35s, 2.4 GiB
-            # -9: 4m10s, 2.35 GiB,
-            # -12: 5m41s, 2.33 GiB,
           fi
 
           export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
@@ -136,7 +132,7 @@ jobs:
           mpif77 -show || true
           set +x
 
-      - name: Upload artifacts (fallback for same-run cache miss)
+      - name: Upload artifacts (fallback for same-run cache miss) # 1m16s (if miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/upload-artifact@v4
         with:
@@ -147,7 +143,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Save cache (only if miss)
+      - name: Save cache (only if miss) # 21s
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
@@ -224,7 +220,7 @@ jobs:
           #sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
           sudo apt-get install -y python3-pytest
 
-      - name: Restore cache (preferred)
+      - name: Restore cache (preferred) # 15-20s
         id: cache
         uses: actions/cache@v4
         with:
@@ -250,10 +246,16 @@ jobs:
           if [ ! -d "$LLVM_DIR" ]; then
             tar --use-compress-program=zstd -xf $LLVM_TAR_ZST
           fi
+          ls -ltra
 
           echo "$PWD/${LLVM_DIR}/bin" >> "$GITHUB_PATH"
           echo "LD_LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+
+          echo "=== path ==="
+          LLVM_BIN="$PWD/$LLVM_DIR/bin"
+          ls -ltra $LLVM_BIN |grep clang
+          ls -ltra $LLVM_BIN |grep flang
 
           echo "=== toolchain ==="
           clang --version
