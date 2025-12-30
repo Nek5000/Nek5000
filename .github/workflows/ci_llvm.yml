@@ -30,7 +30,7 @@ jobs:
             mpich-install-${{ env.MPICH_VER }}
           key: ${{ runner.os }}-${{ runner.arch }}-llvm-${{ env.LLVM_VER }}-mpich-${{ env.MPICH_VER }}
 
-      - name: Download + extract LLVM (cache-aware)
+      - name: Download + extract LLVM (cache-aware), build MPI
         shell: bash
         run: |
           set -euxo pipefail
@@ -68,7 +68,7 @@ jobs:
 
           if [ ! -d "$MPICH_INSTALL" ]; then
             tar -xf $MPICH_TAR
-            cd MPICH_DIR
+            cd $MPICH_DIR
             ./configure \
               CC=clang CXX=clang++ FC=flang F77=flang \
               --disable-fortran-optional-args \
