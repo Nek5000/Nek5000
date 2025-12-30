@@ -60,7 +60,7 @@ jobs:
           MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
           MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
           MPICH_DIR="mpich-${{ env.MPICH_VER }}"
-          MPICH_INSTALL="mpich-install-${{ env.MPICH_VER }}"
+          MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
 
           if [ ! -f "MPICH_TAR" ]; then
             curl -L -o $MPICH_TAR $MPICH_URL
@@ -210,9 +210,9 @@ jobs:
           #MPICH_TAR="mpich-${{ env.MPICH_VER }}.tar.gz"
           #MPICH_DIR="mpich-${{ env.MPICH_VER }}"
 
-          MPICH_INSTALL="mpich-install-${{ env.MPICH_VER }}"
-          MPICH_BIN="$PWD/$MPICH_INSTALL/bin"
-          MPICH_LIB="$PWD/$MPICH_INSTALL/lib"
+          MPICH_INSTALL="$PWD/mpich-install-${{ env.MPICH_VER }}"
+          MPICH_BIN="$MPICH_INSTALL/bin"
+          MPICH_LIB="$MPICH_INSTALL/lib"
           #if [ ! -d "$MPICH_INSTALL" ]; then
           #  tar -xf $MPICH_TAR
           #  cd MPICH_DIR
