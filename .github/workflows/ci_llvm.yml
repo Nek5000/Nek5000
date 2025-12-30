@@ -79,11 +79,15 @@ jobs:
             tar -xf "${LLVM_TAR}"
             mv "${LLVM_SRC}" "${LLVM_DIR}"
             rm -f "${LLVM_TAR}"
-            tar -cf - "${LLVM_DIR}" | zstd -T0 -12 -o "${LLVM_TAR_ZST}"
+            tar -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
             # -6: 3m35s, 2.4 GiB
             # -9: 4m10s, 2.35 GiB,
             # -12: 5m41s, 2.33 GiB,
           fi
+
+          export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
+          export LD_LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}"
 
           echo "=== path ==="
           ls -ltra $LLVM_BIN |grep clang
@@ -109,11 +113,6 @@ jobs:
             tar -xf "${MPICH_TAR}"
             rm -f "${MPICH_TAR}"
 
-            # Use LLVM as toolchain
-            export PATH="$PWD/${LLVM_DIR}/bin:$PATH"
-            export LD_LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LD_LIBRARY_PATH:-}"
-            export LIBRARY_PATH="$PWD/${LLVM_DIR}/lib:${LIBRARY_PATH:-}"
-
             pushd "${MPICH_DIR}"
             ./configure \
               CC=clang CXX=clang++ FC=flang F77=flang \
@@ -128,7 +127,7 @@ jobs:
             popd
 
             rm -rf "${MPICH_DIR}"
-            tar -cf - "${MPICH_INSTALL}" | zstd -T0 -12 -o "${MPICH_INSTALL_ZST}"
+            tar -cf - "${MPICH_INSTALL}" | zstd -T0 -6 -o "${MPICH_INSTALL_ZST}"
             rm -rf "${MPICH_INSTALL}"
           fi
 
