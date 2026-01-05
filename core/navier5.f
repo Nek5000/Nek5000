@@ -2963,8 +2963,10 @@ c-----------------------------------------------------------------------
          zmax = 0.
       endif
 
-      if (ldim.eq.2) write(6,2) xmin,xmax,ymin,ymax
-      if (ldim.eq.3) write(6,3) xmin,xmax,ymin,ymax,zmin,zmax
+      if (nio.eq.0) then
+        if (ldim.eq.2) write(6,2) xmin,xmax,ymin,ymax
+        if (ldim.eq.3) write(6,3) xmin,xmax,ymin,ymax,zmin,zmax
+      endif
     2 format('Domain Size: xyz ',1p4e13.4)
     3 format('Domain Size: xyz ',1p6e13.4)
 
