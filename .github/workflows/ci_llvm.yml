@@ -50,7 +50,6 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          set -x
 
           # ===== LLVM tar.zst =====
           case "${{ runner.arch }}" in
