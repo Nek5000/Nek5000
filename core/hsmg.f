@@ -730,7 +730,7 @@ c----------------------------------------------------------------------
      $            ,llr(ie),lmr(ie),lrr(ie),ah,bh,n,ie)
          call hsmg_setup_fast1d(s(1,1,2,ie),ls,ns,lbs,rbs
      $            ,lls(ie),lms(ie),lrs(ie),ah,bh,n,ie)
-         if(if3d) call hsmg_setup_fast1d(s(1,1,3,ie),lt,nt,lbt,rbt
+         if(if3d) call hsmg_setup_fast1d(s(1,1,ndim,ie),lt,nt,lbt,rbt
      $                     ,llt(ie),lmt(ie),lrt(ie),ah,bh,n,ie)
          il=1
          if(.not.if3d) then
@@ -917,12 +917,12 @@ c     clobbers r
       else
          do ie=1,nelv
             call hsmg_tnsr3d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,2,1,ie),s(1,1,2,ie),s(1,1,3,ie))
+     $                         ,s(1,2,1,ie),s(1,1,2,ie),s(1,1,ndim,ie))
             do i=1,nn
                r(i,ie)=d(i,ie)*e(i,ie)
             enddo
             call hsmg_tnsr3d_el(e(1,ie),nl,r(1,ie),nl
-     $                         ,s(1,1,1,ie),s(1,2,2,ie),s(1,2,3,ie))
+     $                         ,s(1,1,1,ie),s(1,2,2,ie),s(1,2,ndim,ie))
          enddo
       endif
       return
@@ -975,8 +975,8 @@ c     endif
             enddo
             do j=2,ny-1
             do i=2,nx-1
-               u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,3,ie)
-               u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,3,ie)
+               u(i,j, 1,ie)=u(i,j, 1,ie)*wt(i,j,1,ndim,ie)
+               u(i,j,nz,ie)=u(i,j,nz,ie)*wt(i,j,2,ndim,ie)
             enddo
             enddo
          enddo
@@ -1057,8 +1057,8 @@ c     print *, 'Setup rstr wt: ',nx,ny,nz,nelv
             enddo
             do j=1,ny
             do i=1,nx
-               wt(i,j,1,3,ie)=1.0/w(i,j,1,ie)
-               wt(i,j,2,3,ie)=1.0/w(i,j,nz,ie)
+               wt(i,j,1,ndim,ie)=1.0/w(i,j,1,ie)
+               wt(i,j,2,ndim,ie)=1.0/w(i,j,nz,ie)
             enddo
             enddo
          enddo
@@ -1168,8 +1168,8 @@ c     store weight
             enddo
             do k=1,nz
             do j=1,ny
-               wt(j,k,1,3,ie)=w(i,j,1,ie)
-               wt(j,k,2,3,ie)=w(i,j,nz,ie)
+               wt(j,k,1,ndim,ie)=w(i,j,1,ie)
+               wt(j,k,2,ndim,ie)=w(i,j,nz,ie)
             enddo
             enddo
          enddo

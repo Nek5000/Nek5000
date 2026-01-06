@@ -357,10 +357,11 @@ c
           enddo
           enddo
 c
+          iz = 1
           do iy=2,ly1-1
           do ix=2,lx1-1
-            x(ix,iy,1  ,ie)=abs(x(ix,iy,1  ,ie) - x(ix,iy,2    ,ie))
-            x(ix,iy,lz1,ie)=abs(x(ix,iy,lz1,ie) - x(ix,iy,lz1-1,ie))
+            x(ix,iy,1  ,ie)=abs(x(ix,iy,iz  ,ie) - x(ix,iy,iz+1,ie))
+            x(ix,iy,nz1,ie)=abs(x(ix,iy,nz1,ie) - x(ix,iy,nz1-1,ie))
           enddo
           enddo
 c

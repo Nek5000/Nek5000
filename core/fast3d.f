@@ -1583,12 +1583,13 @@ c-----------------------------------------------------------------------
          enddo
          enddo
          call dssum(l,n,n,n)
+         k = 1
          do e=1,nelv
-            llr(e) = l(1,2,2,e)-lmr(e)
-            lrr(e) = l(n,2,2,e)-lmr(e)
-            lls(e) = l(2,1,2,e)-lms(e)
-            lrs(e) = l(2,n,2,e)-lms(e)
-            llt(e) = l(2,2,1,e)-lmt(e)
+            llr(e) = l(1,2,k+1,e)-lmr(e)
+            lrr(e) = l(n,2,k+1,e)-lmr(e)
+            lls(e) = l(2,1,k+1,e)-lms(e)
+            lrs(e) = l(2,n,k+1,e)-lms(e)
+            llt(e) = l(2,2,k,e)-lmt(e)
             lrt(e) = l(2,2,n,e)-lmt(e)
          enddo
       else

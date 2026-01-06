@@ -685,10 +685,13 @@ C
 
            if (if3d) then  ! Convert convector F to r-s-t coordinates
 
+             i4 = 4
              do i=1,nxyzd
                tr(i,1)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)+rx(i,3,e)*fz(i)
-               tr(i,2)=rx(i,4,e)*fx(i)+rx(i,5,e)*fy(i)+rx(i,6,e)*fz(i)
-               tr(i,3)=rx(i,7,e)*fx(i)+rx(i,8,e)*fy(i)+rx(i,9,e)*fz(i)
+               tr(i,2)=rx(i,i4+0,e)*fx(i)+rx(i,i4+1,e)*fy(i)+
+     $                 rx(i,i4+2,e)*fz(i)
+               tr(i,3)=rx(i,i4+3,e)*fx(i)+rx(i,i4+4,e)*fy(i)+
+     $                 rx(i,i4+5,e)*fz(i)
              enddo
 
            else
@@ -882,10 +885,14 @@ c        Convert convector F to r-s-t coordinates
 
          if (if3d) then
 
+           i4 = 4
            do i=1,nxyzd
-              cr(i,e)=rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)+rx(i,3,e)*fz(i)
-              cs(i,e)=rx(i,4,e)*fx(i)+rx(i,5,e)*fy(i)+rx(i,6,e)*fz(i)
-              ct(i,e)=rx(i,7,e)*fx(i)+rx(i,8,e)*fy(i)+rx(i,9,e)*fz(i)
+              cr(i,e)=
+     $          rx(i,1,e)*fx(i)+rx(i,2,e)*fy(i)+rx(i,1*ndim,e)*fz(i)
+              cs(i,e)=
+     $          rx(i,4+0,e)*fx(i)+rx(i,i4+1,e)*fy(i)+rx(i,i4+2,e)*fz(i)
+              ct(i,e)=
+     $          rx(i,i4+3,e)*fx(i)+rx(i,i4+4,e)*fy(i)+rx(i,i4+5,e)*fz(i)
            enddo
 
          else

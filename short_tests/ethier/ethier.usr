@@ -143,7 +143,7 @@ c      if (mod(istep,100).ne.0) return
            do i = 1,nhpts
               x = hxyz(1,i)
               y = hxyz(2,i)
-              z = hxyz(3,i)
+              z = hxyz(ndim,i)
               read(50,*) tt, ux,uy,uz
               call exactu(uxe,uye,uze,x,y,z,1)
               err = max(abs(ux-uxe(1)),err)

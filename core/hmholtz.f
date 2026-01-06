@@ -1916,6 +1916,7 @@ c       Here, we add DG surface terms (11/06/16)
         enddo
 
         i=0
+        i4=4
         nx=lx1
         if (ldim.eq.3) then
          do i2=1,ly1
@@ -1925,8 +1926,10 @@ c       Here, we add DG surface terms (11/06/16)
            d(nx,i1,i2,e)=d(nx,i1,i2,e)-2*fw(2,e)*unr(i,2,e)*dxm1(nx,nx)
            d(i1, 1,i2,e)=d(i1, 1,i2,e)-2*fw(1,e)*uns(i,1,e)*dym1( 1, 1)
            d(i1,nx,i2,e)=d(i1,nx,i2,e)-2*fw(3,e)*uns(i,3,e)*dym1(nx,nx)
-           d(i1,i2, 1,e)=d(i1,i2, 1,e)-2*fw(5,e)*unt(i,5,e)*dzm1( 1, 1)
-           d(i1,i2,nx,e)=d(i1,i2,nx,e)-2*fw(6,e)*unt(i,6,e)*dzm1(nx,nx)
+           d(i1,i2, 1,e)=d(i1,i2, 1,e)-2*fw(i4+1,e)*
+     $                   unt(i,5,e)*dzm1( 1, 1)
+           d(i1,i2,nx,e)=d(i1,i2,nx,e)-2*fw(i4+2,e)*
+     $                   unt(i,6,e)*dzm1(nx,nx)
          enddo
          enddo
         else  ! 2D

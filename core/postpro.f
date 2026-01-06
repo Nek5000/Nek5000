@@ -289,7 +289,7 @@ c
             gije(i,k,2) = dj*( 
      $      ur(i)*rym1(i,1,1,e)+us(i)*sym1(i,1,1,e)+ut(i)*tym1(i,1,1,e))
             ! d/dz
-            gije(i,k,3) = dj*(
+            gije(i,k,ndim) = dj*(
      $      ur(i)*rzm1(i,1,1,e)+us(i)*szm1(i,1,1,e)+ut(i)*tzm1(i,1,1,e))
 
           enddo
@@ -765,7 +765,7 @@ c-----------------------------------------------------------------------
                   li=isym2pre(l)
                   xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1+k*nzs,e)
                   xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1+k*nzs,e)
-                  xyz(li,3,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,ndim,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
                enddo
                enddo
                enddo
@@ -794,35 +794,37 @@ c-----------------------------------------------------------------------
                   call byte_write(rgrp,2,ierr)
                  
                   if(if3d) then
+                    i4 = 4
+
                     buf2(1) = xyz(1,1,kb)
                     buf2(2) = xyz(2,1,kb)
                     buf2(3) = xyz(3,1,kb)
                     buf2(4) = xyz(4,1,kb)
 
-                    buf2(5) = xyz(5,1,kb)
-                    buf2(6) = xyz(6,1,kb)
-                    buf2(7) = xyz(7,1,kb)
-                    buf2(8) = xyz(8,1,kb)
+                    buf2(5) = xyz(i4+1,1,kb)
+                    buf2(6) = xyz(i4+2,1,kb)
+                    buf2(7) = xyz(i4+3,1,kb)
+                    buf2(8) = xyz(i4+4,1,kb)
 
                     buf2(9) = xyz(1,2,kb)
                     buf2(10)= xyz(2,2,kb)
                     buf2(11)= xyz(3,2,kb)
                     buf2(12)= xyz(4,2,kb)
                   
-                    buf2(13)= xyz(5,2,kb)
-                    buf2(14)= xyz(6,2,kb)
-                    buf2(15)= xyz(7,2,kb)
-                    buf2(16)= xyz(8,2,kb)
+                    buf2(13)= xyz(i4+1,2,kb)
+                    buf2(14)= xyz(i4+2,2,kb)
+                    buf2(15)= xyz(i4+3,2,kb)
+                    buf2(16)= xyz(i4+4,2,kb)
 
-                    buf2(17)= xyz(1,3,kb)
-                    buf2(18)= xyz(2,3,kb)
-                    buf2(19)= xyz(3,3,kb)
-                    buf2(20)= xyz(4,3,kb)
+                    buf2(17)= xyz(1,ndim,kb)
+                    buf2(18)= xyz(2,ndim,kb)
+                    buf2(19)= xyz(3,ndim,kb)
+                    buf2(20)= xyz(4,ndim,kb)
 
-                    buf2(21)= xyz(5,3,kb)
-                    buf2(22)= xyz(6,3,kb)
-                    buf2(23)= xyz(7,3,kb)
-                    buf2(24)= xyz(8,3,kb)
+                    buf2(21)= xyz(i4+1,ndim,kb)
+                    buf2(22)= xyz(i4+2,ndim,kb)
+                    buf2(23)= xyz(i4+3,ndim,kb)
+                    buf2(24)= xyz(i4+4,ndim,kb)
 
                     if(ierr.eq.0) call byte_write(buf,48,ierr)
                   else
@@ -841,36 +843,37 @@ c-----------------------------------------------------------------------
                else  !!!! 4byte precision !!!!
                   call byte_write(igr(kb),1,ierr)
                   if (if3d) then 
+                    i4 = 4
 
                     buf(1)  = xyz(1,1,kb)
                     buf(2)  = xyz(2,1,kb)
                     buf(3)  = xyz(3,1,kb)
                     buf(4)  = xyz(4,1,kb)
 
-                    buf(5)  = xyz(5,1,kb)
-                    buf(6)  = xyz(6,1,kb)
-                    buf(7)  = xyz(7,1,kb)
-                    buf(8)  = xyz(8,1,kb)
+                    buf(5)  = xyz(i4+1,1,kb)
+                    buf(6)  = xyz(i4+2,1,kb)
+                    buf(7)  = xyz(i4+3,1,kb)
+                    buf(8)  = xyz(i4+4,1,kb)
 
                     buf(9)  = xyz(1,2,kb)
                     buf(10) = xyz(2,2,kb)
                     buf(11) = xyz(3,2,kb)
                     buf(12) = xyz(4,2,kb)
                   
-                    buf(13) = xyz(5,2,kb)
-                    buf(14) = xyz(6,2,kb)
-                    buf(15) = xyz(7,2,kb)
-                    buf(16) = xyz(8,2,kb)
+                    buf(13) = xyz(i4+1,2,kb)
+                    buf(14) = xyz(i4+2,2,kb)
+                    buf(15) = xyz(i4+3,2,kb)
+                    buf(16) = xyz(i4+4,2,kb)
 
-                    buf(17) = xyz(1,3,kb)
-                    buf(18) = xyz(2,3,kb)
-                    buf(19) = xyz(3,3,kb)
-                    buf(20) = xyz(4,3,kb)
+                    buf(17) = xyz(1,ndim,kb)
+                    buf(18) = xyz(2,ndim,kb)
+                    buf(19) = xyz(3,ndim,kb)
+                    buf(20) = xyz(4,ndim,kb)
 
-                    buf(21) = xyz(5,3,kb)
-                    buf(22) = xyz(6,3,kb)
-                    buf(23) = xyz(7,3,kb)
-                    buf(24) = xyz(8,3,kb)
+                    buf(21) = xyz(i4+1,ndim,kb)
+                    buf(22) = xyz(i4+2,ndim,kb)
+                    buf(23) = xyz(i4+3,ndim,kb)
+                    buf(24) = xyz(i4+4,ndim,kb)
 
                     if(ierr.eq.0) call byte_write(buf,24,ierr)
 
@@ -1207,7 +1210,7 @@ c-----------------------------------------------------------------------
                   li=isym2pre(l)
                   xyz(li,1,kb) = xm1(1+i*nxs,1+j*nys,1+k*nzs,e)
                   xyz(li,2,kb) = ym1(1+i*nxs,1+j*nys,1+k*nzs,e)
-                  xyz(li,3,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
+                  xyz(li,ndim,kb) = zm1(1+i*nxs,1+j*nys,1+k*nzs,e)
                enddo
                enddo
                enddo
@@ -1238,11 +1241,11 @@ c-----------------------------------------------------------------------
 
                   write(10,'(4g15.7)')(xyz(ic,1,kb),ic=1,4)
                   write(10,'(4g15.7)')(xyz(ic,2,kb),ic=1,4)
-                  write(10,'(4g15.7)')(xyz(ic,3,kb),ic=1,4)
+                  write(10,'(4g15.7)')(xyz(ic,ndim,kb),ic=1,4)
 
                   write(10,'(4g15.7)')(xyz(ic,1,kb),ic=5,8)
                   write(10,'(4g15.7)')(xyz(ic,2,kb),ic=5,8)
-                  write(10,'(4g15.7)')(xyz(ic,3,kb),ic=5,8)
+                  write(10,'(4g15.7)')(xyz(ic,ndim,kb),ic=5,8)
 
                else ! 2D
 
@@ -1604,7 +1607,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
      &                      dist,1,
      &                      pts(1,1),ldim,
      &                      pts(2,1),ldim,
-     &                      pts(3,1),ldim,npts)
+     &                      pts(ndim,1),ldim,npts)
      
         nfail = 0 
         do i=1,npts
