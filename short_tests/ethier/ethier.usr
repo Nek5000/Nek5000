@@ -139,7 +139,7 @@ c      if (mod(istep,100).ne.0) return
               read(50,*) (hxyz(k,i),k=1,ndim)
            enddo
 
-           errhpts = 0.0
+           err = 0.0
            do i = 1,nhpts
               x = hxyz(1,i)
               y = hxyz(2,i)

@@ -176,7 +176,7 @@ c     re2 stuff
       real*4 test
       data   test  / 6.54321 /
 
-      integer e,en
+      integer e,en,e2d
 
       real*8 bc8(5)
       integer ibc(6,nelxym)
@@ -796,7 +796,7 @@ c-----------------------------------------------------------------------
       logical ifflow,ifheat,ifper,ifcht
       real*8 buf(10)
       real*8 r_nb
-      integer e
+      integer e,e2d
 
       real*8 bc8(5)
       integer ibc(6,nelxym)
@@ -1132,7 +1132,7 @@ c-----------------------------------------------------------------------
       real xc(4),yc(4),zc(4)
       logical ifcirc,ifcht
 
-      integer e
+      integer e,e2d
 
       dz = dzi(1)
       z0 = zmin
@@ -1470,7 +1470,7 @@ c-----------------------------------------------------------------------
       subroutine rd_bc(iibc,ibc)
 #     include "SIZE"
       
-      integer ibc(6,nelxym)
+      integer ibc(6,nelxym),e
       real*8 bc8(5)
 
       nn=nelv
@@ -1854,7 +1854,7 @@ c-----------------------------------------------------------------------
       logical ifcht
       common /arraz/ zmin,zmax,dz(nelxym)
 
-      integer e,en,edge,edg1
+      integer e,en,edge,edg1,e2d
 
       neln = nel*nlev
       nelnv= nelv*nlev

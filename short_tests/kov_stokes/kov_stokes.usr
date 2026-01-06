@@ -305,12 +305,14 @@ c     cu = cu + B*V.grad u ! dealiased on fine GL mesh
       nxyzd = nxd*nyd*nzd
 
       call grad_rst(ur,us,ut,uf,nxd,if3d)
-
       if (if3d) then   ! mass matrix included, per DFM (4.8.5)
+         i4 = 4
          do i=1,nxyzd
             tr1   = rx(i,1,e)*v1(i)+rx(i,2,e)*v2(i)+rx(i,3,e)*v3(i)
-            tr2   = rx(i,4,e)*v1(i)+rx(i,5,e)*v2(i)+rx(i,6,e)*v3(i)
-            tr3   = rx(i,7,e)*v1(i)+rx(i,8,e)*v2(i)+rx(i,9,e)*v3(i)
+            tr2   = rx(i,i4+0,e)*v1(i)+rx(i,i4+1,e)*v2(i) +
+     $              rx(i,i4+2,e)*v3(i)
+            tr3   = rx(i,i4+3,e)*v1(i)+rx(i,i4+4,e)*v2(i) +
+     $              rx(i,i4+5,e)*v3(i)
             cu(i) = cu(i) + tr1*ur(i)+tr2*us(i)+tr3*ut(i)
          enddo
       else

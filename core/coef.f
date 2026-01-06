@@ -118,7 +118,7 @@ C
          CALL DGLLGL (DYM12,DYTM12,ZGM1(1,2),ZGM2(1,2),IYM12,
      $                                       ly1,ly2,ly1,ly2)
          DZM12 (lz2,lz1) = 0.
-         DZTM12(lz2,lz1) = 0.
+         DZTM12(lz1,lz2) = 0.
       ENDIF
 C
 C     Compute interpolation operators for the geometry mesh M3.

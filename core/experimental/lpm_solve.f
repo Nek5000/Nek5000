@@ -12,6 +12,7 @@
       lpm_d2chk(2) = 0.0
       lpm_npart = npart
       lpm_timef = time_
+      lpm_restart  = .false.
 
       if (nyp.gt.LPM_LRS)
      $   call exitti('nyp > LPM_LRS$',nyp)

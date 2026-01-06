@@ -236,6 +236,7 @@ case $FCcomp in
         FCPP="-cpp"
         FR8="-fdefault-real-8 -fdefault-double-8"
         FF77="-w -ffixed-form"
+        LDFLAGS+=" -fuse-ld=bfd -Wl,--no-relax"
     else
         # CLASSIC FLANG (Legacy/PGI-based)
         FCPP="-Mpreprocess"
