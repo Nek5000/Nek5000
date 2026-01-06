@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - master
+      - flang-wip
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -160,6 +161,7 @@ jobs:
       matrix:
         test_case: [
             "Tools",
+            "IO_Test::test_PnPn2_Parallel",
             "Ethier::test_PnPn2_Parallel",
             "Ethier::test_PnPn_Parallel"
         ]
