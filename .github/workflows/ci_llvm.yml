@@ -1,0 +1,269 @@
+name: CI (flang)
+
+on:
+  # allows us to run workflows manually
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  LLVM_VER: "21.1.0"
+  MPICH_VER: "4.2.2"
+
+jobs:
+  prepare-llvm:
+    runs-on: ubuntu-22.04
+    outputs:
+      cache_key: ${{ steps.key.outputs.cache_key }}
+
+    steps:
+      - name: Compute cache key
+        id: key
+        shell: bash
+        run: |
+          set -eux
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch_tag="x64" ;;
+            aarch64|arm64) arch_tag="arm64" ;;
+            *) arch_tag="$arch" ;;
+          esac
+          echo "cache_key=${{ runner.os }}-${arch_tag}-llvm-${LLVM_VER}-mpich-${MPICH_VER}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cache (LLVM tar.zst + MPICH install tar.zst)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ steps.key.outputs.cache_key }}
+
+      - name: Build & pack LLVM + MPICH (only on cache miss) # 11m30s (if miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # ===== LLVM tar.zst =====
+          case "${{ runner.arch }}" in
+            X64)   LLVM_ARCH="Linux-X64" ;;
+            ARM64) LLVM_ARCH="Linux-AArch64" ;;
+            *) echo "Unsupported arch: ${{ runner.arch }}"; exit 1 ;;
+          esac
+
+          LLVM_SRC="LLVM-${LLVM_VER}-${LLVM_ARCH}"
+          LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/${LLVM_SRC}.tar.xz"
+          LLVM_TAR="llvm-${LLVM_VER}.tar.xz"
+          LLVM_TAR_ZST="llvm.tar.zst"
+          LLVM_DIR="LLVM-${LLVM_VER}"
+          LLVM_DIR_ABS="$HOME/${LLVM_DIR}"
+
+          if [ ! -f "$LLVM_TAR_ZST" ]; then
+            if [ ! -f "$LLVM_TAR" ]; then
+              wget -q "$LLVM_URL" -O "$LLVM_TAR"
+            fi
+
+            rm -rf "${LLVM_SRC}" "${LLVM_DIR_ABS}"
+            tar -xf "${LLVM_TAR}"
+            mv "${LLVM_SRC}" "${LLVM_DIR_ABS}"
+            rm -f "${LLVM_TAR}"
+
+            # Pack RELATIVE to $HOME but destined for $HOME on extract
+            tar -C "$HOME" -cf - "${LLVM_DIR}" | zstd -T0 -6 -o "${LLVM_TAR_ZST}"
+          fi
+
+          export PATH="${LLVM_DIR_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}"
+
+          echo "=== toolchain ==="
+          command -v clang || true
+          command -v flang || true
+          clang --version
+          flang --version
+          find "$(dirname "$(command -v clang)")/../lib" -name 'libflang_rt.runtime*' | head -n 5 || true
+
+          # ===== MPICH install tar.zst =====
+          MPICH_URL="https://www.mpich.org/static/downloads/${MPICH_VER}/mpich-${MPICH_VER}.tar.gz"
+          MPICH_TAR="mpich-${MPICH_VER}.tar.gz"
+          MPICH_DIR="mpich-${MPICH_VER}"
+          MPICH_INSTALL_DIR="mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ABS="$HOME/${MPICH_INSTALL_DIR}"
+          MPICH_INSTALL_ZST="mpich-install.tar.zst"
+
+          if [ ! -f "$MPICH_INSTALL_ZST" ]; then
+            curl -L -o "${MPICH_TAR}" "${MPICH_URL}"
+            rm -rf "${MPICH_DIR}" "${MPICH_INSTALL_ABS}"
+            tar -xf "${MPICH_TAR}"
+            rm -f "${MPICH_TAR}"
+
+            pushd "${MPICH_DIR}"
+            ./configure \
+              CC=clang CXX=clang++ FC=flang F77=flang \
+              CFLAGS="-O2" CXXFLAGS="-O2" FFLAGS="-O2" FCFLAGS="-O2" \
+              LDFLAGS="-fuse-ld=lld" \
+              --disable-fortran-optional-args \
+              --enable-shared --disable-static \
+              --disable-cxx \
+              --prefix="$MPICH_INSTALL_ABS"
+            make -j"$(nproc)"
+            make install
+            popd
+
+            export PATH="${MPICH_INSTALL_ABS}/bin:$PATH:-}"
+            export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
+            export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
+
+            echo "=== wrappers ==="
+            mpicc -show
+            mpif77 -show
+
+            rm -rf "${MPICH_DIR}"
+
+            # Pack RELATIVE to $HOME but destined for $HOME on extract
+            tar -C "$HOME" -cf - "${MPICH_INSTALL_DIR}" | zstd -T0 -6 -o "${MPICH_INSTALL_ZST}"
+            rm -rf "${MPICH_INSTALL_ABS}"
+          fi
+          set +x
+
+      - name: Upload artifacts (fallback for same-run cache miss) # 1m16s (if miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-${{ steps.key.outputs.cache_key }}
+          path: |
+            llvm.tar.zst
+            mpich-install.tar.zst
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Save cache (only if miss) # 21s
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ steps.key.outputs.cache_key }}
+
+  main:
+    needs: prepare-llvm
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        test_case: [
+            "Tools",
+            "Ethier::test_PnPn2_Parallel",
+            "Ethier::test_PnPn_Parallel"
+        ]
+        include:
+          - test_case: "Tools"
+            mpi: no
+      fail-fast: false
+
+    name: "${{ matrix.test_case }}"
+
+    env:
+      TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      CC: ${{ matrix.mpi == 'no' && 'clang' || 'mpicc' }}
+      FC: ${{ matrix.mpi == 'no' && 'flang' || 'mpif77' }}
+      MPICH_CC: clang
+      MPICH_FC: flang
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: apt dependencies
+        shell: bash
+        run: |
+          sudo apt -y update
+          #sudo apt-get install -y wget gnupg lsb-release ca-certificates
+          #wget -q https://apt.llvm.org/llvm.sh
+          #chmod +x llvm.sh
+          #sudo ./llvm.sh "${LLVM_VER}" all
+          #sudo apt-get install -y flang-${LLVM_VER}
+          #sudo apt install -y mpich libmpich-dev python3-pytest
+          #sudo apt-get install -y openmpi-bin libopenmpi-dev python3-pytest
+          sudo apt-get install -y python3-pytest
+
+      - name: Restore cache (preferred) # 15-20s
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            llvm.tar.zst
+            mpich-install.tar.zst
+          key: ${{ needs.prepare-llvm.outputs.cache_key }}
+
+      - name: Download artifacts (fallback when cache miss)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: toolchain-${{ needs.prepare-llvm.outputs.cache_key }}
+          path: .
+
+      - name: Extract & export LLVM
+        shell: bash
+        run: |
+          set -eux
+
+          LLVM_DIR="LLVM-${LLVM_VER}"
+          LLVM_DIR_ABS="$HOME/${LLVM_DIR}"
+          LLVM_TAR_ZST="llvm.tar.zst"
+
+          if [ ! -d "$LLVM_DIR_ABS" ]; then
+            tar --use-compress-program=zstd -xf "${LLVM_TAR_ZST}" -C "$HOME"
+          fi
+          ls -ltra $HOME
+
+          export PATH="${LLVM_DIR_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}"
+          echo "${LLVM_DIR_ABS}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=${LLVM_DIR_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+
+          echo "=== toolchain ==="
+          clang --version
+          flang --version
+          set +x
+
+      - name: Extract & export MPICH
+        shell: bash
+        run: |
+          set -eux
+
+          MPICH_INSTALL_DIR="mpich-install-${MPICH_VER}"
+          MPICH_INSTALL_ABS="$HOME/${MPICH_INSTALL_DIR}"
+          MPICH_INSTALL_ZST="mpich-install.tar.zst"
+
+          if [ ! -d "${MPICH_INSTALL_ABS}" ]; then
+            tar --use-compress-program=zstd -xf "${MPICH_INSTALL_ZST}" -C "$HOME"
+          fi
+          ls -ltra $HOME
+
+          export PATH="${MPICH_INSTALL_ABS}/bin:$PATH"
+          export LD_LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}"
+          export LIBRARY_PATH="${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}"
+          echo "${MPICH_INSTALL_ABS}/bin" >> "$GITHUB_PATH"
+          echo "LD_LIBRARY_PATH=${MPICH_INSTALL_ABS}/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=${MPICH_INSTALL_ABS}/lib:${LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+
+          echo "=== wrappers ==="
+          mpicc -show
+          mpif77 -show
+          set +x
+
+      - name: test
+        shell: bash
+        run: |
+          ulimit -s unlimited
+          pytest-3 -s -v short_tests/NekTests.py::$TEST_CASE
