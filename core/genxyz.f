@@ -1451,22 +1451,23 @@ c-----------------------------------------------------------------------
       ! aspect ratio
       ddmin = 1e20
       ddmax = -1
-      ddavg = 0 
+      ddavg = 0
+      i4 = 4
       do ie = 1,nelt
          ledg(1) = dist_xyzc(1,2,ie)
          ledg(2) = dist_xyzc(1,4,ie)
          ledg(3) = dist_xyzc(2,3,ie)
          ledg(4) = dist_xyzc(4,3,ie)
          if (ndim.eq.3) then
-            ledg(5)  = dist_xyzc(1,5,ie)
-            ledg(6)  = dist_xyzc(2,6,ie)
-            ledg(7)  = dist_xyzc(4,8,ie)
-            ledg(8)  = dist_xyzc(3,7,ie)
+            ledg(i4+1) = dist_xyzc(1,5,ie)
+            ledg(i4+2) = dist_xyzc(2,6,ie)
+            ledg(i4+3) = dist_xyzc(4,8,ie)
+            ledg(i4+4) = dist_xyzc(3,7,ie)
 
-            ledg(9)  = dist_xyzc(5,6,ie)
-            ledg(10) = dist_xyzc(5,8,ie)
-            ledg(11) = dist_xyzc(8,7,ie)
-            ledg(12) = dist_xyzc(6,7,ie)
+            ledg(i4+5) = dist_xyzc(5,6,ie)
+            ledg(i4+6) = dist_xyzc(5,8,ie)
+            ledg(i4+7) = dist_xyzc(8,7,ie)
+            ledg(i4+8) = dist_xyzc(6,7,ie)
          endif
 
          dratio = vlmax(ledg,nedge)/vlmin(ledg,nedge)

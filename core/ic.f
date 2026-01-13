@@ -858,8 +858,10 @@ C
                   enddo
                  endif
                endif
+#if LDIMT>1
                if (ifaxis.and.ifgett) 
      $            call copy(t(1,1,1,1,2),sdmp2(1,1),ntott)
+#endif
             elseif (ifpert.and.ifile.ge.2) then
                j=ifile-1  ! pointer to perturbation field
                if (ifgetu) call copy(vxp(1,j),sdump(1,4),ntotv)

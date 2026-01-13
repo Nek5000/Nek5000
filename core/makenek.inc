@@ -1,5 +1,19 @@
 trap onexit EXIT
 
+is_llvm_flang() {
+    local cmd="$1"
+
+    if ! command -v "$cmd" &> /dev/null; then
+        return 1
+    fi
+
+    if "$cmd" -fc1 -help >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
@@ -217,10 +231,18 @@ case $FCcomp in
                FR8="-r8"
                FF77="-Mfixed"
                ;;
-  *flang*)     FCPP="-Mpreprocess"
-               FR8="-r8"
-               FF77="-Mfixed"
-               ;;
+  *flang*)
+    if is_llvm_flang "$FCcomp"; then
+        FCPP="-cpp"
+        FR8="-fdefault-real-8 -fdefault-double-8"
+        FF77="-w -ffixed-form"
+    else
+        # CLASSIC FLANG (Legacy/PGI-based)
+        FCPP="-Mpreprocess"
+        FR8="-r8"
+        FF77="-Mfixed"
+    fi
+    ;;
   *nvfortran*) FCPP="-Mpreprocess"
                FR8="-r8"
                FF77="-Mfixed"

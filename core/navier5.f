@@ -1519,6 +1519,7 @@ C
       call rzero(dgtq,12)
 c
       if (if3d.or.ifaxis) then
+       i4 = 4
        i = 0
        a = 0
        do j2=js2,jf2,jskip2
@@ -1532,15 +1533,15 @@ c
          v  = visc(j1,j2,1,e)
 c
          s11 = sij(j1,j2,1,1,e)
-         s21 = sij(j1,j2,1,4,e)
-         s31 = sij(j1,j2,1,6,e)
+         s21 = sij(j1,j2,1,i4+0,e)
+         s31 = sij(j1,j2,1,i4+2,e)
 c
-         s12 = sij(j1,j2,1,4,e)
+         s12 = sij(j1,j2,1,i4+0,e)
          s22 = sij(j1,j2,1,2,e)
-         s32 = sij(j1,j2,1,5,e)
+         s32 = sij(j1,j2,1,i4+1,e)
 c
-         s13 = sij(j1,j2,1,6,e)
-         s23 = sij(j1,j2,1,5,e)
+         s13 = sij(j1,j2,1,i4+2,e)
+         s23 = sij(j1,j2,1,i4+1,e)
          s33 = sij(j1,j2,1,3,e)
 c
          dg(1,1) = pm1(j1,j2,1,e)*n1     ! pressure drag
@@ -2111,7 +2112,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      real xt(2**ldim,ldim)
+      real xt(2**3,3)
       real x(lx1,ly1,lz1),y(lx1,ly1,lz1),z(lx1,ly1,lz1)
 
       l = 0
@@ -2236,7 +2237,7 @@ c
       real xm0 (lx1,ly1,lz1,lelt)
       real ym0 (lx1,ly1,lz1,lelt)
       real zm0 (lx1,ly1,lz1,lelt)
-      real sij (lx1,ly1,lz1,3*ldim-3,lelv)
+      real sij (lx1,ly1,lz1,6,lelv)
       real pm1 (lx1,ly1,lz1,lelv)
       real visc(lx1,ly1,lz1,lelv)
 

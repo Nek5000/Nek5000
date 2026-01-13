@@ -684,6 +684,7 @@ c-----------------------------------------------------------------------
       integer*8 vtxo(2**ldim,1), vtxr(2**ldim,1)
       integer nelo, ncut, nblk
       integer e, en, e1,e2,e3,e4,e5,e6,e7,e8
+      integer i4
 
       nblk = ncut**ldim
 
@@ -704,10 +705,11 @@ c-----------------------------------------------------------------------
          vtxo(4,e) = vtxr(4,en+e4)
 
          if (ldim.eq.3) then
-            vtxo(5,e) = vtxr(5,en+e5)
-            vtxo(6,e) = vtxr(6,en+e6)
-            vtxo(7,e) = vtxr(7,en+e7)
-            vtxo(8,e) = vtxr(8,en+e8)
+            i4 = 4
+            vtxo(i4+1,e) = vtxr(i4+1,en+e5)
+            vtxo(i4+2,e) = vtxr(i4+2,en+e6)
+            vtxo(i4+3,e) = vtxr(i4+3,en+e7)
+            vtxo(i4+4,e) = vtxr(i4+4,en+e8)
          endif
       enddo
 
