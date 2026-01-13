@@ -26,7 +26,6 @@ c Particle options
       REAL  LPM_RPARAM(LPM_NPARAM)     ! Specified particle parameters
       COMMON /LPM_PARAM_L/  LPM_RESTART
       LOGICAL LPM_RESTART
-      DATA LPM_RESTART /.false./
 
 c Domain size
       COMMON /LPM_DOMAIN/ LPM_XDRANGE

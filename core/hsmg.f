@@ -1632,7 +1632,7 @@ c     if (param(79).ne.0) mg_lmax = param(79)
       mglx2 = 2*(lx2/4) + 1
       if (lx1.eq.5)  mglx2 = 3
 c     if (lx1.eq.6)  mglx2 = 3
-      if (lx1.le.10) mglx2 = mgn2(lx1)
+      if (lx1.le.10) mglx2 = mgn2(min(lx1,10))
       if (lx1.eq.8)  mglx2 = 4
       if (lx1.eq.8)  mglx2 = 3
 
@@ -2302,7 +2302,7 @@ c     if (param(79).ne.0) mg_h1_lmax = param(79)
       mglx2 = 2*(lx2/4) + 1
       if (lx1.eq.5)  mglx2 = 3
 c     if (lx1.eq.6)  mglx2 = 3
-      if (lx1.le.10) mglx2 = mgn2(lx1)
+      if (lx1.le.10) mglx2 = mgn2(min(lx1,10))
       if (lx1.eq.8)  mglx2 = 4
       if (lx1.eq.8)  mglx2 = 3
 

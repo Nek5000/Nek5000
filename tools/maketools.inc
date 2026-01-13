@@ -1,6 +1,20 @@
 #set -x
 trap onexit EXIT
 
+function is_llvm_flang() {
+    local cmd="$1"
+
+    if ! command -v "$cmd" &> /dev/null; then
+        return 1
+    fi
+
+    if "$cmd" -fc1 -help >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
@@ -93,20 +107,40 @@ fi
 
 PPPO=""
 case $FCcomp in
-  *pgf*)       R8="-r8"
-               CPPF="-Mpreprocess"
+  *pgf*)       FR8="-r8"
+               FCPP="-Mpreprocess"
                BIGMEM="-mcmodel=medium"
                ;;
-  *gfortran*)  R8="-fdefault-real-8 -fdefault-double-8"
-               CPPF="-std=legacy -cpp"
+  *flang*)
+    if is_llvm_flang "$FCcomp"; then
+        FCPP="-cpp"
+        FR8="-fdefault-real-8 -fdefault-double-8"
+        FF77="-w -ffixed-form"
+    else
+        # CLASSIC FLANG (Legacy/PGI-based)
+        FCPP="-Mpreprocess"
+        FR8="-r8" 
+        FF77="-Mfixed"
+    fi 
+    ;;
+  *nvfortran*) FCPP="-Mpreprocess"
+               FR8="-r8"
+               FF77="-Mfixed"
+               ;;
+  *gfortran*)  FR8="-fdefault-real-8 -fdefault-double-8"
+               FCPP="-std=legacy -cpp"
                BIGMEM="-mcmodel=medium"
                ;;
-  *ifort*)     R8="-r8"
-               CPPF="-fpp"
+  *armflang*)  FCPP="-cpp"
+               FR8="-r8"
+               FF77="-std=legacy"
+               ;;
+  *ifort*)     FR8="-r8"
+               FCPP="-fpp"
                BIGMEM="-mcmodel=medium -shared-intel"
                ;;
-  *xlf*)       R8="-qrealsize=8"
-               CPPF="-qsuffix=cpp=f"
+  *xlf*)       FR8="-qrealsize=8"
+               FCPP="-qsuffix=cpp=f"
                BIGMEM="-q64"
                PPPO="-WF,"
                ;;
@@ -152,8 +186,8 @@ export CC=`which $CC`
 export NEK_CFLAGS="$CFLAGS"
 export bin_nek_tools
 export US
-export R8
-export CPPF
+export FR8
+export FCPP
 export BIGMEM
 export LDFLAGS
 function chk_web() {
@@ -244,7 +278,7 @@ else
      fi
 
      export FFLAGS="${NEK_FFLAGS}"
-     export FFLAGS+=" ${CPPF}"
+     export FFLAGS+=" ${FCPP}"
      export FFLAGS+=" ${BIGMEM}"
      export CFLAGS="${NEK_CFLAGS}"
      export CFLAGS+=" ${US}"
@@ -255,7 +289,7 @@ else
         chk_cmake $TOOL
      fi
      if [ "$TOOL" == "exo2nek" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
         chk_web $TOOL
         chk_cmake $TOOL
      fi
@@ -264,26 +298,26 @@ else
         chk_cmake $TOOL
      fi
      if [ "$TOOL" == "gmsh2nek" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "n2to3" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "genmap" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "gencon" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "genbox" ]; then
-       export FFLAGS+=" ${R8}"
+       export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "prenek" ]; then
         export CFLAGS+=" -Dr8"
         chk_x11 $TOOL
      fi
      if [ "$TOOL" == "n2to3co2" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      printf "building $TOOL ... "
 
