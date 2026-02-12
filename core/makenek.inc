@@ -26,28 +26,28 @@ function build_3rdparty() {
   set -o pipefail
 
   cd $SOURCE_ROOT_BLAS
-  FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  VER="$NEK_DEPS_VERSION" FFLAGS="-O0 $FF77 $FFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   cd $SOURCE_ROOT_GSLIB
-  CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+  VER="$NEK_DEPS_VERSION" CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   cd $CASEDIR 
 
   if [ $PARRSB -ne 0 ]; then
      cd $SOURCE_ROOT_PARRSB
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     VER="$NEK_DEPS_VERSION" CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     VER="$NEK_DEPS_VERSION" CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
   if [ $HYPRE -ne 0 ]; then
      cd $SOURCE_ROOT_HYPRE
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
+     VER="$NEK_DEPS_VERSION" CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
   fi
   cd $CASEDIR
 
@@ -88,6 +88,7 @@ function config_nek() {
 : ${PROFILING:=1}
 : ${VISIT:=0}
 : ${PPLIST:=""}
+: ${NEK_DEPS_VERSION:=""}
 
 # first do some checks ...
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then

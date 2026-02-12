@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VER=2.7.0
+: ${VER:="2.7.0"}
 
 PREFIX=sundials
 DIR=${PREFIX}_v${VER}
