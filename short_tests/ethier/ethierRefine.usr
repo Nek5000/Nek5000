@@ -126,67 +126,12 @@ c      if (mod(istep,100).ne.0) return
       call exactu(uxe,uye,uze,xm1,ym1,zm1,n)
       call exactp(pre,xm2,ym2,zm2,n2)
 
-      if (istep.eq.0) then
-
-         ! test history points
-         call hpts
-         close(50)
-
-         if(nid.eq.0) then
-           open(50,file='ethier.his')
-           read(50,*) nhpts
-           do i = 1,nhpts
-              read(50,*) (hxyz(k,i),k=1,ndim)
-           enddo
-
-           err = 0.0
-           do i = 1,nhpts
-              x = hxyz(1,i)
-              y = hxyz(2,i)
-              z = hxyz(ndim,i)
-              read(50,*) tt, ux,uy,uz
-              call exactu(uxe,uye,uze,x,y,z,1)
-              err = max(abs(ux-uxe(1)),err)
-              err = max(abs(uy-uye(1)),err)
-              err = max(abs(uz-uze(1)),err)
-           enddo
-           write(6,*) 'hpts err:', err
-           close(50)
-         endif
-
-         ! test interpolation wrapper
-         nxm = 2 ! mesh is quadratic
-         call interp_setup(intp_h,0.0,nxm,nelt)
-         nint = n
-         call copy (xint,XM1,nint)
-         call copy (yint,YM1,nint)
-         call copy (zint,ZM1,nint)
-         call interp_nfld(uxi,vx,1,xint,yint,zint,nint,
-     $                    iwk,rwk,INTP_NMAX,.true.,intp_h) 
-         call exactu(uxe,uye,uze,xint,yint,zint,nint)
-         call sub2(uxi,uxe,nint)
-         err = glamax(uxi,nint)
-         if (nid.eq.0) write(6,*) 'intp_usr err:', err 
- 
-         ! test processor element mapping 
-         isum = 0
-         do iel = 1,nelv
-            ieg = lglel(iel)
-            isum = isum + ieg 
-         enddo
-         if (nid.eq.0) write(6,*) isum, 'pm0 chksum'
-         if (nid.eq.1) write(6,*) isum, 'pm1 chksum'
-         if (nid.eq.2) write(6,*) isum, 'pm2 chksum'
-
-      endif
-
       call chsign(pre,n2)
       pbar  = glsc2(pr ,bm2,n2)/volvm2
       pbre  = glsc2(pre,bm2,n2)/volvm2
       pbarm = -pbre
       call cadd(pre,pbarm,n2)     !  Make sure pr and pre have same
       call cadd(pre,pbar,n2)      !  average pressure before comparing.
-
 
       if (istep.le.5) then        !  Reset velocity & pressure to eliminate
          call copy (vx,uxe,n)     !  start-up contributions 

@@ -1,10 +1,27 @@
 #set -x
 trap onexit EXIT
 
+function is_llvm_flang() {
+    local cmd="$1"
+
+    if ! command -v "$cmd" &> /dev/null; then
+        return 1
+    fi
+
+    if "$cmd" -fc1 -help >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
-     printf "\nFATAL ERROR occured during compilation!\nCheck $TOOL/build.log for details\n"
+     printf "\nFATAL ERROR occured during compilation!\n"
+     for TOOL in $LIST_ERR ; do
+       printf "Check $TOOL/build.log for details\n"
+     done
   fi
 }
 
@@ -13,8 +30,14 @@ function onexit() {
 : ${bin_nek_tools:=`cd ../bin && pwd`}
 : ${MAXNEL:=150000}
 
-if [ $# -eq 0 ] || [ $1 == '-h' ] || [ $1 == '-help' ]; then
-   echo "Usage: maketools [clean|all|tool(s)]"
+if [ $# -eq 0 ] || [ $1 == '-h' ] || [ $1 == '--help' ]; then
+   echo "Usage: maketools [clean|all|core|tool(s)]"
+   echo "Examples:"
+   echo "  ./maketool all                    # build all tools"
+   echo "  ./maketool core                   # build commonly used tools"
+   echo "  ./maketool n2to3 reatore2         # only build listed tools"
+   echo "  ./maketool clean n2to3 reatore2   # only clean listed tools"
+   echo "  ./maketool clean                  # clean all tools"
    exit 0
 fi
 
@@ -84,20 +107,40 @@ fi
 
 PPPO=""
 case $FCcomp in
-  *pgf*)       R8="-r8"
-               CPPF="-Mpreprocess"
+  *pgf*)       FR8="-r8"
+               FCPP="-Mpreprocess"
                BIGMEM="-mcmodel=medium"
                ;;
-  *gfortran*)  R8="-fdefault-real-8 -fdefault-double-8"
-               CPPF="-std=legacy -cpp"
+  *flang*)
+    if is_llvm_flang "$FCcomp"; then
+        FCPP="-cpp"
+        FR8="-fdefault-real-8 -fdefault-double-8"
+        FF77="-w -ffixed-form"
+    else
+        # CLASSIC FLANG (Legacy/PGI-based)
+        FCPP="-Mpreprocess"
+        FR8="-r8" 
+        FF77="-Mfixed"
+    fi 
+    ;;
+  *nvfortran*) FCPP="-Mpreprocess"
+               FR8="-r8"
+               FF77="-Mfixed"
+               ;;
+  *gfortran*)  FR8="-fdefault-real-8 -fdefault-double-8"
+               FCPP="-std=legacy -cpp"
                BIGMEM="-mcmodel=medium"
                ;;
-  *ifort*)     R8="-r8"
-               CPPF="-fpp"
+  *armflang*)  FCPP="-cpp"
+               FR8="-r8"
+               FF77="-std=legacy"
+               ;;
+  *ifort*)     FR8="-r8"
+               FCPP="-fpp"
                BIGMEM="-mcmodel=medium -shared-intel"
                ;;
-  *xlf*)       R8="-qrealsize=8"
-               CPPF="-qsuffix=cpp=f"
+  *xlf*)       FR8="-qrealsize=8"
+               FCPP="-qsuffix=cpp=f"
                BIGMEM="-q64"
                PPPO="-WF,"
                ;;
@@ -113,9 +156,9 @@ cat > test_underscore.f << _ACEOF
       end
 _ACEOF
 
-$FC -c test_underscore.f 2>&1 >/dev/null 
+$FC -c test_underscore.f 2>&1 >/dev/null
 nm test_underscore.o | grep byte_write_ 1>/dev/null
-if [ $? -eq 0 ]; then 
+if [ $? -eq 0 ]; then
   US="-DUNDERSCORE"
 fi
 \rm test_underscore.* 2>/dev/null
@@ -143,8 +186,8 @@ export CC=`which $CC`
 export NEK_CFLAGS="$CFLAGS"
 export bin_nek_tools
 export US
-export R8
-export CPPF
+export FR8
+export FCPP
 export BIGMEM
 export LDFLAGS
 function chk_web() {
@@ -195,27 +238,37 @@ function chk_list() {
 }
 
 #LIST=`ls -Cd */ | sed 's:\/::g'`
-LIST="genmap gencon genbox n2to3 reatore2 nekmerge prenek postnek nekamg_setup gmsh2nek exo2nek cgns2nek n2to3co2"
-export LIST
+LIST_CORE="genmap genbox n2to3 reatore2 nekmerge"
+LIST_ALL="genmap gencon genbox n2to3 reatore2 nekmerge prenek postnek nekamg_setup gmsh2nek exo2nek cgns2nek n2to3co2"
+LIST_ERR=""
 
 rm -rf build.log
+ierr=0
 if [ "$1" == "clean" ]; then
+   if [ "$#" -gt 1 ]; then
+     LIST=`echo $* | sed 's:\/::g' | sed 's/[^ ]* //'`
+   else
+     LIST=$LIST_ALL
+   fi
    for i in $LIST ; do
+     printf "cleaning $i ... "
      make -C ./$i clean >/dev/null 2>&1
      rm -rf ./$i/build.log
      rm -rf ../bin/$i
-   done 
+     printf "done\n"
+   done
 else
-   export DOALL=''
-   if [ "$1" == "all" ]; then
-      export DOALL=1
-   fi
-   if [ "$1" != "all" ]; then
-      LISTin=`echo $* | sed 's:\/::g'`
-      for TOOL in $LISTin; do
-         chk_list "$LIST" "$TOOL"
+   LIST=""
+   if [ "$1" == "core" ]; then
+      LIST=$LIST_CORE
+   elif [ "$1" == "all" ]; then
+      LIST=$LIST_ALL
+   else
+      LIST_IN=`echo $* | sed 's:\/::g'`
+      for TOOL in $LIST_IN; do
+         chk_list "$LIST_ALL" "$TOOL"
       done
-      LIST=$LISTin
+      LIST=$LIST_IN
    fi
    set -o pipefail
    for TOOL in $LIST ; do
@@ -224,8 +277,8 @@ else
        exit 12
      fi
 
-     export FFLAGS="${NEK_FFLAGS}" 
-     export FFLAGS+=" ${CPPF}"
+     export FFLAGS="${NEK_FFLAGS}"
+     export FFLAGS+=" ${FCPP}"
      export FFLAGS+=" ${BIGMEM}"
      export CFLAGS="${NEK_CFLAGS}"
      export CFLAGS+=" ${US}"
@@ -236,35 +289,35 @@ else
         chk_cmake $TOOL
      fi
      if [ "$TOOL" == "exo2nek" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
         chk_web $TOOL
         chk_cmake $TOOL
      fi
      if [ "$TOOL" == "nekamg_setup" ]; then
         chk_web $TOOL
         chk_cmake $TOOL
-     fi 
+     fi
      if [ "$TOOL" == "gmsh2nek" ]; then
-        export FFLAGS+=" ${R8}"
-     fi	 
-     if [ "$TOOL" == "n2to3" ]; then 
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
+     fi
+     if [ "$TOOL" == "n2to3" ]; then
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "genmap" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "gencon" ]; then
-        export FFLAGS+=" ${R8}"
+        export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "genbox" ]; then
-       export FFLAGS+=" ${R8}"
+       export FFLAGS+=" ${FR8}"
      fi
      if [ "$TOOL" == "prenek" ]; then
         export CFLAGS+=" -Dr8"
         chk_x11 $TOOL
      fi
-     if [ "$TOOL" == "n2to3co2" ]; then 
-        export FFLAGS+=" ${R8}"
+     if [ "$TOOL" == "n2to3co2" ]; then
+        export FFLAGS+=" ${FR8}"
      fi
      printf "building $TOOL ... "
 
@@ -272,9 +325,15 @@ else
        printf "done\n"
      else
        printf "failed\n"
-       export TOOL=$TOOL
-       exit 1
+       LIST_ERR+="$TOOL "
+       ierr=$((ierr+1))
      fi
    done
-   set +o pipefail 
+   if [ $ierr -gt 0 ]; then
+      export LIST_ERR
+      echo "FATAL ERROR: fail to compile $ierr tools: "$LIST_ERR
+      exit 1
+   fi
+
+   set +o pipefail
 fi

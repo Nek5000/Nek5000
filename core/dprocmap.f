@@ -232,7 +232,7 @@ c-----------------------------------------------------------------------
 
       if (n.eq.0) return
 
-      if (nvec.gt.4*lvect) then
+      if (nvec.gt.4*lvec) then
          do i = 1,n-lvec,lvec
             do j = 0,lvec-1
                ipt = i+j

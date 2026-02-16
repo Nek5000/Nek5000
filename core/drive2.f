@@ -54,6 +54,10 @@ c     Set default logicals
       if (lx1.eq.lx2) ifsplit=.true.
 
       if_full_pres = .false.
+      ifcrrs = .true. ! crystal router restart
+      lbrst = min(1024, lelt) ! batch size for restart
+
+      ifjac0_abort = .true. ! abort if initial mesh (rea/re2) is invalid
 
       CALL RZERO (PARAM,200)
 

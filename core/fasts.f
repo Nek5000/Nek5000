@@ -187,10 +187,11 @@ c
           enddo
           enddo
 c
+          iz=1
           do iy=2,ly1-1
           do ix=2,lx1-1
-            x(ix,iy,2    ,ie) = c*x(ix,iy,1  ,ie) + x(ix,iy,2    ,ie)
-            x(ix,iy,lz1-1,ie) = c*x(ix,iy,lz1,ie) + x(ix,iy,lz1-1,ie)
+            x(ix,iy,iz+1 ,ie) = c*x(ix,iy,iz ,ie) + x(ix,iy,iz+1 ,ie)
+            x(ix,iy,nz1-1,ie) = c*x(ix,iy,lz1,ie) + x(ix,iy,nz1-1,ie)
           enddo
           enddo
 c
@@ -234,10 +235,11 @@ c
           enddo
           enddo
 c
+          iz = 1
           do iy=2,ly1-1
           do ix=2,lx1-1
-            x(ix,iy,1  ,ie) = x(ix,iy,2    ,ie)
-            x(ix,iy,lz1,ie) = x(ix,iy,lz1-1,ie)
+            x(ix,iy,iz ,ie) = x(ix,iy,iz+1 ,ie)
+            x(ix,iy,lz1,ie) = x(ix,iy,nz1-1,ie)
           enddo
           enddo
 c
@@ -282,10 +284,11 @@ c
           enddo
           enddo
 c
+          iz = 1
           do iy=2,ly1-1
           do ix=2,lx1-1
-            x(ix,iy,1  ,ie) = x(ix,iy,1  ,ie) + c*x(ix,iy,2    ,ie)
-            x(ix,iy,lz1,ie) = x(ix,iy,lz1,ie) + c*x(ix,iy,lz1-1,ie)
+            x(ix,iy,iz ,ie) = x(ix,iy,iz ,ie) + c*x(ix,iy,iz+1 ,ie)
+            x(ix,iy,lz1,ie) = x(ix,iy,lz1,ie) + c*x(ix,iy,nz1-1,ie)
           enddo
           enddo
 c
@@ -338,9 +341,10 @@ c-----------------------------------------------------------------------
                   l(i,n,k,e)=1
                enddo
             enddo
+            k = 2
             do j=2,n
                do i=2,n
-                  l(i,j,2,e)=1
+                  l(i,j,k,e)=1
                   l(i,j,n,e)=1
                enddo
             enddo
@@ -379,9 +383,10 @@ c     l now holds the count matrix C on the outer pressure nodes
                   w(i,k,2,2,eb)=1.0/l(i+1,n,k+1,e)
                enddo
             enddo
+            k = 2
             do j=1,ly2
                do i=1,lx2
-                  w(i,j,1,3,eb)=1.0/l(i+1,j+1,2,e)
+                  w(i,j,1,3,eb)=1.0/l(i+1,j+1,k,e)
                   w(i,j,2,3,eb)=1.0/l(i+1,j+1,n,e)
                enddo
             enddo
@@ -421,19 +426,20 @@ c-----------------------------------------------------------------------
             do k=1,lz2
                do j=1,ly2
                   x(  1,j,k,e)=w(j,k,1,1,eb)*x(  1,j,k,e)
-                  x(lx2,j,k,e)=w(j,k,2,1,eb)*x(lx2,j,k,e)
+                  x(nx2,j,k,e)=w(j,k,2,1,eb)*x(nx2,j,k,e)
                enddo
             enddo
             do k=1,lz2
                do i=2,lx2-1
                   x(i,  1,k,e)=w(i,k,1,2,eb)*x(i,  1,k,e)
-                  x(i,ly2,k,e)=w(i,k,2,2,eb)*x(i,ly2,k,e)
+                  x(i,ny2,k,e)=w(i,k,2,2,eb)*x(i,ny2,k,e)
                enddo
             enddo
+            k = 1
             do j=2,ly2-1
                do i=2,lx2-1
-                  x(i,j,  1,e)=w(i,j,1,3,eb)*x(i,j,  1,e)
-                  x(i,j,lz2,e)=w(i,j,2,3,eb)*x(i,j,lz2,e)
+                  x(i,j,  k,e)=w(i,j,1,3,eb)*x(i,j,  k,e)
+                  x(i,j,nz2,e)=w(i,j,2,3,eb)*x(i,j,nz2,e)
                enddo
             enddo
          enddo
@@ -442,12 +448,13 @@ c-----------------------------------------------------------------------
             eb = e0 + e
             do j=1,ly2
                x(  1,j,0,e)=w(j,1,1,1,eb)*x(  1,j,0,e)
-               x(lx2,j,0,e)=w(j,1,2,1,eb)*x(lx2,j,0,e)
+               x(nx2,j,0,e)=w(j,1,2,1,eb)*x(nx2,j,0,e)
             enddo
             do i=2,lx2-1
                x(i,  1,0,e)=w(i,1,1,2,eb)*x(i,  1,0,e)
-               x(i,ly2,0,e)=w(i,1,2,2,eb)*x(i,ly2,0,e)
+               x(i,ny2,0,e)=w(i,1,2,2,eb)*x(i,ny2,0,e)
             enddo
          enddo
       endif
+
       end

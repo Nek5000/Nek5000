@@ -4,6 +4,9 @@ writeInterval = 0
 #writeDoublePrecision = yes
 #writeNFiles = 2
 
+[MESH]
+hrefine = 1 # 1=off, >2: refine
+
 [PRESSURE]
 residualtol = 1e-08
 residualproj = no

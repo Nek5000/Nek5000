@@ -461,7 +461,7 @@ c     (i.e.,   rhs(NS) = rhs(NS) + B*lf,  where B is the mass matrix)
 c
       include 'SIZE'
 c
-      real lf(lx1*ly1*lz1*lelv,ldim)
+      real lf(lx1*ly1*lz1*lelv,3)
       real b1(lx1*ly1*lz1*lelv)
       real b2(lx1*ly1*lz1*lelv)
       real b3(lx1*ly1*lz1*lelv)
@@ -1072,16 +1072,17 @@ c      endif
      $                         ,imesh,tolh,nmxhi,3
      $                         ,vproj(1,3),ivproj(1,3),binvm1)
          elseif (ifield.eq.ifldmhd) then  ! B-field
+            i4 = 4
             call hsolve (' BX ',o1,i1,h1,h2,b1mask,vmult
      $                         ,imesh,tolh,nmxhi,1
-     $                         ,vproj(1,4),ivproj(1,4),binvm1)
+     $                         ,vproj(1,i4+0),ivproj(1,i4+0),binvm1)
             call hsolve (' BY ',o2,i2,h1,h2,b2mask,vmult
      $                         ,imesh,tolh,nmxhi,2
-     $                         ,vproj(1,5),ivproj(1,5),binvm1)
+     $                         ,vproj(1,i4+1),ivproj(1,i4+1),binvm1)
             if (if3d)
      $      call hsolve (' BZ ',o3,i3,h1,h2,b3mask,vmult
      $                         ,imesh,tolh,nmxhi,3
-     $                         ,vproj(1,6),ivproj(1,6),binvm1)
+     $                         ,vproj(1,i4+2),ivproj(1,i4+2),binvm1)
          endif
       endif
 C
@@ -1379,13 +1380,16 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             call sub3(wk,vz(1,1,1,e),bz(1,1,1,e),nxyz1)
             call intp_rstd(zm(1,3),wk,lx1,lxd,if3d,0)
 
+            i4 = 4
             do i=1,nxyzd  ! Convert convector (zm) to r-s-t coordinates
                tr(i,1)=
      $            rx(i,1,e)*zm(i,1)+rx(i,2,e)*zm(i,2)+rx(i,3,e)*zm(i,3)
                tr(i,2)=
-     $            rx(i,4,e)*zm(i,1)+rx(i,5,e)*zm(i,2)+rx(i,6,e)*zm(i,3)
+     $            rx(i,i4+0,e)*zm(i,1)+rx(i,i4+1,e)*zm(i,2)+
+     $              rx(i,i4+2,e)*zm(i,3)
                tr(i,3)=
-     $            rx(i,7,e)*zm(i,1)+rx(i,8,e)*zm(i,2)+rx(i,9,e)*zm(i,3)
+     $            rx(i,i4+3,e)*zm(i,1)+rx(i,i4+4,e)*zm(i,2)+
+     $              rx(i,i4+5,e)*zm(i,3)
             enddo
 
 
@@ -1407,14 +1411,16 @@ c           write(6,*) nid,' inside fast',e,nxyz1
             enddo
             call intp_rstd(fz,wk,lx1,lxd,if3d,1) ! Project back to coarse
 
-
+            i4 = 4
             do i=1,nxyzd  ! Convert convector (zp) to r-s-t coordinates
                tr(i,1)=
      $            rx(i,1,e)*zp(i,1)+rx(i,2,e)*zp(i,2)+rx(i,3,e)*zp(i,3)
                tr(i,2)=
-     $            rx(i,4,e)*zp(i,1)+rx(i,5,e)*zp(i,2)+rx(i,6,e)*zp(i,3)
+     $            rx(i,i4+0,e)*zp(i,1)+rx(i,i4+1,e)*zp(i,2)+
+     $              rx(i,i4+2,e)*zp(i,3)
                tr(i,3)=
-     $            rx(i,7,e)*zp(i,1)+rx(i,8,e)*zp(i,2)+rx(i,9,e)*zp(i,3)
+     $            rx(i,i4+3,e)*zp(i,1)+rx(i,i4+4,e)*zp(i,2)+
+     $              rx(i,i4+5,e)*zp(i,3)
             enddo
 
 

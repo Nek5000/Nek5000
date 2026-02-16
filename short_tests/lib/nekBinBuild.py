@@ -29,6 +29,24 @@ def build_tools(
         my_env["CC"] = cc
     my_env["bin_nek_tools"] = tools_bin
 
+    if targets[0] == "core":
+        proc = Popen([maketools_in, "core"], env=my_env, cwd=tools_root, stderr=STDOUT)
+        proc.wait()
+        if proc.returncode != 0:
+            targets = [t for t in os.listdir(tools_root) if "maketools" not in t]
+            for t in targets:
+                logfile = tools_root / t / "build.log"
+                print(logfile, end="")
+                try:
+                    with open(logfile, "r") as file:
+                        text = file.read()
+                    print(":")
+                    print(text)
+                except FileNotFoundError:
+                    print("  (File does not exist)")
+            exit(-1)
+        return
+
     if targets[0] == "all":
         targets = [t for t in os.listdir(tools_root) if "maketools" not in t]
         print("Targets:", targets)
@@ -67,6 +85,8 @@ def build_nek(source_root, usr_file, cwd=None, opts=None, verbose=False):
         my_env["CC"] = _opts.get("CC")
     if _opts.get("PPLIST"):
         my_env["PPLIST"] = _opts.get("PPLIST")
+    if _opts.get("FFLAGS"):
+        my_env["FFLAGS"] = _opts.get("FFLAGS")
 
     makenek_in = Path(source_root) / "bin" / "makenek"
     logfile = Path(cwd) / "build.log"

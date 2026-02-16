@@ -1,5 +1,19 @@
 trap onexit EXIT
 
+is_llvm_flang() {
+    local cmd="$1"
+
+    if ! command -v "$cmd" &> /dev/null; then
+        return 1
+    fi
+
+    if "$cmd" -fc1 -help >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 function onexit() {
   retval=$?
   if [ $retval -gt 0 ] && [ $retval -lt 11 ]; then
@@ -25,12 +39,6 @@ function build_3rdparty() {
   fi
   cd $CASEDIR
 
-  if [ $PARMETIS -ne 0 ]; then
-     cd $SOURCE_ROOT_PARMETIS
-     CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
-  fi
-  cd $CASEDIR
-
   if [ $CVODE -ne 0 ]; then
      cd $SOURCE_ROOT_CVODE
      CFLAGS="-O2 $CFLAGS" ./install 2>&1 | tee -a $CASEDIR/build.log >/dev/null
@@ -48,17 +56,24 @@ function build_3rdparty() {
 }
 
 function clean_3rdparty() {
-  cd $SOURCE_ROOT_BLAS; ./install clean 2>/dev/null
+  if [[ $1 = "clean" ]]; then
+    act="clean"
+  elif [[ $1 = "distclean" ]]; then
+    act="distclean"
+  else
+    echo "clean_3rdparty: Invalid clean mode $1"
+    exit 1
+  fi
+
+  cd $SOURCE_ROOT_BLAS; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_GSLIB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_GSLIB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARRSB; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_PARRSB; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_PARMETIS; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_CVODE; ./install $act 2>/dev/null
   cd $CASEDIR
-  cd $SOURCE_ROOT_CVODE; ./install clean 2>/dev/null
-  cd $CASEDIR
-  cd $SOURCE_ROOT_HYPRE; ./install clean 2>/dev/null
+  cd $SOURCE_ROOT_HYPRE; ./install $act 2>/dev/null
   cd $CASEDIR
 }
 
@@ -79,6 +94,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
   echo "Options and arguments:"
   echo "  <casename>    name of usr file without extension"
   echo "  clean         cleanup build environment"
+  echo "  distclean     cleanup build environment and remove tar files"
   echo "  -build-dep    build dependencies"
   echo ""
   echo "PPLIST config options:" 
@@ -113,8 +129,6 @@ SOURCE_ROOT_GSLIB="$NEK_SOURCE_ROOT/3rd_party/gslib"
 export SOURCE_ROOT_GSLIB
 SOURCE_ROOT_PARRSB="$NEK_SOURCE_ROOT/3rd_party/parRSB"
 export SOURCE_ROOT_PARRSB
-SOURCE_ROOT_PARMETIS="$NEK_SOURCE_ROOT/3rd_party/parMETIS"
-export SOURCE_ROOT_PARMETIS
 SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
@@ -126,12 +140,12 @@ if [ "$1" == "-build-dep" ]; then
   nargs=0
 fi 
 
-if [[ $1 = "clean" ]]; then
+if [[ $1 = "clean" || $1 = "distclean" ]]; then
   while true; do
     read -p "do you want to cleanup all 3rd party dependencies too? [N]" yn
     case $yn in
       [Yy]* )
-        clean_3rdparty; 
+        clean_3rdparty "$1";
         if [ -f makefile ]; then make clean; fi
         break ;;
       * ) 
@@ -217,10 +231,18 @@ case $FCcomp in
                FR8="-r8"
                FF77="-Mfixed"
                ;;
-  *flang*)     FCPP="-Mpreprocess"
-               FR8="-r8"
-               FF77="-Mfixed"
-               ;;
+  *flang*)
+    if is_llvm_flang "$FCcomp"; then
+        FCPP="-cpp"
+        FR8="-fdefault-real-8 -fdefault-double-8"
+        FF77="-w -ffixed-form"
+    else
+        # CLASSIC FLANG (Legacy/PGI-based)
+        FCPP="-Mpreprocess"
+        FR8="-r8"
+        FF77="-Mfixed"
+    fi
+    ;;
   *nvfortran*) FCPP="-Mpreprocess"
                FR8="-r8"
                FF77="-Mfixed"
@@ -305,7 +327,6 @@ PPLIST="${PPLIST}"
 MPIIO=1
 DPROCMAP=0
 PARRSB=0
-PARMETIS=0
 CVODE=0
 HYPRE=0
 MXM_USER="mxm_std.o"
@@ -325,11 +346,6 @@ do
      PARRSB_OPT+=" GSLIBPATH=${SOURCE_ROOT_GSLIB}"
      USR_LFLAGS+=" -L${SOURCE_ROOT_PARRSB}/lib -lparRSB"
      PARRSB_INC="${SOURCE_ROOT_PARRSB}/include"
-   fi
-   if [ "$i" == "PARMETIS" ]; then
-     PARMETIS=1
-     USR_LFLAGS+=" -L$SOURCE_ROOT_PARMETIS/lib -lparmetis -lmetis"
-     METIS_INC="$SOURCE_ROOT_PARMETIS/include"
    fi
    if [ "$i" == "CVODE" ]; then 
      CVODE=1
@@ -476,14 +492,6 @@ if [ $HYPRE -ne 0 ]; then
   mv .makefile.tmp .makefile
 fi
 
-if [ $PARMETIS -ne 0 ]; then
-  sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${METIS_INC}:" \
-      -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
-      .makefile > .makefile.tmp
-
-  mv .makefile.tmp .makefile
-fi
-
 if [ $PARRSB -ne 0 ]; then
   sed -e "s:^PARRSB_IFLAGS[ ]*=.*:PARRSB_IFLAGS\:=-I${PARRSB_INC}:" \
       -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \
@@ -552,6 +560,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'lxo' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lxo' >> SIZE
      echo '      parameter(lxo   = lx1) ! max output grid size (lxo>=lx1)' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'ax1' ; then
@@ -564,6 +573,7 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
      cat SIZE | grep -iv lxs > SIZE.x; mv SIZE.x SIZE  # Clean existing SIZE file of old version
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lxs,lys,lzs' >> SIZE
      echo '      parameter (lxs=1,lys=lxs,lzs=(lxs-1)*(ldim-2)+1) !New Pressure Preconditioner' >> SIZE
 
   fi
@@ -576,29 +586,40 @@ if ! cat SIZE | grep -q 'SIZE.inc' ; then
   if ! cat SIZE | grep -qi 'lfdm' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lfdm' >> SIZE
      echo '      parameter (lfdm=0)  ! == 1 for fast diagonalization method' >> SIZE
   fi
   if ! cat SIZE | grep -qi 'nsessmax' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nsessmax' >> SIZE
      echo '      parameter (nsessmax=1)  ! max sessions to NEKNEK' >> SIZE
   fi
   if ! cat SIZE | grep -qi 'nmaxl_nn' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nmaxl_nn' >> SIZE
      echo '      parameter (nmaxl_nn=' >> SIZE
      echo '     $          min(1+(nsessmax-1)*2*ldim*lxz*lelt,2*ldim*lxz*lelt))' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'nfldmax_nn' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nfldmax_nn' >> SIZE
      echo '      parameter (nfldmax_nn=' >> SIZE
      echo '     $          min(1+(nsessmax-1)*(ldim+1+ldimt),ldim+1+ldimt))' >>SIZE
   fi
   if ! cat SIZE | grep -qi 'nio' ; then
      echo >>SIZE
      echo 'c automatically added by makenek' >>SIZE
+     echo '      integer nio' >> SIZE
      echo '      common/IOFLAG/nio  ! for logfile verbosity control' >> SIZE
+  fi
+  if ! cat SIZE | grep -qi 'lhref' ; then
+     echo >>SIZE
+     echo 'c automatically added by makenek' >>SIZE
+     echo '      integer lhref' >> SIZE
+     echo '      parameter (lhref=10)' >> SIZE
   fi
 fi
 
@@ -623,7 +644,7 @@ if [ -f .state ]; then
         read -p "do you want to rebuild all 3rd party dependencies too? [N]" yn
         case $yn in
           [Yy]* )
-            clean_3rdparty;
+            clean_3rdparty "clean";
             break ;;
           * )
            break ;;

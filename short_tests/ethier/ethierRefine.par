@@ -1,0 +1,27 @@
+[GENERAL]
+polynomialorder = 7
+pnpnformulation = yes
+minnumprocesses = 1
+maxnumhistorypoints = 1000
+timestepper = bdf3 #bdf2
+writeinterval = 0
+numsteps = 2000
+dt = 5e-5
+
+[MESH]
+hrefine = 2
+
+[PROBLEMTYPE]
+equation = incompNS
+
+[PRESSURE]
+preconditioner = semg_xxt
+residualtol = 1e-08
+residualproj = no
+
+[VELOCITY]
+residualtol = 1e-12
+residualproj = no
+density = 1
+viscosity = -10
+

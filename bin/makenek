@@ -56,7 +56,7 @@ echo "using source path: $NEK_SOURCE_ROOT"
 VERMAKENEK="19.0.1"
 set +a -e
 $NEK_SOURCE_ROOT/bin/nekconfig $@
-if [[ $1 != "clean" ]]; then
+if [[ $1 != "clean" && $1 != "distclean" ]]; then
  $NEK_SOURCE_ROOT/bin/nekconfig -build-dep
  set -o pipefail
  touch $1.usr 

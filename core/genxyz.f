@@ -1434,12 +1434,16 @@ c     it too should be updated.
       return
       end
 c-----------------------------------------------------------------------
-      subroutine mesh_metrics
+      subroutine mesh_metrics(ifprint)
       include 'SIZE'
       include 'TOTAL'
 
       parameter(nedge = 4 + 8*(ldim-2))
       real ledg(nedge)
+      logical ifprint
+
+      real elem_metric
+      common /msh_metrics/ elem_metric(3,3)
 
       nxyz = nx1*ny1*nz1
       ntot = nxyz*nelt
@@ -1447,22 +1451,23 @@ c-----------------------------------------------------------------------
       ! aspect ratio
       ddmin = 1e20
       ddmax = -1
-      ddavg = 0 
+      ddavg = 0
+      i4 = 4
       do ie = 1,nelt
          ledg(1) = dist_xyzc(1,2,ie)
          ledg(2) = dist_xyzc(1,4,ie)
          ledg(3) = dist_xyzc(2,3,ie)
          ledg(4) = dist_xyzc(4,3,ie)
          if (ndim.eq.3) then
-            ledg(5)  = dist_xyzc(1,5,ie)
-            ledg(6)  = dist_xyzc(2,6,ie)
-            ledg(7)  = dist_xyzc(4,8,ie)
-            ledg(8)  = dist_xyzc(3,7,ie)
+            ledg(i4+1) = dist_xyzc(1,5,ie)
+            ledg(i4+2) = dist_xyzc(2,6,ie)
+            ledg(i4+3) = dist_xyzc(4,8,ie)
+            ledg(i4+4) = dist_xyzc(3,7,ie)
 
-            ledg(9)  = dist_xyzc(5,6,ie)
-            ledg(10) = dist_xyzc(5,8,ie)
-            ledg(11) = dist_xyzc(8,7,ie)
-            ledg(12) = dist_xyzc(6,7,ie)
+            ledg(i4+5) = dist_xyzc(5,6,ie)
+            ledg(i4+6) = dist_xyzc(5,8,ie)
+            ledg(i4+7) = dist_xyzc(8,7,ie)
+            ledg(i4+8) = dist_xyzc(6,7,ie)
          endif
 
          dratio = vlmax(ledg,nedge)/vlmin(ledg,nedge)
@@ -1503,7 +1508,17 @@ c-----------------------------------------------------------------------
       dxmax = glmax(ddmax,1)
       dxavg = glsum(ddavg,1)/nelgt 
 
-      if (nid.eq.0) then
+      elem_metric(1,1) = dxmin
+      elem_metric(2,1) = dxmax
+      elem_metric(3,1) = 0.0
+      elem_metric(1,2) = dsjmin
+      elem_metric(2,2) = dsjmax
+      elem_metric(3,2) = dsjavg
+      elem_metric(1,3) = darmin
+      elem_metric(2,3) = darmax
+      elem_metric(3,3) = daravg
+
+      if (nid.eq.0.AND.ifprint) then
          write(6,*) 'mesh metrics:'
          write(6,'(A,1p2E9.2)') ' GLL grid spacing min/max    :',
      $   dxmin,dxmax

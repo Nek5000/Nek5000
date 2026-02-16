@@ -1772,7 +1772,7 @@ c-----------------------------------------------------------------------
             i = 1 + ((lx1-1)*(ic-1))/(nxc-1)
             mask(1,ic,jc,kc,e) = v1mask(i,j,k,e)
             mask(2,ic,jc,kc,e) = v2mask(i,j,k,e)
-            mask(3,ic,jc,kc,e) = v3mask(i,j,k,e)
+            mask(ndim,ic,jc,kc,e) = v3mask(i,j,k,e)
          enddo
          enddo
          enddo
@@ -1860,8 +1860,8 @@ c     real    a(ncl,ldim,ncl,ldim,1),h1(1),h2(1)
 
             a(1,i,k,j,e)=vlsc2(b(1,i),a1(1,e),nxyz)  ! bi^T * A^e * bj
             a(2,i,k,j,e)=vlsc2(b(1,i),a2(1,e),nxyz)  ! bi^T * A^e * bj
-            if (if3d)
-     $      a(3,i,k,j,e)=vlsc2(b(1,i),a3(1,e),nxyz)  ! bi^T * A^e * bj
+            if (ldim.eq.3)
+     $      a(ldim,i,k,j,e)=vlsc2(b(1,i),a3(1,e),nxyz)  ! bi^T * A^e * bj
 
          enddo
          enddo
@@ -2040,7 +2040,7 @@ c
       real au(1),av(1),aw(1),u(1),v(1),w(1),h1(1),h2(1)
 
       parameter (l=lx1*ly1*lz1)
-      real ur(l,ldim,ldim)
+      real ur(l,3,3)
 
       integer e,p
 
@@ -2522,13 +2522,13 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       m   = n*ldim ! vector length
       nel = nelfld(ifld)
 
-      call axhmsf   (b(1,1,k),b(1,2,k),b(1,3,k)
-     $              ,x(1,1,k),x(1,2,k),x(1,3,k),h1,h2,matmod)
-      call rmask    (b(1,1,k),b(1,2,k),b(1,3,k),nel)
-      call opdssum  (b(1,1,k),b(1,2,k),b(1,3,k))
+      call axhmsf   (b(1,1,k),b(1,2,k),b(1,ndim,k)
+     $              ,x(1,1,k),x(1,2,k),x(1,ndim,k),h1,h2,matmod)
+      call rmask    (b(1,1,k),b(1,2,k),b(1,ndim,k),nel)
+      call opdssum  (b(1,1,k),b(1,2,k),b(1,ndim,k))
 
-      xax0 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,3,k)
-     $                  ,x(1,1,k),x(1,2,k),x(1,3,k),wt)
+      xax0 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,ndim,k)
+     $                  ,x(1,1,k),x(1,2,k),x(1,ndim,k),wt)
       ierr = 3
 
       if (xax0.le.0.and.nio.eq.0)write(6,*)istep,ierr,k,xax0,'Proj3 ERR'
@@ -2537,10 +2537,10 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       s = 0.
       do j=1,k-1! Modifed Gram-Schmidt
 
-        betaj = ( op_vlsc2_wt(b(1,1,j),b(1,2,j),b(1,3,j)
-     $                       ,x(1,1,k),x(1,2,k),x(1,3,k),wt)
-     $          + op_vlsc2_wt(b(1,1,k),b(1,2,k),b(1,3,k)
-     $                       ,x(1,1,j),x(1,2,j),x(1,3,j),wt))/2.
+        betaj = ( op_vlsc2_wt(b(1,1,j),b(1,2,j),b(1,ndim,j)
+     $                       ,x(1,1,k),x(1,2,k),x(1,ndim,k),wt)
+     $          + op_vlsc2_wt(b(1,1,k),b(1,2,k),b(1,ndim,k)
+     $                       ,x(1,1,j),x(1,2,j),x(1,ndim,j),wt))/2.
         betam = -glsum(betaj,1)
         call add2s2 (x(1,1,k),x(1,1,j),betam,m) ! Full-vector-subtract
         call add2s2 (b(1,1,k),b(1,1,j),betam,m) !
@@ -2550,8 +2550,8 @@ c     Orthonormalize the kth element of X against x_j, j < k.
       enddo
 
       xax1 = xax0-s
-      xax2 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,3,k)
-     $                  ,x(1,1,k),x(1,2,k),x(1,3,k),wt)
+      xax2 = op_glsc2_wt(b(1,1,k),b(1,2,k),b(1,ndim,k)
+     $                  ,x(1,1,k),x(1,2,k),x(1,ndim,k),wt)
       scale = xax2
 
       eps  = 1.e-8

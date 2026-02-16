@@ -2348,7 +2348,7 @@ c     -------------------------------------------------
       endif
 
 c     Quick check on maximum #dofs:
-      m    = nxyz*nelt
+      m    = nxyz*nel
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve + ngvs  ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
@@ -2521,7 +2521,7 @@ c
       endif
 
 c     Quick check on maximum #dofs:
-      m    = nxyz*nelt
+      m    = nxyz*nel
       ngvm = i8glmax(glo_num,m)
       ngvv = ngvv + ngve         ! number of unique ids w/o interior 
       ngvi = ngvi + ngvv         ! total number of unique ids 
