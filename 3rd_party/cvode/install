@@ -1,24 +1,32 @@
 #!/bin/bash
 set -e
 
-VER=2.7.0
+: ${NEK_DEPS_LOCAL_SRC:=0}
+: ${VER:="2.7.0"}
 
 PREFIX=sundials
 DIR=${PREFIX}_v${VER}
 STAMP_FILE=install.stamp
 ROOT=$PWD
 
+# use existing local src
+if [[ $NEK_DEPS_LOCAL_SRC -eq 1 ]]; then
+  DIR=${PREFIX}
+  VER="local"
+fi
+
 clean() {
-  rm -rf "$DIR/build" lib include $PREFIX $STAMP_FILE 2>/dev/null
+  rm -rf "$DIR/build" lib include $STAMP_FILE 2>/dev/null || true
+  [ -L $PREFIX ] && rm -f -- $PREFIX 2>/dev/null || true # soft link only
 }
 
 distclean() {
   clean
-  rm -rf ${PREFIX}_v* *.tar.gz 2>/dev/null
+  rm -rf ${PREFIX} ${PREFIX}_v* *.tar.gz 2>/dev/null || true
 }
 
 fetch() {
-  rm -rf $DIR 2>/dev/null
+  rm -rf $DIR 2>/dev/null || true
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/LLNL/sundials/archive/refs/tags/v$VER.tar.gz
 }
 
@@ -53,13 +61,15 @@ if [ -f ./lib/libsundials_fcvode.a ]; then
   exit 0
 fi
 
-if [ ! -f v$VER.tar.gz ]; then
-  fetch
-fi
+if [[ $NEK_DEPS_LOCAL_SRC -eq 0 ]]; then
+  if [ ! -f v$VER.tar.gz ]; then
+    fetch
+  fi
 
-if [ ! -d $DIR ]; then
-  mkdir $DIR
-  tar -zxvf v$VER.tar.gz -C $DIR --strip-components=1
+  if [ ! -d $DIR ]; then
+    mkdir $DIR
+    tar -zxvf v$VER.tar.gz -C $DIR --strip-components=1
+  fi
 fi
 
 cd $DIR
@@ -89,7 +99,9 @@ set +x
 make install -j4
 
 cd $ROOT
-ln -sfn $DIR/ $PREFIX
+if [[ $NEK_DEPS_LOCAL_SRC -eq 0 ]]; then
+  ln -sfn $DIR/ $PREFIX
+fi
 
 if [ "$?" -eq 0 ]; then
   cd $ROOT
