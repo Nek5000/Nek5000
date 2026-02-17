@@ -16,17 +16,17 @@ if [[ $NEK_DEPS_LOCAL_SRC -eq 1 ]]; then
 fi
 
 clean() {
-  rm -rf "$DIR/build" lib include $STAMP_FILE 2>/dev/null
-  [ -L folder ] && rm -f $PREFIX 2>/dev/null # soft link only
+  rm -rf "$DIR/build" lib include $STAMP_FILE 2>/dev/null || true
+  [ -L $PREFIX ] && rm -f -- $PREFIX 2>/dev/null || true # soft link only
 }
 
 distclean() {
   clean
-  rm -rf ${PREFIX} ${PREFIX}_v* *.tar.gz 2>/dev/null
+  rm -rf ${PREFIX} ${PREFIX}_v* *.tar.gz 2>/dev/null || true
 }
 
 fetch() {
-  rm -rf $DIR 2>/dev/null
+  rm -rf $DIR 2>/dev/null || true
   wget --no-check-certificate -O v$VER.tar.gz https://github.com/hypre-space/hypre/archive/v$VER.tar.gz
 }
 
