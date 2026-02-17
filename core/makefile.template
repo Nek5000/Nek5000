@@ -20,7 +20,6 @@ USR=
 USR_LFLAGS=
 
 MPI=0 
-DPROCMAP=0
 VISIT=0
 
 VISIT_IFLAGS=
@@ -30,6 +29,8 @@ GSLIB_IFLAGS=
 PARRSB_IFLAGS=
 
 ################################################################################
+
+PPS+=${PPLIST}
 
 PPS_F = $(patsubst %,$(PPPO)-D%,$(PPS))
 PPS_C = $(patsubst %,-D%,$(PPS))
@@ -53,7 +54,7 @@ finiparser.o iniparser.o dictionary.o \
 hpf.o hrefine.o \
 fcrs.o crs_xxt.o crs_amg.o \
 fem_amg_preco.o crs_hypre.o \
-partitioner.o
+partitioner.o dprocmap.o
 ################################################################################
 # MXM 
 MXM =  
@@ -65,10 +66,10 @@ ifeq ($(MPI),0)
 endif
 
 $(info $(shell mkdir -p $(OBJDIR)))
-DUMMY:= $(shell cp $S/core/PARALLEL.default $(OBJDIR)/PARALLEL 2>/dev/null)
-ifeq ($(DPROCMAP),1)
-	CORE := ${CORE} dprocmap.o
- 	DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $(OBJDIR)/PARALLEL 2>/dev/null)
+ifeq ($(filter -DDPROCMAP,$(PPS_F)),)
+  DUMMY:= $(shell cp $S/core/PARALLEL.default $(OBJDIR)/PARALLEL 2>/dev/null)
+else
+  DUMMY:= $(shell cp $S/core/PARALLEL.dprocmap $(OBJDIR)/PARALLEL 2>/dev/null)
 endif
 
 ifneq ($(VISIT),0)

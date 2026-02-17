@@ -325,7 +325,6 @@ PPLIST="${PPLIST}"
 
 # add user defined preprocessor symbols
 MPIIO=1
-DPROCMAP=0
 PARRSB=0
 CVODE=0
 HYPRE=0
@@ -336,9 +335,6 @@ for i in $PPLIST
 do
    if [ "$i" == "NOMPIIO" ]; then
      MPIIO=0
-   fi
-   if [ "$i" == "DPROCMAP" ]; then
-     DPROCMAP=1
    fi
    if [ "$i" == "PARRSB" ]; then
      PARRSB=1
@@ -450,7 +446,6 @@ sed -e "s:^FC[ ]*=.*:FC=$FC:" \
 -e "s/^MPI[ ]*=.*/MPI=$MPI/" \
 -e "s/^CVODE[ ]*=.*/CVODE=$CVODE/" \
 -e "s:^GSLIB_IFLAGS[ ]*=.*:GSLIB_IFLAGS\:=${GSLIB_IFLAGS}:" \
--e "s/^DPROCMAP[ ]*=.*/DPROCMAP=${DPROCMAP}/" \
 -e "s/^VISIT[ ]*=.*/VISIT=${VISIT}/" \
 -e "s:^USR[ ]*=.*:USR=$USR:" \
 -e "s:^USR_LFLAGS[ ]*=.*:USR_LFLAGS=$USR_LFLAGS:" \

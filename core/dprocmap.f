@@ -1,3 +1,64 @@
+      integer function ibsearch(a,n,k)      !     P. 88-89, NUMERICAL RECIPES
+      include 'SIZE'
+      include 'PARALLEL'
+      integer a(n),n,k
+
+      ibsearch = 0
+
+      if (n.eq.0) return
+
+      ilo=1
+      ihi=n
+
+        lcount = 0
+    1   if ((ihi-ilo).gt.1) then
+           lcount = lcount + 1
+           i=(ihi+ilo)/2
+           if (a(i).eq.k) goto 10
+           if (a(i).gt.k) then
+              ihi=i
+           else
+              ilo=i
+           endif
+           goto 1
+        endif
+
+      return
+
+   10 ibsearch = i
+
+      return
+      end
+c-----------------------------------------------------------------------
+      integer function lsearch_ur(a,n,k)
+
+      integer a(n), n, k
+      parameter(lvec = 8) ! unroll factor
+
+      lsearch_ur = 0
+      ipt        = 0
+
+      if (n.eq.0) return
+
+      if (nvec.gt.4*lvect) then
+         do i = 1,n-lvec,lvec
+            do j = 0,lvec-1
+               ipt = i+j
+               if (a(ipt).eq.k) lsearch_ur = ipt
+            enddo
+            if (lsearch_ur.gt.0) return
+         enddo
+      endif
+
+
+      do j = ipt+1,n
+         if (a(j).eq.k) lsearch_ur = j
+         if (lsearch_ur.gt.0) return
+      enddo
+
+      return
+      end
+
 #ifdef DPROCMAP
 c-----------------------------------------------------------------------
 c
@@ -186,67 +247,6 @@ c-----------------------------------------------------------------------
          nids = mod(eg,np) - 1
          il = nstar + 1
       endif
-
-      return
-      end
-c-----------------------------------------------------------------------
-      integer function ibsearch(a,n,k)      !     P. 88-89, NUMERICAL RECIPES
-      include 'SIZE'
-      include 'PARALLEL'
-      integer a(n),n,k
-
-      ibsearch = 0
-
-      if (n.eq.0) return
-
-      ilo=1
-      ihi=n
-
-        lcount = 0
-    1   if ((ihi-ilo).gt.1) then
-           lcount = lcount + 1
-           i=(ihi+ilo)/2
-           if (a(i).eq.k) goto 10
-           if (a(i).gt.k) then
-              ihi=i
-           else
-              ilo=i
-           endif
-           goto 1
-        endif
-
-      return
-
-   10 ibsearch = i
-
-      return
-      end
-c-----------------------------------------------------------------------
-      integer function lsearch_ur(a,n,k)
-
-      integer a(n), n, k
-      parameter(lvec = 8) ! unroll factor
-
-      lsearch_ur = 0
-      ipt        = 0
-
-      if (n.eq.0) return
-
-      if (nvec.gt.4*lvec) then
-         do i = 1,n-lvec,lvec
-            do j = 0,lvec-1
-               ipt = i+j
-               if (a(ipt).eq.k) lsearch_ur = ipt
-            enddo
-            if (lsearch_ur.gt.0) return
-         enddo
-      endif
-
-
-      do j = ipt+1,n
-         if (a(j).eq.k) lsearch_ur = j
-         if (lsearch_ur.gt.0) return
-      enddo
 
       return
       end
