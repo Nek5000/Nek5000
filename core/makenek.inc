@@ -88,6 +88,7 @@ function config_nek() {
 : ${PROFILING:=1}
 : ${VISIT:=0}
 : ${PPLIST:=""}
+: ${NEK_DEPS_LOCAL_SRC:=0}
 
 # first do some checks ...
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$PPLIST" == "?" ]; then
@@ -133,6 +134,7 @@ SOURCE_ROOT_CVODE="$NEK_SOURCE_ROOT/3rd_party/cvode"
 export SOURCE_ROOT_CVODE
 SOURCE_ROOT_HYPRE="$NEK_SOURCE_ROOT/3rd_party/hypre"
 export SOURCE_ROOT_HYPRE
+export NEK_DEPS_LOCAL_SRC
 
 NODEP=1
 if [ "$1" == "-build-dep" ]; then
