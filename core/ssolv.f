@@ -493,18 +493,18 @@ C--------------------------------------------------------------------
       COMMON /CPRINT/ IFPRINT
       LOGICAL         IFPRINT
 C
-      COMMON /SCRSS2/ DV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrss2_ssolv/ DV1 (LX1,LY1,LZ1,LELV)
      $ ,              DV2 (LX1,LY1,LZ1,LELV)
      $ ,              DV3 (LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/  W1  (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_ssolv/  W1  (LX1,LY1,LZ1,LELV)
      $ ,              W2  (LX1,LY1,LZ1,LELV)
      $ ,              W3  (LX1,LY1,LZ1,LELV)
      $ ,              BDIVV(LX2,LY2,LZ2,LELV)
-      COMMON /SCRMG/  T1  (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_ssolv/  T1  (LX1,LY1,LZ1,LELV)
      $ ,              T2  (LX1,LY1,LZ1,LELV)
      $ ,              T3  (LX1,LY1,LZ1,LELV)
      $ ,              DIVV(LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/  H1  (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_ssolv/  H1  (LX1,LY1,LZ1,LELV)
      $ ,              H2  (LX1,LY1,LZ1,LELV)
 C
       CALL OPSUB3 (DV1,DV2,DV3,VX,VY,VZ,VXLAG,VYLAG,VZLAG)
@@ -577,10 +577,10 @@ C----------------------------------------------------------------------
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
       INCLUDE 'STEADY'
-      COMMON /SCRUZ/  DELTAT (LX1,LY1,LZ1,LELT)
+      COMMON /scruz_ssolv/  DELTAT (LX1,LY1,LZ1,LELT)
      $ ,              WA     (LX1,LY1,LZ1,LELT)
      $ ,              WB     (LX1,LY1,LZ1,LELT)
-      COMMON /SCRVH/  H1     (LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_ssolv/  H1     (LX1,LY1,LZ1,LELT)
      $ ,              H2     (LX1,LY1,LZ1,LELT)
       COMMON /CPRINT/ IFPRINT
       LOGICAL         IFPRINT
@@ -725,7 +725,7 @@ C
       INCLUDE 'SOLN'
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
-      COMMON /SCRMG/ DIVFLD (LX2,LY2,LZ2,LELV)
+      COMMON /scrmg_ssolv/ DIVFLD (LX2,LY2,LZ2,LELV)
      $ ,             WORK   (LX2,LY2,LZ2,LELV)
       NTOT2 = lx2*ly2*lz2*NELV
       CALL OPDIV   (DIVFLD,VX,VY,VZ)
@@ -782,14 +782,14 @@ C
 C--------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
-      COMMON /SCRNS/ W1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_ssolv/ W1    (LX1,LY1,LZ1,LELV)
      $ ,             W2    (LX1,LY1,LZ1,LELV)
      $ ,             W3    (LX1,LY1,LZ1,LELV)
      $ ,             DV1   (LX1,LY1,LZ1,LELV)
      $ ,             DV2   (LX1,LY1,LZ1,LELV)
      $ ,             DV3   (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_ssolv/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 C
       IF (NIO.EQ.0) WRITE(6,5)

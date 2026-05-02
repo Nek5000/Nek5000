@@ -9,7 +9,7 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       include 'CTIMER'
 
       logical  if_conv_std
-      common /SCRUZ/ w1(lx1,ly1,lz1,lelt)
+      common /scruz_makeq/ w1(lx1,ly1,lz1,lelt)
 
       nxyz = lx1*ly1*lz1
       ntot = nxyz*nelv

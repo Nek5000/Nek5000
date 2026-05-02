@@ -40,22 +40,22 @@ c
       REAL*8 dnekclock,t0
 c
       parameter (          n_tri = 7*ltotd )
-      common /scrns/  tri (n_tri)
+      common /scrns_navier6/  tri (n_tri)
       integer         tri,elem
 c
-      common /screv/ x(2*ltotd)
-      common /scrvh/ y(2*ltotd)
-      common /scrch/ z(2*ltotd)
+      common /screv_navier6/ x(2*ltotd)
+      common /scrvh_navier6/ y(2*ltotd)
+      common /scrch_navier6/ z(2*ltotd)
 c
-      common /ctmp0/ nv_to_t(2*ltotd)
+      common /ctmp0_navier6/ nv_to_t(2*ltotd)
 c
       parameter (lia = ltotd - 2 - 2*lelt)
-      common /scrcg/ ntri(lelt+1),nmask(lelt+1)
+      common /scrcg_navier6/ ntri(lelt+1),nmask(lelt+1)
      $             , ia(lia)
 c
-      common /scruz/ color   (4*ltotd)
-      common /scrmg/ ddmask  (4*ltotd)
-      common /ctmp1/ mask    (4*ltotd)
+      common /scruz_navier6/ color   (4*ltotd)
+      common /scrmg_navier6/ ddmask  (4*ltotd)
+      common /ctmp1_navier6/ mask    (4*ltotd)
 
       parameter(lxx=lx1*lx1, levb=lelv+lbelv)
       common /fastd/  df(lx1*ly1*lz1,levb)
@@ -156,7 +156,7 @@ c
       real p(lx1,ly1,lz1,1)
       integer ce,cf
 c
-      common /ctmp0/ w1(lx1,ly1),w2(lx1,ly1)
+      common /ctmp0_navier6/ w1(lx1,ly1),w2(lx1,ly1)
 c
 c     First, copy local geometry to temporary, expanded, arrays
 c

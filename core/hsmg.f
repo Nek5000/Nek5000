@@ -787,7 +787,7 @@ c----------------------------------------------------------------------
       
       include 'SIZE'
       parameter(lxm=lx1+2)
-      common /ctmp0/ b(2*lxm*lxm),w(2*lxm*lxm)
+      common /ctmp0_hsmg/ b(2*lxm*lxm),w(2*lxm*lxm)
       
       call hsmg_setup_fast1d_a(s,lbc,rbc,ll,lm,lr,ah,n)
       call hsmg_setup_fast1d_b(b,lbc,rbc,ll,lm,lr,bh,n)
@@ -1390,8 +1390,8 @@ c----------------------------------------------------------------------
 c     common /quick/ ecrs  (lx2*ly2*lz2*lelv)  ! quick work array
 c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
 
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
+      common /scrhi_hsmg/ h2inv (lx1,ly1,lz1,lelv)
+      common /scrvh_hsmg/ h1    (lx1,ly1,lz1,lelv),
      $               h2    (lx1,ly1,lz1,lelv)
       
       integer ilstep,iter
@@ -1868,11 +1868,11 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
       include 'CTIMER'
       include 'PARALLEL'
       
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv),
+      common /scrhi_hsmg/ h2inv (lx1,ly1,lz1,lelv)
+      common /scrvh_hsmg/ h1    (lx1,ly1,lz1,lelv),
      $               h2    (lx1,ly1,lz1,lelv)
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrmg/ e(2*lt),w(lt),r(lt)
+      common /scrmg_hsmg/ e(2*lt),w(lt),r(lt)
       integer p_msk,p_b
       logical if_hybrid
 
@@ -2024,7 +2024,7 @@ c
       logical ifh2
 
       parameter (lxyz=lx1*ly1*lz1)
-      common /ctmp0/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp0_hsmg/ ur(lxyz),us(lxyz),ut(lxyz)
 
       integer e
 
@@ -2236,8 +2236,8 @@ c----------------------------------------------------------------------
       include 'TOTAL'
       include 'HSMG'
 
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelt)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelt),
+      common /scrhi_hsmg/ h2inv (lx1,ly1,lz1,lelt)
+      common /scrvh_hsmg/ h1    (lx1,ly1,lz1,lelt),
      $               h2    (lx1,ly1,lz1,lelt)
 
       integer p_h1,p_h2,p_g,p_b,p_msk
@@ -2514,7 +2514,7 @@ c----------------------------------------------------------------------
 
 c     As a first pass, rely on the cheesy common-block interface to get h1
 
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_hsmg/ h1    (lx1,ly1,lz1,lelv)
      $             , h2    (lx1,ly1,lz1,lelv)
      $             , h2inv (lx1,ly1,lz1,lelv)
 
@@ -2553,7 +2553,7 @@ c-----------------------------------------------------------------------
 
 c     As a first pass, rely on the cheesy common-block interface to get h2
 
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_hsmg/ h1    (lx1,ly1,lz1,lelv)
      $             , h2    (lx1,ly1,lz1,lelv)
      $             , h2inv (lx1,ly1,lz1,lelv)
 
@@ -2724,7 +2724,7 @@ c-----------------------------------------------------------------------
       real b(1),g(ng,1),wt(1),wk(1)
       logical ifinv
 
-      common /ctmp0/ wi(2*lx1+4)
+      common /ctmp0_hsmg/ wi(2*lx1+4)
 
       n = nx*ny*nz
 
@@ -2788,7 +2788,7 @@ c-----------------------------------------------------------------------
       include 'TSTEP'  ! nelfld
 
       integer p_g,p_b,e
-      common /ctmp1/ w(lx1*ly1*lz1*lelt*2)
+      common /ctmp1_hsmg/ w(lx1*ly1*lz1*lelt*2)
 
       l                 = mg_h1_lmax
       p_mg_b (l,mg_fld) = 0
@@ -2905,7 +2905,7 @@ c-----------------------------------------------------------------------
 
       integer e
       real a(ng,nx,ny)
-      common /ctmp0/ w(100000)
+      common /ctmp0_hsmg/ w(100000)
       character*6 name6
 
 c     do i=1,ng

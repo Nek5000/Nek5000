@@ -59,7 +59,7 @@ c
       integer*8 i8gl_running_sum, i8rsum
       integer*8 n8, np8, nb8
 
-      common /scrns/ vi(2,lx1*ly1*lz1*lelt)
+      common /scrns_lb_setqvol/ vi(2,lx1*ly1*lz1*lelt)
       integer vi
 
       integer icalld,cr_lb

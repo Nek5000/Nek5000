@@ -18,9 +18,9 @@ c     intype = -1  (implicit)
       real             h2   (lx1,ly1,lz1,lelv)
       real             h2inv(lx1,ly1,lz1,lelv)
 
-      common /scrmg/    wp (lx2,ly2,lz2,lelv)
+      common /scrmg_gmres/    wp (lx2,ly2,lz2,lelv)
 
-      common /ctmp0/   wk1(lgmres),wk2(lgmres)
+      common /ctmp0_gmres/   wk1(lgmres),wk2(lgmres)
       common /cgmres1/ y(lgmres)
 
       real alpha, l, temp
@@ -319,10 +319,10 @@ c     GMRES iteration.
       real             h2   (lx1,ly1,lz1,lelv)
       real             wt   (lx1,ly1,lz1,lelv)
 
-      common /scrcg/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
+      common /scrcg_gmres/ d(lx1*ly1*lz1*lelv),wk(lx1*ly1*lz1*lelv)
 
       common /cgmres1/ y(lgmres)
-      common /ctmp0/   wk1(lgmres),wk2(lgmres)
+      common /ctmp0_gmres/   wk1(lgmres),wk2(lgmres)
       real alpha, l, temp
       integer outer
 

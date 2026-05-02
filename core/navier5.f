@@ -25,7 +25,7 @@ c
       save intv
       save intp
 
-      common /ctmp0/ intw,intt
+      common /ctmp0_navier5/ intw,intt
      $             , wk1,wk2
      $             , zgmv,wgtv,zgmp,wgtp,tmax(100),omax(103)
 
@@ -37,7 +37,7 @@ c
 c
 c     outpost arrays
       parameter (lt=lx1*ly1*lz1*lelv)
-      common /scruz/ w1(lt),w2(lt),w3(lt),wt(lt)
+      common /scruz_navier5/ w1(lt),w2(lt),w3(lt),wt(lt)
 
       character*18 sfmt
 
@@ -472,7 +472,7 @@ c
       parameter (lxyz=lx1*ly1*lz1)
       real ux(lxyz,1),uy(lxyz,1),uz(lxyz,1),u(lxyz,1)
 
-      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp1_navier5/ ur(lxyz),us(lxyz),ut(lxyz)
 
       integer e
 
@@ -521,7 +521,7 @@ c-----------------------------------------------------------------------
       real ur(lx),us(lx),ut(lx)
      $    ,vr(lx),vs(lx),vt(lx)
      $    ,wr(lx),ws(lx),wt(lx)
-      common /ctmp0/ ur,us,ut,vr,vs,vt,wr,ws,wt
+      common /ctmp0_navier5/ ur,us,ut,vr,vs,vt,wr,ws,wt
 
       integer e
       real jacmil
@@ -1639,14 +1639,14 @@ c
       real x0(3),w1(0:maxobj)
       logical ifdout,iftout
 c
-      common /scrns/         sij (lx1*ly1*lz1*6*lelv)
-      common /scrcg/         pm1 (lx1,ly1,lz1,lelv)
-      common /scrsf/         xm0(lx1,ly1,lz1,lelt)
+      common /scrns_navier5/         sij (lx1*ly1*lz1*6*lelv)
+      common /scrcg_navier5/         pm1 (lx1,ly1,lz1,lelv)
+      common /scrsf_navier5/         xm0(lx1,ly1,lz1,lelt)
      $,                      ym0(lx1,ly1,lz1,lelt)
      $,                      zm0(lx1,ly1,lz1,lelt)
 c
       parameter (lr=lx1*ly1*lz1)
-      common /scruz/         ur(lr),us(lr),ut(lr)
+      common /scruz_navier5/         ur(lr),us(lr),ut(lr)
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 c
@@ -1971,8 +1971,8 @@ c
       character*1   f1(127)
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scravg/ ua(lt),va(lt),wa(lt),pa(lt)
-      common /scrsf/  ta(lt,ldimt)
+      common /scravg_navier5/ ua(lt),va(lt),wa(lt),pa(lt)
+      common /scrsf_navier5/  ta(lt,ldimt)
 
       character*1 s1(127)
       equivalence (s1,initc) ! equivalence to initial condition
@@ -2148,14 +2148,14 @@ c
      $                , scale_vf(3)
 
 
-      common /scrns/         sij (lx1*ly1*lz1*6*lelv)
-      common /scrcg/         pm1 (lx1,ly1,lz1,lelv)
-      common /scrsf/         xm0(lx1,ly1,lz1,lelt)
+      common /scrns_navier5/         sij (lx1*ly1*lz1*6*lelv)
+      common /scrcg_navier5/         pm1 (lx1,ly1,lz1,lelv)
+      common /scrsf_navier5/         xm0(lx1,ly1,lz1,lelt)
      $,                      ym0(lx1,ly1,lz1,lelt)
      $,                      zm0(lx1,ly1,lz1,lelt)
 
       parameter (lr=lx1*ly1*lz1)
-      common /scruz/         ur(lr),us(lr),ut(lr)
+      common /scruz_navier5/         ur(lr),us(lr),ut(lr)
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 
@@ -2325,8 +2325,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lt = lx1*ly1*lz1)
-      common /scrns/ xb(lt,lelt),yb(lt,lelt),zb(lt,lelt)
-      common /scruz/ tmsk(lt,lelt),tmlt(lt,lelt),w1(lt),w2(lt)
+      common /scrns_navier5/ xb(lt,lelt),yb(lt,lelt),zb(lt,lelt)
+      common /scruz_navier5/ tmsk(lt,lelt),tmlt(lt,lelt),w1(lt),w2(lt)
 
       integer e,f
       character*3 cb
@@ -2785,7 +2785,7 @@ c
       real u(1),diag(1)
 
       parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
-      common /ctmp0/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz)
+      common /ctmp0_navier5/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz)
 
       ifldt = ifield
       ifield = ifld
@@ -2808,7 +2808,8 @@ c
       real u(1)
 
       parameter (lxx=lx1*lx1,lxyz=lx1*ly1*lz1)
-      common /ctmp0/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz),diag(lx1)
+      common /ctmp0_navier5/ f(lxx),wk1(lxyz),wk2(lxyz),wk3(lxyz),
+     $ diag(lx1)
 
       ifldt = ifield
       ifield = ifld
@@ -2835,7 +2836,7 @@ c-----------------------------------------------------------------------
       real v(lt,nelt)
       logical ifd4
 
-      common /ctmp1/ w(lt,lelt),ur(lt),us(lt),ut(lt),w1(2*lt)
+      common /ctmp1_navier5/ w(lt,lelt),ur(lt),us(lt),ut(lt),w1(2*lt)
 
       integer e
 
@@ -3246,7 +3247,7 @@ c
       real d(lx2,ly2,lz2,lelt),m1(lx1*ly1*lz1,lelt)
 
       parameter (lw = 3*lx1*ly1*lz1)
-      common /ctmp1/ w(lw)
+      common /ctmp1_navier5/ w(lw)
 
       integer icalld,noutf,e,f
       save    icalld,noutf
@@ -3444,7 +3445,7 @@ c
       real ua(*)
       real u (*)
 
-      common /scrcg/ wrk(lx1*ly1*lz1*lelv)
+      common /scrcg_navier5/ wrk(lx1*ly1*lz1*lelv)
 
       n = nx1*ny1*nz1*nelv
 

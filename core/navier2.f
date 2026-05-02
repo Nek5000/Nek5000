@@ -187,7 +187,7 @@ c
       parameter (lxyz=lx1*ly1*lz1)
       real ux(lxyz),uy(lxyz),uz(lxyz),u(lxyz,1)
 c
-      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp1_navier2/ ur(lxyz),us(lxyz),ut(lxyz)
 c
       integer e
 

@@ -40,7 +40,8 @@ c                                   ncut = 4 --> 64x number of elements
       integer e,eg,egn,el,en,er,es,et
 
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
-      common /scrns/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
+      common /scrns_hrefine/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,
+     $ mxnew)
      $             , pc(lx1*lx1,mxnew),pt(lx1*lx1,mxnew)
       real x0,y0,z0,pc,pt
 
@@ -490,7 +491,8 @@ c     apply one round of refinement to a field
       integer e,eg,egn,el,en,er,es,et
 
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
-      common /scrns/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
+      common /scrns_hrefine/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,
+     $ mxnew)
      $             , pc(lx1*lx1,mxnew),pt(lx1*lx1,mxnew)
       real x0,y0,z0,pc,pt
 
@@ -576,7 +578,8 @@ c     restart, refine fields after readfld
 
       integer lxyz,mxmin,mxnew
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
-      common /scrns/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,mxnew)
+      common /scrns_hrefine/ x0(lxyz,mxnew),y0(lxyz,mxnew),z0(lxyz,
+     $ mxnew)
      $             , pc(lx1*lx1,mxnew),pt(lx1*lx1,mxnew)
       real x0,y0,z0,pc,pt
 

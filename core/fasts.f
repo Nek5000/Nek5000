@@ -23,9 +23,9 @@ c
       include 'CTIMER'
 c
       real u(lx2,ly2,lz2,lelv),v(lx2,ly2,lz2,lelv)
-      common /scrpre/ v1(lx1,ly1,lz1,lelv)
+      common /scrpre_fasts/ v1(lx1,ly1,lz1,lelv)
      $               ,w1(lx1,ly1,lz1),w2(lx1,ly1,lz1)
-      common /scrover/ ar(lelv)
+      common /scrover_fasts/ ar(lelv)
 
       parameter(lxx=lx1*lx1, levb=lelv+lbelv)
       common /fastd/  df(lx1*ly1*lz1,levb)

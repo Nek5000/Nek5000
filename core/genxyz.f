@@ -8,7 +8,8 @@ c-----------------------------------------------------------------------
 C
 C     ....note..... CTMP1 is used in this format in several subsequent routines
 C
-      COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
+      COMMON /ctmp1_genxyz/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),
+     $ ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
       DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
       LOGICAL IFGLJ
@@ -105,7 +106,8 @@ c-----------------------------------------------------------------------
       include 'TOPOL'
       include 'GEOM'
       include 'WZ'
-      COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
+      COMMON /ctmp1_genxyz/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),
+     $ ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
 C
       DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
@@ -567,11 +569,12 @@ C
       real xml(nxl,nyl,nzl,1),yml(nxl,nyl,nzl,1),zml(nxl,nyl,nzl,1)
 
 C     Note : CTMP1 is used in this format in several subsequent routines
-      common /ctmp1/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),zcrved(lz1)
+      common /ctmp1_genxyz/ h(lx1,3,2),xcrved(lx1),ycrved(ly1),
+     $ zcrved(lz1)
      $             , zgml(lx1,3),work(3,lx1,lz1)
 
       parameter (ldw=2*lx1*ly1*lz1)
-      common /ctmp0/ w(ldw)
+      common /ctmp0_genxyz/ w(ldw)
 
       character*1 ccv
 
@@ -688,9 +691,10 @@ C
       DIMENSION XML(NX,NY,NZ,1),YML(NX,NY,NZ,1),ZML(NX,NY,NZ,1)
       DIMENSION XYSRF(3,NX,NZ)
 C
-      COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
+      COMMON /ctmp1_genxyz/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),
+     $ ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
-      COMMON /CTMP0/ XCV(3,2,2),VN1(3),VN2(3)
+      COMMON /ctmp0_genxyz/ XCV(3,2,2),VN1(3),VN2(3)
      $              ,X1(3),X2(3),X3(3),DX(3)
       DIMENSION IOPP(3),NXX(3)
 c
@@ -846,7 +850,8 @@ C
 C     Generate XYZ vector along an edge of a surface.
 C
       include 'SIZE'
-      COMMON /CTMP1/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),ZCRVED(LZ1)
+      COMMON /ctmp1_genxyz/ H(LX1,3,2),XCRVED(LX1),YCRVED(LY1),
+     $ ZCRVED(LZ1)
      $             , ZGML(LX1,3),WORK(3,LX1,LZ1)
 C
       DIMENSION XYSRF(3,NX,NY)
@@ -1291,7 +1296,7 @@ c        5+-----+6    t                      5+-----+6    t
       data    indx / 1,2,4,3,5,6,8,7 /
 
       parameter (ldw=4*lx1*ly1*lz1)
-      common /ctmp0/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
+      common /ctmp0_genxyz/ xcb(2,2,2),ycb(2,2,2),zcb(2,2,2),w(ldw)
 
       common /cxyzl/ zgml(lx1,3),jx (lx1*2),jy (lx1*2),jz (lx1*2)
      $                          ,jxt(lx1*2),jyt(lx1*2),jzt(lx1*2)
@@ -1342,7 +1347,7 @@ c     Generate bi- or trilinear mesh
       integer e
 
       parameter (ldw=4*lx1*ly1*lz1)
-      common /ctmp0/ w(ldw,2),zg(3)
+      common /ctmp0_genxyz/ w(ldw,2),zg(3)
 
 c     Note : CTMP1 is used in this format in several subsequent routines
 

@@ -784,7 +784,7 @@ c-----------------------------------------------------------------------
 
       parameter  (lt=lx1*ly1*lz1*lelt)
       parameter (mwd = 3*lt/2)
-      common /scrns/ x(mwd),y(mwd),x1(mwd),y1(mwd)
+      common /scrns_comm_mpi/ x(mwd),y(mwd),x1(mwd),y1(mwd)
 
       include 'mpif.h'
       integer status(mpi_status_size)
@@ -864,7 +864,7 @@ c-----------------------------------------------------------------------
 
       parameter  (lt=lx1*ly1*lz1*lelt)
       parameter (mwd = 3*lt)
-      common /scrns/ x(mwd),y(mwd)
+      common /scrns_comm_mpi/ x(mwd),y(mwd)
 
       include 'mpif.h'
       integer status(mpi_status_size)
@@ -958,7 +958,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       common /nekmpi/ mid,np,nekcomm,nekgroup,nekreal
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrns/ x(3*lt),y(3*lt)
+      common /scrns_comm_mpi/ x(3*lt),y(3*lt)
 !
 !     Est. msg vol for dt s
 !
@@ -1018,9 +1018,9 @@ c-----------------------------------------------------------------------
 
       parameter  (lt=lx1*ly1*lz1*lelt)
       parameter (mwd = 3*lt)
-      common /scrns/ x(mwd),y(mwd)
-      common /scruz/ times(2,500)
-      common /scrcg/ nwd(500)
+      common /scrns_comm_mpi/ x(mwd),y(mwd)
+      common /scruz_comm_mpi/ times(2,500)
+      common /scrcg_comm_mpi/ nwd(500)
 
       nwds  = 1
       mtest = 0
@@ -1084,8 +1084,8 @@ c-----------------------------------------------------------------------
 
       parameter  (lt=lx1*ly1*lz1*lelt)
       parameter (mwd = 3*lt)
-      common /scrns/ x(mwd),y(mwd)
-      common /scruz/ times(2,500)
+      common /scrns_comm_mpi/ x(mwd),y(mwd)
+      common /scruz_comm_mpi/ times(2,500)
 
       call rzero(x,mwd)
 

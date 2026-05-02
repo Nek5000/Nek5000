@@ -14,9 +14,9 @@ C
       LOGICAL          IFPRINT
       LOGICAL          IFCONV
 
-      COMMON /SCRNS/ TA(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_conduct/ TA(LX1,LY1,LZ1,LELT)
      $              ,TB(LX1,LY1,LZ1,LELT)
-      COMMON /SCRVH/ H1(LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_conduct/ H1(LX1,LY1,LZ1,LELT)
      $              ,H2(LX1,LY1,LZ1,LELT)
 
       include 'ORTHOT'
@@ -216,7 +216,7 @@ C---------------------------------------------------------------
       include 'MASS'
       include 'TSTEP'
 
-      common /scruz/ ta (lx1*ly1*lz1*lelt)
+      common /scruz_conduct/ ta (lx1*ly1*lz1*lelt)
 
       nel = nelfld(ifield)
       n   = lx1*ly1*lz1*nel
@@ -264,7 +264,7 @@ C-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrns/ tb(lt),h2(lt)
+      common /scrns_conduct/ tb(lt),h2(lt)
 
       nel   = nelfld(ifield)
       n     = lx1*ly1*lz1*nel
@@ -304,7 +304,7 @@ C-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrns/ tb(lt),h2(lt)
+      common /scrns_conduct/ tb(lt),h2(lt)
 
       nel   = nelfld(ifield)
       n     = lx1*ly1*lz1*nelv
@@ -431,9 +431,9 @@ C
       logical          ifprint
       logical          ifconv
 
-      common /scrns/ ta(lx1,ly1,lz1,lelt)
+      common /scrns_conduct/ ta(lx1,ly1,lz1,lelt)
      $              ,tb(lx1,ly1,lz1,lelt)
-      common /scrvh/ h1(lx1,ly1,lz1,lelt)
+      common /scrvh_conduct/ h1(lx1,ly1,lz1,lelt)
      $              ,h2(lx1,ly1,lz1,lelt)
 
 
@@ -492,7 +492,7 @@ c
       include 'TSTEP'
       include 'INPUT'
 
-      common /scruz/ ta(lx1,ly1,lz1,lelt)
+      common /scruz_conduct/ ta(lx1,ly1,lz1,lelt)
      $              ,h2(lx1,ly1,lz1,lelt)
 
       nel = nelfld(ifield)
@@ -569,7 +569,7 @@ c-----------------------------------------------------------------------
       integer e,f
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
-      common /scrdg/uf(lx1*lz1,2*ldim,lelt)
+      common /scrdg_conduct/uf(lx1*lz1,2*ldim,lelt)
 
 
 
@@ -594,7 +594,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      common /ctmp1/ qs(lx1*ly1*lz1*lelt)
+      common /ctmp1_conduct/ qs(lx1*ly1*lz1*lelt)
       integer*8 vertex
 
       logical ifany
@@ -629,7 +629,7 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       real mask(1)
-      common /ctmp0/ qs(lx1*ly1*lz1*lelt)
+      common /ctmp0_conduct/ qs(lx1*ly1*lz1*lelt)
 
       integer ifld_last
       save    ifld_last
@@ -654,8 +654,8 @@ C
       logical          ifprint,ifconv
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrns/ ta(lt),tb(lt)
-      common /scrvh/ h1(lt),h2(lt)
+      common /scrns_conduct/ ta(lt),tb(lt)
+      common /scrvh_conduct/ h1(lt),h2(lt)
 
       include 'ORTHOT'  ! This must be fixed
 

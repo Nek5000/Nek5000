@@ -402,7 +402,7 @@ c
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-      COMMON /SCRSF/ dtmp(lx1*ly1*lz1*lelv)
+      COMMON /scrsf_cvode_driver/ dtmp(lx1*ly1*lz1*lelv)
 
       ntot = lx1*ly1*lz1*nelv
 
