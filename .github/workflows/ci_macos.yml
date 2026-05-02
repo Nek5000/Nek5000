@@ -1,0 +1,65 @@
+name: CI (macOS)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  main:
+    runs-on: macos-14
+    strategy:
+      matrix:
+        test_case: [
+            "Tools",
+            "Axi::test_PnPn_Parallel",
+            "ConjHt::test_PnPn_Parallel",
+            "Eddy_EddyUv::test_PnPn_Parallel",
+            "Eddy_LegacySize::test_PnPn2_Parallel",
+            "Ethier::test_PnPn2_Parallel",
+            "Ethier::test_PnPn_Parallel",
+            "FsHydro::test_PnPn2_Parallel",
+            "InclDef::test_PnPn_Serial",
+            "KovStokes::test_PnPn2_Parallel",
+            "KovStokes::test_PnPn_Parallel",
+            "LowMachTest::test_PnPn_Parallel",
+            "chan2d::test_PnPn_Parallel"
+        ]
+        include:
+          - test_case: "Tools"
+            mpi: no
+      fail-fast: false
+
+    name: "${{ matrix.test_case }}"
+
+    env:
+      TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
+      CC: "${{ matrix.mpi == 'no' && 'gcc-15' || 'mpicc' }}"
+      FFLAGS: "-fallow-argument-mismatch -ffp-contract=off"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: brew dependencies
+        shell: bash
+        run: |
+          brew update
+          brew install gcc open-mpi python@3.13
+          /opt/homebrew/bin/python3.13 -m pip install --break-system-packages pytest
+
+      - name: test
+        shell: bash
+        run: |
+          export PATH=/opt/homebrew/bin:$PATH
+          export OMPI_FC=gfortran-15
+          export OMPI_CC=gcc-15
+          /opt/homebrew/bin/python3.13 -m pytest -s -v short_tests/NekTests.py::$TEST_CASE
