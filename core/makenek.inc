@@ -300,12 +300,22 @@ cat > _test.f << _ACEOF
       program test
       end
 _ACEOF
+
 $FCcomp -Wl,--allow-multiple-definition -o _test _test.f >/dev/null 2>&1 || true
-\rm _test.f 2>/dev/null
 if [ -f _test ]; then
   LDFLAGS+=" -Wl,--allow-multiple-definition"
   \rm _test 2>/dev/null
 fi
+
+if [ "$(uname)" = "Darwin" ]; then
+  $FCcomp -Wl,-ld_classic -o _test _test.f >/dev/null 2>&1 || true
+  if [ -f _test ]; then
+    LDFLAGS+=" -Wl,-ld_classic"
+    \rm _test 2>/dev/null
+  fi
+fi
+
+\rm _test.f 2>/dev/null
 
 # set preprocessor symbols
 if [ $MPI -eq 0 ]; then
