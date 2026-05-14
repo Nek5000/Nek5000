@@ -258,7 +258,6 @@ c-----------------------------------------------------------------------
 c     interp mat for h-refine, GLL
 c        nx: npts in 1 direction
 c        ncut: new nel in 1 direction
-      implicit none
       include 'SIZE'
 
       logical ifrecomp
@@ -558,7 +557,6 @@ c-----------------------------------------------------------------------
       subroutine h_refine_readfld(xm1_,ym1_,zm1_,vx_,vy_,vz_
      $                           ,pm1_,t_,ps_, refine, refineSize)
 c     restart, refine fields after readfld
-      implicit none
       include 'SIZE'
       include 'INPUT' ! ifaxis
       include 'PARALLEL' ! np
@@ -661,7 +659,6 @@ c-----------------------------------------------------------------------
 c     Extra interface to recover original mesh info, for hMG
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_nel(nelv_o,nelt_o,ncut)
-      implicit none
       include 'SIZE'
       integer nelv_o,nelt_o,ncut,nblk
 
@@ -679,7 +676,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_vertex(vtxo,vtxr,nelo,ncut)
-      implicit none
       include 'SIZE'
       integer*8 vtxo(2**ldim,1), vtxr(2**ldim,1)
       integer nelo, ncut, nblk
@@ -717,7 +713,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_cbc(CBCo,CBCr,nelo,ncut)
-      implicit none
       include 'SIZE'
       integer e,el,er,nelo,ncut,kcut,nblk
       integer ic,jc,kc
@@ -754,7 +749,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine hrefcuts_i2c(cout) ! convert integer to base 62 alphabet
-      implicit none
       include 'SIZE'
       include 'INPUT'
 
@@ -810,7 +804,6 @@ c     Base 62 alphabet
       end
 c-----------------------------------------------------------------------
       subroutine hrefcuts_c2i(cin) ! convert string to int list
-      implicit none
       include 'SIZE'
       include 'RESTART'
 
@@ -886,7 +879,6 @@ c     This subroutine return the ordered diffeference
 c        hrefcutsrs = hrefcuts \ hrefcutsrs
 c     which is the extra refinement on the top of checkpoint to match simulation
 c
-      implicit none
       include 'SIZE'
       include 'INPUT'
       include 'RESTART'
