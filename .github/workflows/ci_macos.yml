@@ -40,12 +40,15 @@ jobs:
       CMAKE_POLICY_VERSION_MINIMUM: "3.5" # HYPRE dep #873
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: brew dependencies
         shell: bash
         run: |
-          brew install gcc mpich cmake pytest
+          # silence already install warnings
+          for pkg in gcc mpich cmake pytest; do
+            brew list "$pkg" >/dev/null 2>&1 || brew install "$pkg"
+          done
 
           # create gfortran soft link rather than gfortran-15
           GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-[0-9]*' | sort -V | tail -n 1)"
