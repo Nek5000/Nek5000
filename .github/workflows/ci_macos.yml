@@ -45,8 +45,8 @@ jobs:
         shell: bash
         run: |
           brew install gcc mpich cmake pytest
-#          python -m pip install --upgrade pip
-#          python -m pip install pytest
+          #python -m pip install --upgrade pip
+          #python -m pip install pytest
 
           mkdir -p "$RUNNER_TEMP/bin"
 
