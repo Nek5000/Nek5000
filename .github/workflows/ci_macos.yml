@@ -37,6 +37,7 @@ jobs:
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
       CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
     steps:
       - uses: actions/checkout@v4
