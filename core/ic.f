@@ -2142,7 +2142,7 @@ c-----------------------------------------------------------------------
 
       real*4 wk(2*lwk) ! message buffer
       real*4 wkg(2*lwk) ! storage buffer
-      parameter(lrbs_loc=20*lx1*ly1*lz1*ldim)
+      parameter(lrbs_loc=20*lx1*ly1*lz1)
       parameter(lrbs=lrbs_loc*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
