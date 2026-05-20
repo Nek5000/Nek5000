@@ -1945,7 +1945,7 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer wk
-      num_recv  = nxyzr*nelt
+      num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
@@ -1985,7 +1985,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelt - 1) / lbrst + 1
+            nbatch = (nelt_hr0 - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
@@ -2094,7 +2094,7 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
       l = 1
-      do e=1,nelt
+      do e=1,nelt_hr0
          if (np.gt.1) then
             ei = e
          elseif(np.eq.1) then
@@ -2140,7 +2140,7 @@ c-----------------------------------------------------------------------
 
       real*4 wk(2*lwk) ! message buffer
       real*4 wkg(2*lwk) ! storage buffer
-      parameter(lrbs_loc=20*lx1*ly1*lz1)
+      parameter(lrbs_loc=20*lx1*ly1*lz1*ldim)
       parameter(lrbs=lrbs_loc*lelt)
       common /vrthov/ w2(lrbs) ! read buffer
       real*4 w2
@@ -2157,7 +2157,7 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
       ! check message buffer wk
-      num_recv  = nxyzr*nelt 
+      num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
 
@@ -2196,7 +2196,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelt - 1) / lbrst + 1
+            nbatch = (nelt_hr0 - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
@@ -2304,7 +2304,7 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
       l = 1
-      do e=1,nelt
+      do e=1,nelt_hr0
          if (np.gt.1) then
             ei = e
          else if(np.eq.1) then
@@ -2565,9 +2565,8 @@ c
 
 #ifdef MPI
       lbrst = min(lbrst, lelt)
-      if (lbrst.lt.nelt) then
-        if(nio.eq.0) write(*,*)'Batched restart with lbrst',lbrst,nelt
-      endif
+      if (lbrst.lt.nelt_hr0.AND.nio.eq.0)
+     $  write(*,*)'Batched restart with lbrst',lbrst,nelt_hr0
 
       call rzero(rst_etime,4) ! mpiio / pack / transfer / unpack
 
@@ -2576,7 +2575,7 @@ c
       else
         disp_unit = 4
         win_size = int(disp_unit,8)*size(wk)
-        if (lbrst.lt.nelt) then
+        if (lbrst.lt.nelt_hr0) then
           win_size = int(disp_unit,8)*(7*lx1*ly1*lz1*lbrst)*(wdsize/4)
         endif
 

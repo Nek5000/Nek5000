@@ -887,6 +887,7 @@ c
       integer nblk, nblk_rs, ncut, ncut_rs, i, j, ierr
       integer nelgr0, nelgt0
 
+      nelt_hr0 = nelt
       if (nhref.eq.0) return
 
       if (nio.eq.0) then
@@ -939,6 +940,13 @@ c
       if (nio.eq.0) then
          write(*,*)'href schdule, dif: ', (hrefcutsrs(i),i=1,nhrefrs)
       endif
+
+      ncut = 1
+      do i=1,nhrefrs
+         ncut = ncut * hrefcutsrs(i)
+      enddo
+      nblk_dif = ncut**ldim
+      nelt_hr0 = nelt / nblk_dif
 
       return
 
