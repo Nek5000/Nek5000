@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        test_case: [
+        test_case: [ 
             "Tools",
             "Ethier::test_PnPn2_Parallel",
             "Ethier::test_PnPn_Parallel"
@@ -39,7 +39,7 @@ jobs:
       CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: brew dependencies
         shell: bash
