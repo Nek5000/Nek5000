@@ -13,7 +13,6 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
 
 jobs:
   main:
@@ -35,6 +34,7 @@ jobs:
 
     env:
       TEST_CASE: ${{ matrix.test_case }}
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
       CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
