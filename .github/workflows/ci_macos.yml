@@ -51,16 +51,20 @@ jobs:
           mkdir -p "$RUNNER_TEMP/bin"
 
           GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-*' | sort -V | tail -n 1)"
-          GCC_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gcc-*' | sort -V | tail -n 1)"
+          GCC_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gcc-[0-9]*' ! -name 'gcc-ar-*' ! -name 'gcc-nm-*' ! -name 'gcc-ranlib-*' | sort -V | tail -n 1)"
 
           ln -sf "$GFORTRAN_BIN" "$RUNNER_TEMP/bin/gfortran"
           ln -sf "$GCC_BIN" "$RUNNER_TEMP/bin/gcc"
 
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
+          echo $GCC_BIN
+          echo $GFORTRAN_BIN
+
       - name: Check compilers
         shell: bash
         run: |
+          set -x
           which gcc || true
           which gfortran || true
           which mpicc || true
