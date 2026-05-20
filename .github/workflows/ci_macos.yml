@@ -24,6 +24,7 @@ jobs:
             "Tools",
             "Ethier::test_PnPn2_Parallel",
             "Ethier::test_PnPn_Parallel"
+        ]
         include:
           - test_case: "Tools"
             mpi: no
