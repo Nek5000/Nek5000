@@ -2247,7 +2247,6 @@ c-----------------------------------------------------------------------
                   iel = ie_map_r2o(gllel(vi(2,iloc)),nhrefblkrs)
                   l = (iel-1) * nxyzr + 1
                   call icopy (wkg(l),vi(3,iloc),nxyzr)
-                  write(*,*)'dbg2',nid,n,nrmax,iloc,vi(2,iloc),iel
                 enddo
                 call nekgsync()
                 rst_etime(4) = rst_etime(4) + dnekclock_sync() - etime0
