@@ -1,0 +1,51 @@
+name: CI (maxOS)
+
+on:
+  # allows us to run workflows manually
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  main:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        test_case: [ 
+            "Tools",
+            "Ethier::test_PnPn2_Parallel",
+            "Ethier::test_PnPn_Parallel"
+        include:
+          - test_case: "Tools"
+            mpi: no
+      fail-fast: false
+
+    name: "${{ matrix.test_case }}"
+
+    env:
+      TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
+      CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: apt dependencies
+        shell: bash
+        run: |
+          sudo apt -y update
+          sudo apt install -y gfortran mpich libmpich-dev python3-pytest
+
+      - name: test
+        shell: bash
+        run: |
+          pytest-3 -s -v short_tests/NekTests.py::$TEST_CASE
