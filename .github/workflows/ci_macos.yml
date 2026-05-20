@@ -37,7 +37,7 @@ jobs:
       MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
       FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
       CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
-      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5" # HYPRE dep #873
 
     steps:
       - uses: actions/checkout@v4
@@ -46,22 +46,14 @@ jobs:
         shell: bash
         run: |
           brew install gcc mpich cmake pytest
-          #python -m pip install --upgrade pip
-          #python -m pip install pytest
+
+          # create gfortran soft link rather than gfortran-15
+          GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-[0-9]*' | sort -V | tail -n 1)"
+          echo $GFORTRAN_BIN
 
           mkdir -p "$RUNNER_TEMP/bin"
-
-          # create soft link of gfortran rather than gfortran-15
-          GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-*' | sort -V | tail -n 1)"
-          GCC_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gcc-[0-9]*' ! -name 'gcc-ar-*' ! -name 'gcc-nm-*' ! -name 'gcc-ranlib-*' | sort -V | tail -n 1)"
-
           ln -sf "$GFORTRAN_BIN" "$RUNNER_TEMP/bin/gfortran"
-          ln -sf "$GCC_BIN" "$RUNNER_TEMP/bin/gcc"
-
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
-
-          echo $GCC_BIN
-          echo $GFORTRAN_BIN
 
       - name: Check compilers
         shell: bash
@@ -71,12 +63,12 @@ jobs:
           which gfortran || true
           which mpicc || true
           which mpif77 || true
+          which cmake || true
+
           gcc --version || true
           gfortran --version || true
           mpicc --version || true
           mpif77 --version || true
-
-          which cmake || true
           cmake --version || true
 
           which pytest
