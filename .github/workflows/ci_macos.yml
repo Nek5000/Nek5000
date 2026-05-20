@@ -48,6 +48,16 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest
 
+          mkdir -p "$RUNNER_TEMP/bin"
+
+          GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-*' | sort -V | tail -n 1)"
+          GCC_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gcc-*' | sort -V | tail -n 1)"
+
+          ln -sf "$GFORTRAN_BIN" "$RUNNER_TEMP/bin/gfortran"
+          ln -sf "$GCC_BIN" "$RUNNER_TEMP/bin/gcc"
+
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
       - name: Check compilers
         shell: bash
         run: |
