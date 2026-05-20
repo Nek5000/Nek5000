@@ -1,4 +1,4 @@
-name: CI (maxOS)
+name: CI (macOS)
 
 on:
   # allows us to run workflows manually
@@ -17,6 +17,7 @@ env:
 jobs:
   main:
     runs-on: macos-latest
+
     strategy:
       matrix:
         test_case: [ 
@@ -39,13 +40,29 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: apt dependencies
+      - name: brew dependencies
         shell: bash
         run: |
-          sudo apt -y update
-          sudo apt install -y gfortran mpich libmpich-dev python3-pytest
+          brew install gcc mpich
+          pip3 install --upgrade pip
+          pip3 install pytest
+
+      - name: Check compilers
+        shell: bash
+        run: |
+          which gcc || true
+          which gfortran || true
+          which mpicc || true
+          which mpif77 || true
+          gcc --version || true
+          gfortran --version || true
+          mpicc --version || true
+          mpif77 --version || true
+
+          which pytest
+          pytest --version
 
       - name: test
         shell: bash
         run: |
-          pytest-3 -s -v short_tests/NekTests.py::$TEST_CASE
+          pytest -s -v short_tests/NekTests.py::$TEST_CASE
