@@ -1944,6 +1944,8 @@ c-----------------------------------------------------------------------
       dnxyzr = nxyzr 
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
+      nelt_hr0 = nelt / nhrefblkrs
+
       ! check message buffer wk
       num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
@@ -2001,7 +2003,7 @@ c-----------------------------------------------------------------------
                 l = 1
                 iloc = 1
                 do e = k+1,k+nelrr
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     vi(1,iloc) = gllnid(er(e))
                     vi(2,iloc) = er(e)
@@ -2030,7 +2032,7 @@ c-----------------------------------------------------------------------
                   goto 100
                 endif
                 do iloc = 1,n
-                  iel = gllel(vi(2,iloc))
+                  iel = ie_map_r2o(gllel(vi(2,iloc)),nhrefblkrs)
                   l = (iel-1) * nxyzr + 1
                   call icopy (wkg(l),vi(3,iloc),nxyzr)
                 enddo
@@ -2044,7 +2046,7 @@ c-----------------------------------------------------------------------
                 call MPI_Win_lock_all(0,rsH,ierr)
                 do e = k+1,k+nelrr
                   jnid = gllnid(er(e))                ! where is er(e) now?
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
 
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     disp = (jeln-jeln1) * int(nxyzr,8)
@@ -2156,6 +2158,8 @@ c-----------------------------------------------------------------------
       nxyzr  = ldim*nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
+      nelt_hr0 = nelt / nhrefblkrs
+
       ! check message buffer wk
       num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
@@ -2211,7 +2215,7 @@ c-----------------------------------------------------------------------
                 l = 1
                 iloc = 1
                 do e = k+1,k+nelrr
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     vi(1,iloc) = gllnid(er(e))
                     vi(2,iloc) = er(e)
@@ -2240,9 +2244,10 @@ c-----------------------------------------------------------------------
                   goto 100
                 endif
                 do iloc = 1,n
-                  iel = gllel(vi(2,iloc))
+                  iel = ie_map_r2o(gllel(vi(2,iloc)),nhrefblkrs)
                   l = (iel-1) * nxyzr + 1
                   call icopy (wkg(l),vi(3,iloc),nxyzr)
+                  write(*,*)'dbg2',nid,n,nrmax,iloc,vi(2,iloc),iel
                 enddo
                 call nekgsync()
                 rst_etime(4) = rst_etime(4) + dnekclock_sync() - etime0
@@ -2254,8 +2259,7 @@ c-----------------------------------------------------------------------
                 call MPI_Win_lock_all(0,rsH,ierr)
                 do e = k+1,k+nelrr
                   jnid = gllnid(er(e))                ! where is er(e) now?
-                  jeln = gllel(er(e))
-
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     disp = (jeln-jeln1) * int(nxyzr,8)
                     call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
@@ -2308,7 +2312,7 @@ c-----------------------------------------------------------------------
          if (np.gt.1) then
             ei = e
          else if(np.eq.1) then
-            ei = er(e) 
+            ei = ie_map_r2o(er(e),nhrefblkrs)
          endif
 
          if (if_byte_sw) then
