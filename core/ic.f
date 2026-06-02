@@ -1944,8 +1944,10 @@ c-----------------------------------------------------------------------
       dnxyzr = nxyzr 
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
+      nelt_hr0 = nelt / nhrefblkrs
+
       ! check message buffer wk
-      num_recv  = nxyzr*nelt
+      num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_gets a')
 
@@ -1985,7 +1987,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelt - 1) / lbrst + 1
+            nbatch = (nelt_hr0 - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
@@ -2001,7 +2003,7 @@ c-----------------------------------------------------------------------
                 l = 1
                 iloc = 1
                 do e = k+1,k+nelrr
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     vi(1,iloc) = gllnid(er(e))
                     vi(2,iloc) = er(e)
@@ -2030,7 +2032,7 @@ c-----------------------------------------------------------------------
                   goto 100
                 endif
                 do iloc = 1,n
-                  iel = gllel(vi(2,iloc))
+                  iel = ie_map_r2o(gllel(vi(2,iloc)),nhrefblkrs)
                   l = (iel-1) * nxyzr + 1
                   call icopy (wkg(l),vi(3,iloc),nxyzr)
                 enddo
@@ -2044,7 +2046,7 @@ c-----------------------------------------------------------------------
                 call MPI_Win_lock_all(0,rsH,ierr)
                 do e = k+1,k+nelrr
                   jnid = gllnid(er(e))                ! where is er(e) now?
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
 
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     disp = (jeln-jeln1) * int(nxyzr,8)
@@ -2094,7 +2096,7 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
       l = 1
-      do e=1,nelt
+      do e=1,nelt_hr0
          if (np.gt.1) then
             ei = e
          elseif(np.eq.1) then
@@ -2156,8 +2158,10 @@ c-----------------------------------------------------------------------
       nxyzr  = ldim*nxr*nyr*nzr
       if (wdsizr.eq.8) nxyzr = 2*nxyzr
 
+      nelt_hr0 = nelt / nhrefblkrs
+
       ! check message buffer wk
-      num_recv  = nxyzr*nelt 
+      num_recv  = nxyzr*nelt_hr0
       num_avail = size(wk)
       call lim_chk(num_recv,num_avail,'     ','     ','mfi_getv a')
 
@@ -2196,7 +2200,7 @@ c-----------------------------------------------------------------------
             endif
 
 #ifdef MPI
-            nbatch = (nelt - 1) / lbrst + 1
+            nbatch = (nelt_hr0 - 1) / lbrst + 1
             nbatch = iglmax(nbatch, 1)
 
             do ibatch = 1,nbatch
@@ -2211,7 +2215,7 @@ c-----------------------------------------------------------------------
                 l = 1
                 iloc = 1
                 do e = k+1,k+nelrr
-                  jeln = gllel(er(e))
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     vi(1,iloc) = gllnid(er(e))
                     vi(2,iloc) = er(e)
@@ -2240,7 +2244,7 @@ c-----------------------------------------------------------------------
                   goto 100
                 endif
                 do iloc = 1,n
-                  iel = gllel(vi(2,iloc))
+                  iel = ie_map_r2o(gllel(vi(2,iloc)),nhrefblkrs)
                   l = (iel-1) * nxyzr + 1
                   call icopy (wkg(l),vi(3,iloc),nxyzr)
                 enddo
@@ -2254,8 +2258,7 @@ c-----------------------------------------------------------------------
                 call MPI_Win_lock_all(0,rsH,ierr)
                 do e = k+1,k+nelrr
                   jnid = gllnid(er(e))                ! where is er(e) now?
-                  jeln = gllel(er(e))
-
+                  jeln = ie_map_r2o(gllel(er(e)),nhrefblkrs)
                   if (jeln.ge.jeln1.AND.jeln.le.jeln2) then
                     disp = (jeln-jeln1) * int(nxyzr,8)
                     call MPI_Put(w2(l),nxyzr,MPI_REAL4,jnid,
@@ -2304,11 +2307,11 @@ c-----------------------------------------------------------------------
       if (wdsizr.eq.8) nxyzw = 2*nxyzw
 
       l = 1
-      do e=1,nelt
+      do e=1,nelt_hr0
          if (np.gt.1) then
             ei = e
          else if(np.eq.1) then
-            ei = er(e) 
+            ei = ie_map_r2o(er(e),nhrefblkrs)
          endif
 
          if (if_byte_sw) then
@@ -2565,9 +2568,8 @@ c
 
 #ifdef MPI
       lbrst = min(lbrst, lelt)
-      if (lbrst.lt.nelt) then
-        if(nio.eq.0) write(*,*)'Batched restart with lbrst',lbrst,nelt
-      endif
+      if (lbrst.lt.nelt_hr0.AND.nio.eq.0)
+     $  write(*,*)'Batched restart with lbrst',lbrst,nelt_hr0
 
       call rzero(rst_etime,4) ! mpiio / pack / transfer / unpack
 
@@ -2576,7 +2578,7 @@ c
       else
         disp_unit = 4
         win_size = int(disp_unit,8)*size(wk)
-        if (lbrst.lt.nelt) then
+        if (lbrst.lt.nelt_hr0) then
           win_size = int(disp_unit,8)*(7*lx1*ly1*lz1*lbrst)*(wdsize/4)
         endif
 
