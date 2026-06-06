@@ -143,7 +143,7 @@ c-----------------------------------------------------------------------
 
       parameter(mdw=2+2**ldim)
       parameter(ndw=7*lx1*ly1*lz1*lelv/mdw)
-      common /scrns/ wk(mdw*ndw)
+      common /scrns_map2/ wk(mdw*ndw)
       integer*8 wk
 
       integer     wk4(2*mdw*ndw)
@@ -158,9 +158,9 @@ c-----------------------------------------------------------------------
 
       integer*8 eid8(lelt), vtx8(lelt*2**ldim)
       integer   iwork(lelt)
-      common /ctmp0/ eid8, vtx8, iwork
+      common /ctmp0_map2/ eid8, vtx8, iwork
 
-      common /scrcg/ xyz(ldim*lelt*2**ldim)
+      common /scrcg_map2/ xyz(ldim*lelt*2**ldim)
 
       integer cnt, algo
       integer opt_parrsb(3)
@@ -483,10 +483,10 @@ c-----------------------------------------------------------------------
       real tol
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
-      common /scrcg/ xyz(ldim*(2**ldim)*lelt)
+      common /scrcg_map2/ xyz(ldim*(2**ldim)*lelt)
 
       integer*8 eid8(4*lelt),vtx8(lelt*(2**ldim+1))
-      common /ctmp0/ eid8, vtx8, iwork
+      common /ctmp0_map2/ eid8, vtx8, iwork
 
       ierr = 0
 
@@ -660,7 +660,7 @@ C
       include 'SOLN'
       include 'SCRCT'
       include 'TSTEP'
-      common /ctmp0/ iwork(lelt)
+      common /ctmp0_map2/ iwork(lelt)
 
       REAL*8 dnekclock,t0
 

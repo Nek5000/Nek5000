@@ -284,7 +284,7 @@ C--------------------------------------------------------------------
       COMMON /CPRINT/ IFPRINT
       LOGICAL         IFPRINT
 C
-      COMMON /SCRUZ/  DIVV (LX2,LY2,LZ2,LELV)
+      COMMON /scruz_navier4/  DIVV (LX2,LY2,LZ2,LELV)
      $ ,              BDIVV(LX2,LY2,LZ2,LELV)
 C
       if (ifsplit) return
@@ -525,7 +525,7 @@ c
       REAL           MASK (LX1,LY1,LZ1,1)
       REAL           MULT (LX1,LY1,LZ1,1)
       REAL           bi   (LX1,LY1,LZ1,1)
-      COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
+      COMMON /ctmp0_navier4/ W1   (LX1,LY1,LZ1,LELT)
      $ ,             W2   (LX1,LY1,LZ1,LELT)
 c
       etime1=dnekclock()
@@ -1253,8 +1253,8 @@ c
       integer   napprox(1)
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrvh/ h1(lt),h2(lt)
-      common /scruz/ r (lt),ub(lt)
+      common /scrvh_navier4/ h1(lt),h2(lt)
+      common /scruz_navier4/ r (lt),ub(lt)
 
       logical ifstdh
       character*4  cname

@@ -421,7 +421,7 @@ c-----------------------------------------------------------------------
       include 'CTIMER'
 
       parameter (lt=lx1*ly1*lz1*lelt,lxyz=lx1*ly1*lz1)
-      common /scrcg/ pm1(lt),wk1(lxyz),wk2(lxyz)
+      common /scrcg_multimesh/ pm1(lt),wk1(lxyz),wk2(lxyz)
 
       real fieldout(nmaxl_nn,nfldmax_nn)
       real field(lx1*ly1*lz1*lelt)
@@ -533,7 +533,7 @@ C--------------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKNEK'
       integer e,f
-      common /ctmp1/ work(lx1*ly1*lz1*lelt)
+      common /ctmp1_multimesh/ work(lx1*ly1*lz1*lelt)
       integer itchk
       common /idumochk/ itchk
       integer icalld
@@ -849,16 +849,16 @@ c
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx2,ly2,lz2,lelv)
 C
-      COMMON /SCRNS/ rw1   (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_multimesh/ rw1   (LX1,LY1,LZ1,LELV)
      $ ,             rw2   (LX1,LY1,LZ1,LELV)
      $ ,             rw3   (LX1,LY1,LZ1,LELV)
      $ ,             dv1   (LX1,LY1,LZ1,LELV)
      $ ,             dv2   (LX1,LY1,LZ1,LELV)
      $ ,             dv3   (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_multimesh/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
-      COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
+      COMMON /scrhi_multimesh/ H2INV (LX1,LY1,LZ1,LELV)
       common /cvflow_i/ icvflow,iavflow
 
       common /cbplan_vol_ms/  vxcp, dvxc, vycp,
@@ -992,7 +992,7 @@ c     (Tombo splitting scheme).
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx2,ly2,lz2,lelv)
 
-      common /scrns/ resv1 (lx1,ly1,lz1,lelv)
+      common /scrns_multimesh/ resv1 (lx1,ly1,lz1,lelv)
      $ ,             resv2 (lx1,ly1,lz1,lelv)
      $ ,             resv3 (lx1,ly1,lz1,lelv)
      $ ,             respr (lx2*ly2*lz2,lelv)
@@ -1002,9 +1002,9 @@ c     (Tombo splitting scheme).
      $ ,             WA1 (lx1*ly1*lz1*lelv)
      $ ,             WA2 (lx1*ly1*lz1*lelv)
      $ ,             WA3 (lx1*ly1*lz1*lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_multimesh/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-      COMMON /SCRMG/ W1    (LX1*LY1*LZ1,LELV)
+      COMMON /scrmg_multimesh/ W1    (LX1*LY1*LZ1,LELV)
      $ ,             W2    (LX1*LY1*LZ1,LELV)
      $ ,             W3    (LX1*LY1*LZ1,LELV)
 

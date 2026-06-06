@@ -17,7 +17,7 @@ C----------------------------------------------------------------
       INCLUDE 'TSTEP'
       REAL           Z2   (LX2,LY2,LZ2,LELV)
       REAL           R2   (LX2,LY2,LZ2,LELV)
-      COMMON /SCRNS/ MASK (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier3/ MASK (LX1,LY1,LZ1,LELV)
      $              ,R1   (LX1,LY1,LZ1,LELV)
      $              ,X1   (LX1,LY1,LZ1,LELV)
      $              ,W2   (LX2,LY2,LZ2,LELV)
@@ -59,7 +59,7 @@ c
       include 'CTIMER'
 c
       real u(1),v(1)
-      common /scrprc/ uc(lx1*ly1*lz1*lelt)
+      common /scrprc_navier3/ uc(lx1*ly1*lz1*lelt)
 c
       if (icalld.eq.0) then
          tddsl=0.0

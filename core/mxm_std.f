@@ -3928,9 +3928,9 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       parameter (lt=4*lx1*ly1*lz1*lelt)
-      common /scrns/ a(lt)
-      common /scruz/ b(lt)
-      common /scrmg/ c(lt)
+      common /scrns_mxm_std/ a(lt)
+      common /scruz_mxm_std/ b(lt)
+      common /scrmg_mxm_std/ c(lt)
 
       integer ll,icalld
       save    ll,icalld

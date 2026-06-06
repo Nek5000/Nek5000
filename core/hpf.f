@@ -26,7 +26,7 @@
       data icalld /0/
 
       real TA1,TA2,TA3
-      COMMON /SCRUZ/ TA1 (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_hpf/ TA1 (LX1,LY1,LZ1,LELV)
      $ ,             TA2 (LX1,LY1,LZ1,LELV)
      $ ,             TA3 (LX1,LY1,LZ1,LELV)
 

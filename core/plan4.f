@@ -18,14 +18,14 @@ c
       INCLUDE 'ORTHOP'
       INCLUDE 'CTIMER'
 C
-      COMMON /SCRNS/ RES1  (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_plan4/ RES1  (LX1,LY1,LZ1,LELV)
      $ ,             RES2  (LX1,LY1,LZ1,LELV)
      $ ,             RES3  (LX1,LY1,LZ1,LELV)
      $ ,             DV1   (LX1,LY1,LZ1,LELV)
      $ ,             DV2   (LX1,LY1,LZ1,LELV)
      $ ,             DV3   (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_plan4/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
  
       REAL           DPR   (LX2,LY2,LZ2,LELV)
@@ -105,19 +105,19 @@ C     Compute startresidual/right-hand-side in the pressure
 
       REAL           RESPR (LX1*LY1*LZ1,LELV)
 c
-      COMMON /SCRNS/ TA1   (LX1*LY1*LZ1,LELV)
+      COMMON /scrns_plan4/ TA1   (LX1*LY1*LZ1,LELV)
      $ ,             TA2   (LX1*LY1*LZ1,LELV)
      $ ,             TA3   (LX1*LY1*LZ1,LELV)
      $ ,             WA1   (LX1*LY1*LZ1*LELV)
      $ ,             WA2   (LX1*LY1*LZ1*LELV)
      $ ,             WA3   (LX1*LY1*LZ1*LELV)
-      COMMON /SCRMG/ W1    (LX1*LY1*LZ1,LELV)
+      COMMON /scrmg_plan4/ W1    (LX1*LY1*LZ1,LELV)
      $ ,             W2    (LX1*LY1*LZ1,LELV)
      $ ,             W3    (LX1*LY1*LZ1,LELV)
 
-      common /scruz/         sij (lx1*ly1*lz1,6,lelv)
+      common /scruz_plan4/         sij (lx1*ly1*lz1,6,lelv)
       parameter (lr=lx1*ly1*lz1)
-      common /scrvz/         ur(lr),us(lr),ut(lr)
+      common /scrvz_plan4/         ur(lr),us(lr),ut(lr)
      $                     , vr(lr),vs(lr),vt(lr)
      $                     , wr(lr),ws(lr),wt(lr)
 
@@ -274,7 +274,7 @@ C     Compute the residual for the velocity
      $   , h1   (lx1,ly1,lz1,lelv)
      $   , h2   (lx1,ly1,lz1,lelv)
 
-      COMMON /SCRUZ/ TA1   (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_plan4/ TA1   (LX1,LY1,LZ1,LELV)
      $ ,             TA2   (LX1,LY1,LZ1,LELV)
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
      $ ,             TA4   (LX1,LY1,LZ1,LELV)
@@ -318,11 +318,11 @@ C     Compute the residual for the velocity
      $   , h1   (lx1,ly1,lz1,lelv)
      $   , h2   (lx1,ly1,lz1,lelv)
 
-      COMMON /SCRUZ/ TA1   (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_plan4/ TA1   (LX1,LY1,LZ1,LELV)
      $ ,             TA2   (LX1,LY1,LZ1,LELV)
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
      $ ,             TA4   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ wa1   (LX1*LY1*LZ1,LELV)
+      COMMON /scrmg_plan4/ wa1   (LX1*LY1*LZ1,LELV)
      $ ,             wa2   (LX1*LY1*LZ1,LELV)
      $ ,             wa3   (LX1*LY1*LZ1,LELV)
 
@@ -550,7 +550,7 @@ c
       include 'TOTAL'
       include 'CVODE'
 
-      common /scrns/ w1(lx1,ly1,lz1,lelt)
+      common /scrns_plan4/ w1(lx1,ly1,lz1,lelt)
      $              ,w2(lx1,ly1,lz1,lelt)
      $              ,w3(lx1,ly1,lz1,lelt)
      $              ,tx(lx1,ly1,lz1,lelt)
@@ -653,7 +653,7 @@ c
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
 
-      COMMON /SCRNS/ DVC  (LX1,LY1,LZ1,LELV),
+      COMMON /scrns_plan4/ DVC  (LX1,LY1,LZ1,LELV),
      $               DV1  (LX1,LY1,LZ1,LELV),
      $               DV2  (LX1,LY1,LZ1,LELV),
      $               DFC  (LX1,LY1,LZ1,LELV)
@@ -718,7 +718,7 @@ C
       INCLUDE 'CTIMER'
 C
       DIMENSION S(LX1,LY1,LZ1,LELT)
-      COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
+      COMMON /scrsf_plan4/ TMP(LX1,LY1,LZ1,LELT)
      $             , TMA(LX1,LY1,LZ1,LELT)
      $             , SMU(LX1,LY1,LZ1,LELT)
       common  /nekcb/ cb

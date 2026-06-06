@@ -10,14 +10,14 @@ C     Helmholtz equations
       include 'DOMAIN'
       include 'FDMH1'
 
-      common /screv/  dpc(lx1*ly1*lz1*lelt)
+      common /screv_subs1/  dpc(lx1*ly1*lz1*lelt)
      $     ,          p1 (lx1*ly1*lz1*lelt)
-      common /scrch/  p2 (lx1*ly1*lz1*lelt)
+      common /scrch_subs1/  p2 (lx1*ly1*lz1*lelt)
      $     ,          p3 (lx1*ly1*lz1*lelt)
-      common /scrsl/  qq1(lx1*ly1*lz1*lelt)
+      common /scrsl_subs1/  qq1(lx1*ly1*lz1*lelt)
      $     ,          qq2(lx1*ly1*lz1*lelt)
      $     ,          qq3(lx1*ly1*lz1*lelt)
-      common /scrmg/  pp1(lx1*ly1*lz1*lelt)
+      common /scrmg_subs1/  pp1(lx1*ly1*lz1*lelt)
      $     ,          pp2(lx1*ly1*lz1*lelt)
      $     ,          pp3(lx1*ly1*lz1*lelt)
      $     ,          wa (lx1*ly1*lz1*lelt)
@@ -186,7 +186,7 @@ c
       include 'TSTEP'
       include 'PARALLEL'
 
-      common /scruz/ cx(lx1*ly1*lz1*lelt)
+      common /scruz_subs1/ cx(lx1*ly1*lz1*lelt)
      $ ,             cy(lx1,ly1,lz1,lelt)
      $ ,             cz(lx1,ly1,lz1,lelt)
 
@@ -473,14 +473,14 @@ C--------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
 C
-      common /ctmp1/ u(lx1,ly1,lz1,lelv)
+      common /ctmp1_subs1/ u(lx1,ly1,lz1,lelv)
      $ ,             v(lx1,ly1,lz1,lelv)
      $ ,             w(lx1,ly1,lz1,lelv)
-      common /ctmp0/ x(lx1,ly1,lz1,lelv)
+      common /ctmp0_subs1/ x(lx1,ly1,lz1,lelv)
      $ ,             r(lx1,ly1,lz1,lelv)
       common /udxmax/ umax
 
-      common /scruz/ cx(lx1*ly1*lz1*lelv)
+      common /scruz_subs1/ cx(lx1*ly1*lz1*lelv)
      $ ,             cy(lx1,ly1,lz1,lelv)
      $ ,             cz(lx1,ly1,lz1,lelv)
 C
@@ -683,7 +683,8 @@ C
       include 'SOLN'
       include 'GEOM'
       include 'TSTEP'
-      common /ctmp0/  stc(lx1,ly1,lz1),sigst(lx1,ly1),dtst(lx1,ly1)
+      common /ctmp0_subs1/  stc(lx1,ly1,lz1),sigst(lx1,ly1),dtst(lx1,
+     $ ly1)
       character cb*3,cb2*2
 C
 C     Applicable?
@@ -753,7 +754,7 @@ C
       include 'GEOM'
       include 'DXYZ'
       common /delrst/ drst(lx1),drsti(lx1)
-      common /ctmp0/  xfm1(lx1),yfm1(lx1),t1xf(lx1),t1yf(lx1)
+      common /ctmp0_subs1/  xfm1(lx1),yfm1(lx1),t1xf(lx1),t1yf(lx1)
       DIMENSION DTST(LX1,1)
       LOGICAL IFAXIS
 C
@@ -799,10 +800,10 @@ C
       include 'GEOM'
       include 'DXYZ'
       common /delrst/ drst(lx1),drsti(lx1)
-      common /ctmp0/  xfm1(lx1,ly1),yfm1(lx1,ly1),zfm1(lx1,ly1)
-      common /ctmp1/  drm1(lx1,lx1),drtm1(lx1,ly1)
+      common /ctmp0_subs1/  xfm1(lx1,ly1),yfm1(lx1,ly1),zfm1(lx1,ly1)
+      common /ctmp1_subs1/  drm1(lx1,lx1),drtm1(lx1,ly1)
      $             ,  dsm1(lx1,lx1),dstm1(lx1,ly1)
-      common /scrmg/  xrm1(lx1,ly1),yrm1(lx1,ly1),zrm1(lx1,ly1)
+      common /scrmg_subs1/  xrm1(lx1,ly1),yrm1(lx1,ly1),zrm1(lx1,ly1)
      $             ,  xsm1(lx1,ly1),ysm1(lx1,ly1),zsm1(lx1,ly1)
       dimension dtst(lx1,ly1)
 C
@@ -1170,7 +1171,7 @@ C-------------------------------------------------------------------
       include 'EIGEN'
       common /cprint/ ifprint
       logical         ifprint
-      common /ctmp0/ wa (lx1,ly1,lz1,lelt)
+      common /ctmp0_subs1/ wa (lx1,ly1,lz1,lelt)
 C
       dimension r1    (lx1,ly1,lz1,1)
      $        , r2    (lx1,ly1,lz1,1)
@@ -1326,9 +1327,9 @@ C
       include 'GEOM'
       include 'TSTEP'
 
-      common /ctmp0/ exz(lx1*ly1*lz1*lelt)
+      common /ctmp0_subs1/ exz(lx1*ly1*lz1*lelt)
      $             , eyz(lx1*ly1*lz1*lelt)
-      common /ctmp1/ exx(lx1*ly1*lz1*lelt)
+      common /ctmp1_subs1/ exx(lx1*ly1*lz1*lelt)
      $             , exy(lx1*ly1*lz1*lelt)
      $             , eyy(lx1*ly1*lz1*lelt)
      $             , ezz(lx1*ly1*lz1*lelt)
@@ -1369,13 +1370,13 @@ C
 C     CAUTION : Stresses and strainrates share the same scratch commons
 C
       include 'SIZE'
-      common /ctmp1/ txx(lx1,ly1,lz1,lelt)
+      common /ctmp1_subs1/ txx(lx1,ly1,lz1,lelt)
      $             , txy(lx1,ly1,lz1,lelt)
      $             , tyy(lx1,ly1,lz1,lelt)
      $             , tzz(lx1,ly1,lz1,lelt)
-      common /ctmp0/ txz(lx1,ly1,lz1,lelt)
+      common /ctmp0_subs1/ txz(lx1,ly1,lz1,lelt)
      $             , tyz(lx1,ly1,lz1,lelt)
-      common /scrsf/ t11(lx1,ly1,lz1,lelt)
+      common /scrsf_subs1/ t11(lx1,ly1,lz1,lelt)
      $             , t22(lx1,ly1,lz1,lelt)
      $             , t33(lx1,ly1,lz1,lelt)
      $             , hii(lx1,ly1,lz1,lelt)
@@ -1434,11 +1435,11 @@ c-----------------------------------------------------------------------
       subroutine aijuj (au1,au2,au3,nel,ifaxis)
 C
       include 'SIZE'
-      common /ctmp1/ txx(lx1,ly1,lz1,lelt)
+      common /ctmp1_subs1/ txx(lx1,ly1,lz1,lelt)
      $             , txy(lx1,ly1,lz1,lelt)
      $             , tyy(lx1,ly1,lz1,lelt)
      $             , tzz(lx1,ly1,lz1,lelt)
-      common /ctmp0/ txz(lx1,ly1,lz1,lelt)
+      common /ctmp0_subs1/ txz(lx1,ly1,lz1,lelt)
      $             , tyz(lx1,ly1,lz1,lelt)
 C
       DIMENSION AU1(LX1,LY1,LZ1,1)
@@ -1458,7 +1459,7 @@ c-----------------------------------------------------------------------
 C
       include 'SIZE'
       include 'GEOM'
-      common /scrsf/ ur(lx1,ly1,lz1,lelt)
+      common /scrsf_subs1/ ur(lx1,ly1,lz1,lelt)
      $             , us(lx1,ly1,lz1,lelt)
      $             , ut(lx1,ly1,lz1,lelt)
 c
@@ -1643,7 +1644,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 c
-      common /ctmp0/ w(lx1,ly1,lz1)
+      common /ctmp0_subs1/ w(lx1,ly1,lz1)
 c
       include 'FDMH1'
 c
@@ -1730,7 +1731,7 @@ c     a new array of global pointers for an nx^ldim set of elements.
       integer*8 vertex(1)
       logical ifcenter
 
-      common /ctmp0/ gnum(lx1*ly1*lz1*lelt)
+      common /ctmp0_subs1/ gnum(lx1*ly1*lz1*lelt)
       integer*8 gnum
 
       call set_vert(gnum,ngv,nx,nel,vertex,ifcenter)
@@ -1827,9 +1828,9 @@ c     Galerkin projection
       real    a(ldim,ncl,ldim,ncl,1),h1(1),h2(1)
 c     real    a(ncl,ldim,ncl,ldim,1),h1(1),h2(1)
 
-      common /scrcr2/ a1(lx1*ly1*lz1,lelt),w1(lx1*ly1*lz1,lelt)
+      common /scrcr2_subs1/ a1(lx1*ly1*lz1,lelt),w1(lx1*ly1*lz1,lelt)
      $              , a2(lx1*ly1*lz1,lelt),w2(lx1*ly1*lz1,lelt)
-      common /scrcr3/ a3(lx1*ly1*lz1,lelt),w3(lx1*ly1*lz1,lelt)
+      common /scrcr3_subs1/ a3(lx1*ly1*lz1,lelt),w3(lx1*ly1*lz1,lelt)
      $              , b (lx1*ly1*lz1,8)
 
       integer e
@@ -1885,8 +1886,8 @@ c     Given an input vector v, this generates the H1 coarse-grid solution
 
       real u1(1),u2(1),u3(1),v1(1),v2(1),v3(1)
 
-      common /scrpr3/ uc1(lcr*lelt),uc2(lcr*lelt),uc3(lcr*lelt)
-      common /scrpr2/ vc1(lcr*lelt),vc2(lcr*lelt),vc3(lcr*lelt)
+      common /scrpr3_subs1/ uc1(lcr*lelt),uc2(lcr*lelt),uc3(lcr*lelt)
+      common /scrpr2_subs1/ vc1(lcr*lelt),vc2(lcr*lelt),vc3(lcr*lelt)
 
       integer icalld1
       save    icalld1
@@ -1965,11 +1966,11 @@ c-----------------------------------------------------------------------
       integer null_space,e
 
       character*3 cb
-      common /scrxxti/ ia(ldim*ldim*lcr*lcr*lelv)
+      common /scrxxti_subs1/ ia(ldim*ldim*lcr*lcr*lelv)
      $               , ja(ldim*ldim*lcr*lcr*lelv)
 
       parameter (lcc=2**ldim)
-      common /scrcr1/ a(ldim*ldim*lcc*lcc*lelt)
+      common /scrcr1_subs1/ a(ldim*ldim*lcc*lcc*lelt)
       real mask(ldim,lcr,lelv)
       equivalence (mask,a)
 
@@ -2216,7 +2217,7 @@ C
      $        , TZ(LX1,LY1,LZ1,1)
      $        , FF(LX1*LY1*LZ1,1)
 
-      common /scrsf/ fr(lx1*ly1*lz1,lelt)
+      common /scrsf_subs1/ fr(lx1*ly1*lz1,lelt)
      $             , fs(lx1*ly1*lz1,lelt)
      $             , ft(lx1*ly1*lz1,lelt)
       real           wa(lx1,ly1,lz1,lelt)
@@ -2312,7 +2313,7 @@ C
       include 'DXYZ'
       include 'GEOM'
       include 'WZ'
-      common /ctmp0/ phi(lx1,ly1)
+      common /ctmp0_subs1/ phi(lx1,ly1)
 C
       DIMENSION VFY(LX1,LY1,LZ1,1)
      $        , TZZ(LX1,LY1,LZ1,1)
@@ -2383,7 +2384,7 @@ c     Assumes if uservp is true and thus reorthogonalizes every step
       include 'CTIMER'
 
       real b1(1),b2(1),b3(1),h1(1),h2(1),wt(1)
-      common /ctmp1/ w(lx1*ly1*lz1*lelt,ldim)
+      common /ctmp1_subs1/ w(lx1*ly1*lz1*lelt,ldim)
       real l2a,l2b
 
       kmax = napproxstrs(1)
@@ -2627,7 +2628,7 @@ C
 C     Caution: 2nd and 3rd strainrate invariants residing in scratch
 C              common /SCREV/ are used in STNRINV and NEKASGN
 C
-      common /screv/ sii (lx1,ly1,lz1,lelt),siii(lx1,ly1,lz1,lelt)
+      common /screv_subs1/ sii (lx1,ly1,lz1,lelt),siii(lx1,ly1,lz1,lelt)
 
       if (nio.eq.0.and.loglevel.gt.2)
      $   write(6,*) 'setprop'

@@ -11,13 +11,13 @@ C-----------------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRNS/  RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_planx/  RESV1 (LX1,LY1,LZ1,LELV)
      $ ,              RESV2 (LX1,LY1,LZ1,LELV)
      $ ,              RESV3 (LX1,LY1,LZ1,LELV)
      $ ,              DV1   (LX1,LY1,LZ1,LELV)
      $ ,              DV2   (LX1,LY1,LZ1,LELV)
      $ ,              DV3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_planx/  H1    (LX1,LY1,LZ1,LELV)
      $ ,              H2    (LX1,LY1,LZ1,LELV)
 C
       IF (IGEOM.EQ.1) THEN
@@ -76,7 +76,7 @@ C---------------------------------------------------------------------
       REAL           RESV3 (LX1,LY1,LZ1,1)
       REAL           H1    (LX1,LY1,LZ1,1)
       REAL           H2    (LX1,LY1,LZ1,1)
-      COMMON /SCRUZ/ W1    (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_planx/ W1    (LX1,LY1,LZ1,LELV)
      $ ,             W2    (LX1,LY1,LZ1,LELV)
      $ ,             W3    (LX1,LY1,LZ1,LELV)
 

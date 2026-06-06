@@ -109,9 +109,9 @@ C-------------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
 C
-      COMMON /SCRVH/ H1 (LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_eigsolv/ H1 (LX1,LY1,LZ1,LELT)
      $ ,             H2 (LX1,LY1,LZ1,LELT)
-      COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
+      COMMON /scrhi_eigsolv/ H2INV (LX1,LY1,LZ1,LELV)
 C
       NTOT1  = lx1*ly1*lz1*NELV
 C
@@ -214,7 +214,7 @@ C
       REAL            MULT (LX1,LY1,LZ1,1)
       REAL            H1   (LX1,LY1,LZ1,1)
       REAL            H2   (LX1,LY1,LZ1,1)
-      COMMON /SCREV/  X1   (LX1,LY1,LZ1,LELT)
+      COMMON /screv_eigsolv/  X1   (LX1,LY1,LZ1,LELT)
      $ ,              Y1   (LX1,LY1,LZ1,LELT)
       CHARACTER NAME*4
 C
@@ -269,7 +269,7 @@ C
       REAL            MULT (LX1,LY1,LZ1,1)
       REAL            H1   (LX1,LY1,LZ1,1)
       REAL            H2   (LX1,LY1,LZ1,1)
-      COMMON /SCREV/  X1   (LX1,LY1,LZ1,LELT)
+      COMMON /screv_eigsolv/  X1   (LX1,LY1,LZ1,LELT)
      $ ,              Y1   (LX1,LY1,LZ1,LELT)
 C
       IF (IMESH.EQ.1) NEL = NELV
@@ -323,7 +323,7 @@ C
       REAL           H1   (LX1,LY1,LZ1,1)
       REAL           H2   (LX1,LY1,LZ1,1)
       REAL           H2INV(LX1,LY1,LZ1,1)
-      COMMON /SCREV/ X2   (LX2,LY2,LZ2,LELV)
+      COMMON /screv_eigsolv/ X2   (LX2,LY2,LZ2,LELV)
      $ ,             Y2   (LX2,LY2,LZ2,LELV)
 C
       NTOT2  = lx2*ly2*lz2*NELV
@@ -368,7 +368,7 @@ C
       REAL           H1    (LX1,LY1,LZ1,1)
       REAL           H2    (LX1,LY1,LZ1,1)
       REAL           H2INV (LX1,LY1,LZ1,1)
-      COMMON /SCREV/ X2 (LX2,LY2,LZ2,LELV)
+      COMMON /screv_eigsolv/ X2 (LX2,LY2,LZ2,LELV)
      $ ,             Y2 (LX2,LY2,LZ2,LELV)
 C
       NTOT2  = lx2*ly2*lz2*NELV

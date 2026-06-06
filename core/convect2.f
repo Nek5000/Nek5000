@@ -20,7 +20,7 @@ c-----------------------------------------------------------------------
 
       common /cchar/ ct_vx(0:lorder+1) ! time for each slice in c_vx()
 
-      common /scruz/ cx  (lx1*ly1*lz1*lelt)
+      common /scruz_convect2/ cx  (lx1*ly1*lz1*lelt)
      $ ,             cy  (lx1*ly1*lz1*lelt)
      $ ,             cz  (lx1*ly1*lz1*lelt)
      $ ,             hmsk(lx1*ly1*lz1*lelt)
@@ -82,7 +82,7 @@ c-----------------------------------------------------------------------
       integer msk(0:1)
       character      cb*3
       parameter (lxyz1=lx1*ly1*lz1)
-      common /ctmp1/ work(lxyz1,lelt)
+      common /ctmp1_convect2/ work(lxyz1,lelt)
 
       real mask(lxyz1,1),u(lxyz1,1),v(lxyz1,1),w(lxyz1,1)
 
