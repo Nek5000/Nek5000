@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload artifacts (fallback for same-run cache miss) # 1m16s (if miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: toolchain-${{ steps.key.outputs.cache_key }}
           path: |
@@ -146,7 +146,7 @@ jobs:
 
       - name: Save cache (only if miss) # 21s
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             llvm.tar.zst
@@ -179,7 +179,7 @@ jobs:
       MPICH_FC: flang
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: apt dependencies
         shell: bash
@@ -196,7 +196,7 @@ jobs:
 
       - name: Restore cache (preferred) # 15-20s
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             llvm.tar.zst
@@ -205,7 +205,7 @@ jobs:
 
       - name: Download artifacts (fallback when cache miss)
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: toolchain-${{ needs.prepare-llvm.outputs.cache_key }}
           path: .
