@@ -258,7 +258,6 @@ c-----------------------------------------------------------------------
 c     interp mat for h-refine, GLL
 c        nx: npts in 1 direction
 c        ncut: new nel in 1 direction
-      implicit none
       include 'SIZE'
 
       logical ifrecomp
@@ -461,27 +460,6 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c     h refine + restart
 c-----------------------------------------------------------------------
-      subroutine h_refine_copy(u,nel,ncut)
-      include 'SIZE'
-      real u(lx1,ly1,lz1,*)
-      real ubak(lx1,ly1,lz1,lelt)
-      integer ncut, nblk
-
-      nblk = ncut**ldim
-      nxyz = lx1*ly1*lz1
-
-      call rzero(ubak,nxyz*lelt)
-      call copy(ubak,u,nxyz*nel*nblk)
-      call rzero(u,nxyz*nel*nblk)
-
-      do ie=1,nel
-        ien = ie_map_o2r(ie,nblk)
-        call copy(u(1,1,1,ie),ubak(1,1,1,ien),nxyz)
-      enddo
-
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine h_refine_fld(u,nel,ncut)
 c     apply one round of refinement to a field
       include 'SIZE'
@@ -558,7 +536,6 @@ c-----------------------------------------------------------------------
       subroutine h_refine_readfld(xm1_,ym1_,zm1_,vx_,vy_,vz_
      $                           ,pm1_,t_,ps_, refine, refineSize)
 c     restart, refine fields after readfld
-      implicit none
       include 'SIZE'
       include 'INPUT' ! ifaxis
       include 'PARALLEL' ! np
@@ -591,37 +568,6 @@ c     restart, refine fields after readfld
 
       if (ifaxis) then
          call exitti('h-refine does not support ifaxis=T$',ncut)
-      endif
-
-      if (np.gt.1) then
-        nelt0 = nelt
-        do iref=refineSize,1,-1 ! reverse copy
-          ncut = refine(iref)
-          nblk = ncut**ldim
-          nelt0 = nelt0 / nblk
-
-          if (ifgetxr.AND.ifgetx) then
-            call h_refine_copy(xm1_,nelt0,ncut)
-            call h_refine_copy(ym1_,nelt0,ncut)
-            call h_refine_copy(zm1_,nelt0,ncut)
-          endif
-          if (ifgetur.AND.ifgetu) then
-            call h_refine_copy(vx_,nelt0,ncut)
-            call h_refine_copy(vy_,nelt0,ncut)
-            call h_refine_copy(vz_,nelt0,ncut)
-          endif
-          if (ifgetpr.AND.ifgetp) then
-            call h_refine_copy(pm1_,nelt0,ncut)
-          endif
-          if (ifgettr.AND.ifgett) then
-            call h_refine_copy(t_,nelt0,ncut)
-          endif
-          do k=1,npsr
-            if (ifgtpsr(k).AND.ifgtps(k))then
-              call h_refine_copy(ps_(1,1,1,1,k),nelt0,ncut)
-            endif
-          enddo
-        enddo
       endif
 
       nelt0 = nelt / nblk_total
@@ -661,7 +607,6 @@ c-----------------------------------------------------------------------
 c     Extra interface to recover original mesh info, for hMG
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_nel(nelv_o,nelt_o,ncut)
-      implicit none
       include 'SIZE'
       integer nelv_o,nelt_o,ncut,nblk
 
@@ -679,7 +624,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_vertex(vtxo,vtxr,nelo,ncut)
-      implicit none
       include 'SIZE'
       integer*8 vtxo(2**ldim,1), vtxr(2**ldim,1)
       integer nelo, ncut, nblk
@@ -717,7 +661,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine h_refine_r2o_cbc(CBCo,CBCr,nelo,ncut)
-      implicit none
       include 'SIZE'
       integer e,el,er,nelo,ncut,kcut,nblk
       integer ic,jc,kc
@@ -754,7 +697,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine hrefcuts_i2c(cout) ! convert integer to base 62 alphabet
-      implicit none
       include 'SIZE'
       include 'INPUT'
 
@@ -810,7 +752,6 @@ c     Base 62 alphabet
       end
 c-----------------------------------------------------------------------
       subroutine hrefcuts_c2i(cin) ! convert string to int list
-      implicit none
       include 'SIZE'
       include 'RESTART'
 
@@ -886,7 +827,6 @@ c     This subroutine return the ordered diffeference
 c        hrefcutsrs = hrefcuts \ hrefcutsrs
 c     which is the extra refinement on the top of checkpoint to match simulation
 c
-      implicit none
       include 'SIZE'
       include 'INPUT'
       include 'RESTART'
@@ -895,6 +835,7 @@ c
       integer nblk, nblk_rs, ncut, ncut_rs, i, j, ierr
       integer nelgr0, nelgt0
 
+      nhrefblkrs = 1
       if (nhref.eq.0) return
 
       if (nio.eq.0) then
@@ -947,6 +888,12 @@ c
       if (nio.eq.0) then
          write(*,*)'href schdule, dif: ', (hrefcutsrs(i),i=1,nhrefrs)
       endif
+
+      ncut = 1
+      do i=1,nhrefrs
+         ncut = ncut * hrefcutsrs(i)
+      enddo
+      nhrefblkrs = ncut**ldim
 
       return
 

@@ -1223,11 +1223,11 @@ c-----------------------------------------------------------------------
 
       if(nid.eq.0) then
         call chcopy(nam1(kk),'.nek5000',8)
-        open(unit=101,file=name)
-        write(101,*) "filetemplate: ", trim(fname), "%01d.f%05d"
-        write(101,*) "firsttimestep: 1"
-        write(101,*) "numtimesteps: ", nfld
-        close(101) 
+        open(unit=89,file=name)
+        write(89,*) "filetemplate: ", trim(fname), "%01d.f%05d"
+        write(89,*) "firsttimestep: 1"
+        write(89,*) "numtimesteps: ", nfld
+        close(89) 
       endif
 
       call chcopy(fnam1(k),six,ndigit)                  !  Add file-id holder
