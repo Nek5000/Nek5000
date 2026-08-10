@@ -224,7 +224,7 @@ c
       arg   = r/arg
 c
       if (abs(arg).gt.1) goto 999
-      theta = acos(abs(arg))
+      theta = acos(arg)
 c
       t1    = theta / 3.
       t2    = (theta + twopi) / 3.
