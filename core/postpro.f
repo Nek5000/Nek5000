@@ -244,7 +244,7 @@ c
 c
   999 continue   ! failed
       ierr = 1
-      call rzero(x,3)
+      call rzero(xo,3)
 
       return
       end
