@@ -426,44 +426,63 @@ C
      $        , YM3(LX3,LY3,LZ3,1)
      $        , ZM3(LX3,LY3,LZ3,1)
 C
+      ioff = 1
       XRM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       XSM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       XTM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(2*lx3*ly3*lz3*lelt+1 : 3*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       YRM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(3*lx3*ly3*lz3*lelt+1 : 4*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       YSM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(4*lx3*ly3*lz3*lelt+1 : 5*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       YTM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(5*lx3*ly3*lz3*lelt+1 : 6*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       ZRM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrns(6*lx3*ly3*lz3*lelt+1 : 7*lx3*ly3*lz3*lelt)
+     $   cb_scrns(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = 1
       RXM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp1(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_ctmp1(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       RYM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp1(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_ctmp1(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       RZM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp1(2*lx3*ly3*lz3*lelt+1 : 3*lx3*ly3*lz3*lelt)
+     $   cb_ctmp1(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       SXM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp1(3*lx3*ly3*lz3*lelt+1 : 4*lx3*ly3*lz3*lelt)
+     $   cb_ctmp1(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = 1
       ZSM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp0(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_ctmp0(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       ZTM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_ctmp0(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_ctmp0(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = 1
       SYM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrmg(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_scrmg(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       SZM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrmg(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_scrmg(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       TXM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrmg(2*lx3*ly3*lz3*lelt+1 : 3*lx3*ly3*lz3*lelt)
+     $   cb_scrmg(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       TYM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scrmg(3*lx3*ly3*lz3*lelt+1 : 4*lx3*ly3*lz3*lelt)
+     $   cb_scrmg(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = 1
       TZM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_screv(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_screv(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       JACM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_screv(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_screv(ioff : ioff + lx3*ly3*lz3*lelt - 1)
 C
       NXY3  = lx3*ly3
       NYZ3  = ly3*lz3
@@ -615,24 +634,25 @@ C
      $               , ZRM1(:,:,:,:)
       real, pointer :: ZSM1(:,:,:,:), ZTM1(:,:,:,:)
 C
-      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
-      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
-      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelt+1 : 7*lx1*ly1*lz1*lelt)
-      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = 1
+      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
 C
       NXY1  = lx1*ly1
       NYZ1  = ly1*lz1
@@ -703,26 +723,27 @@ C
      $               , ZRM1(:,:,:,:)
       real, pointer :: ZSM1(:,:,:,:), ZTM1(:,:,:,:), WJ(:,:,:,:)
 C
-      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
-      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
-      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelt+1 : 7*lx1*ly1*lz1*lelt)
-      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      WJ  (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = 1
+      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      WJ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
 C
       NXYZ1 = lx1*ly1*lz1
       NTOT1 = NXYZ1*NELT
@@ -1313,22 +1334,24 @@ C
      $               , YSM1(:,:,:,:)
       real, pointer :: WGTR1(:,:), WGTR2(:,:), WGTR3(:,:), WGTR4(:,:)
 C
-      WGTR1(1:lx1,1:lelt) => cb_ctmp0(0*lx1*lelt+1 : 1*lx1*lelt)
-      WGTR2(1:ly1,1:lelt) => cb_ctmp0(1*lx1*lelt+1
-     $                              : 1*lx1*lelt+ly1*lelt)
-      WGTR3(1:lx1,1:lelt) => cb_ctmp0(1*lx1*lelt+ly1*lelt+1
-     $                              : 2*lx1*lelt+ly1*lelt)
-      WGTR4(1:ly1,1:lelt) => cb_ctmp0(2*lx1*lelt+ly1*lelt+1
-     $                              : 2*lx1*lelt+2*ly1*lelt)
+      ioff = 1
+      WGTR1(1:lx1,1:lelt) => cb_ctmp0(ioff : ioff + lx1*lelt - 1)
+      ioff = ioff + lx1*lelt
+      WGTR2(1:ly1,1:lelt) => cb_ctmp0(ioff : ioff + ly1*lelt - 1)
+      ioff = ioff + ly1*lelt
+      WGTR3(1:lx1,1:lelt) => cb_ctmp0(ioff : ioff + lx1*lelt - 1)
+      ioff = ioff + lx1*lelt
+      WGTR4(1:ly1,1:lelt) => cb_ctmp0(ioff : ioff + ly1*lelt - 1)
 C
-      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 C
       CALL SETWGTR (WGTR1,WGTR2,WGTR3,WGTR4)
 C
@@ -1397,14 +1420,15 @@ C
      $ ,        WGTR3(LX1,1)
      $ ,        WGTR4(LY1,1)
 C
-      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 C
       IF (IFAXIS) THEN
          DO 100 IEL=1,NELT
@@ -1462,32 +1486,33 @@ C
      $               , A(:,:,:,:), B(:,:,:,:)
       real, pointer :: C(:,:,:,:), DOT(:,:,:,:)
 C
-      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
-      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
-      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelt+1 : 7*lx1*ly1*lz1*lelt)
-      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      A   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      B   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      C   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      DOT (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      XTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZRM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = 1
+      ZSM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZTM1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      A(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      B(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = 1
+      C(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      DOT(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
 C
       NXY1  = lx1*ly1
       NFACE = 2*ldim
@@ -1745,10 +1770,10 @@ C
 C
       real, pointer :: XA(:,:,:), XB(:,:,:)
 C
-      XA(1:lx1,1:ly3,1:lz3) => cb_ctmp0(0*lx1*ly3*lz3+1
-     $                                : 1*lx1*ly3*lz3)
-      XB(1:lx1,1:ly1,1:lz3) => cb_ctmp0(1*lx1*ly3*lz3+1
-     $                                : 1*lx1*ly3*lz3+lx1*ly1*lz3)
+      ioff = 1
+      XA(1:lx1,1:ly3,1:lz3) => cb_ctmp0(ioff : ioff + lx1*ly3*lz3 - 1)
+      ioff = ioff + lx1*ly3*lz3
+      XB(1:lx1,1:ly1,1:lz3) => cb_ctmp0(ioff : ioff + lx1*ly1*lz3 - 1)
 C
       NYZ3 = ly3*lz3
       NXY1 = lx1*ly1
@@ -1794,10 +1819,10 @@ C
 C
       real, pointer :: XA(:,:,:), XB(:,:,:)
 C
-      XA(1:lx3,1:ly1,1:lz1) => cb_ctmp0(0*lx3*ly1*lz1+1
-     $                                : 1*lx3*ly1*lz1)
-      XB(1:lx3,1:ly3,1:lz1) => cb_ctmp0(1*lx3*ly1*lz1+1
-     $                                : 1*lx3*ly1*lz1+lx3*ly3*lz1)
+      ioff = 1
+      XA(1:lx3,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lx3*ly1*lz1 - 1)
+      ioff = ioff + lx3*ly1*lz1
+      XB(1:lx3,1:ly3,1:lz1) => cb_ctmp0(ioff : ioff + lx3*ly3*lz1 - 1)
 C
       NYZ1 = ly1*lz1
       NXY3 = lx3*ly3
@@ -1875,10 +1900,10 @@ C
 C
       real, pointer :: XA(:,:,:), XB(:,:,:)
 C
-      XA(1:lx1,1:ly2,1:lz2) => cb_ctmp0(0*lx1*ly2*lz2+1
-     $                                : 1*lx1*ly2*lz2)
-      XB(1:lx1,1:ly1,1:lz2) => cb_ctmp0(1*lx1*ly2*lz2+1
-     $                                : 1*lx1*ly2*lz2+lx1*ly1*lz2)
+      ioff = 1
+      XA(1:lx1,1:ly2,1:lz2) => cb_ctmp0(ioff : ioff + lx1*ly2*lz2 - 1)
+      ioff = ioff + lx1*ly2*lz2
+      XB(1:lx1,1:ly1,1:lz2) => cb_ctmp0(ioff : ioff + lx1*ly1*lz2 - 1)
 C
       NYZ2 = ly2*lz2
       NXY1 = lx1*ly1
@@ -1922,10 +1947,10 @@ C
 C
       real, pointer :: XA(:,:,:), XB(:,:,:)
 C
-      XA(1:lx1,1:ly2,1:lz2) => cb_ctmp0(0*lx1*ly2*lz2+1
-     $                                : 1*lx1*ly2*lz2)
-      XB(1:lx1,1:ly1,1:lz2) => cb_ctmp0(1*lx1*ly2*lz2+1
-     $                                : 1*lx1*ly2*lz2+lx1*ly1*lz2)
+      ioff = 1
+      XA(1:lx1,1:ly2,1:lz2) => cb_ctmp0(ioff : ioff + lx1*ly2*lz2 - 1)
+      ioff = ioff + lx1*ly2*lz2
+      XB(1:lx1,1:ly1,1:lz2) => cb_ctmp0(ioff : ioff + lx1*ly1*lz2 - 1)
 C
       NYZ2 = ly2*lz2
       NXY1 = lx1*ly1

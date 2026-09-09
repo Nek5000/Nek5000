@@ -107,24 +107,25 @@ C
 
       integer e
 
-      DUDR(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1+1 : 1*lx1*ly1*lz1)
-      DUDS(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1+1 : 2*lx1*ly1*lz1)
-      DUDT(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1+1 : 3*lx1*ly1*lz1)
-      TMP1(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(3*lx1*ly1*lz1+1 : 4*lx1*ly1*lz1)
-      TMP2(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(4*lx1*ly1*lz1+1 : 5*lx1*ly1*lz1)
-      TMP3(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(5*lx1*ly1*lz1+1 : 6*lx1*ly1*lz1)
-      TM1(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1+1 : 1*lx1*ly1*lz1)
-      TM2(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1+1 : 2*lx1*ly1*lz1)
-      TM3(1:lx1,1:ly1,1:lz1) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1+1 : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      DUDR(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      DUDS(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      DUDT(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TMP1(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TMP2(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TMP3(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = 1
+      TM1(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TM2(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TM3(1:lx1,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
 
       naxhm = naxhm + 1
       etime1 = dnekclock()
@@ -563,10 +564,11 @@ C-------------------------------------------------------------------
       REAL MULT (LX1,LY1,LZ1,1)
       REAL MASK (LX1,LY1,LZ1,1)
 C
-      W1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      W2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      W1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      W2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
 C
       IF (EIGAA.NE.0.) THEN
          ACONDNO = EIGGA/EIGAA
@@ -662,12 +664,18 @@ c
       common /iterhm/ niterhm
       character*4 name
 c
-      d     (1:lg) => cb_scrcg(0*lg+1 : 1*lg)
-      scalar(1:2)  => cb_scrcg(1*lg+1 : 1*lg+2)
-      r(1:lg) => cb_scrmg(0*lg+1 : 1*lg)
-      w(1:lg) => cb_scrmg(1*lg+1 : 2*lg)
-      p(1:lg) => cb_scrmg(2*lg+1 : 3*lg)
-      z(1:lg) => cb_scrmg(3*lg+1 : 4*lg)
+      ioff = 1
+      d(1:lg) => cb_scrcg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      scalar(1:2) => cb_scrcg(ioff : ioff + 2 - 1)
+      ioff = 1
+      r(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      w(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      p(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      z(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
 c
       if (ifsplit.and.name.eq.'PRES') then
          if (param(42).eq.0) then
@@ -1075,9 +1083,12 @@ c
 c
       integer left,right
 c
-      W (1:lx1,1:lx1) => cb_ctmp0(0*lx1*lx1+1 : 1*lx1*lx1)
-      aa(1:lx1,1:lx1) => cb_ctmp0(1*lx1*lx1+1 : 2*lx1*lx1)
-      bb(1:lx1,1:lx1) => cb_ctmp0(2*lx1*lx1+1 : 3*lx1*lx1)
+      ioff = 1
+      W(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      aa(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      bb(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
 c
 c     Set up generic operators for fdm applied to H1 operator (Helmholtz)
 c
@@ -1172,11 +1183,15 @@ c
       real, pointer :: W(:,:),aa(:,:),bb(:,:),mask(:,:,:,:)
       character*3 cb
 c
-      W   (1:lx1,1:lx1) => cb_ctmp0(0*lx1*lx1+1 : 1*lx1*lx1)
-      aa  (1:lx1,1:lx1) => cb_ctmp0(1*lx1*lx1+1 : 2*lx1*lx1)
-      bb  (1:lx1,1:lx1) => cb_ctmp0(2*lx1*lx1+1 : 3*lx1*lx1)
-      mask(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(3*lx1*lx1+1
-     $                                : 3*lx1*lx1+lx1*ly1*lz1*lelt)
+      ioff = 1
+      W(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      aa(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      bb(1:lx1,1:lx1) => cb_ctmp0(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      mask(1:lx1,1:ly1,1:lz1,1:lelt) =>
+     $   cb_ctmp0(ioff : ioff + lx1*ly1*lz1*lelt - 1)
 c
 c     Set up element specific information
 c
@@ -1570,12 +1585,18 @@ C------------------------------------------------------------------------
 
       logical ifmcor
 
-      d     (1:lg) => cb_scrcg(0*lg+1 : 1*lg)
-      scalar(1:2)  => cb_scrcg(1*lg+1 : 1*lg+2)
-      r(1:lg) => cb_scrmg(0*lg+1 : 1*lg)
-      w(1:lg) => cb_scrmg(1*lg+1 : 2*lg)
-      p(1:lg) => cb_scrmg(2*lg+1 : 3*lg)
-      z(1:lg) => cb_scrmg(3*lg+1 : 4*lg)
+      ioff = 1
+      d(1:lg) => cb_scrcg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      scalar(1:2) => cb_scrcg(ioff : ioff + 2 - 1)
+      ioff = 1
+      r(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      w(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      p(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
+      ioff = ioff + lg
+      z(1:lg) => cb_scrmg(ioff : ioff + lg - 1)
 
 c **  zero out stuff for Lanczos eigenvalue estimator
       call rzero(diagt,maxcg)
@@ -2135,12 +2156,13 @@ c     Helmholtz matrix-vector product: Au = h1*[A]u + h2*[B]u
       uf(1:lx1*lz1,1:2*ldim,1:lelt,1:2) =>
      $   cb_ytmp0(1 : 2*lx1*lz1*2*ldim*lelt)
 
-      ur(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      us(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      ut(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      ur(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      us(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ut(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp1(ioff : ioff + ltot - 1)
 
       n     = lx1*ly1*lz1*nelfld(ifield)
       nface = 2*ldim
@@ -2270,12 +2292,18 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
       real*8 etime1,dnekclock
 
-      wk1(1:lgmres) => cb_ctmp0(0*lgmres+1 : 1*lgmres)
-      wk2(1:lgmres) => cb_ctmp0(1*lgmres+1 : 2*lgmres)
-      r(1:lt) => cb_scrcg(0*lt+1 : 1*lt)
-      z(1:lt) => cb_scrcg(1*lt+1 : 2*lt)
-      p(1:lt) => cb_scrcg(2*lt+1 : 3*lt)
-      w(1:lt) => cb_scrcg(3*lt+1 : 4*lt)
+      ioff = 1
+      wk1(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
+      ioff = ioff + lgmres
+      wk2(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
+      ioff = 1
+      r(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      z(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      p(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      w(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
       r1(1:lt) => cb_scrmg(1 : lt)
 
       n = lx1*ly1*lz1*nelv

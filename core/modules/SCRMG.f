@@ -25,6 +25,7 @@
 
          allocate(cb_scrmg(nscrmg), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrmg$',ierr)
+         cb_scrmg = 0
 
       end subroutine init
       end module scrmg_mod

@@ -161,15 +161,18 @@ c
       pm1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrcg(1 : lx1*ly1*lz1*lelv)
       tax(1:lx1,1:ly1,1:lelt,1:ldimt) =>
      $   cb_scrmg(1 : lx1*ly1*lelt*ldimt)
-      vxax(1:lx1,1:ly1,1:lelv) => cb_scruz(0*lx1*ly1*lelv+1
-     $                                    : 1*lx1*ly1*lelv)
-      vyax(1:lx1,1:ly1,1:lelv) => cb_scruz(1*lx1*ly1*lelv+1
-     $                                    : 2*lx1*ly1*lelv)
-      prax(1:lx2,1:ly2,1:lelv) => cb_scruz(2*lx1*ly1*lelv+1
-     $                                    : 2*lx1*ly1*lelv+lx2*ly2*lelv)
-      yax(1:lx1,1:ly1,1:lelt) => cb_scruz(
-     $   2*lx1*ly1*lelv+lx2*ly2*lelv+1
-     $ : 2*lx1*ly1*lelv+lx2*ly2*lelv+lx1*ly1*lelt)
+      ioff = 1
+      vxax(1:lx1,1:ly1,1:lelv) =>
+     $   cb_scruz(ioff : ioff + lx1*ly1*lelv - 1)
+      ioff = ioff + lx1*ly1*lelv
+      vyax(1:lx1,1:ly1,1:lelv) =>
+     $   cb_scruz(ioff : ioff + lx1*ly1*lelv - 1)
+      ioff = ioff + lx1*ly1*lelv
+      prax(1:lx2,1:ly2,1:lelv) =>
+     $   cb_scruz(ioff : ioff + lx2*ly2*lelv - 1)
+      ioff = ioff + lx2*ly2*lelv
+      yax(1:lx1,1:ly1,1:lelt) =>
+     $   cb_scruz(ioff : ioff + lx1*ly1*lelt - 1)
 
       if (isave.eq.0) then ! map to GLL grid
 
@@ -896,12 +899,15 @@ c-----------------------------------------------------------------------
       real, pointer :: ur1(:), ur2(:), ur3(:)
 
       pm1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrcg(1 : lx1*ly1*lz1*lelv)
-      ur1(1:lxo*lxo*lxo*lelt) => cb_scruz(0*lxo*lxo*lxo*lelt+1
-     $                                   : 1*lxo*lxo*lxo*lelt)
-      ur2(1:lxo*lxo*lxo*lelt) => cb_scruz(1*lxo*lxo*lxo*lelt+1
-     $                                   : 2*lxo*lxo*lxo*lelt)
-      ur3(1:lxo*lxo*lxo*lelt) => cb_scruz(2*lxo*lxo*lxo*lelt+1
-     $                                   : 3*lxo*lxo*lxo*lelt)
+      ioff = 1
+      ur1(1:lxo*lxo*lxo*lelt) =>
+     $   cb_scruz(ioff : ioff + lxo*lxo*lxo*lelt - 1)
+      ioff = ioff + lxo*lxo*lxo*lelt
+      ur2(1:lxo*lxo*lxo*lelt) =>
+     $   cb_scruz(ioff : ioff + lxo*lxo*lxo*lelt - 1)
+      ioff = ioff + lxo*lxo*lxo*lelt
+      ur3(1:lxo*lxo*lxo*lelt) =>
+     $   cb_scruz(ioff : ioff + lxo*lxo*lxo*lelt - 1)
 
       tiostart=dnekclock_sync()
 
@@ -1525,12 +1531,16 @@ c
       character*3 name3
       logical if_save(ldimt)
 c
-      w1(1:ltot1) => cb_outtmp(0*ltot1+1 : 1*ltot1)
-      w2(1:ltot1) => cb_outtmp(1*ltot1+1 : 2*ltot1)
-      w3(1:ltot1) => cb_outtmp(2*ltot1+1 : 3*ltot1)
-      wp(1:ltot2) => cb_outtmp(3*ltot1+1 : 3*ltot1+ltot2)
-      wt(1:ltot1,1:ldimt) => cb_outtmp(3*ltot1+ltot2+1
-     $                                : 3*ltot1+ltot2+ltot1*ldimt)
+      ioff = 1
+      w1(1:ltot1) => cb_outtmp(ioff : ioff + ltot1 - 1)
+      ioff = ioff + ltot1
+      w2(1:ltot1) => cb_outtmp(ioff : ioff + ltot1 - 1)
+      ioff = ioff + ltot1
+      w3(1:ltot1) => cb_outtmp(ioff : ioff + ltot1 - 1)
+      ioff = ioff + ltot1
+      wp(1:ltot2) => cb_outtmp(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      wt(1:ltot1,1:ldimt) => cb_outtmp(ioff : ioff + ltot1*ldimt - 1)
 
       ntot1  = lx1*ly1*lz1*nelt
       ntot1t = lx1*ly1*lz1*nelt

@@ -822,8 +822,10 @@ c----------------------------------------------------------------------
       parameter(lxm=lx1+2)
       real, pointer :: b(:),w(:)
 
-      b(1:2*lxm*lxm) => cb_ctmp0(0*2*lxm*lxm+1 : 1*2*lxm*lxm)
-      w(1:2*lxm*lxm) => cb_ctmp0(1*2*lxm*lxm+1 : 2*2*lxm*lxm)
+      ioff = 1
+      b(1:2*lxm*lxm) => cb_ctmp0(ioff : ioff + 2*lxm*lxm - 1)
+      ioff = ioff + 2*lxm*lxm
+      w(1:2*lxm*lxm) => cb_ctmp0(ioff : ioff + 2*lxm*lxm - 1)
 
       call hsmg_setup_fast1d_a(s,lbc,rbc,ll,lm,lr,ah,n)
       call hsmg_setup_fast1d_b(b,lbc,rbc,ll,lm,lr,bh,n)
@@ -1447,10 +1449,11 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
-      h1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
 
       mg_fld = 1
       if (ifield.gt.1) mg_fld = 2
@@ -1929,14 +1932,18 @@ c     if_hybrid = .false.   ! to convergence efficiency
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
-      e(1:2*lt) => cb_scrmg(0*2*lt+1 : 1*2*lt)
-      w(1:lt)   => cb_scrmg(2*lt+1 : 3*lt)
-      r(1:lt)   => cb_scrmg(3*lt+1 : 4*lt)
+      ioff = 1
+      e(1:2*lt) => cb_scrmg(ioff : ioff + 2*lt - 1)
+      ioff = ioff + 2*lt
+      w(1:lt) => cb_scrmg(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      r(1:lt) => cb_scrmg(ioff : ioff + lt - 1)
 
-      h1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
 
       nel   = nelfld(ifield)
 
@@ -2088,9 +2095,12 @@ c
 
       integer e
 
-      ur(1:lxyz) => cb_ctmp0(0*lxyz+1 : 1*lxyz)
-      us(1:lxyz) => cb_ctmp0(1*lxyz+1 : 2*lxyz)
-      ut(1:lxyz) => cb_ctmp0(2*lxyz+1 : 3*lxyz)
+      ioff = 1
+      ur(1:lxyz) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      us(1:lxyz) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ut(1:lxyz) => cb_ctmp0(ioff : ioff + lxyz - 1)
 
       do e=1,nel
 
@@ -2312,10 +2322,11 @@ c----------------------------------------------------------------------
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelt) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelt)
-      h1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      h2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      h1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
 
       param(59) = 1
       call geom_reset(1)  ! Recompute g1m1 etc. with deformed only
@@ -2596,12 +2607,14 @@ c     As a first pass, rely on the cheesy common-block interface to get h1
 
       integer p_h1
 
-      h1   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrvh(ioff : ioff + ltotv - 1)
 
       l                 = mg_h1_lmax
       p_mg_h1(l,mg_fld) = 0
@@ -2641,12 +2654,14 @@ c     As a first pass, rely on the cheesy common-block interface to get h2
 
       integer p_h2,pf,pc
 
-      h1   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrvh(ioff : ioff + ltotv - 1)
 
       l                 = mg_h1_lmax
       p_mg_h2(l,mg_fld) = 0

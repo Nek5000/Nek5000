@@ -22,6 +22,7 @@ c        vdc(lx1*ly1*lz1*lelv,2))
 
          allocate(cb_cvflow_a(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_cvflow_a$',ierr)
+         cb_cvflow_a = 0
 
       end subroutine init
       end module cvflow_a_mod

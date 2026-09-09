@@ -25,6 +25,7 @@ c        navier8.f (crs_solve_h1: vc(lcr*lelt))
 
          allocate(cb_scrpr2(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrpr2$',ierr)
+         cb_scrpr2 = 0
 
       end subroutine init
       end module scrpr2_mod

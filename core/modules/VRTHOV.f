@@ -54,8 +54,10 @@ c     MUST NOT run while cb_cmbuf backs a live window.
 
          allocate(cb_rdbuf(ns), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_rdbuf$',ns)
+         cb_rdbuf = 0
          allocate(cb_cmbuf(ns), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_cmbuf$',ns)
+         cb_cmbuf = 0
       end subroutine vrthov_reserve
 
 c     escape hatch: release both buffers. free any MPI window over cb_cmbuf first.

@@ -32,25 +32,23 @@ c
       real, pointer :: df(:,:), sr(:,:), ss(:,:), st(:,:)
       integer e,eb,eoff
 
-      v1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrpre(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      w1(1:lx1,1:ly1,1:lz1) =>
-     $   cb_scrpre(1*lx1*ly1*lz1*lelv+1
-     $           : 1*lx1*ly1*lz1*lelv+lx1*ly1*lz1)
-      w2(1:lx1,1:ly1,1:lz1) =>
-     $   cb_scrpre(1*lx1*ly1*lz1*lelv+lx1*ly1*lz1+1
-     $           : 1*lx1*ly1*lz1*lelv+2*lx1*ly1*lz1)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      v1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrpre(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      lxyz = lx1*ly1*lz1
+      w1(1:lx1,1:ly1,1:lz1) => cb_scrpre(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      w2(1:lx1,1:ly1,1:lz1) => cb_scrpre(ioff : ioff + lxyz - 1)
+      ioff = 1
       df(1:lx1*ly1*lz1,1:levb) =>
-     $   cb_fastd(0*lx1*ly1*lz1*levb+1 : 1*lx1*ly1*lz1*levb)
-      sr(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+1
-     $          : 1*lx1*ly1*lz1*levb+lxx*2*levb)
-      ss(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+lxx*2*levb+1
-     $          : 1*lx1*ly1*lz1*levb+2*lxx*2*levb)
-      st(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+2*lxx*2*levb+1
-     $          : 1*lx1*ly1*lz1*levb+3*lxx*2*levb)
+     $   cb_fastd(ioff : ioff + lx1*ly1*lz1*levb - 1)
+      ioff = ioff + lx1*ly1*lz1*levb
+      sr(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
+      ioff = ioff + lxx*2*levb
+      ss(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
+      ioff = ioff + lxx*2*levb
+      st(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
 
 c
       nsolv=nsolv+1

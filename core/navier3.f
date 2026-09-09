@@ -25,21 +25,21 @@ c
       save    icalld
       data    icalld/0/
 
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       MASK(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      R1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      X1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      W2  (1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
-      H1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1
-     $          : 4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      H2  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1
-     $          : 5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      R1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      X1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      ltot2 = lx2*ly2*lz2*lelv
+      W2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrns(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 
       icalld=icalld+1
 c

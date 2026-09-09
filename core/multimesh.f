@@ -427,9 +427,12 @@ c-----------------------------------------------------------------------
       real field(lx1*ly1*lz1*lelt)
       integer nv,nt,i,j,k,n,ie,ix,iy,iz,idx,ifld
 
-      pm1(1:lt)   => cb_scrcg(0*lt+1 : 1*lt)
-      wk1(1:lxyz) => cb_scrcg(1*lt+1 : 1*lt+lxyz)
-      wk2(1:lxyz) => cb_scrcg(1*lt+lxyz+1 : 1*lt+2*lxyz)
+      ioff = 1
+      pm1(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      wk1(1:lxyz) => cb_scrcg(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      wk2(1:lxyz) => cb_scrcg(ioff : ioff + lxyz - 1)
 
       if (nio.eq.0) write(6,98)
      $   ' Multidomain data exchange ... ', nfld_neknek
@@ -701,18 +704,21 @@ c     Check list:
 c     param (55) -- volume flow rate, if nonzero
 c     forcing in X? or in Z?
 
+      ioff = 1
       vxc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(0*kx1*ky1*kz1*lelv+1 : 1*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       vyc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(1*kx1*ky1*kz1*lelv+1 : 2*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       vzc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(2*kx1*ky1*kz1*lelv+1 : 3*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       prc(1:kx2,1:ky2,1:kz2,1:lelv) =>
-     $   cb_cvflow_a(3*kx1*ky1*kz1*lelv+1
-     $             : 3*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx2*ky2*kz2*lelv - 1)
+      ioff = ioff + kx2*ky2*kz2*lelv
       vdc(1:kx1*ky1*kz1*lelv,1:2) =>
-     $   cb_cvflow_a(3*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv+1
-     $             : 5*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv*2 - 1)
 
       ntot1 = lx1*ly1*lz1*nelv
       ntot2 = lx2*ly2*lz2*nelv
@@ -887,47 +893,57 @@ C
 c
       H2INV(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       vxcbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vycbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vzcbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
+      ioff = 1
       vxcp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvxc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vycp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvyc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vzcp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvzc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
       resbc(1:lx1*ly1*lz1*lelv,1:ldim+1) =>
      $   cb_cbplan_vol_ms(6*lx1*ly1*lz1*lelv+1
      $                  : 6*lx1*ly1*lz1*lelv+(ldim+1)*lx1*ly1*lz1*lelv)
 
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      rw1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      rw2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      rw3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      dv1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      dv2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      dv3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+      ioff = 1
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
+      rw1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      rw2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      rw3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESPR(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + lx2*ly2*lz2*lelv - 1)
 c
 c     Compute velocity, 1st part
 c
@@ -1064,66 +1080,73 @@ c     (Tombo splitting scheme).
 
       CHARACTER CB*3
 
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       vxcbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vycbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vzcbc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cvflow_nn(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_cvflow_nn(ioff : ioff + ltotv - 1)
 
+      ioff = 1
       vxcp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvxc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vycp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvyc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       vzcp(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       dvzc(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_cbplan_vol_ms(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+     $   cb_cbplan_vol_ms(ioff : ioff + ltotv - 1)
       resbc(1:lx1*ly1*lz1*lelv,1:ldim+1) =>
      $   cb_cbplan_vol_ms(6*lx1*ly1*lz1*lelv+1
      $                  : 6*lx1*ly1*lz1*lelv+(ldim+1)*lx1*ly1*lz1*lelv)
 
-      h1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      W1(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(0*lx1*ly1*lz1*lelv+1
-     $                                    : 1*lx1*ly1*lz1*lelv)
-      W2(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(1*lx1*ly1*lz1*lelv+1
-     $                                    : 2*lx1*ly1*lz1*lelv)
-      W3(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(2*lx1*ly1*lz1*lelv+1
-     $                                    : 3*lx1*ly1*lz1*lelv)
+      ioff = 1
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
+      W1(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      W2(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      W3(1:lx1*ly1*lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = 1
       resv1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       resv2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       resv3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      respr(1:lx2*ly2*lz2,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
-      TA1(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   3*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      TA2(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      TA3(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   6*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      WA1(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   6*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   7*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      WA2(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   7*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   8*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      WA3(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   8*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   9*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      ltot2 = lx2*ly2*lz2*lelv
+      respr(1:lx2*ly2*lz2,1:lelv) => cb_scrns(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      TA1(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      WA1(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      WA2(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      WA3(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 
       n = lx1*ly1*lz1*nelv
       NXYZ1  = lx1*ly1*lz1

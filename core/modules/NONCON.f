@@ -31,6 +31,7 @@ c
       subroutine init
          use size_mod
          implicit none
+         integer ltot
 
          integer ierr, ioff
 
@@ -50,6 +51,7 @@ c        --- allocate backing arrays ---
      $      + ldim                      ! dtrk
      $      + 2*2*2), stat=ierr)        ! rs
          if (ierr.ne.0) call exitti('alloc cb_allr$',ierr)
+         cb_allr = 0
 
          allocate(cb_alli(
      $        maxmor                    ! noncon_f
@@ -59,18 +61,20 @@ c        --- allocate backing arrays ---
      $      + 3*2                       ! imin
      $      + 1), stat=ierr)            ! mort_m
          if (ierr.ne.0) call exitti('alloc cb_alli$',ierr)
+         cb_alli = 0
 
          allocate(cb_logg(
      $        1                         ! ifnc
      $      + 1                         ! ifhalf
      $      + maxmor), stat=ierr)       ! ifjt
          if (ierr.ne.0) call exitti('alloc cb_logg$',ierr)
+         cb_logg = .false.
 
 c        Group 1: /allr/
          ioff = 1
-         umult(1:lx1*ly1*lz1*lelt) =>
-     $         cb_allr(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+         ltot = lx1*ly1*lz1*lelt
+         umult(1:lx1*ly1*lz1*lelt) => cb_allr(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          jmat(1:lx1,1:lx1,1:2,1:maxmor) =>
      $         cb_allr(ioff : ioff + lx1*lx1*2*maxmor - 1)
          ioff = ioff + lx1*lx1*2*maxmor

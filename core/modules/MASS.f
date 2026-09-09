@@ -22,6 +22,7 @@ c
       subroutine init
          use size_mod
          implicit none
+         integer ltot, ltotv, ltot2
 
          integer ierr, ioff
 
@@ -45,27 +46,31 @@ c        --- allocate backing arrays ---
      $      + lx1*ly1*lz1*lelt              ! upf
      $      + 1), stat=ierr)                ! volvm1ms
          if (ierr.ne.0) call exitti('alloc cb_mass$',ierr)
+         cb_mass = 0
 
 c        Group 1: /mass/
          ioff = 1
+         ltot = lx1*ly1*lz1*lelt
          bm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
+         ltot2 = lx2*ly2*lz2*lelv
          bm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_mass(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_mass(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
+         ltotv = lx1*ly1*lz1*lelv
          binvm1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_mass(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          bintm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          bm2inv(1:lx2,1:ly2,1:lz2,1:lelt) =>
      $         cb_mass(ioff : ioff + lx2*ly2*lz2*lelt - 1)
          ioff = ioff + lx2*ly2*lz2*lelt
          baxm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          bm1lag(1:lx1,1:ly1,1:lz1,1:lelt,1:lorder-1) =>
      $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt*(lorder-1) - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*(lorder-1)
@@ -78,17 +83,16 @@ c        Group 1: /mass/
          voltm2 => cb_mass(ioff)
          ioff = ioff + 1
          yinvm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
-         binvdg(1:lx1*ly1*lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
+         binvdg(1:lx1*ly1*lz1,1:lelt) => cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          bm1ms(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          upf(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_mass(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_mass(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          volvm1ms => cb_mass(ioff)
 
       end subroutine init

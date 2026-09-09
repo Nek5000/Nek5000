@@ -21,6 +21,7 @@ c        l(lx1,ly1,lz1,lelv)
 
          allocate(cb_swaplengths(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_swaplengths$',ierr)
+         cb_swaplengths = 0
 
       end subroutine init
       end module swaplengths_mod

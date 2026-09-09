@@ -61,6 +61,7 @@ c        bdry.f (TRST3D: DRM1,DRTM1,DSM1,DSTM1,WGS)
 
          allocate(cb_ctmp1(nctmp1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_ctmp1$',ierr)
+         cb_ctmp1 = 0
 
       end subroutine init
       end module ctmp1_mod

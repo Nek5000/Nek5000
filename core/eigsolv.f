@@ -116,10 +116,11 @@ C
 C
       H2INV(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
-      H1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      H2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      H1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      H2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
 C
       NTOT1  = lx1*ly1*lz1*NELV
 C
@@ -226,10 +227,11 @@ C
       real, pointer :: X1(:,:,:,:), Y1(:,:,:,:)
       CHARACTER NAME*4
 C
-      X1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      Y1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      X1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      Y1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
 C
       IF (IMESH.EQ.1) NEL  = NELV
       IF (IMESH.EQ.2) NEL  = NELT
@@ -285,10 +287,11 @@ C
       REAL            H2   (LX1,LY1,LZ1,1)
       real, pointer :: X1(:,:,:,:), Y1(:,:,:,:)
 C
-      X1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      Y1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      X1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      Y1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
 C
       IF (IMESH.EQ.1) NEL = NELV
       IF (IMESH.EQ.2) NEL = NELT
@@ -344,10 +347,11 @@ C
       REAL           H2INV(LX1,LY1,LZ1,1)
       real, pointer :: X2(:,:,:,:), Y2(:,:,:,:)
 C
-      X2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_screv(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
-      Y2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_screv(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      X2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_screv(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Y2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_screv(ioff : ioff + ltot2 - 1)
 C
       NTOT2  = lx2*ly2*lz2*NELV
       EVNEW  = 0.
@@ -394,10 +398,11 @@ C
       REAL           H2INV (LX1,LY1,LZ1,1)
       real, pointer :: X2(:,:,:,:), Y2(:,:,:,:)
 C
-      X2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_screv(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
-      Y2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_screv(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      X2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_screv(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Y2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_screv(ioff : ioff + ltot2 - 1)
 C
       NTOT2  = lx2*ly2*lz2*NELV
       EVNEW  = 0.

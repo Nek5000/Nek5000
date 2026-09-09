@@ -21,6 +21,7 @@ c        lr,ls,lt(2*lx1+4), llr,lls,llt,lmr,lms,lmt,lrr,lrs,lrt(lelt)
 
          allocate(cb_ctmpf(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_ctmpf$',ierr)
+         cb_ctmpf = 0
 
       end subroutine init
       end module ctmpf_mod

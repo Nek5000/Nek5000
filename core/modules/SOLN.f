@@ -64,6 +64,7 @@
       subroutine init
          use size_mod
          implicit none
+         integer ltot, ltotv, ltot2
 
          integer lorder2, ierr, ntotvsol, ntotvslp, ioff
 
@@ -73,6 +74,7 @@ c        --- allocate backing arrays ---
 
          allocate(cb_bqcb(lx1*ly1*lz1*lelt*ldimt * 2), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_bqcb$',ierr)
+         cb_bqcb = 0
 
          ntotvsol =
      $      (lx1*ly1*lz1*lelv * 6)
@@ -90,6 +92,7 @@ c        --- allocate backing arrays ---
      $    + (lx1*ly1*lz1*lelv * 3)
          allocate(cb_vptsol(ntotvsol), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_vptsol$',ierr)
+         cb_vptsol = 0
 
          allocate(cb_vptsolm(
      $      (lbx1*lby1*lbz1*lbelv * 3)
@@ -98,17 +101,22 @@ c        --- allocate backing arrays ---
      $    + (lbx1*lby1*lbz1*lbelv*(lorder-1) * 3)
      $    + (lbx2*lby2*lbz2*lbelv*lorder2)), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_vptsolm$',ierr)
+         cb_vptsolm = 0
 
          allocate(cb_expvis(1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_expvis$',ierr)
+         cb_expvis = 0
          allocate(cb_cbm2(
      $      (lx2*ly2*lz2*lelv)
      $    + (lx2*ly2*lz2*lelv*lorder2)), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_cbm2$',ierr)
+         cb_cbm2 = 0
          allocate(cb_diverg(lx2*ly2*lz2*lelt * 2), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_diverg$',ierr)
+         cb_diverg = 0
          allocate(cb_p0therm(6), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_p0therm$',ierr)
+         cb_p0therm = 0
 
          allocate(cb_vptmsk(
      $      (lx1*ly1*lz1*lelv * 4)
@@ -118,6 +126,7 @@ c        --- allocate backing arrays ---
      $    + (lx1*ly1*lz1*lelt*ldimt)
      $    + (lbx1*lby1*lbz1*lbelv * 4)), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_vptmsk$',ierr)
+         cb_vptmsk = 0
 
          ntotvslp =
      $      (lpx1*lpy1*lpz1*lpelv*lpert * 3)
@@ -131,9 +140,11 @@ c        --- allocate backing arrays ---
      $    + (lpx1*lpy1*lpz1*lpelt*ldimt*lpert * 2)
          allocate(cb_pvptsl(ntotvslp), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_pvptsl$',ierr)
+         cb_pvptsl = 0
 
          allocate(cb_ppointr(1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_ppointr$',ierr)
+         cb_ppointr = 0
 
 c        Group 1: /bqcb/
          ioff = 1
@@ -164,36 +175,38 @@ c        Group 2: /vptsol/
          vgradt2(1:lx1,1:ly1,1:lz1,1:lelt,1:ldimt) =>
      $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelt*ldimt - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*ldimt
+         ltotv = lx1*ly1*lz1*lelv
          abx1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          aby1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          abz1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          abx2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          aby2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          abz2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         ltot = lx1*ly1*lz1*lelt
          vdiff_e(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_vptsol(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          vx(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          vy(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          vz(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          t(1:lx1,1:ly1,1:lz1,1:lelt,1:ldimt) =>
      $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelt*ldimt - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*ldimt
@@ -204,17 +217,17 @@ c        Group 2: /vptsol/
      $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelt*ldimt1 - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*ldimt1
          bfx(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          bfy(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          bfz(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          cflf(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          c_vx(1:lxd*lyd*lzd*lelv*ldim,1:lorder+1) =>
      $         cb_vptsol(ioff : ioff
      $         + lxd*lyd*lzd*lelv*ldim*(lorder+1) - 1)
@@ -235,13 +248,13 @@ c        Group 2: /vptsol/
      $         + lx1*ly1*lz1*lelv*ldim*(lorder+1) - 1)
          ioff = ioff + lx1*ly1*lz1*lelv*ldim*(lorder+1)
          vx_e(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          vy_e(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          vz_e(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptsol(ioff : ioff + lx1*ly1*lz1*lelv - 1)
+     $   cb_vptsol(ioff : ioff + ltotv - 1)
 
 c        Group 3: /vptsolm/
          ioff = 1
@@ -303,9 +316,10 @@ c        Group 3: /vptsolm/
 c        Group 4: /expvis/, /cbm2/, /diverg/, /p0therm/
          nu_star => cb_expvis(1)
          ioff = 1
+         ltot2 = lx2*ly2*lz2*lelv
          pr(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_cbm2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_cbm2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          prlag(1:lx2,1:ly2,1:lz2,1:lelv,1:lorder2) =>
      $         cb_cbm2(ioff : ioff + lx2*ly2*lz2*lelv*lorder2 - 1)
          ioff = 1
@@ -323,26 +337,26 @@ c        Group 4: /expvis/, /cbm2/, /diverg/, /p0therm/
 c        Group 8: /vptmsk/
          ioff = 1
          v1mask(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptmsk(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          v2mask(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptmsk(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          v3mask(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptmsk(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          pmask(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptmsk(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          tmask(1:lx1,1:ly1,1:lz1,1:lelt,1:ldimt) =>
      $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelt*ldimt - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*ldimt
          omask(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_vptmsk(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          vmult(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelv - 1)
-         ioff = ioff + lx1*ly1*lz1*lelv
+     $   cb_vptmsk(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
          tmult(1:lx1,1:ly1,1:lz1,1:lelt,1:ldimt) =>
      $         cb_vptmsk(ioff : ioff + lx1*ly1*lz1*lelt*ldimt - 1)
          ioff = ioff + lx1*ly1*lz1*lelt*ldimt

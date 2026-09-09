@@ -36,8 +36,10 @@ c
 c
       real*8 etime1,etime2,dnekclock
 c
-      wk1(1:lgmres) => cb_ctmp0(0*lgmres+1 : 1*lgmres)
-      wk2(1:lgmres) => cb_ctmp0(1*lgmres+1 : 2*lgmres)
+      ioff = 1
+      wk1(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
+      ioff = ioff + lgmres
+      wk2(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
       wp(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrmg(1 : lx2*ly2*lz2*lelv)
 
       if(.not.iflag) then
@@ -343,12 +345,15 @@ c     data    iflag,if_hyb  /.false. , .true. /
 
       real*8 etime1,etime2,dnekclock
 
-      wk1(1:lgmres) => cb_ctmp0(0*lgmres+1 : 1*lgmres)
-      wk2(1:lgmres) => cb_ctmp0(1*lgmres+1 : 2*lgmres)
-      d(1:lx1*ly1*lz1*lelv) => cb_scrcg(0*lx1*ly1*lz1*lelv+1
-     $                                : 1*lx1*ly1*lz1*lelv)
-      wk(1:lx1*ly1*lz1*lelv) => cb_scrcg(1*lx1*ly1*lz1*lelv+1
-     $                                 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      wk1(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
+      ioff = ioff + lgmres
+      wk2(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      d(1:lx1*ly1*lz1*lelv) => cb_scrcg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      wk(1:lx1*ly1*lz1*lelv) => cb_scrcg(ioff : ioff + ltotv - 1)
 
       n = lx1*ly1*lz1*nelv
 
@@ -697,14 +702,15 @@ c
 
       integer lbr,rbr,lbs,rbs,lbt,rbt
 
-      sr(1:lxss,1:2,1:lelv) => cb_fastg(0*lxss*2*lelv+1
-     $                                : 1*lxss*2*lelv)
-      ss(1:lxss,1:2,1:lelv) => cb_fastg(1*lxss*2*lelv+1
-     $                                : 2*lxss*2*lelv)
-      st(1:lxss,1:2,1:lelv) => cb_fastg(2*lxss*2*lelv+1
-     $                                : 3*lxss*2*lelv)
-      df(1:lxs*lys*lzs,1:lelv) => cb_fastg(3*lxss*2*lelv+1
-     $                          : 3*lxss*2*lelv+lxs*lys*lzs*lelv)
+      ioff = 1
+      sr(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      ss(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      st(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      df(1:lxs*lys*lzs,1:lelv) =>
+     $   cb_fastg(ioff : ioff + lxs*lys*lzs*lelv - 1)
       lr (1:2*lx1+4) => cb_ctmpf(0*(2*lx1+4)+1 : 1*(2*lx1+4))
       ls (1:2*lx1+4) => cb_ctmpf(1*(2*lx1+4)+1 : 2*(2*lx1+4))
       lt (1:2*lx1+4) => cb_ctmpf(2*(2*lx1+4)+1 : 3*(2*lx1+4))
@@ -1135,14 +1141,15 @@ c
 
       real r(1),w1(1),w2(1)
 
-      sr(1:lxss,1:2,1:lelv) => cb_fastg(0*lxss*2*lelv+1
-     $                                : 1*lxss*2*lelv)
-      ss(1:lxss,1:2,1:lelv) => cb_fastg(1*lxss*2*lelv+1
-     $                                : 2*lxss*2*lelv)
-      st(1:lxss,1:2,1:lelv) => cb_fastg(2*lxss*2*lelv+1
-     $                                : 3*lxss*2*lelv)
-      df(1:lxs*lys*lzs,1:lelv) => cb_fastg(3*lxss*2*lelv+1
-     $                          : 3*lxss*2*lelv+lxs*lys*lzs*lelv)
+      ioff = 1
+      sr(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      ss(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      st(1:lxss,1:2,1:lelv) => cb_fastg(ioff : ioff + lxss*2*lelv - 1)
+      ioff = ioff + lxss*2*lelv
+      df(1:lxs*lys*lzs,1:lelv) =>
+     $   cb_fastg(ioff : ioff + lxs*lys*lzs*lelv - 1)
 
       nx = lx1+2
 c

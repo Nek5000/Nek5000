@@ -37,9 +37,11 @@
 
          allocate(cb_scrns(nscrns), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrns$',ierr)
+         cb_scrns = 0
 
          allocate(cb_resdmp(lx1*ly1*lz1*lelt*ldimt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_resdmp$',ierr)
+         cb_resdmp = 0
 
       end subroutine init
       end module scrns_mod

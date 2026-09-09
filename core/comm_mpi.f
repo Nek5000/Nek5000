@@ -796,10 +796,14 @@ c-----------------------------------------------------------------------
 
       character*10 fname
 
-      x (1:mwd) => cb_scrns(0*mwd+1 : 1*mwd)
-      y (1:mwd) => cb_scrns(1*mwd+1 : 2*mwd)
-      x1(1:mwd) => cb_scrns(2*mwd+1 : 3*mwd)
-      y1(1:mwd) => cb_scrns(3*mwd+1 : 4*mwd)
+      ioff = 1
+      x(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      y(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      x1(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      y1(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
 
       if (nid.eq.nodea) then
          write(fname,3) np,nodeb
@@ -882,8 +886,10 @@ c-----------------------------------------------------------------------
 
       character*10 fname
 
-      x(1:mwd) => cb_scrns(0*mwd+1 : 1*mwd)
-      y(1:mwd) => cb_scrns(1*mwd+1 : 2*mwd)
+      ioff = 1
+      x(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      y(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
 
       if (nid.eq.nodea) then
          write(fname,3) np,nodeb
@@ -1048,8 +1054,10 @@ c-----------------------------------------------------------------------
       call c_f_pointer(c_loc(cb_scrcg(1)), nwd, [500])
       times(1:2,1:500) => cb_scruz(1 : 1000)
 
-      x(1:mwd) => cb_scrns(0*mwd+1 : 1*mwd)
-      y(1:mwd) => cb_scrns(1*mwd+1 : 2*mwd)
+      ioff = 1
+      x(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      y(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
 
       nwds  = 1
       mtest = 0
@@ -1118,8 +1126,10 @@ c-----------------------------------------------------------------------
       real, pointer :: x(:),y(:)
       real, pointer :: times(:,:)
 
-      x(1:mwd) => cb_scrns(0*mwd+1 : 1*mwd)
-      y(1:mwd) => cb_scrns(1*mwd+1 : 2*mwd)
+      ioff = 1
+      x(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
+      ioff = ioff + mwd
+      y(1:mwd) => cb_scrns(ioff : ioff + mwd - 1)
       times(1:2,1:500) => cb_scruz(1 : 1000)
 
       call rzero(x,mwd)

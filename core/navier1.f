@@ -23,31 +23,35 @@ C
 C
       H2INV(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
       RESV1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      DV1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      DV2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      DV3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DV1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DV2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DV3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       WP(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
-      G1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      G2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      G3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + lx2*ly2*lz2*lelv - 1)
+      ioff = 1
+      G1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      G2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      G3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 C
       IF (IGEOM.EQ.1) THEN
 C
@@ -117,18 +121,22 @@ c     Compute start-residual/right-hand-side in the pressure equation
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
       real, pointer :: VBDRY1(:,:,:,:), VBDRY2(:,:,:,:), VBDRY3(:,:,:,:)
 
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       VBDRY1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       VBDRY2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       VBDRY3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = 1
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
 
       if ((intype.eq.0).or.(intype.eq.-1)) then
          call ophinv (ta1,ta2,ta3,g1,g2,g3,h1,h2,tolhr,nmxp)
@@ -158,16 +166,17 @@ c     Compute the residual for the velocity - UZAWA SCHEME.
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
       real, pointer :: H1(:,:,:,:), H2(:,:,:,:)
 C
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = 1
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_screv(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_screv(ioff : ioff + ltotv - 1)
 C
       INLOC   = -1
       CALL SETHLM  (H1,H2,INLOC)
@@ -203,20 +212,22 @@ C-----------------------------------------------------------------------
       real, pointer :: TB1(:,:,:,:), TB2(:,:,:,:), TB3(:,:,:,:)
      $               , HZERO(:,:,:,:)
 C
-      TB1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TB2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TB3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TB1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       HZERO(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = 1
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
 C
       NTOT1 = lx1*ly1*lz1*NELV
 C
@@ -333,18 +344,19 @@ C
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
      $               , TB1(:,:,:,:), TB2(:,:,:,:), TB3(:,:,:,:)
 
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      TB1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      TB2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      TB3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 
       call opgradt (ta1,ta2,ta3,wp)
       if ((intype.eq.0).or.(intype.eq.-1)) then
@@ -429,11 +441,15 @@ c
 
       integer e
 C
-      wx (1:lx1*ly1*lz1) => cb_ctmp1(0*lx1*ly1*lz1+1 : 1*lx1*ly1*lz1)
-      ta1(1:lx1*ly1*lz1) => cb_ctmp1(1*lx1*ly1*lz1+1 : 2*lx1*ly1*lz1)
-      ta2(1:lx1*ly1*lz1) => cb_ctmp1(2*lx1*ly1*lz1+1 : 3*lx1*ly1*lz1)
-      ta3(1:lx1*ly1,1:lz1) =>
-     $   cb_ctmp1(3*lx1*ly1*lz1+1 : 4*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      wx(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ta1(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ta2(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ta3(1:lx1*ly1,1:lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
 C
 #ifdef TIMER
       ncdtp=ncdtp+1
@@ -646,9 +662,13 @@ C---------------------------------------------------------------------
 
       integer e
 
-      ta1(1:lx1*ly1*lz1) => cb_ctmp1(0*lx1*ly1*lz1+1 : 1*lx1*ly1*lz1)
-      ta2(1:lx1*ly1*lz1) => cb_ctmp1(1*lx1*ly1*lz1+1 : 2*lx1*ly1*lz1)
-      ta3(1:lx1*ly1*lz1) => cb_ctmp1(2*lx1*ly1*lz1+1 : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      ta1(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ta2(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ta3(1:lx1*ly1*lz1) => cb_ctmp1(ioff : ioff + lxyz - 1)
 C
 #ifdef TIMER
       nmltd=nmltd+1
@@ -993,10 +1013,13 @@ C
 c
       integer*8 ntotg,nxyz2
 c
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
       H1M2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrch(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
+     $   cb_scrch(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
       H2M2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrch(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+     $   cb_scrch(ioff : ioff + ltot2 - 1)
 c
       NTOT2 = lx2*ly2*lz2*NELV
       if (istep.ne.kstep .and. .not.ifanls) then
@@ -1060,21 +1083,21 @@ C----------------------------------------------------------------
       LOGICAL         IFPRINT, IFHZPC
       integer*8 ntotg,nxyz
 
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       MASK(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      R1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      X1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      W2  (1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
-      H1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1
-     $          : 4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      H2  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1
-     $          : 5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      R1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      X1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      ltot2 = lx2*ly2*lz2*lelv
+      W2(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrns(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 
       nxyz   = lx1*ly1*lz1
       ntotg  = nxyz*nelgv
@@ -1163,10 +1186,11 @@ C-----------------------------------------------------------------
       REAL           RES  (LX2,LY2,LZ2,LELV)
       real, pointer :: TA(:,:,:,:), TB(:,:,:,:)
 C
-      TA(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrmg(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
-      TB(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrmg(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      TA(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrmg(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      TB(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrmg(ioff : ioff + ltot2 - 1)
 C
       RBNORM = 0.
       NTOT2  = lx2*ly2*lz2*NELV
@@ -1198,10 +1222,11 @@ C-------------------------------------------------------------------
       COMMON /CPRINT/ IFPRINT
       LOGICAL         IFPRINT
 C
-      TA(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_ctmp0(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
-      TB(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_ctmp0(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      TA(1:lx2,1:ly2,1:lz2,1:lelv) => cb_ctmp0(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      TB(1:lx2,1:ly2,1:lz2,1:lelv) => cb_ctmp0(ioff : ioff + ltot2 - 1)
 C
       ICONV = 0
 C
@@ -1346,17 +1371,22 @@ C
       REAL    CONV (LX1,LY1,LZ1,1)
       REAL    FI   (LX1,LY1,LZ1,1)
 C
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       CMASK1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrch(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       CMASK2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrch(ioff : ioff + ltotv - 1)
 C
-      MFI  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      DMFI (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      MFI(1:lx1,1:ly1,1:lz1,1:lelv) => cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DMFI(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       MDMFI(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
 C
       NXYZ1 = lx1*ly1*lz1
       NTOT1 = lx1*ly1*lz1*NELV
@@ -1416,18 +1446,19 @@ C--------------------------------------------------------------------
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
      $               , TB1(:,:,:,:), TB2(:,:,:,:), TB3(:,:,:,:)
 C
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      TB1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      TB2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      TB3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 C
       NXY1  = lx1*ly1
       NYZ1  = ly1*lz1
@@ -1645,12 +1676,13 @@ C---------------------------------------------------------------
 C
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
 C
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
 C
       NTOT1 = lx1*ly1*lz1*NELV
       CALL CONVOP  (TA1,VX)
@@ -1684,20 +1716,21 @@ C
      $               , TB1(:,:,:,:), TB2(:,:,:,:), TB3(:,:,:,:)
      $               , H2(:,:,:,:)
 C
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      TB1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      TB2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      TB3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
-      H2 (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelv+1 : 7*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 C
       NTOT1 = lx1*ly1*lz1*NELV
       CONST = 1./DT
@@ -1743,12 +1776,13 @@ C-----------------------------------------------------------------------
 C
       real, pointer :: TA1(:,:,:,:), TA2(:,:,:,:), TA3(:,:,:,:)
 C
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
 C
       NTOT1 = lx1*ly1*lz1*NELV
 C
@@ -2186,12 +2220,13 @@ C
 C
       if (.not. allocated(cb_scrnrm))
      $   allocate(cb_scrnrm(3*lx1*ly1*lz1*lelt))
-      Y  (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrnrm(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      TA1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrnrm(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrnrm(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      Y(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrnrm(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TA1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrnrm(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TA2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrnrm(ioff : ioff + ltot - 1)
 C
       IF (IMESH.EQ.1) THEN
          NEL = NELV
@@ -2255,14 +2290,15 @@ C
       REAL LENGTH
 C
       TA2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrch(1 : lx1*ly1*lz1*lelt)
-      Y1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      Y2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      Y3(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      TA1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      Y1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      Y2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      Y3(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TA1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
 C
       IMESH  = 1
       NEL    = NELV
@@ -2358,36 +2394,38 @@ C--------------------------------------------------------------------
      $               , WP(:,:,:,:)
       real, pointer :: H1(:,:,:,:), H2(:,:,:,:)
 C
-      TB1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      TB2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      TB3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      WP (1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrmg(
-     $   3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TB1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TB3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      ltot2 = lx2*ly2*lz2*lelv
+      WP(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scrmg(ioff : ioff + ltot2 - 1)
+      ioff = 1
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
       RESV1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESP(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
-      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(
-     $   3*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(
-     $   4*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
-      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(
-     $   5*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv+1 :
-     $   6*lx1*ly1*lz1*lelv+lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      TA3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 C
       IFSTUZ = .TRUE.
       TCRITV = TOLHV*1.5
@@ -3044,14 +3082,16 @@ C-----------------------------------------------------------------------
       real*8 etime1,dnekclock
       integer*8 ntotg,nxyz2
 
-      WP  (1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
-      XCG (1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
-      PCG (1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(2*lx2*ly2*lz2*lelv+1 : 3*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      WP(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      XCG(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      PCG(1:lx2,1:ly2,1:lz2,1:lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
       RPCG(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(3*lx2*ly2*lz2*lelv+1 : 4*lx2*ly2*lz2*lelv)
+     $   cb_scruz(ioff : ioff + ltot2 - 1)
 
       etime1 = dnekclock()
       DIVEX = 0.
@@ -3366,17 +3406,22 @@ C
       REAL    CONV (LX1,LY1,LZ1,1)
       REAL    FI   (LX1,LY1,LZ1,1)
 C
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       CMASK1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrch(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       CMASK2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrch(ioff : ioff + ltotv - 1)
 
-      MFI  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      DMFI (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      MFI(1:lx1,1:ly1,1:lz1,1:lelv) => cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DMFI(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       MDMFI(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
 
       if (nio.eq.0.and.loglevel.gt.2)
      $   write(6,*) 'convop', ifield, ifdeal(ifield)
@@ -3447,14 +3492,15 @@ C
       save icalld
       data icalld /0/
 
-      TA1 (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp0(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      DFID(1:lxd,1:lyd,1:lzd,1:lelv) => cb_ctmp0(
-     $   1*lx1*ly1*lz1*lelv+1
-     $ : 1*lx1*ly1*lz1*lelv+1*lxd*lyd*lzd*lelv)
-      TA1D(1:lxd,1:lyd,1:lzd,1:lelv) => cb_ctmp0(
-     $   1*lx1*ly1*lz1*lelv+1*lxd*lyd*lzd*lelv+1
-     $ : 1*lx1*ly1*lz1*lelv+2*lxd*lyd*lzd*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      TA1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_ctmp0(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      DFID(1:lxd,1:lyd,1:lzd,1:lelv) =>
+     $   cb_ctmp0(ioff : ioff + lxd*lyd*lzd*lelv - 1)
+      ioff = ioff + lxd*lyd*lzd*lelv
+      TA1D(1:lxd,1:lyd,1:lzd,1:lelv) =>
+     $   cb_ctmp0(ioff : ioff + lxd*lyd*lzd*lelv - 1)
 c
       NTOTD = lxd*lyd*lzd*NELV
 c
@@ -3511,12 +3557,13 @@ C     Store the inverse jacobian to speed this operation up
 C
       real, pointer :: dudr(:,:,:), duds(:,:,:), dudt(:,:,:)
 
-      dudr(1:lx1,1:ly1,1:lz1) => cb_ctmp0(0*lx1*ly1*lz1+1
-     $                                   : 1*lx1*ly1*lz1)
-      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(1*lx1*ly1*lz1+1
-     $                                   : 2*lx1*ly1*lz1)
-      dudt(1:lx1,1:ly1,1:lz1) => cb_ctmp0(2*lx1*ly1*lz1+1
-     $                                   : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      dudr(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dudt(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
 
       nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -3595,12 +3642,13 @@ C
 C
       real, pointer :: dudr(:,:,:), duds(:,:,:), dudt(:,:,:)
 
-      dudr(1:lx1,1:ly1,1:lz1) => cb_ctmp0(0*lx1*ly1*lz1+1
-     $                                   : 1*lx1*ly1*lz1)
-      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(1*lx1*ly1*lz1+1
-     $                                   : 2*lx1*ly1*lz1)
-      dudt(1:lx1,1:ly1,1:lz1) => cb_ctmp0(2*lx1*ly1*lz1+1
-     $                                   : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      dudr(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dudt(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
 C
       nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -3676,12 +3724,13 @@ c
 C
       real, pointer :: duds(:,:,:), dvds(:,:,:), dwds(:,:,:)
 
-      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(0*lx1*ly1*lz1+1
-     $                                   : 1*lx1*ly1*lz1)
-      dvds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(1*lx1*ly1*lz1+1
-     $                                   : 2*lx1*ly1*lz1)
-      dwds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(2*lx1*ly1*lz1+1
-     $                                   : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dvds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dwds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
 C
       nel = nelv
       if (imesh.eq.2) nel = nelt
@@ -3923,12 +3972,13 @@ c
       integer opct
 #endif
 
-      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(0*lx1*ly1*lz1+1
-     $                                   : 1*lx1*ly1*lz1)
-      dvds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(1*lx1*ly1*lz1+1
-     $                                   : 2*lx1*ly1*lz1)
-      dwds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(2*lx1*ly1*lz1+1
-     $                                   : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      duds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dvds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      dwds(1:lx1,1:ly1,1:lz1) => cb_ctmp0(ioff : ioff + lxyz - 1)
 C
 c
 c     Operation count
@@ -4197,45 +4247,62 @@ C
       real, pointer :: RKZ1(:,:,:,:), RKZ2(:,:,:,:)
       real, pointer :: RKZ3(:,:,:,:), RKZ4(:,:,:,:)
 C
-      RKZ1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      RKZ2  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      RKY1  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      RKY2  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      RKY3  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      RKY4  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      RKZ3  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      RKZ4  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrch(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      RKZ1(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_screv(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      RKZ2(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_screv(ioff : ioff + ltotv - 1)
+      ioff = 1
+      RKY1(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      RKY2(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      RKY3(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      RKY4(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = 1
+      RKZ3(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrch(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      RKZ4(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrch(ioff : ioff + ltotv - 1)
 C
-      VXN   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      VYN   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      VZN   (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+      ioff = 1
+      VXN(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      VYN(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      VZN(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       HV1MSK(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       HV2MSK(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       HV3MSK(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
-      WORK  (1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelv+1 : 7*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      WORK(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = 1
       RKX1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RKX2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RKX3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RKX4(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_ctmp1(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
 C
       NTOT1 = lx1*ly1*lz1*NELV
 C
@@ -4474,9 +4541,12 @@ c
 
       integer e
 
-      ur(1:lxyz) => cb_ctmp1(0*lxyz+1 : 1*lxyz)
-      us(1:lxyz) => cb_ctmp1(1*lxyz+1 : 2*lxyz)
-      ut(1:lxyz) => cb_ctmp1(2*lxyz+1 : 3*lxyz)
+      ioff = 1
+      ur(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      us(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ut(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
 
       N = lx1-1
       do e=1,nel
@@ -4552,24 +4622,26 @@ C
       REAL fac
 C----------------------------------------------------------------------
 
-      W1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      W2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      W3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      SXZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      SYZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      SXX(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      SXY(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      SYY(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
-      SZZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      W1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      W2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      W3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      SXZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SYZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SXX(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SXY(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SYY(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SZZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 
       NTOT = lx1*ly1*lz1*NELV
 
@@ -4640,18 +4712,19 @@ C
      $        , U2(LX1,LY1,LZ1,1)
      $        , U3(LX1,LY1,LZ1,1)
 
-      EXZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      EYZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      EXX(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      EXY(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
-      EYY(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
-      EZZ(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      EXZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      EYZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      EXX(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      EXY(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      EYY(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      EZZ(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 
       NEL = NELV
       NTOT1 = lx1*ly1*lz1*NEL
@@ -4697,10 +4770,11 @@ c
 
       if (.not. allocated(cb_cbwlap))
      $   allocate(cb_cbwlap(2*lx1*ly1*lz1*lelt))
-      wrk(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_cbwlap(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      h2 (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_cbwlap(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      wrk(1:lx1,1:ly1,1:lz1,1:lelt) => cb_cbwlap(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_cbwlap(ioff : ioff + ltot - 1)
 
       ntot = lx1*ly1*lz1*nelfld(ifld)
       if (.not.iftmsh(ifld)) imesh = 1
@@ -4730,9 +4804,13 @@ c-----------------------------------------------------------------------
 
       integer e
 
-      u(1:lx1*ly1*lz1) => cb_scruz(0*lx1*ly1*lz1+1 : 1*lx1*ly1*lz1)
-      v(1:lx1*ly1*lz1) => cb_scruz(1*lx1*ly1*lz1+1 : 2*lx1*ly1*lz1)
-      w(1:lx1*ly1*lz1) => cb_scruz(2*lx1*ly1*lz1+1 : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      u(1:lx1*ly1*lz1) => cb_scruz(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      v(1:lx1*ly1*lz1) => cb_scruz(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      w(1:lx1*ly1*lz1) => cb_scruz(ioff : ioff + lxyz - 1)
 
       nxyz = lx1*ly1*lz1
 
@@ -4823,15 +4901,24 @@ c
      $               , vr(:),vs(:),vt(:)
      $               , wr(:),ws(:),wt(:)
 
-      ur(1:lxyz) => cb_ctmp1(0*lxyz+1 : 1*lxyz)
-      us(1:lxyz) => cb_ctmp1(1*lxyz+1 : 2*lxyz)
-      ut(1:lxyz) => cb_ctmp1(2*lxyz+1 : 3*lxyz)
-      vr(1:lxyz) => cb_ctmp1(3*lxyz+1 : 4*lxyz)
-      vs(1:lxyz) => cb_ctmp1(4*lxyz+1 : 5*lxyz)
-      vt(1:lxyz) => cb_ctmp1(5*lxyz+1 : 6*lxyz)
-      wr(1:lxyz) => cb_ctmp1(6*lxyz+1 : 7*lxyz)
-      ws(1:lxyz) => cb_ctmp1(7*lxyz+1 : 8*lxyz)
-      wt(1:lxyz) => cb_ctmp1(8*lxyz+1 : 9*lxyz)
+      ioff = 1
+      ur(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      us(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ut(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vr(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vs(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vt(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      wr(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ws(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      wt(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
 
       call gradl_rst(ur,us,ut,u1,lx1,if3d) ! Grad on GLL
       call gradl_rst(vr,vs,vt,u2,lx1,if3d)
@@ -4914,15 +5001,24 @@ c
      $               , vr(:),vs(:),vt(:)
      $               , wr(:),ws(:),wt(:)
 
-      ur(1:lxyz) => cb_ctmp1(0*lxyz+1 : 1*lxyz)
-      us(1:lxyz) => cb_ctmp1(1*lxyz+1 : 2*lxyz)
-      ut(1:lxyz) => cb_ctmp1(2*lxyz+1 : 3*lxyz)
-      vr(1:lxyz) => cb_ctmp1(3*lxyz+1 : 4*lxyz)
-      vs(1:lxyz) => cb_ctmp1(4*lxyz+1 : 5*lxyz)
-      vt(1:lxyz) => cb_ctmp1(5*lxyz+1 : 6*lxyz)
-      wr(1:lxyz) => cb_ctmp1(6*lxyz+1 : 7*lxyz)
-      ws(1:lxyz) => cb_ctmp1(7*lxyz+1 : 8*lxyz)
-      wt(1:lxyz) => cb_ctmp1(8*lxyz+1 : 9*lxyz)
+      ioff = 1
+      ur(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      us(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ut(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vr(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vs(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      vt(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      wr(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ws(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      wt(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
 
       call gradl_rst(ur,us,ut,u1,lx1,if3d) ! Grad on GLL
       call gradl_rst(vr,vs,vt,u2,lx1,if3d)

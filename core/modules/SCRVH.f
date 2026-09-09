@@ -25,6 +25,7 @@
 
          allocate(cb_scrvh(nscrvh), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrvh$',ierr)
+         cb_scrvh = 0
 
       end subroutine init
       end module scrvh_mod

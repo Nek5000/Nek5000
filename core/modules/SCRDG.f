@@ -33,6 +33,7 @@ c        convect.f (conv_bdry_dg_weak/conv_rhs_dg_weak: + us(lf))
 
          allocate(cb_scrdg(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrdg$',ierr)
+         cb_scrdg = 0
 
       end subroutine init
       end module scrdg_mod

@@ -1730,8 +1730,10 @@ c
 
       logical ifwt,ifvec
 
-      r (1:lt) => cb_scruz(0*lt+1 : 1*lt)
-      ub(1:lt) => cb_scruz(1*lt+1 : 2*lt)
+      ioff = 1
+      r(1:lt) => cb_scruz(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      ub(1:lt) => cb_scruz(ioff : ioff + lt - 1)
 
       call chcopy(cname,name,4)
       call capit (cname,4)

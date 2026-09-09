@@ -22,6 +22,7 @@ c        navier0.f, navier8.f, subs1.f (13 sites)
 
          allocate(cb_ivrtx(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_ivrtx$',ierr)
+         cb_ivrtx = 0_8
 
       end subroutine init
       end module ivrtx_mod

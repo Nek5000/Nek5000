@@ -639,18 +639,22 @@ c
       save    icalld
       data    icalld  /-1/
 
-      ur(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      us(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      ut(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      ur(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      us(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ut(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
       phigin(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
+     $   cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
       phig_qtl(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
+     $   cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
       grad_dot(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     >   cb_scrns(5*lx1*ly1*lz1*lelt+1 : 6*lx1*ly1*lz1*lelt)
+     $   cb_scrns(ioff : ioff + ltot - 1)
 
       icalld = icalld + 1
       nxyze = lx1*ly1*lz1*lelt

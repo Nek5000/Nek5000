@@ -18,12 +18,13 @@ c
 
       real kwave2
 
-      wk1(1:lx2*ly2*lz2*lelv) => cb_scruz(0*lx2*ly2*lz2*lelv+1
-     $                                   : 1*lx2*ly2*lz2*lelv)
-      wk2(1:lx2*ly2*lz2*lelv) => cb_scruz(1*lx2*ly2*lz2*lelv+1
-     $                                   : 2*lx2*ly2*lz2*lelv)
-      wk3(1:lx2*ly2*lz2*lelv) => cb_scruz(2*lx2*ly2*lz2*lelv+1
-     $                                   : 3*lx2*ly2*lz2*lelv)
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
+      wk1(1:lx2*ly2*lz2*lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      wk2(1:lx2*ly2*lz2*lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      wk3(1:lx2*ly2*lz2*lelv) => cb_scruz(ioff : ioff + ltot2 - 1)
 
       call ortho(res) !Ensure that residual is orthogonal to null space
 

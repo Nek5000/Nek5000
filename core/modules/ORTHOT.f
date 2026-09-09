@@ -28,9 +28,11 @@ c        --- allocate backing arrays ---
 
          allocate(cb_trthoi(2*ldimt_proj), stat=ierr) ! napproxt
          if (ierr.ne.0) call exitti('alloc cb_trthoi$',ierr)
+         cb_trthoi = 0
 
          allocate(cb_trthov(ktott*(laxtt+1)*ldimt_proj), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_trthov$',ierr)
+         cb_trthov = 0
                                                         ! approxt
 
 c        Group 1: /trthoi/

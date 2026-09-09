@@ -31,6 +31,7 @@ c                           postpro.f RE2 tools igr(1000), icurve(12,500)=6000 i
 
          allocate(cb_scruz(nscruz), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scruz$',ierr)
+         cb_scruz = 0
 
       end subroutine init
       end module scruz_mod

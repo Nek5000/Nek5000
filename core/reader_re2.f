@@ -85,16 +85,18 @@ c-----------------------------------------------------------------------
       parameter(lrs   = 1+ldim*(2**ldim)) ! record size: group x(:,c) ...
       parameter(li    = 2*lrs+2)
 
-      integer, pointer :: bufr(:,:)
+      !integer, pointer :: bufr(:,:)
+      integer bufr(li-2, nrmax)
 
-      integer, pointer :: vi(:,:)
+      !integer, pointer :: vi(:,:)
+      integer vi (li, nrmax)
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
       integer*8       count_b
 
-      call c_f_pointer(c_loc(cb_scrns(1)), bufr, [li-2,nrmax])
-      call c_f_pointer(c_loc(cb_ctmp1(1)), vi, [li,nrmax])
+      !call c_f_pointer(c_loc(cb_scrns(1)), bufr, [li-2,nrmax])
+      !call c_f_pointer(c_loc(cb_ctmp1(1)), vi, [li,nrmax])
 
       nrg       = nelgt
       nr        = nelt

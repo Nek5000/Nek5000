@@ -40,8 +40,10 @@ C
       data    icalld/0/
 C
       RHS(1:ltot2,1:mxprev) => cb_orthov(1 : ltot2*mxprev)
-      Pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
-      Pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
+      ioff = 1
+      Pbar(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pnew(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
 C
 C     First call, we have no vectors to orthogonalize against.
       IF (ICALLD.EQ.0) THEN
@@ -135,8 +137,10 @@ C
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
       RHS(1:ltot2,1:mxprev) => cb_orthov(1 : ltot2*mxprev)
-      Pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
-      Pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
+      ioff = 1
+      Pbar(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pnew(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
 C
       NTOT2=lx2*ly2*lz2*NELV
 C
@@ -188,8 +192,10 @@ C
       REAL             H2INV(LX1,LY1,LZ1,LELV)
 C
       RHS(1:ltot2,1:mxprev) => cb_orthov(1 : ltot2*mxprev)
-      Pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
-      Pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
+      ioff = 1
+      Pbar(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pnew(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
 C
       NTOT2=lx2*ly2*lz2*NELV
 C
@@ -241,9 +247,12 @@ C
       real ALPHAd
 C
       RHS(1:ltot2,1:mxprev) => cb_orthov(1 : ltot2*mxprev)
-      Pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
-      Pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
-      Pbrr(1:ltot2) => cb_orthox(2*ltot2+1 : 3*ltot2)
+      ioff = 1
+      Pbar(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pnew(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pbrr(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
 C
       ierr  = 0
       NTOT2 = lx2*ly2*lz2*NELV
@@ -311,10 +320,13 @@ C--------------------------------------------------------------------
 C
       real, pointer :: DIVV(:,:,:,:), BDIVV(:,:,:,:)
 C
+      ioff = 1
+      ltot2 = lx2*ly2*lz2*lelv
       DIVV(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(0*lx2*ly2*lz2*lelv+1 : 1*lx2*ly2*lz2*lelv)
+     $   cb_scruz(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
       BDIVV(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scruz(1*lx2*ly2*lz2*lelv+1 : 2*lx2*ly2*lz2*lelv)
+     $   cb_scruz(ioff : ioff + ltot2 - 1)
 C
       if (ifsplit) return
       IF (param(102).eq.0.and.(TOLPDF.NE.0. .OR. ISTEP.LE.5)) return
@@ -413,8 +425,10 @@ C
       data    icalld/0/
 
       RHS(1:ltot2,1:mxprev) => cb_orthov(1 : ltot2*mxprev)
-      Pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
-      Pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
+      ioff = 1
+      Pbar(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
+      ioff = ioff + ltot2
+      Pnew(1:ltot2) => cb_orthox(ioff : ioff + ltot2 - 1)
 
       ntot2=lx2*ly2*lz2*nelv
 
@@ -562,10 +576,11 @@ c
       REAL           bi   (LX1,LY1,LZ1,1)
       real, pointer :: W1(:,:,:,:), W2(:,:,:,:)
 c
-      W1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      W2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_ctmp0(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      W1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      W2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_ctmp0(ioff : ioff + ltot - 1)
 c
       etime1=dnekclock()
 c
@@ -1308,10 +1323,14 @@ c
 
       logical ifwt,ifvec
 
-      h1(1:lt) => cb_scrvh(0*lt+1 : 1*lt)
-      h2(1:lt) => cb_scrvh(1*lt+1 : 2*lt)
-      r (1:lt) => cb_scruz(0*lt+1 : 1*lt)
-      ub(1:lt) => cb_scruz(1*lt+1 : 2*lt)
+      ioff = 1
+      h1(1:lt) => cb_scrvh(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      h2(1:lt) => cb_scrvh(ioff : ioff + lt - 1)
+      ioff = 1
+      r(1:lt) => cb_scruz(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      ub(1:lt) => cb_scruz(ioff : ioff + lt - 1)
 
       call chcopy(cname,name,4)
       call capit (cname,4)

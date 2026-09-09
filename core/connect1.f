@@ -35,12 +35,15 @@ C
 
       glo_num(1:lx1*ly1*lz1*lelv) => cb_c_is1(1:lx1*ly1*lz1*lelv)
       vertex(1:(2**ldim)*lelt) => cb_ivrtx(1:(2**ldim)*lelt)
+      ioff = 1
       XM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       YM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       ZM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(2*lx3*ly3*lz3*lelt+1 : 3*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
 
       if(nio.eq.0) write(6,*) 'setup mesh topology'
 C
@@ -730,10 +733,14 @@ C
       real, pointer :: XCB(:,:,:),YCB(:,:,:),ZCB(:,:,:),H(:,:,:)
       integer, pointer :: INDX(:)
 C
-      XCB(1:2,1:2,1:2) => cb_ctmp0(0*8+1 : 1*8)
-      YCB(1:2,1:2,1:2) => cb_ctmp0(1*8+1 : 2*8)
-      ZCB(1:2,1:2,1:2) => cb_ctmp0(2*8+1 : 3*8)
-      H  (1:3,1:3,1:2) => cb_ctmp0(3*8+1 : 3*8+18)
+      ioff = 1
+      XCB(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      YCB(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      ZCB(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      H(1:3,1:3,1:2) => cb_ctmp0(ioff : ioff + 3*3*2 - 1)
       call c_f_pointer(c_loc(cb_ctmp0(3*8+18+1)), INDX, [8])
 C
       NXL=3
@@ -1640,19 +1647,30 @@ c-----------------------------------------------------------------------
 
       glo_num(1:lx1*ly1*lz1*lelv) => cb_c_is1(1:lx1*ly1*lz1*lelv)
       vertex(1:(2**ldim)*lelt) => cb_ivrtx(1:(2**ldim)*lelt)
-      snx(1:lxz) => cb_scruz(0*lxz+1 : 1*lxz)
-      sny(1:lxz) => cb_scruz(1*lxz+1 : 2*lxz)
-      snz(1:lxz) => cb_scruz(2*lxz+1 : 3*lxz)
-      efc(1:lxz) => cb_scruz(3*lxz+1 : 4*lxz)
+      ioff = 1
+      snx(1:lxz) => cb_scruz(ioff : ioff + lxz - 1)
+      ioff = ioff + lxz
+      sny(1:lxz) => cb_scruz(ioff : ioff + lxz - 1)
+      ioff = ioff + lxz
+      snz(1:lxz) => cb_scruz(ioff : ioff + lxz - 1)
+      ioff = ioff + lxz
+      efc(1:lxz) => cb_scruz(ioff : ioff + lxz - 1)
       call c_f_pointer(c_loc(cb_scrsf(1)), jvrtex, [2**ldim,lelt])
 
-      enum(1:lxyz,1:lelt) => cb_scrns(0*lxyz*lelt+1 : 1*lxyz*lelt)
-      rnx (1:lxyz,1:lelt) => cb_scrns(1*lxyz*lelt+1 : 2*lxyz*lelt)
-      rny (1:lxyz,1:lelt) => cb_scrns(2*lxyz*lelt+1 : 3*lxyz*lelt)
-      rnz (1:lxyz,1:lelt) => cb_scrns(3*lxyz*lelt+1 : 4*lxyz*lelt)
-      tnx (1:lxyz,1:lelt) => cb_scrns(4*lxyz*lelt+1 : 5*lxyz*lelt)
-      tny (1:lxyz,1:lelt) => cb_scrns(5*lxyz*lelt+1 : 6*lxyz*lelt)
-      tnz (1:lxyz,1:lelt) => cb_scrns(6*lxyz*lelt+1 : 7*lxyz*lelt)
+      ioff = 1
+      enum(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      rnx(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      rny(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      rnz(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      tnx(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      tny(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
+      ioff = ioff + lxyz*lelt
+      tnz(1:lxyz,1:lelt) => cb_scrns(ioff : ioff + lxyz*lelt - 1)
 
       gsh_fld(0)=gsh_fld(1)
       if (iftmsh(0)) gsh_fld(0)=gsh_fld(2)

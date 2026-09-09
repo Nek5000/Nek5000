@@ -56,14 +56,16 @@ c                                   ncut = 4 --> 64x number of elements
       save    isym2pre
       data    isym2pre / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
 
-      x0(1:lxyz,1:mxnew) => cb_scrns(0*lxyz*mxnew+1 : 1*lxyz*mxnew)
-      y0(1:lxyz,1:mxnew) => cb_scrns(1*lxyz*mxnew+1 : 2*lxyz*mxnew)
-      z0(1:lxyz,1:mxnew) => cb_scrns(2*lxyz*mxnew+1 : 3*lxyz*mxnew)
-      pc(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+1 : 3*lxyz*mxnew+lx1*lx1*mxnew)
-      pt(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+lx1*lx1*mxnew+1
-     $          : 3*lxyz*mxnew+2*lx1*lx1*mxnew)
+      ioff = 1
+      x0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      y0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      z0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      pc(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
+      ioff = ioff + lx1*lx1*mxnew
+      pt(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
       vertex(1:(2**ldim),1:lelt) => cb_ivrtx(1:(2**ldim)*lelt)
 
       nvrt = ncut+1
@@ -482,14 +484,16 @@ c     apply one round of refinement to a field
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
       real, pointer :: x0(:,:),y0(:,:),z0(:,:),pc(:,:),pt(:,:)
 
-      x0(1:lxyz,1:mxnew) => cb_scrns(0*lxyz*mxnew+1 : 1*lxyz*mxnew)
-      y0(1:lxyz,1:mxnew) => cb_scrns(1*lxyz*mxnew+1 : 2*lxyz*mxnew)
-      z0(1:lxyz,1:mxnew) => cb_scrns(2*lxyz*mxnew+1 : 3*lxyz*mxnew)
-      pc(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+1 : 3*lxyz*mxnew+lx1*lx1*mxnew)
-      pt(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+lx1*lx1*mxnew+1
-     $          : 3*lxyz*mxnew+2*lx1*lx1*mxnew)
+      ioff = 1
+      x0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      y0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      z0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      pc(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
+      ioff = ioff + lx1*lx1*mxnew
+      pt(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
 
       nblk = ncut**ldim
       call lim_chk(nblk,mxnew,'nblk ','mxnew',' h_refine_fld ')
@@ -575,14 +579,16 @@ c     restart, refine fields after readfld
       parameter(lxyz=lx1*ly1*lz1,mxmin=512,mxnew=max(mxmin,lelt))
       real, pointer :: x0(:,:),y0(:,:),z0(:,:),pc(:,:),pt(:,:)
 
-      x0(1:lxyz,1:mxnew) => cb_scrns(0*lxyz*mxnew+1 : 1*lxyz*mxnew)
-      y0(1:lxyz,1:mxnew) => cb_scrns(1*lxyz*mxnew+1 : 2*lxyz*mxnew)
-      z0(1:lxyz,1:mxnew) => cb_scrns(2*lxyz*mxnew+1 : 3*lxyz*mxnew)
-      pc(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+1 : 3*lxyz*mxnew+lx1*lx1*mxnew)
-      pt(1:lx1*lx1,1:mxnew) =>
-     $   cb_scrns(3*lxyz*mxnew+lx1*lx1*mxnew+1
-     $          : 3*lxyz*mxnew+2*lx1*lx1*mxnew)
+      ioff = 1
+      x0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      y0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      z0(1:lxyz,1:mxnew) => cb_scrns(ioff : ioff + lxyz*mxnew - 1)
+      ioff = ioff + lxyz*mxnew
+      pc(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
+      ioff = ioff + lx1*lx1*mxnew
+      pt(1:lx1*lx1,1:mxnew) => cb_scrns(ioff : ioff + lx1*lx1*mxnew - 1)
 
       ncut_total = 1
       do iref=1,refineSize

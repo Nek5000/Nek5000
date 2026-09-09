@@ -63,6 +63,7 @@ c
       subroutine init
          use size_mod
          implicit none
+         integer ltot, ltot2
 
          integer ierr, ioff
 
@@ -76,6 +77,7 @@ c        --- allocate backing arrays ---
      $      + lx2*ly2*lz2*lelv         ! ym2
      $      + lx2*ly2*lz2*lelv), stat=ierr) ! zm2
          if (ierr.ne.0) call exitti('alloc cb_gxyz$',ierr)
+         cb_gxyz = 0
 
          allocate(cb_giso1(
      $        lx1*ly1*lz1*lelt         ! rxm1
@@ -90,6 +92,7 @@ c        --- allocate backing arrays ---
      $      + lx1*ly1*lz1*lelt         ! jacm1
      $      + lx1*ly1*lz1*lelt), stat=ierr) ! jacmi
          if (ierr.ne.0) call exitti('alloc cb_giso1$',ierr)
+         cb_giso1 = 0
 
          allocate(cb_giso2(
      $        lx2*ly2*lz2*lelv         ! rxm2
@@ -103,9 +106,11 @@ c        --- allocate backing arrays ---
      $      + lx2*ly2*lz2*lelv         ! tzm2
      $      + lx2*ly2*lz2*lelv), stat=ierr) ! jacm2
          if (ierr.ne.0) call exitti('alloc cb_giso2$',ierr)
+         cb_giso2 = 0
 
          allocate(cb_gisod(lxd*lyd*lzd*ldim*ldim*lelv), stat=ierr) ! rx
          if (ierr.ne.0) call exitti('alloc cb_gisod$',ierr)
+         cb_gisod = 0
 
          allocate(cb_gmfact(
      $        lx1*ly1*lz1*lelt         ! g1m1
@@ -115,6 +120,7 @@ c        --- allocate backing arrays ---
      $      + lx1*ly1*lz1*lelt         ! g5m1
      $      + lx1*ly1*lz1*lelt), stat=ierr) ! g6m1
          if (ierr.ne.0) call exitti('alloc cb_gmfact$',ierr)
+         cb_gmfact = 0
 
          allocate(cb_gsurf(
      $        lx1*lz1*6*lelt           ! unr
@@ -133,6 +139,7 @@ c        --- allocate backing arrays ---
      $      + lx1*lz1*2*ldim*lelt      ! etalph
      $      + 1), stat=ierr)           ! dlam
          if (ierr.ne.0) call exitti('alloc cb_gsurf$',ierr)
+         cb_gsurf = 0
 
          allocate(cb_gvolm(
      $        lx1m*ly1m*lz1m*lelt      ! vnx
@@ -145,6 +152,7 @@ c        --- allocate backing arrays ---
      $      + lx1m*ly1m*lz1m*lelt      ! v2y
      $      + lx1m*ly1m*lz1m*lelt), stat=ierr) ! v2z
          if (ierr.ne.0) call exitti('alloc cb_gvolm$',ierr)
+         cb_gvolm = 0
 
          allocate(cb_glog(
      $        1                        ! ifgeom
@@ -165,98 +173,101 @@ c        --- allocate backing arrays ---
      $      + 8*lelt                   ! ifnskp
      $      + 1), stat=ierr)           ! ifbcor
          if (ierr.ne.0) call exitti('alloc cb_glog$',ierr)
+         cb_glog = .false.
 
          allocate(cb_cbbid(
      $        6*lelv                   ! boundaryID
      $      + 6*lelt), stat=ierr)      ! boundaryIDt
          if (ierr.ne.0) call exitti('alloc cb_cbbid$',ierr)
+         cb_cbbid = 0
 
 c        Group 1: /gxyz/
          ioff = 1
+         ltot = lx1*ly1*lz1*lelt
          xm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gxyz(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gxyz(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          ym1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gxyz(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gxyz(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          zm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gxyz(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gxyz(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
+         ltot2 = lx2*ly2*lz2*lelv
          xm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_gxyz(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_gxyz(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          ym2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_gxyz(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_gxyz(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          zm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_gxyz(ioff : ioff + lx2*ly2*lz2*lelv - 1)
+     $   cb_gxyz(ioff : ioff + ltot2 - 1)
 
 c        Group 2: /giso1/
          ioff = 1
          rxm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          sxm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          txm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          rym1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          sym1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          tym1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          rzm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          szm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          tzm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          jacm1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
-         jacmi(1:lx1*ly1*lz1,1:lelt) =>
-     $         cb_giso1(ioff : ioff + lx1*ly1*lz1*lelt - 1)
+     $   cb_giso1(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
+         jacmi(1:lx1*ly1*lz1,1:lelt) => cb_giso1(ioff : ioff + ltot - 1)
 
 c        Group 3: /giso2/
          ioff = 1
          rxm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          sxm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          txm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          rym2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          sym2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          tym2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          rzm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          szm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          tzm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          jacm2(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $         cb_giso2(ioff : ioff + lx2*ly2*lz2*lelv - 1)
+     $   cb_giso2(ioff : ioff + ltot2 - 1)
 
 c        Group 4: /gisod/
          rx(1:lxd*lyd*lzd,1:ldim*ldim,1:lelv) =>
@@ -265,22 +276,22 @@ c        Group 4: /gisod/
 c        Group 5: /gmfact/
          ioff = 1
          g1m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gmfact(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          g2m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gmfact(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          g3m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gmfact(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          g4m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gmfact(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          g5m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
-         ioff = ioff + lx1*ly1*lz1*lelt
+     $   cb_gmfact(ioff : ioff + ltot - 1)
+         ioff = ioff + ltot
          g6m1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $         cb_gmfact(ioff : ioff + lx1*ly1*lz1*lelt - 1)
+     $   cb_gmfact(ioff : ioff + ltot - 1)
 
 c        Group 6: /gsurf/
          ioff = 1

@@ -29,9 +29,11 @@ c        --- allocate backing arrays ---
      $      + ldim*ktotstrs*(1+mxprev)),   ! bstrs
      $      stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_wrthov$',ierr)
+         cb_wrthov = 0
 
          allocate(cb_srthoi(2), stat=ierr)  ! napproxstrs
          if (ierr.ne.0) call exitti('alloc cb_srthoi$',ierr)
+         cb_srthoi = 0
 
 c        Group 1: /wrthov/
          ioff = 1

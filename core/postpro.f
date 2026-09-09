@@ -369,14 +369,21 @@ c-----------------------------------------------------------------------
       logical ifdmpflt
 
       intt(1:lx1,1:lx1) => cb_ctmp0(1 : lx1*lx1)
-      zgmv(1:lx1) => cb_scrvh(0*lx1+1 : 1*lx1)
-      wgtv(1:lx1) => cb_scrvh(1*lx1+1 : 2*lx1)
-      zgmp(1:lx1) => cb_scrvh(2*lx1+1 : 3*lx1)
-      wgtp(1:lx1) => cb_scrvh(3*lx1+1 : 4*lx1)
-      tmax(1:100) => cb_scrvh(4*lx1+1 : 4*lx1+100)
-      wk1(1:lx1,1:lx1,1:lx1,1:lelt) => cb_screv(1 : lx1*lx1*lx1*lelt)
-      wk2(1:lx1,1:lx1,1:lx1) => cb_screv(
-     $   lx1*lx1*lx1*lelt+1 : lx1*lx1*lx1*lelt+lx1*lx1*lx1)
+      ioff = 1
+      zgmv(1:lx1) => cb_scrvh(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      wgtv(1:lx1) => cb_scrvh(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      zgmp(1:lx1) => cb_scrvh(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      wgtp(1:lx1) => cb_scrvh(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      tmax(1:100) => cb_scrvh(ioff : ioff + 100 - 1)
+      ioff = 1
+      wk1(1:lx1,1:lx1,1:lx1,1:lelt) =>
+     $   cb_screv(ioff : ioff + lx1*lx1*lx1*lelt - 1)
+      ioff = ioff + lx1*lx1*lx1*lelt
+      wk2(1:lx1,1:lx1,1:lx1) => cb_screv(ioff : ioff + lx1*lx1*lx1 - 1)
 
       imax = nid
       imax = iglmax(imax,1)
@@ -749,10 +756,11 @@ c-----------------------------------------------------------------------
       real   buf2(25)  ! double precsn
       equivalence (buf,buf2)
 
+      ioff = 1
       xyz(1:lv,1:ldim,1:lblock) =>
-     $   cb_scrns(0*lv*ldim*lblock+1 : 1*lv*ldim*lblock)
-      wk(1:lv*ldim*lblock) =>
-     $   cb_scrns(1*lv*ldim*lblock+1 : 2*lv*ldim*lblock)
+     $   cb_scrns(ioff : ioff + lv*ldim*lblock - 1)
+      ioff = ioff + lv*ldim*lblock
+      wk(1:lv*ldim*lblock) => cb_scrns(ioff : ioff + lv*ldim*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), igr, [lblock])
 
       nxs = lx1-1
@@ -943,10 +951,11 @@ c     A two pass strategy is used:  first count, then write
       real, pointer :: vcurve(:,:,:),wk(:)
       integer, pointer :: icurve(:,:)
 
+      ioff = 1
       vcurve(1:5,1:12,1:lblock) =>
-     $   cb_scrns(0*5*12*lblock+1 : 1*5*12*lblock)
-      wk(1:5*12*lblock) =>
-     $   cb_scrns(1*5*12*lblock+1 : 2*5*12*lblock)
+     $   cb_scrns(ioff : ioff + 5*12*lblock - 1)
+      ioff = ioff + 5*12*lblock
+      wk(1:5*12*lblock) => cb_scrns(ioff : ioff + 5*12*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), icurve, [12,lblock])
 
       wdsiz2=4
@@ -1077,10 +1086,10 @@ c-----------------------------------------------------------------------
       real   buf2( 8)  ! double precsn
       equivalence (buf,buf2)
 
-      vbc(1:5,1:6,1:lblock) =>
-     $   cb_scrns(0*5*6*lblock+1 : 1*5*6*lblock)
-      wk(1:5*6*lblock) =>
-     $   cb_scrns(1*5*6*lblock+1 : 2*5*6*lblock)
+      ioff = 1
+      vbc(1:5,1:6,1:lblock) => cb_scrns(ioff : ioff + 5*6*lblock - 1)
+      ioff = ioff + 5*6*lblock
+      wk(1:5*6*lblock) => cb_scrns(ioff : ioff + 5*6*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), ibc, [6,lblock])
 
       nface = 2*ldim
@@ -1220,10 +1229,11 @@ c-----------------------------------------------------------------------
       save    isym2pre
       data    isym2pre / 1 , 2 , 4 , 3 , 5 , 6 , 8 , 7 /
 
+      ioff = 1
       xyz(1:lv,1:ldim,1:lblock) =>
-     $   cb_scrns(0*lv*ldim*lblock+1 : 1*lv*ldim*lblock)
-      wk(1:lv*ldim*lblock) =>
-     $   cb_scrns(1*lv*ldim*lblock+1 : 2*lv*ldim*lblock)
+     $   cb_scrns(ioff : ioff + lv*ldim*lblock - 1)
+      ioff = ioff + lv*ldim*lblock
+      wk(1:lv*ldim*lblock) => cb_scrns(ioff : ioff + lv*ldim*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), igr, [lblock])
 
       letapt = 'a'
@@ -1327,10 +1337,11 @@ c     A two pass strategy is used:  first count, then write
       real, pointer :: vcurve(:,:,:),wk(:)
       integer, pointer :: icurve(:,:)
 
+      ioff = 1
       vcurve(1:5,1:12,1:lblock) =>
-     $   cb_scrns(0*5*12*lblock+1 : 1*5*12*lblock)
-      wk(1:5*12*lblock) =>
-     $   cb_scrns(1*5*12*lblock+1 : 2*5*12*lblock)
+     $   cb_scrns(ioff : ioff + 5*12*lblock - 1)
+      ioff = ioff + 5*12*lblock
+      wk(1:5*12*lblock) => cb_scrns(ioff : ioff + 5*12*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), icurve, [12,lblock])
 
       if (imid.gt.0) then
@@ -1442,10 +1453,10 @@ c-----------------------------------------------------------------------
       save        chtemp
       data        chtemp /' '/   ! For mesh bcs
 
-      vbc(1:5,1:6,1:lblock) =>
-     $   cb_scrns(0*5*6*lblock+1 : 1*5*6*lblock)
-      wk(1:5*6*lblock) =>
-     $   cb_scrns(1*5*6*lblock+1 : 2*5*6*lblock)
+      ioff = 1
+      vbc(1:5,1:6,1:lblock) => cb_scrns(ioff : ioff + 5*6*lblock - 1)
+      ioff = ioff + 5*6*lblock
+      wk(1:5*6*lblock) => cb_scrns(ioff : ioff + 5*6*lblock - 1)
       call c_f_pointer(c_loc(cb_scruz(1)), ibc, [6,lblock])
 
       nface = 2*ldim
@@ -1534,10 +1545,14 @@ c-----------------------------------------------------------------------
 
       real len
 
-      x3(1:27) => cb_scrns(0*27+1 : 1*27)
-      y3(1:27) => cb_scrns(1*27+1 : 2*27)
-      z3(1:27) => cb_scrns(2*27+1 : 3*27)
-      xyz(1:3,1:3) => cb_scrns(3*27+1 : 3*27+9)
+      ioff = 1
+      x3(1:27) => cb_scrns(ioff : ioff + 27 - 1)
+      ioff = ioff + 27
+      y3(1:27) => cb_scrns(ioff : ioff + 27 - 1)
+      ioff = ioff + 27
+      z3(1:27) => cb_scrns(ioff : ioff + 27 - 1)
+      ioff = ioff + 27
+      xyz(1:3,1:3) => cb_scrns(ioff : ioff + 3*3 - 1)
 
       call chcopy(ccrve,ccurve(1,e),12)
 

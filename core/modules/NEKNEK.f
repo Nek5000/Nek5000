@@ -45,26 +45,33 @@ c        --- allocate backing arrays ---
 
          allocate(cb_intflag(2*ldim*lelt), stat=ierr)     ! intflag
          if (ierr.ne.0) call exitti('alloc cb_intflag$',ierr)
+         cb_intflag = 0
 
          allocate(cb_intmask(lx1*ly1*lz1*lelt), stat=ierr) ! imask
          if (ierr.ne.0) call exitti('alloc cb_intmask$',ierr)
+         cb_intmask = 0
 
          allocate(cb_valmask(lx1*ly1*lz1*lelt*nfldmax_nn),
      $            stat=ierr)                              ! valint
          if (ierr.ne.0) call exitti('alloc cb_valmask$',ierr)
+         cb_valmask = 0
 
          allocate(cb_cgeom(1), stat=ierr)                 ! igeom
          if (ierr.ne.0) call exitti('alloc cb_cgeom$',ierr)
+         cb_cgeom = 0
 
          allocate(cb_inbc(1), stat=ierr)                  ! nfld_neknek
          if (ierr.ne.0) call exitti('alloc cb_inbc$',ierr)
+         cb_inbc = 0
 
          allocate(cb_mybd(lx1*ly1*lz1*lelt*nfldmax_nn*3),
      $            stat=ierr)                              ! bdrylg
          if (ierr.ne.0) call exitti('alloc cb_mybd$',ierr)
+         cb_mybd = 0
 
          allocate(cb_multipts_r(nmaxl_nn*ldim), stat=ierr) ! rst
          if (ierr.ne.0) call exitti('alloc cb_multipts_r$',ierr)
+         cb_multipts_r = 0
 
          allocate(cb_multipts_i(
      $        nmaxl_nn                 ! rcode
@@ -73,9 +80,11 @@ c        --- allocate backing arrays ---
      $      + 1*nmaxl_nn               ! ilist
      $      + 1), stat=ierr)           ! npoints_nn
          if (ierr.ne.0) call exitti('alloc cb_multipts_i$',ierr)
+         cb_multipts_i = 0
 
          allocate(cb_intp_h_nn(1), stat=ierr)             ! inth_multi2
          if (ierr.ne.0) call exitti('alloc cb_intp_h_nn$',ierr)
+         cb_intp_h_nn = 0
 
 c        Group 1: /intflag/
          intflag(1:2*ldim,1:lelt) => cb_intflag(1 : 2*ldim*lelt)

@@ -28,9 +28,11 @@ c        --- allocate backing arrays ---
 
          allocate(cb_prthoi(2), stat=ierr)             ! napproxp
          if (ierr.ne.0) call exitti('alloc cb_prthoi$',ierr)
+         cb_prthoi = 0
 
          allocate(cb_prthov(ktotp*(laxtp+1)), stat=ierr) ! approxp
          if (ierr.ne.0) call exitti('alloc cb_prthov$',ierr)
+         cb_prthov = 0
 
 c        Group 1: /prthoi/
          ioff = 1

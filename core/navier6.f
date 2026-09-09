@@ -73,17 +73,15 @@ c
 
       integer e
 
+      ioff = 1
       df(1:lx1*ly1*lz1,1:levb) =>
-     $   cb_fastd(0*lx1*ly1*lz1*levb+1 : 1*lx1*ly1*lz1*levb)
-      sr(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+1
-     $          : 1*lx1*ly1*lz1*levb+lxx*2*levb)
-      ss(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+lxx*2*levb+1
-     $          : 1*lx1*ly1*lz1*levb+2*lxx*2*levb)
-      st(1:lxx*2,1:levb) =>
-     $   cb_fastd(1*lx1*ly1*lz1*levb+2*lxx*2*levb+1
-     $          : 1*lx1*ly1*lz1*levb+3*lxx*2*levb)
+     $   cb_fastd(ioff : ioff + lx1*ly1*lz1*levb - 1)
+      ioff = ioff + lx1*ly1*lz1*levb
+      sr(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
+      ioff = ioff + lxx*2*levb
+      ss(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
+      ioff = ioff + lxx*2*levb
+      st(1:lxx*2,1:levb) => cb_fastd(ioff : ioff + lxx*2*levb - 1)
 
       call c_f_pointer(c_loc(cb_scrns(1)), tri, [n_tri])
       call c_f_pointer(c_loc(cb_ctmp1(1)), mask, [4*ltotd])
@@ -192,8 +190,10 @@ c
 c
       real, pointer :: w1(:,:),w2(:,:)
 c
-      w1(1:lx1,1:ly1) => cb_ctmp0(0*lx1*ly1+1 : 1*lx1*ly1)
-      w2(1:lx1,1:ly1) => cb_ctmp0(1*lx1*ly1+1 : 2*lx1*ly1)
+      ioff = 1
+      w1(1:lx1,1:ly1) => cb_ctmp0(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      w2(1:lx1,1:ly1) => cb_ctmp0(ioff : ioff + lx1*ly1 - 1)
 c
 c     First, copy local geometry to temporary, expanded, arrays
 c

@@ -32,12 +32,13 @@ c
 
       if (.not. allocated(cb_cbxmi))
      $   allocate(cb_cbxmi(3*lx1*ly1*lz1*lelt))
-      xmi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(0*lx1*ly1*lz1*lelt+1
-     $                                    : 1*lx1*ly1*lz1*lelt)
-      ymi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(1*lx1*ly1*lz1*lelt+1
-     $                                    : 2*lx1*ly1*lz1*lelt)
-      zmi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(2*lx1*ly1*lz1*lelt+1
-     $                                    : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      xmi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ymi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      zmi(1:lx1*ly1*lz1*lelt) => cb_cbxmi(ioff : ioff + ltot - 1)
 
       tol = max(5e-13,tolin)
       npt_max = 128

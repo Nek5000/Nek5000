@@ -389,12 +389,15 @@ C----------------------------------------------------------------------
 C
       real, pointer :: XM3(:,:,:,:), YM3(:,:,:,:), ZM3(:,:,:,:)
 C
+      ioff = 1
       XM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(0*lx3*ly3*lz3*lelt+1 : 1*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       YM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(1*lx3*ly3*lz3*lelt+1 : 2*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
+      ioff = ioff + lx3*ly3*lz3*lelt
       ZM3(1:lx3,1:ly3,1:lz3,1:lelt) =>
-     $   cb_scruz(2*lx3*ly3*lz3*lelt+1 : 3*lx3*ly3*lz3*lelt)
+     $   cb_scruz(ioff : ioff + lx3*ly3*lz3*lelt - 1)
 
       if (nio.eq.0.and.istep.le.1) write(6,*) 'generate geometry data'
 
@@ -1386,18 +1389,21 @@ c     Check list:
 c     param (55) -- volume flow rate, if nonzero
 c     forcing in X? or in Z?
 
+      ioff = 1
       vxc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(0*kx1*ky1*kz1*lelv+1 : 1*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       vyc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(1*kx1*ky1*kz1*lelv+1 : 2*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       vzc(1:kx1,1:ky1,1:kz1,1:lelv) =>
-     $   cb_cvflow_a(2*kx1*ky1*kz1*lelv+1 : 3*kx1*ky1*kz1*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv - 1)
+      ioff = ioff + kx1*ky1*kz1*lelv
       prc(1:kx2,1:ky2,1:kz2,1:lelv) =>
-     $   cb_cvflow_a(3*kx1*ky1*kz1*lelv+1
-     $             : 3*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx2*ky2*kz2*lelv - 1)
+      ioff = ioff + kx2*ky2*kz2*lelv
       vdc(1:kx1*ky1*kz1*lelv,1:2) =>
-     $   cb_cvflow_a(3*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv+1
-     $             : 5*kx1*ky1*kz1*lelv+kx2*ky2*kz2*lelv)
+     $   cb_cvflow_a(ioff : ioff + kx1*ky1*kz1*lelv*2 - 1)
 
       ntot1 = lx1*ly1*lz1*nelv
       ntot2 = lx2*ly2*lz2*nelv
@@ -1554,19 +1560,23 @@ C
 c
       common /cvflow_i/ icvflow,iavflow
 C
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
       RESV1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESV3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESPR(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + lx2*ly2*lz2*lelv - 1)
 C
 C     Compute pressure
 C
@@ -1629,25 +1639,26 @@ C
 c
       H2INV(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
-      H1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      H2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      rw1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      rw2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      rw3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      dv1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
-      dv2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelv+1 : 5*lx1*ly1*lz1*lelv)
-      dv3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(5*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      H1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      H2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
+      rw1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      rw2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      rw3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       RESPR(1:lx2,1:ly2,1:lz2,1:lelv) =>
-     $   cb_scrns(6*lx1*ly1*lz1*lelv+1 : 6*lx1*ly1*lz1*lelv
-     $                                 + lx2*ly2*lz2*lelv)
+     $   cb_scrns(ioff : ioff + lx2*ly2*lz2*lelv - 1)
 c
 c     Compute velocity, 1st part
 c
@@ -1725,18 +1736,23 @@ c     (Tombo splitting scheme).
 
       common /cvflow_i/ icvflow,iavflow
 
-      h1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      h2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
       resv1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       resv2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       resv3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       respr(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + ltotv - 1)
 
       n = lx1*ly1*lz1*nelv
       call invers2  (h1,vtrans,n)
@@ -1786,12 +1802,13 @@ c
       real, pointer :: v(:,:,:,:), h1(:,:,:,:), h2(:,:,:,:)
 c
       w(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(1 : lx1*ly1*lz1*lelt)
-      v (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      h1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      h2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      v(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
       ntot = lx1*ly1*lz1*nelv
       call rone (h1,ntot)
@@ -1843,10 +1860,11 @@ C
       data    rstart  /1/
 c
       TA(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(1 : lx1*ly1*lz1*lelt)
-      SII (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      SIII(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      SII(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SIII(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
 c
       rfinal   = 1./param(2) ! Target Re
 c

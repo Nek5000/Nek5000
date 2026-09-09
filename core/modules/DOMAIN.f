@@ -36,12 +36,16 @@ c
 
          allocate(na(lelt+1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc na$',ierr)
+         na = 0
          allocate(ma(lelt+1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc ma$',ierr)
+         ma = 0
          allocate(nza(lelt+1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc nza$',ierr)
+         nza = 0
          allocate(se_to_gcrs(lcr,lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc se_to_gcrs$',ierr)
+         se_to_gcrs = 0_8
 
       end subroutine init
       end module domain_mod

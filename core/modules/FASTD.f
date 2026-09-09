@@ -27,6 +27,7 @@ c        read on every solve in fasts.f's local_solves_fdm.
 
          allocate(cb_fastd(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_fastd$',ierr)
+         cb_fastd = 0
 
       end subroutine init
       end module fastd_mod

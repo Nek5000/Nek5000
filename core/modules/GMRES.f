@@ -30,6 +30,7 @@ c
       subroutine init
          use size_mod
          implicit none
+         integer ltot2
 
          integer ierr, ioff
 
@@ -44,31 +45,36 @@ c        --- allocate backing arrays ---
      $      + lgmres                 ! c_gmres
      $      + lgmres), stat=ierr)    ! s_gmres
          if (ierr.ne.0) call exitti('alloc cb_gmres$',ierr)
+         cb_gmres = 0
 
          allocate(cb_gmre1(lx2*ly2*lz2*lelv*lgmres), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_gmre1$',ierr)
+         cb_gmre1 = 0
                                                        ! v_gmres
 
          allocate(cb_gmre2(lx2*ly2*lz2*lelv*lgmres), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_gmre2$',ierr)
+         cb_gmre2 = 0
                                                        ! z_gmres
 
          allocate(cb_spltprec(
      $        lx2*ly2*lz2*lelv       ! ml_gmres
      $      + lx2*ly2*lz2*lelv), stat=ierr) ! mu_gmres
          if (ierr.ne.0) call exitti('alloc cb_spltprec$',ierr)
+         cb_spltprec = 0
 
 c        Group 1: /gmres/
          ioff = 1
+         ltot2 = lx2*ly2*lz2*lelv
          x_gmres(1:lx2*ly2*lz2*lelv) =>
-     $         cb_gmres(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_gmres(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          r_gmres(1:lx2*ly2*lz2*lelv) =>
-     $         cb_gmres(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_gmres(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          w_gmres(1:lx2*ly2*lz2*lelv) =>
-     $         cb_gmres(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_gmres(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          h_gmres(1:lgmres,1:lgmres) =>
      $         cb_gmres(ioff : ioff + lgmres*lgmres - 1)
          ioff = ioff + lgmres*lgmres
@@ -90,10 +96,10 @@ c        Group 3: /gmre2/
 c        Group 4: /spltprec/
          ioff = 1
          ml_gmres(1:lx2*ly2*lz2*lelv) =>
-     $         cb_spltprec(ioff : ioff + lx2*ly2*lz2*lelv - 1)
-         ioff = ioff + lx2*ly2*lz2*lelv
+     $   cb_spltprec(ioff : ioff + ltot2 - 1)
+         ioff = ioff + ltot2
          mu_gmres(1:lx2*ly2*lz2*lelv) =>
-     $         cb_spltprec(ioff : ioff + lx2*ly2*lz2*lelv - 1)
+     $   cb_spltprec(ioff : ioff + ltot2 - 1)
 
       end subroutine init
       end module gmres_mod

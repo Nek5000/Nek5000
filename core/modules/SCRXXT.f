@@ -24,6 +24,7 @@ c        navier8.f (set_up_h1_crs/crs_solve_h1: cmlt,mask(lcr,lelv))
 
          allocate(cb_scrxxt(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrxxt$',ierr)
+         cb_scrxxt = 0
 
       end subroutine init
       end module scrxxt_mod

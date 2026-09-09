@@ -14,16 +14,18 @@ C
       DIMENSION XML(NXL,NYL,NZL,1),YML(NXL,NYL,NZL,1),ZML(NXL,NYL,NZL,1)
       LOGICAL IFGLJ
 C
-      H     (1:lx1,1:3,1:2) => cb_ctmp1(0*lx1*3*2+1 : 1*lx1*3*2)
-      XCRVED(1:lx1) => cb_ctmp1(1*lx1*3*2+1 : 1*lx1*3*2+lx1)
-      YCRVED(1:ly1) => cb_ctmp1(1*lx1*3*2+lx1+1 : 1*lx1*3*2+lx1+ly1)
-      ZCRVED(1:lz1) => cb_ctmp1(1*lx1*3*2+lx1+ly1+1
-     $                        : 1*lx1*3*2+lx1+ly1+lz1)
-      ZGML  (1:lx1,1:3) => cb_ctmp1(1*lx1*3*2+lx1+ly1+lz1+1
-     $                            : 1*lx1*3*2+lx1+ly1+lz1+3*lx1)
-      WORK  (1:3,1:lx1,1:lz1) => cb_ctmp1(
-     $   1*lx1*3*2+lx1+ly1+lz1+3*lx1+1
-     $ : 1*lx1*3*2+lx1+ly1+lz1+3*lx1+3*lx1*lz1)
+      ioff = 1
+      H(1:lx1,1:3,1:2) => cb_ctmp1(ioff : ioff + lx1*3*2 - 1)
+      ioff = ioff + lx1*3*2
+      XCRVED(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      YCRVED(1:ly1) => cb_ctmp1(ioff : ioff + ly1 - 1)
+      ioff = ioff + ly1
+      ZCRVED(1:lz1) => cb_ctmp1(ioff : ioff + lz1 - 1)
+      ioff = ioff + lz1
+      ZGML(1:lx1,1:3) => cb_ctmp1(ioff : ioff + lx1*3 - 1)
+      ioff = ioff + lx1*3
+      WORK(1:3,1:lx1,1:lz1) => cb_ctmp1(ioff : ioff + 3*lx1*lz1 - 1)
 C
       IFGLJ = .FALSE.
       IF (IFAXIS .AND. IFRZER(IE) .AND. (ISID.EQ.2 .OR. ISID.EQ.4)) 
@@ -126,16 +128,18 @@ C
       DIMENSION IOPP(3),NXX(3)
       CHARACTER*1 CCV
 C
-      H     (1:lx1,1:3,1:2) => cb_ctmp1(0*lx1*3*2+1 : 1*lx1*3*2)
-      XCRVED(1:lx1) => cb_ctmp1(1*lx1*3*2+1 : 1*lx1*3*2+lx1)
-      YCRVED(1:ly1) => cb_ctmp1(1*lx1*3*2+lx1+1 : 1*lx1*3*2+lx1+ly1)
-      ZCRVED(1:lz1) => cb_ctmp1(1*lx1*3*2+lx1+ly1+1
-     $                        : 1*lx1*3*2+lx1+ly1+lz1)
-      ZGML  (1:lx1,1:3) => cb_ctmp1(1*lx1*3*2+lx1+ly1+lz1+1
-     $                            : 1*lx1*3*2+lx1+ly1+lz1+3*lx1)
-      WORK  (1:3,1:lx1,1:lz1) => cb_ctmp1(
-     $   1*lx1*3*2+lx1+ly1+lz1+3*lx1+1
-     $ : 1*lx1*3*2+lx1+ly1+lz1+3*lx1+3*lx1*lz1)
+      ioff = 1
+      H(1:lx1,1:3,1:2) => cb_ctmp1(ioff : ioff + lx1*3*2 - 1)
+      ioff = ioff + lx1*3*2
+      XCRVED(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      YCRVED(1:ly1) => cb_ctmp1(ioff : ioff + ly1 - 1)
+      ioff = ioff + ly1
+      ZCRVED(1:lz1) => cb_ctmp1(ioff : ioff + lz1 - 1)
+      ioff = ioff + lz1
+      ZGML(1:lx1,1:3) => cb_ctmp1(ioff : ioff + lx1*3 - 1)
+      ioff = ioff + lx1*3
+      WORK(1:3,1:lx1,1:lz1) => cb_ctmp1(ioff : ioff + 3*lx1*lz1 - 1)
 C
       CALL DSSET(NXL,NYL,NZL)
       IFACE  = EFACE1(IFACE1)
@@ -603,16 +607,18 @@ C     Note : CTMP1 is used in this format in several subsequent routines
 
       w(1:ldw) => cb_ctmp0(1 : ldw)
 
-      h     (1:lx1,1:3,1:2) => cb_ctmp1(0*lx1*3*2+1 : 1*lx1*3*2)
-      xcrved(1:lx1) => cb_ctmp1(1*lx1*3*2+1 : 1*lx1*3*2+lx1)
-      ycrved(1:ly1) => cb_ctmp1(1*lx1*3*2+lx1+1 : 1*lx1*3*2+lx1+ly1)
-      zcrved(1:lz1) => cb_ctmp1(1*lx1*3*2+lx1+ly1+1
-     $                        : 1*lx1*3*2+lx1+ly1+lz1)
-      zgml  (1:lx1,1:3) => cb_ctmp1(1*lx1*3*2+lx1+ly1+lz1+1
-     $                            : 1*lx1*3*2+lx1+ly1+lz1+3*lx1)
-      work  (1:3,1:lx1,1:lz1) => cb_ctmp1(
-     $   1*lx1*3*2+lx1+ly1+lz1+3*lx1+1
-     $ : 1*lx1*3*2+lx1+ly1+lz1+3*lx1+3*lx1*lz1)
+      ioff = 1
+      h(1:lx1,1:3,1:2) => cb_ctmp1(ioff : ioff + lx1*3*2 - 1)
+      ioff = ioff + lx1*3*2
+      xcrved(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      ycrved(1:ly1) => cb_ctmp1(ioff : ioff + ly1 - 1)
+      ioff = ioff + ly1
+      zcrved(1:lz1) => cb_ctmp1(ioff : ioff + lz1 - 1)
+      ioff = ioff + lz1
+      zgml(1:lx1,1:3) => cb_ctmp1(ioff : ioff + lx1*3 - 1)
+      ioff = ioff + lx1*3
+      work(1:3,1:lx1,1:lz1) => cb_ctmp1(ioff : ioff + 3*lx1*lz1 - 1)
 
 c     Initialize geometry arrays with bi- triquadratic deformations
       call linquad(xml,yml,zml,nxl,nyl,nzl)
@@ -744,23 +750,32 @@ c
       real    vout(3),vsph(3)
       logical ifconcv
 c
-      H     (1:lx1,1:3,1:2) => cb_ctmp1(0*lx1*3*2+1 : 1*lx1*3*2)
-      XCRVED(1:lx1) => cb_ctmp1(1*lx1*3*2+1 : 1*lx1*3*2+lx1)
-      YCRVED(1:ly1) => cb_ctmp1(1*lx1*3*2+lx1+1 : 1*lx1*3*2+lx1+ly1)
-      ZCRVED(1:lz1) => cb_ctmp1(1*lx1*3*2+lx1+ly1+1
-     $                        : 1*lx1*3*2+lx1+ly1+lz1)
-      ZGML  (1:lx1,1:3) => cb_ctmp1(1*lx1*3*2+lx1+ly1+lz1+1
-     $                            : 1*lx1*3*2+lx1+ly1+lz1+3*lx1)
-      WORK  (1:3,1:lx1,1:lz1) => cb_ctmp1(
-     $   1*lx1*3*2+lx1+ly1+lz1+3*lx1+1
-     $ : 1*lx1*3*2+lx1+ly1+lz1+3*lx1+3*lx1*lz1)
-      XCV(1:3,1:2,1:2) => cb_ctmp0(0*12+1 : 1*12)
-      VN1(1:3) => cb_ctmp0(1*12+1 : 1*12+3)
-      VN2(1:3) => cb_ctmp0(1*12+3+1 : 1*12+6)
-      X1 (1:3) => cb_ctmp0(1*12+6+1 : 1*12+9)
-      X2 (1:3) => cb_ctmp0(1*12+9+1 : 1*12+12)
-      X3 (1:3) => cb_ctmp0(1*12+12+1 : 1*12+15)
-      DX (1:3) => cb_ctmp0(1*12+15+1 : 1*12+18)
+      ioff = 1
+      H(1:lx1,1:3,1:2) => cb_ctmp1(ioff : ioff + lx1*3*2 - 1)
+      ioff = ioff + lx1*3*2
+      XCRVED(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      YCRVED(1:ly1) => cb_ctmp1(ioff : ioff + ly1 - 1)
+      ioff = ioff + ly1
+      ZCRVED(1:lz1) => cb_ctmp1(ioff : ioff + lz1 - 1)
+      ioff = ioff + lz1
+      ZGML(1:lx1,1:3) => cb_ctmp1(ioff : ioff + lx1*3 - 1)
+      ioff = ioff + lx1*3
+      WORK(1:3,1:lx1,1:lz1) => cb_ctmp1(ioff : ioff + 3*lx1*lz1 - 1)
+      ioff = 1
+      XCV(1:3,1:2,1:2) => cb_ctmp0(ioff : ioff + 3*2*2 - 1)
+      ioff = ioff + 3*2*2
+      VN1(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
+      ioff = ioff + 3
+      VN2(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
+      ioff = ioff + 3
+      X1(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
+      ioff = ioff + 3
+      X2(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
+      ioff = ioff + 3
+      X3(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
+      ioff = ioff + 3
+      DX(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
 C
 C     Determine geometric parameters
 C
@@ -912,16 +927,18 @@ C
       DIMENSION X1(3),X2(3)
       REAL U1(3),U2(3),VN(3),B(3)
 C
-      H     (1:lx1,1:3,1:2) => cb_ctmp1(0*lx1*3*2+1 : 1*lx1*3*2)
-      XCRVED(1:lx1) => cb_ctmp1(1*lx1*3*2+1 : 1*lx1*3*2+lx1)
-      YCRVED(1:ly1) => cb_ctmp1(1*lx1*3*2+lx1+1 : 1*lx1*3*2+lx1+ly1)
-      ZCRVED(1:lz1) => cb_ctmp1(1*lx1*3*2+lx1+ly1+1
-     $                        : 1*lx1*3*2+lx1+ly1+lz1)
-      ZGML  (1:lx1,1:3) => cb_ctmp1(1*lx1*3*2+lx1+ly1+lz1+1
-     $                            : 1*lx1*3*2+lx1+ly1+lz1+3*lx1)
-      WORK  (1:3,1:lx1,1:lz1) => cb_ctmp1(
-     $   1*lx1*3*2+lx1+ly1+lz1+3*lx1+1
-     $ : 1*lx1*3*2+lx1+ly1+lz1+3*lx1+3*lx1*lz1)
+      ioff = 1
+      H(1:lx1,1:3,1:2) => cb_ctmp1(ioff : ioff + lx1*3*2 - 1)
+      ioff = ioff + lx1*3*2
+      XCRVED(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      YCRVED(1:ly1) => cb_ctmp1(ioff : ioff + ly1 - 1)
+      ioff = ioff + ly1
+      ZCRVED(1:lz1) => cb_ctmp1(ioff : ioff + lz1 - 1)
+      ioff = ioff + lz1
+      ZGML(1:lx1,1:3) => cb_ctmp1(ioff : ioff + lx1*3 - 1)
+      ioff = ioff + lx1*3
+      WORK(1:3,1:lx1,1:lz1) => cb_ctmp1(ioff : ioff + 3*lx1*lz1 - 1)
 C
 C     Normalize incoming vectors
 C
@@ -1369,10 +1386,14 @@ c        5+-----+6    t                      5+-----+6    t
      $                          ,zlin(2)
       real jx,jy,jz,jxt,jyt,jzt
 
-      xcb(1:2,1:2,1:2) => cb_ctmp0(0*8+1 : 1*8)
-      ycb(1:2,1:2,1:2) => cb_ctmp0(1*8+1 : 2*8)
-      zcb(1:2,1:2,1:2) => cb_ctmp0(2*8+1 : 3*8)
-      w  (1:ldw) => cb_ctmp0(3*8+1 : 3*8+ldw)
+      ioff = 1
+      xcb(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      ycb(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      zcb(1:2,1:2,1:2) => cb_ctmp0(ioff : ioff + 2*2*2 - 1)
+      ioff = ioff + 2*2*2
+      w(1:ldw) => cb_ctmp0(ioff : ioff + ldw - 1)
 
       call setzgml (zgml,e,nxl,nyl,nzl,ifaxl)
 
@@ -1434,8 +1455,10 @@ c     Note : CTMP1 is used in this format in several subsequent routines
      $                          ,zquad(3)
       real jx,jy,jz,jxt,jyt,jzt
 
-      w (1:ldw,1:2) => cb_ctmp0(0*2*ldw+1 : 1*2*ldw)
-      zg(1:3)       => cb_ctmp0(1*2*ldw+1 : 1*2*ldw+3)
+      ioff = 1
+      w(1:ldw,1:2) => cb_ctmp0(ioff : ioff + ldw*2 - 1)
+      ioff = ioff + ldw*2
+      zg(1:3) => cb_ctmp0(ioff : ioff + 3 - 1)
 
       call xyzlin(xq,yq,zq,3,3,3,e,.false.) ! map bilin to 3x3x3
 

@@ -23,6 +23,7 @@ c        fasts.f (init_weight_op/do_weight_op): w(lx2,lz2,2,3,levb)
 
          allocate(cb_weightop(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_weightop$',ierr)
+         cb_weightop = 0
 
       end subroutine init
       end module weightop_mod

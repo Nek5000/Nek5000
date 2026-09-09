@@ -28,13 +28,14 @@ C-----------------------------------------------------------------------
 
       real psmax(ldimt)
 
-      work(1:lx1,1:ly1,1:lz1,1:lelv) => cb_ctmp1(
-     $   0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      ta1(1:lx2,1:ly1,1:lz1) => cb_ctmp1(
-     $   1*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv+lx2*ly1*lz1)
-      ta2(1:lx2,1:ly2,1:lz1) => cb_ctmp1(
-     $   1*lx1*ly1*lz1*lelv+lx2*ly1*lz1+1
-     $ : 1*lx1*ly1*lz1*lelv+lx2*ly1*lz1+lx2*ly2*lz1)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      work(1:lx1,1:ly1,1:lz1,1:lelv) =>
+     $   cb_ctmp1(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      ta1(1:lx2,1:ly1,1:lz1) => cb_ctmp1(ioff : ioff + lx2*ly1*lz1 - 1)
+      ioff = ioff + lx2*ly1*lz1
+      ta2(1:lx2,1:ly2,1:lz1) => cb_ctmp1(ioff : ioff + lx2*ly2*lz1 - 1)
 
       if(nio.eq.0) write(6,*) 'set initial conditions'
 
@@ -1245,15 +1246,16 @@ C
       SAVE    NOLD
       DATA    NOLD /0/
 
-      xa(1:lxyzr) => cb_ctmp0(0*lxyzr+1 : 1*lxyzr)
-      xb(1:lx1,1:ly1,1:lzr) => cb_ctmp0(1*lxyzr+1
-     $                                : 1*lxyzr+lx1*ly1*lzr)
-      xc(1:lxyzr) => cb_ctmp0(1*lxyzr+lx1*ly1*lzr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr)
-      zgmr(1:lxr) => cb_ctmp0(2*lxyzr+lx1*ly1*lzr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr+lxr)
-      wgtr(1:lxr) => cb_ctmp0(2*lxyzr+lx1*ly1*lzr+lxr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr+2*lxr)
+      ioff = 1
+      xa(1:lxyzr) => cb_ctmp0(ioff : ioff + lxyzr - 1)
+      ioff = ioff + lxyzr
+      xb(1:lx1,1:ly1,1:lzr) => cb_ctmp0(ioff : ioff + lx1*ly1*lzr - 1)
+      ioff = ioff + lx1*ly1*lzr
+      xc(1:lxyzr) => cb_ctmp0(ioff : ioff + lxyzr - 1)
+      ioff = ioff + lxyzr
+      zgmr(1:lxr) => cb_ctmp0(ioff : ioff + lxr - 1)
+      ioff = ioff + lxr
+      wgtr(1:lxr) => cb_ctmp0(ioff : ioff + lxr - 1)
 
 C     Bounds checking on mapped data.
       if (nxr.gt.lxr) then
@@ -1327,15 +1329,16 @@ C
       SAVE    NOLD
       DATA    NOLD /0/
 
-      xa(1:lxyzr) => cb_ctmp0(0*lxyzr+1 : 1*lxyzr)
-      xb(1:lx1,1:ly1,1:lzr) => cb_ctmp0(1*lxyzr+1
-     $                                : 1*lxyzr+lx1*ly1*lzr)
-      xc(1:lxyzr) => cb_ctmp0(1*lxyzr+lx1*ly1*lzr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr)
-      zgmr(1:lxr) => cb_ctmp0(2*lxyzr+lx1*ly1*lzr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr+lxr)
-      wgtr(1:lxr) => cb_ctmp0(2*lxyzr+lx1*ly1*lzr+lxr+1
-     $                      : 2*lxyzr+lx1*ly1*lzr+2*lxr)
+      ioff = 1
+      xa(1:lxyzr) => cb_ctmp0(ioff : ioff + lxyzr - 1)
+      ioff = ioff + lxyzr
+      xb(1:lx1,1:ly1,1:lzr) => cb_ctmp0(ioff : ioff + lx1*ly1*lzr - 1)
+      ioff = ioff + lx1*ly1*lzr
+      xc(1:lxyzr) => cb_ctmp0(ioff : ioff + lxyzr - 1)
+      ioff = ioff + lxyzr
+      zgmr(1:lxr) => cb_ctmp0(ioff : ioff + lxr - 1)
+      ioff = ioff + lxr
+      wgtr(1:lxr) => cb_ctmp0(ioff : ioff + lxr - 1)
 
 C     Bounds checking on mapped data.
       if (nxr.gt.lxr) then
@@ -1869,12 +1872,13 @@ C
 c
       real, pointer :: XM3(:,:,:,:), YM3(:,:,:,:), ZM3(:,:,:,:)
 C
-      XM3(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      YM3(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      ZM3(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      XM3(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      YM3(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ZM3(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
 c
       if(nio.eq.0) write(6,*) 'regenerate geometry data',icall
 

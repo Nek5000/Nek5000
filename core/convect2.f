@@ -23,14 +23,15 @@ c-----------------------------------------------------------------------
 
       real, pointer :: cx(:), cy(:), cz(:), hmsk(:)
 
-      cx  (1:lx1*ly1*lz1*lelt) => cb_scruz(0*lx1*ly1*lz1*lelt+1
-     $                                    : 1*lx1*ly1*lz1*lelt)
-      cy  (1:lx1*ly1*lz1*lelt) => cb_scruz(1*lx1*ly1*lz1*lelt+1
-     $                                    : 2*lx1*ly1*lz1*lelt)
-      cz  (1:lx1*ly1*lz1*lelt) => cb_scruz(2*lx1*ly1*lz1*lelt+1
-     $                                    : 3*lx1*ly1*lz1*lelt)
-      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(3*lx1*ly1*lz1*lelt+1
-     $                                    : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      cx(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      cy(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      cz(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
 
       if (igeom.eq.1) return

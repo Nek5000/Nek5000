@@ -19,6 +19,7 @@ c        LELV<=LELT
 
          allocate(cb_scrch(nscrch), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrch$',ierr)
+         cb_scrch = 0
 
       end subroutine init
       end module scrch_mod

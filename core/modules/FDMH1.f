@@ -25,8 +25,10 @@ c
          allocate(cb_fdmh1r(9*lx1 + 2*9*lx1*lx1 + 3*lelt
      $                     + lx1*ly1*lz1*lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_fdmh1r$',ierr)
+         cb_fdmh1r = 0
          allocate(ktype(lelt,3,0:4), stat=ierr)
          if (ierr.ne.0) call exitti('alloc ktype$',ierr)
+         ktype = 0
 
          ioff = 1
          dd(1:lx1,1:9) => cb_fdmh1r(ioff : ioff+lx1*9-1)

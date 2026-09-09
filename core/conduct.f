@@ -21,14 +21,15 @@ C
       real, pointer :: TA(:,:,:,:), TB(:,:,:,:)
       real, pointer :: H1(:,:,:,:), H2(:,:,:,:)
 
-      H1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      H2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      TA(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      TB(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      H1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      H2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = 1
+      TA(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TB(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 
       if (ifdgfld(ifield)) then
          call cdscal_dg(igeom)
@@ -279,8 +280,10 @@ C-----------------------------------------------------------------------
       parameter (lt=lx1*ly1*lz1*lelt)
       real, pointer :: tb(:),h2(:)
 
-      tb(1:lt) => cb_scrns(0*lt+1 : 1*lt)
-      h2(1:lt) => cb_scrns(1*lt+1 : 2*lt)
+      ioff = 1
+      tb(1:lt) => cb_scrns(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      h2(1:lt) => cb_scrns(ioff : ioff + lt - 1)
 
       nel   = nelfld(ifield)
       n     = lx1*ly1*lz1*nel
@@ -323,8 +326,10 @@ C-----------------------------------------------------------------------
       parameter (lt=lx1*ly1*lz1*lelt)
       real, pointer :: tb(:),h2(:)
 
-      tb(1:lt) => cb_scrns(0*lt+1 : 1*lt)
-      h2(1:lt) => cb_scrns(1*lt+1 : 2*lt)
+      ioff = 1
+      tb(1:lt) => cb_scrns(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      h2(1:lt) => cb_scrns(ioff : ioff + lt - 1)
 
       nel   = nelfld(ifield)
       n     = lx1*ly1*lz1*nelv
@@ -456,14 +461,15 @@ C
       real, pointer :: ta(:,:,:,:), tb(:,:,:,:)
       real, pointer :: h1(:,:,:,:), h2(:,:,:,:)
 
-      h1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      h2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrvh(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      ta(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      tb(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      h1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrvh(ioff : ioff + ltot - 1)
+      ioff = 1
+      ta(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      tb(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
 
 c     QUESTIONABLE support for Robin BC's at this point! (5/15/08)
 
@@ -523,10 +529,11 @@ c
 
       real, pointer :: ta(:,:,:,:), h2(:,:,:,:)
 
-      ta(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      h2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      ta(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      h2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
       nel = nelfld(ifield)
       n   = lx1*ly1*lz1*nel
@@ -702,10 +709,14 @@ C
       real, pointer :: ta(:),tb(:)
       real, pointer :: h1(:),h2(:)
 
-      ta(1:lt) => cb_scrns(0*lt+1 : 1*lt)
-      tb(1:lt) => cb_scrns(1*lt+1 : 2*lt)
-      h1(1:lt) => cb_scrvh(0*lt+1 : 1*lt)
-      h2(1:lt) => cb_scrvh(1*lt+1 : 2*lt)
+      ioff = 1
+      ta(1:lt) => cb_scrns(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      tb(1:lt) => cb_scrns(ioff : ioff + lt - 1)
+      ioff = 1
+      h1(1:lt) => cb_scrvh(ioff : ioff + lt - 1)
+      ioff = ioff + lt
+      h2(1:lt) => cb_scrvh(ioff : ioff + lt - 1)
 
       call dg_setup2(tmask(1,1,1,1,ifield-1))
 

@@ -37,14 +37,15 @@ c
       real h0,h0max
       real viscc(8,lelt)
 
-      r (1:lx1*ly1*lz1,1:lelt) => cb_scrmg(0*lx1*ly1*lz1*lelt+1
-     $                                    : 1*lx1*ly1*lz1*lelt)
-      tx(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(1*lx1*ly1*lz1*lelt+1
-     $                                    : 2*lx1*ly1*lz1*lelt)
-      ty(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(2*lx1*ly1*lz1*lelt+1
-     $                                    : 3*lx1*ly1*lz1*lelt)
-      tz(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(3*lx1*ly1*lz1*lelt+1
-     $                                    : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      r(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      tx(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ty(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      tz(1:lx1*ly1*lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
 
       if (ix*iy*iz*e .ne. 1) then ! use cache
          avm_vdiff = visc(ix,iy,iz,e)

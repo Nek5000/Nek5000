@@ -90,20 +90,20 @@ c-----------------------------------------------------------------------
      $   allocate(cb_p5var(3*lx1*ly1*lz1*lelv))
       rhs2(1:lx1*ly1*lz1*lelv,1:3) =>
      $   cb_p5var(1 : 3*lx1*ly1*lz1*lelv)
-      h1(1:lx1*ly1*lz1*lelv) => cb_scrvh(0*lx1*ly1*lz1*lelv+1
-     $                                  : 1*lx1*ly1*lz1*lelv)
-      h2(1:lx1*ly1*lz1*lelv) => cb_scrvh(1*lx1*ly1*lz1*lelv+1
-     $                                  : 2*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      h1(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      h2(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = 1
       resv(1:lx1*ly1*lz1*lelv,1:3) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelv*3+1 : 1*lx1*ly1*lz1*lelv*3)
-      dv1(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   1*lx1*ly1*lz1*lelv*3+1 : 1*lx1*ly1*lz1*lelv*3+lx1*ly1*lz1*lelv)
-      dv2(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   1*lx1*ly1*lz1*lelv*3+lx1*ly1*lz1*lelv+1
-     $ : 1*lx1*ly1*lz1*lelv*3+2*lx1*ly1*lz1*lelv)
-      dv3(1:lx1*ly1*lz1*lelv) => cb_scrns(
-     $   1*lx1*ly1*lz1*lelv*3+2*lx1*ly1*lz1*lelv+1
-     $ : 1*lx1*ly1*lz1*lelv*3+3*lx1*ly1*lz1*lelv)
+     $   cb_scrns(ioff : ioff + lx1*ly1*lz1*lelv*3 - 1)
+      ioff = ioff + lx1*ly1*lz1*lelv*3
+      dv1(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv2(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      dv3(1:lx1*ly1*lz1*lelv) => cb_scrns(ioff : ioff + ltotv - 1)
 
       if (lx1.eq.lx2)
      $   call exitti('midstep requires lx2=lx1-2 in SIZE$',lx2)

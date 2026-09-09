@@ -51,25 +51,35 @@ C
 
          allocate(cb_scrmg_ct(n_scrmg), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrmg_ct$',ierr)
+         cb_scrmg_ct = 0
          allocate(cb_screv_ct(2*4*6*lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_screv_ct$',ierr)
+         cb_screv_ct = 0
          allocate(cb_ctmp1_ct(3*3*3*lzl*lelt + 5*6*lelt + 3*8*lelt),
      $            stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_ctmp1_ct$',ierr)
+         cb_ctmp1_ct = 0
          allocate(cbcs(6,lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cbcs$',ierr)
+         cbcs = ''
          allocate(ibrnch(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc ibrnch$',ierr)
+         ibrnch = 0
          allocate(nbrnch(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc nbrnch$',ierr)
+         nbrnch = 0
          allocate(list(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc list$',ierr)
+         list = 0
          allocate(list1(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc list1$',ierr)
+         list1 = 0
          allocate(list2(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc list2$',ierr)
+         list2 = 0
          allocate(ifcnst(6,lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc ifcnst$',ierr)
+         ifcnst = .false.
 
          ioff = 1
          rmxs(1:lelt) => cb_scrmg_ct(ioff : ioff+lelt-1)
@@ -106,8 +116,10 @@ C
          zms(1:3,1:3,1:lzl,1:lelt) =>
      $      cb_scrmg_ct(ioff : ioff+9*lzl*lelt-1)
 
-         side (1:4,1:6,1:lelt) => cb_screv_ct(1 : 4*6*lelt)
-         sides(1:4,1:6,1:lelt) => cb_screv_ct(4*6*lelt+1 : 2*4*6*lelt)
+      ioff = 1
+      side(1:4,1:6,1:lelt) => cb_screv_ct(ioff : ioff + 4*6*lelt - 1)
+      ioff = ioff + 4*6*lelt
+      sides(1:4,1:6,1:lelt) => cb_screv_ct(ioff : ioff + 4*6*lelt - 1)
 
          ioff = 1
          flag(1:3,1:3,1:lzl,1:lelt) =>

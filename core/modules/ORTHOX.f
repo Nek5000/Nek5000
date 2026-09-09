@@ -22,6 +22,7 @@ c        induct.f's setrhsp/gensolnp/econjp: only pbar,pnew)
 
          allocate(cb_orthox(n), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_orthox$',ierr)
+         cb_orthox = 0
 
       end subroutine init
       end module orthox_mod

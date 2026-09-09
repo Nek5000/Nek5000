@@ -192,9 +192,12 @@ c
 c
       integer e
 
-      ur(1:lxyz) => cb_ctmp1(0*lxyz+1 : 1*lxyz)
-      us(1:lxyz) => cb_ctmp1(1*lxyz+1 : 2*lxyz)
-      ut(1:lxyz) => cb_ctmp1(2*lxyz+1 : 3*lxyz)
+      ioff = 1
+      ur(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      us(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      ut(1:lxyz) => cb_ctmp1(ioff : ioff + lxyz - 1)
 
 c
       N = lx1-1

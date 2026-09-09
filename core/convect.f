@@ -22,23 +22,24 @@ c
 
       real, pointer :: r1(:), r2(:), r3(:), r4(:)
 
-      r1(1:lx1*ly1*lz1*lelv) => cb_scrmg(0*lx1*ly1*lz1*lelv+1
-     $                                  : 1*lx1*ly1*lz1*lelv)
-      r2(1:lx1*ly1*lz1*lelv) => cb_scrmg(1*lx1*ly1*lz1*lelv+1
-     $                                  : 2*lx1*ly1*lz1*lelv)
-      r3(1:lx1*ly1*lz1*lelv) => cb_scrmg(2*lx1*ly1*lz1*lelv+1
-     $                                  : 3*lx1*ly1*lz1*lelv)
-      r4(1:lx1*ly1*lz1*lelv) => cb_scrmg(3*lx1*ly1*lz1*lelv+1
-     $                                  : 4*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      r1(1:lx1*ly1*lz1*lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      r2(1:lx1*ly1*lz1*lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      r3(1:lx1*ly1*lz1*lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      r4(1:lx1*ly1*lz1*lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
 
-      bmsk(1:lx1*ly1*lz1*lelv) => cb_scrvh(0*lx1*ly1*lz1*lelv+1
-     $                                    : 1*lx1*ly1*lz1*lelv)
-      bdwt(1:lx1*ly1*lz1*lelv) => cb_scrvh(1*lx1*ly1*lz1*lelv+1
-     $                                    : 2*lx1*ly1*lz1*lelv)
-      bmst(1:lx1*ly1*lz1*lelv) => cb_scrvh(2*lx1*ly1*lz1*lelv+1
-     $                                    : 3*lx1*ly1*lz1*lelv)
-      u1  (1:lx1*ly1*lz1*lelv) => cb_scrvh(3*lx1*ly1*lz1*lelv+1
-     $                                    : 4*lx1*ly1*lz1*lelv)
+      ioff = 1
+      bmsk(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      bdwt(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      bmst(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      u1(1:lx1*ly1*lz1*lelv) => cb_scrvh(ioff : ioff + ltotv - 1)
 
       ct(1:lxd*lyd*lzd*lelv*ldim) =>
      $   cb_scrns(1 : lxd*lyd*lzd*lelv*ldim)
@@ -267,10 +268,14 @@ c
       logical if3d,ifd
       integer e
 c
-      ur(1:ldd) => cb_ctmp1(0*ldd+1 : 1*ldd)
-      us(1:ldd) => cb_ctmp1(1*ldd+1 : 2*ldd)
-      ut(1:ldd) => cb_ctmp1(2*ldd+1 : 3*ldd)
-      ud(1:ldd) => cb_ctmp1(3*ldd+1 : 4*ldd)
+      ioff = 1
+      ur(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      us(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ut(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ud(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
 c
       if3d = .true.
       ifd  = .false.
@@ -315,10 +320,14 @@ c
       logical if3d,ifd
       integer e
 c
-      ur(1:ldd) => cb_ctmp1(0*ldd+1 : 1*ldd)
-      us(1:ldd) => cb_ctmp1(1*ldd+1 : 2*ldd)
-      ut(1:ldd) => cb_ctmp1(2*ldd+1 : 3*ldd)
-      ud(1:ldd) => cb_ctmp1(3*ldd+1 : 4*ldd)
+      ioff = 1
+      ur(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      us(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ut(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ud(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
 c
       if3d = .false.
       ifd  = .false.
@@ -960,14 +969,15 @@ c
 
       real, pointer :: phx(:), phy(:), phz(:), hmsk(:)
 
-      phx (1:lx1*ly1*lz1*lelt) => cb_scruz(0*lx1*ly1*lz1*lelt+1
-     $                                    : 1*lx1*ly1*lz1*lelt)
-      phy (1:lx1*ly1*lz1*lelt) => cb_scruz(1*lx1*ly1*lz1*lelt+1
-     $                                    : 2*lx1*ly1*lz1*lelt)
-      phz (1:lx1*ly1*lz1*lelt) => cb_scruz(2*lx1*ly1*lz1*lelt+1
-     $                                    : 3*lx1*ly1*lz1*lelt)
-      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(3*lx1*ly1*lz1*lelt+1
-     $                                    : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      phx(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      phy(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      phz(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
       nadvc = nadvc + 1
       etime1=dnekclock()
@@ -1025,10 +1035,11 @@ c     operator-integrator-factor method (characteristics).
 
       real, pointer :: phi(:), hmsk(:)
 
-      phi (1:lx1*ly1*lz1*lelt) => cb_scruz(0*lx1*ly1*lz1*lelt+1
-     $                                    : 1*lx1*ly1*lz1*lelt)
-      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(1*lx1*ly1*lz1*lelt+1
-     $                                    : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      phi(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      hmsk(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
       nadvc=nadvc+1
       etime1=dnekclock()
@@ -1070,12 +1081,18 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       logical if3d,ifd
       integer e
 
-      ur(1:ldd) => cb_ctmp1(0*ldd+1 : 1*ldd)
-      us(1:ldd) => cb_ctmp1(1*ldd+1 : 2*ldd)
-      ut(1:ldd) => cb_ctmp1(2*ldd+1 : 3*ldd)
-      ju(1:ldd) => cb_ctmp1(3*ldd+1 : 4*ldd)
-      ud(1:ldd) => cb_ctmp1(4*ldd+1 : 5*ldd)
-      tu(1:ldd) => cb_ctmp1(5*ldd+1 : 6*ldd)
+      ioff = 1
+      ur(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      us(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ut(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ju(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ud(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      tu(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
 
       if3d = .true.
       ifd  = .false.
@@ -1133,12 +1150,18 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       logical if3d,ifd
       integer e
 
-      ur(1:ldd) => cb_ctmp1(0*ldd+1 : 1*ldd)
-      us(1:ldd) => cb_ctmp1(1*ldd+1 : 2*ldd)
-      ut(1:ldd) => cb_ctmp1(2*ldd+1 : 3*ldd)
-      ju(1:ldd) => cb_ctmp1(3*ldd+1 : 4*ldd)
-      ud(1:ldd) => cb_ctmp1(4*ldd+1 : 5*ldd)
-      tu(1:ldd) => cb_ctmp1(5*ldd+1 : 6*ldd)
+      ioff = 1
+      ur(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      us(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ut(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ju(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ud(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      tu(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
 
       if3d = .false.
       ifd  = .false.
@@ -1269,12 +1292,13 @@ c-----------------------------------------------------------------------
 
       real bdivw(n,lorder),hmsk(n)
 
-      cx(1:lx1*ly1*lz1*lelt) => cb_scruz(0*lx1*ly1*lz1*lelt+1
-     $                                  : 1*lx1*ly1*lz1*lelt)
-      cy(1:lx1*ly1*lz1*lelt) => cb_scruz(1*lx1*ly1*lz1*lelt+1
-     $                                  : 2*lx1*ly1*lz1*lelt)
-      cz(1:lx1*ly1*lz1*lelt) => cb_scruz(2*lx1*ly1*lz1*lelt+1
-     $                                  : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      cx(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      cy(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      cz(1:lx1*ly1*lz1*lelt) => cb_scruz(ioff : ioff + ltot - 1)
 
       do i=lorder,2,-1
          call copy(bdivw(1,i),bdivw(1,i-1),n)
@@ -1462,11 +1486,16 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
 
       integer e,f
 
-      uf        (1:lf) => cb_scrdg(0*lf+1 : 1*lf)
-      uxf       (1:lf) => cb_scrdg(1*lf+1 : 2*lf)
-      uyf       (1:lf) => cb_scrdg(2*lf+1 : 3*lf)
-      uzf       (1:lf) => cb_scrdg(3*lf+1 : 4*lf)
-      upwind_wgt(1:lf) => cb_scrdg(4*lf+1 : 5*lf)
+      ioff = 1
+      uf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uxf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uyf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uzf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      upwind_wgt(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
 
       n  = lx1*ly1*lz1*nelv
       nf = lx1*lz1*2*ldim*nelt
@@ -1687,20 +1716,26 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
 
       integer e,f,fdim
 
-      uf        (1:lf) => cb_scrdg(0*lf+1 : 1*lf)
-      uxf       (1:lf) => cb_scrdg(1*lf+1 : 2*lf)
-      uyf       (1:lf) => cb_scrdg(2*lf+1 : 3*lf)
-      uzf       (1:lf) => cb_scrdg(3*lf+1 : 4*lf)
-      upwind_wgt(1:lf) => cb_scrdg(4*lf+1 : 5*lf)
-      beta_c(1:lx1*lz1) => cb_scrdg(5*lf+1 : 5*lf+lx1*lz1)
-      jaco_c(1:lx1*lz1) => cb_scrdg(5*lf+lx1*lz1+1
-     $                            : 5*lf+2*lx1*lz1)
-      beta_f(1:lxd*lzd) => cb_scrdg(5*lf+2*lx1*lz1+1
-     $                            : 5*lf+2*lx1*lz1+lxd*lzd)
-      jaco_f(1:lxd*lzd) => cb_scrdg(5*lf+2*lx1*lz1+lxd*lzd+1
-     $                            : 5*lf+2*lx1*lz1+2*lxd*lzd)
-      ufine (1:lxd*lzd) => cb_scrdg(5*lf+2*lx1*lz1+2*lxd*lzd+1
-     $                            : 5*lf+2*lx1*lz1+3*lxd*lzd)
+      ioff = 1
+      uf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uxf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uyf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uzf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      upwind_wgt(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      beta_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      jaco_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      beta_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      jaco_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      ufine(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
 
       n  = lx1*ly1*lz1*lelv
       nf = lx1*lz1*2*ldim*lelt
@@ -1797,12 +1832,18 @@ c     Assumes that current convecting field is on dealias mesh, in c()
 
       integer e
 
-      ur(1:ldd) => cb_ctmp1(0*ldd+1 : 1*ldd)
-      us(1:ldd) => cb_ctmp1(1*ldd+1 : 2*ldd)
-      ut(1:ldd) => cb_ctmp1(2*ldd+1 : 3*ldd)
-      ju(1:ldd) => cb_ctmp1(3*ldd+1 : 4*ldd)
-      ud(1:ldd) => cb_ctmp1(4*ldd+1 : 5*ldd)
-      tu(1:ldd) => cb_ctmp1(5*ldd+1 : 6*ldd)
+      ioff = 1
+      ur(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      us(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ut(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ju(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      ud(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
+      ioff = ioff + ldd
+      tu(1:ldd) => cb_ctmp1(ioff : ioff + ldd - 1)
 
       nxyz  = lx1*ly1*lz1
       nrstd = md**ldim
@@ -1859,21 +1900,28 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
 
       integer e,f,fdim
 
-      uf        (1:lf) => cb_scrdg(0*lf+1 : 1*lf)
-      uxf       (1:lf) => cb_scrdg(1*lf+1 : 2*lf)
-      uyf       (1:lf) => cb_scrdg(2*lf+1 : 3*lf)
-      uzf       (1:lf) => cb_scrdg(3*lf+1 : 4*lf)
-      upwind_wgt(1:lf) => cb_scrdg(4*lf+1 : 5*lf)
-      us        (1:lf) => cb_scrdg(5*lf+1 : 6*lf)
-      beta_c(1:lx1*lz1) => cb_scrdg(6*lf+1 : 6*lf+lx1*lz1)
-      jaco_c(1:lx1*lz1) => cb_scrdg(6*lf+lx1*lz1+1
-     $                            : 6*lf+2*lx1*lz1)
-      beta_f(1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+1
-     $                            : 6*lf+2*lx1*lz1+lxd*lzd)
-      jaco_f(1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+lxd*lzd+1
-     $                            : 6*lf+2*lx1*lz1+2*lxd*lzd)
-      ufine (1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+2*lxd*lzd+1
-     $                            : 6*lf+2*lx1*lz1+3*lxd*lzd)
+      ioff = 1
+      uf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uxf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uyf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uzf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      upwind_wgt(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      us(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      beta_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      jaco_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      beta_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      jaco_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      ufine(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
 
       n  = lx1*ly1*lz1*nelv
       nf = lx1*lz1*2*ldim*nelt
@@ -1962,21 +2010,28 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
 
       integer e,f,fdim
 
-      uf        (1:lf) => cb_scrdg(0*lf+1 : 1*lf)
-      uxf       (1:lf) => cb_scrdg(1*lf+1 : 2*lf)
-      uyf       (1:lf) => cb_scrdg(2*lf+1 : 3*lf)
-      uzf       (1:lf) => cb_scrdg(3*lf+1 : 4*lf)
-      upwind_wgt(1:lf) => cb_scrdg(4*lf+1 : 5*lf)
-      us        (1:lf) => cb_scrdg(5*lf+1 : 6*lf)
-      beta_c(1:lx1*lz1) => cb_scrdg(6*lf+1 : 6*lf+lx1*lz1)
-      jaco_c(1:lx1*lz1) => cb_scrdg(6*lf+lx1*lz1+1
-     $                            : 6*lf+2*lx1*lz1)
-      beta_f(1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+1
-     $                            : 6*lf+2*lx1*lz1+lxd*lzd)
-      jaco_f(1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+lxd*lzd+1
-     $                            : 6*lf+2*lx1*lz1+2*lxd*lzd)
-      ufine (1:lxd*lzd) => cb_scrdg(6*lf+2*lx1*lz1+2*lxd*lzd+1
-     $                            : 6*lf+2*lx1*lz1+3*lxd*lzd)
+      ioff = 1
+      uf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uxf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uyf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      uzf(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      upwind_wgt(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      us(1:lf) => cb_scrdg(ioff : ioff + lf - 1)
+      ioff = ioff + lf
+      beta_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      jaco_c(1:lx1*lz1) => cb_scrdg(ioff : ioff + lx1*lz1 - 1)
+      ioff = ioff + lx1*lz1
+      beta_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      jaco_f(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
+      ioff = ioff + lxd*lzd
+      ufine(1:lxd*lzd) => cb_scrdg(ioff : ioff + lxd*lzd - 1)
 
       n  = lx1*ly1*lz1*lelv
       nf = lx1*lz1*2*ldim*lelt

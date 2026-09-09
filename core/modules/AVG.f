@@ -31,6 +31,7 @@ c        --- allocate backing arrays ---
 
          allocate(cb_avgcmnr(2), stat=ierr)          ! atime, timel
          if (ierr.ne.0) call exitti('alloc cb_avgcmnr$',ierr)
+         cb_avgcmnr = 0
 
          allocate(cb_chkavg(
      $        ax1*ay1*az1*lelt         ! uavg
@@ -39,6 +40,7 @@ c        --- allocate backing arrays ---
      $      + ax1*ay1*az1*lelt*ldimt   ! tavg
      $      + ax2*ay2*az2*lelt), stat=ierr) ! pavg
          if (ierr.ne.0) call exitti('alloc cb_chkavg$',ierr)
+         cb_chkavg = 0
 
          allocate(cb_chkrms(
      $        ax1*ay1*az1*lelt         ! urms
@@ -50,6 +52,7 @@ c        --- allocate backing arrays ---
      $      + ax1*ay1*az1*lelt         ! wums
      $      + ax1*ay1*az1*lelt), stat=ierr) ! uvms
          if (ierr.ne.0) call exitti('alloc cb_chkrms$',ierr)
+         cb_chkrms = 0
 
 c        Group 1: /avgcmnr/
          ioff = 1

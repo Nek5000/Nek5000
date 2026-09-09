@@ -601,18 +601,25 @@ c
 c
       logical ifonbc
 c
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
       TMP1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       TMP2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       TMP3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scruz(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scruz(ioff : ioff + ltotv - 1)
+      ioff = 1
       TMQ1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       TMQ2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
       TMQ3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
+     $   cb_scrmg(ioff : ioff + ltotv - 1)
 c
       ifonbc = .false.
 c
@@ -732,12 +739,13 @@ C
       common  /nekcb/ cb
       CHARACTER CB*3
 
-      TMP(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrsf(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      TMA(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrsf(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      SMU(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrsf(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      TMP(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrsf(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TMA(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrsf(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SMU(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrsf(ioff : ioff + ltot - 1)
 
       nusbc=nusbc+1
       etime1=dnekclock()
@@ -1171,10 +1179,11 @@ C
 
       real, pointer :: SII(:,:,:,:), SIII(:,:,:,:)
 
-      SII (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      SIII(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_screv(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      SII(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      SIII(1:lx1,1:ly1,1:lz1,1:lelt) => cb_screv(ioff : ioff + ltot - 1)
 
       x     = xm1(ix,iy,iz,e)
       y     = ym1(ix,iy,iz,e)
@@ -1222,12 +1231,13 @@ C
       CHARACTER CB*3
 C
       STC(1:lx1,1:ly1,1:lz1) => cb_ctmp0(1 : lx1*ly1*lz1)
-      TRX(1:lx1,1:ly1,1:lz1) => cb_scrsf(0*lx1*ly1*lz1+1
-     $                                  : 1*lx1*ly1*lz1)
-      TRY(1:lx1,1:ly1,1:lz1) => cb_scrsf(1*lx1*ly1*lz1+1
-     $                                  : 2*lx1*ly1*lz1)
-      TRZ(1:lx1,1:ly1,1:lz1) => cb_scrsf(2*lx1*ly1*lz1+1
-     $                                  : 3*lx1*ly1*lz1)
+      ioff = 1
+      lxyz = lx1*ly1*lz1
+      TRX(1:lx1,1:ly1,1:lz1) => cb_scrsf(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TRY(1:lx1,1:ly1,1:lz1) => cb_scrsf(ioff : ioff + lxyz - 1)
+      ioff = ioff + lxyz
+      TRZ(1:lx1,1:ly1,1:lz1) => cb_scrsf(ioff : ioff + lxyz - 1)
 
       IFLD  = 1
       NFACE = 2*ldim
@@ -1373,10 +1383,14 @@ C
       DIMENSION CANG(2),SANG(2)
       DIMENSION IXN(2),IYN(2),IAN(2)
 C
-      A1X(1:lx1) => cb_ctmp1(0*lx1+1 : 1*lx1)
-      A1Y(1:lx1) => cb_ctmp1(1*lx1+1 : 2*lx1)
-      STX(1:lx1) => cb_ctmp1(2*lx1+1 : 3*lx1)
-      STY(1:lx1) => cb_ctmp1(3*lx1+1 : 4*lx1)
+      ioff = 1
+      A1X(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      A1Y(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      STX(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      STY(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
 C
       DO 100 IX=1,lx1
          AA = SIGST(IX,1) * WXM1(IX)
@@ -1448,17 +1462,28 @@ C
       DIMENSION IXN(2),IYN(2),IAN(2)
       LOGICAL IFGLJ
 C
-      XFM1(1:lx1) => cb_ctmp0(0*lx1+1 : 1*lx1)
-      YFM1(1:lx1) => cb_ctmp0(1*lx1+1 : 2*lx1)
-      T1XF(1:lx1) => cb_ctmp0(2*lx1+1 : 3*lx1)
-      T1YF(1:lx1) => cb_ctmp0(3*lx1+1 : 4*lx1)
-      A1X (1:lx1) => cb_ctmp1(0*lx1+1 : 1*lx1)
-      A1Y (1:lx1) => cb_ctmp1(1*lx1+1 : 2*lx1)
-      A2X (1:lx1) => cb_ctmp1(2*lx1+1 : 3*lx1)
-      A2Y (1:lx1) => cb_ctmp1(3*lx1+1 : 4*lx1)
-      STX (1:lx1) => cb_ctmp1(4*lx1+1 : 5*lx1)
-      STY (1:lx1) => cb_ctmp1(5*lx1+1 : 6*lx1)
-      XJM1(1:lx1) => cb_ctmp1(6*lx1+1 : 7*lx1)
+      ioff = 1
+      XFM1(1:lx1) => cb_ctmp0(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      YFM1(1:lx1) => cb_ctmp0(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      T1XF(1:lx1) => cb_ctmp0(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      T1YF(1:lx1) => cb_ctmp0(ioff : ioff + lx1 - 1)
+      ioff = 1
+      A1X(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      A1Y(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      A2X(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      A2Y(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      STX(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      STY(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
+      ioff = ioff + lx1
+      XJM1(1:lx1) => cb_ctmp1(ioff : ioff + lx1 - 1)
 C
       IFGLJ = .FALSE.
       IF ( IFRZER(IEL) .AND. (IFC.EQ.2 .OR. IFC.EQ.4) ) IFGLJ = .TRUE.
@@ -1651,39 +1676,65 @@ C
       DIMENSION TRX(LX1,LY1,LZ1),TRY(LX1,LY1,LZ1),TRZ(LX1,LY1,LZ1)
       DIMENSION SIGST(LX1,LY1)
 C
-      XFM1(1:lx1,1:ly1) => cb_ctmp0(0*lx1*ly1+1 : 1*lx1*ly1)
-      YFM1(1:lx1,1:ly1) => cb_ctmp0(1*lx1*ly1+1 : 2*lx1*ly1)
-      ZFM1(1:lx1,1:ly1) => cb_ctmp0(2*lx1*ly1+1 : 3*lx1*ly1)
-      DRM1 (1:lx1,1:lx1) => cb_ctmp1(0*lx1*lx1+1 : 1*lx1*lx1)
-      DRTM1(1:lx1,1:ly1) => cb_ctmp1(1*lx1*lx1+1 : 1*lx1*lx1+lx1*ly1)
-      DSM1 (1:lx1,1:lx1) => cb_ctmp1(1*lx1*lx1+lx1*ly1+1
-     $                             : 2*lx1*lx1+lx1*ly1)
-      DSTM1(1:lx1,1:ly1) => cb_ctmp1(2*lx1*lx1+lx1*ly1+1
-     $                             : 2*lx1*lx1+2*lx1*ly1)
-      WGS  (1:lx1,1:ly1) => cb_ctmp1(2*lx1*lx1+2*lx1*ly1+1
-     $                             : 2*lx1*lx1+3*lx1*ly1)
-      XRM1(1:lx1,1:ly1) => cb_scrmg(0*lx1*ly1+1 : 1*lx1*ly1)
-      YRM1(1:lx1,1:ly1) => cb_scrmg(1*lx1*ly1+1 : 2*lx1*ly1)
-      ZRM1(1:lx1,1:ly1) => cb_scrmg(2*lx1*ly1+1 : 3*lx1*ly1)
-      XSM1(1:lx1,1:ly1) => cb_scrmg(3*lx1*ly1+1 : 4*lx1*ly1)
-      YSM1(1:lx1,1:ly1) => cb_scrmg(4*lx1*ly1+1 : 5*lx1*ly1)
-      ZSM1(1:lx1,1:ly1) => cb_scrmg(5*lx1*ly1+1 : 6*lx1*ly1)
-      S1X(1:lx1,1:ly1) => cb_scruz(0*lx1*ly1+1 : 1*lx1*ly1)
-      S1Y(1:lx1,1:ly1) => cb_scruz(1*lx1*ly1+1 : 2*lx1*ly1)
-      S1Z(1:lx1,1:ly1) => cb_scruz(2*lx1*ly1+1 : 3*lx1*ly1)
-      S2X(1:lx1,1:ly1) => cb_scruz(3*lx1*ly1+1 : 4*lx1*ly1)
-      S2Y(1:lx1,1:ly1) => cb_scruz(4*lx1*ly1+1 : 5*lx1*ly1)
-      S2Z(1:lx1,1:ly1) => cb_scruz(5*lx1*ly1+1 : 6*lx1*ly1)
+      ioff = 1
+      XFM1(1:lx1,1:ly1) => cb_ctmp0(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      YFM1(1:lx1,1:ly1) => cb_ctmp0(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      ZFM1(1:lx1,1:ly1) => cb_ctmp0(ioff : ioff + lx1*ly1 - 1)
+      ioff = 1
+      DRM1(1:lx1,1:lx1) => cb_ctmp1(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      DRTM1(1:lx1,1:ly1) => cb_ctmp1(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      DSM1(1:lx1,1:lx1) => cb_ctmp1(ioff : ioff + lx1*lx1 - 1)
+      ioff = ioff + lx1*lx1
+      DSTM1(1:lx1,1:ly1) => cb_ctmp1(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      WGS(1:lx1,1:ly1) => cb_ctmp1(ioff : ioff + lx1*ly1 - 1)
+      ioff = 1
+      XRM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      YRM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      ZRM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      XSM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      YSM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      ZSM1(1:lx1,1:ly1) => cb_scrmg(ioff : ioff + lx1*ly1 - 1)
+      ioff = 1
+      S1X(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      S1Y(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      S1Z(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      S2X(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      S2Y(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      S2Z(1:lx1,1:ly1) => cb_scruz(ioff : ioff + lx1*ly1 - 1)
 C
-      G1X (1:lx1,1:ly1) => cb_scrns(0*lx1*ly1+1 : 1*lx1*ly1)
-      G1Y (1:lx1,1:ly1) => cb_scrns(1*lx1*ly1+1 : 2*lx1*ly1)
-      G1Z (1:lx1,1:ly1) => cb_scrns(2*lx1*ly1+1 : 3*lx1*ly1)
-      G2X (1:lx1,1:ly1) => cb_scrns(3*lx1*ly1+1 : 4*lx1*ly1)
-      G2Y (1:lx1,1:ly1) => cb_scrns(4*lx1*ly1+1 : 5*lx1*ly1)
-      G2Z (1:lx1,1:ly1) => cb_scrns(5*lx1*ly1+1 : 6*lx1*ly1)
-      GBS (1:lx1,1:ly1) => cb_scrns(6*lx1*ly1+1 : 7*lx1*ly1)
-      GB1L(1:lx1,1:ly1) => cb_scrns(7*lx1*ly1+1 : 8*lx1*ly1)
-      GB2L(1:lx1,1:ly1) => cb_scrns(8*lx1*ly1+1 : 9*lx1*ly1)
+      ioff = 1
+      G1X(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      G1Y(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      G1Z(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      G2X(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      G2Y(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      G2Z(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      GBS(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      GB1L(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
+      ioff = ioff + lx1*ly1
+      GB2L(1:lx1,1:ly1) => cb_scrns(ioff : ioff + lx1*ly1 - 1)
 C
       NXY1 = lx1*ly1
 C
@@ -1925,14 +1976,15 @@ C
       real, pointer :: V1(:,:,:,:), V2(:,:,:,:), V3(:,:,:,:)
      $               , VV(:,:,:,:)
 C
-      V1(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelv+1 : 1*lx1*ly1*lz1*lelv)
-      V2(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelv+1 : 2*lx1*ly1*lz1*lelv)
-      V3(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelv+1 : 3*lx1*ly1*lz1*lelv)
-      VV(1:lx1,1:ly1,1:lz1,1:lelv) =>
-     $   cb_scrmg(3*lx1*ly1*lz1*lelv+1 : 4*lx1*ly1*lz1*lelv)
+      ioff = 1
+      ltotv = lx1*ly1*lz1*lelv
+      V1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      V2(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      V3(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
+      ioff = ioff + ltotv
+      VV(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrmg(ioff : ioff + ltotv - 1)
 C
       NXZ1  = lx1*lz1
       TOLV  = 0.01*VMAX
@@ -2028,12 +2080,13 @@ c-----------------------------------------------------------------------
 
       integer e,f
 
-      v1(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      v2(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      v3(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrmg(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      v1(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      v2(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      v3(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrmg(ioff : ioff + ltot - 1)
 
       nface = 2*ldim
 

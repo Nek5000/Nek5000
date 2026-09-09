@@ -153,14 +153,16 @@ C
      $               ,QMASK(:,:,:,:),tmp(:)
       CHARACTER*3 CB
 
-      TA   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      TB   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      TA(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      TB(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
       QMASK(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      tmp(1:2) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt+2)
+     $   cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      tmp(1:2) => cb_scrns(ioff : ioff + 2 - 1)
 
 c      call  vrdsmshx  ! verify mesh topology
 
@@ -394,16 +396,18 @@ C
      $               , qmask(:,:,:,:)
       CHARACTER*3 CB
 C
-      tc   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(0*lx1*ly1*lz1*lelt+1 : 1*lx1*ly1*lz1*lelt)
-      td   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(1*lx1*ly1*lz1*lelt+1 : 2*lx1*ly1*lz1*lelt)
-      ta   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(2*lx1*ly1*lz1*lelt+1 : 3*lx1*ly1*lz1*lelt)
-      tb   (1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(3*lx1*ly1*lz1*lelt+1 : 4*lx1*ly1*lz1*lelt)
+      ioff = 1
+      ltot = lx1*ly1*lz1*lelt
+      tc(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      td(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      ta(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
+      tb(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+      ioff = ioff + ltot
       qmask(1:lx1,1:ly1,1:lz1,1:lelt) =>
-     $   cb_scrns(4*lx1*ly1*lz1*lelt+1 : 5*lx1*ly1*lz1*lelt)
+     $   cb_scrns(ioff : ioff + ltot - 1)
 C
       IERR      = 0
       EPS       = 1.0e-04
@@ -586,10 +590,14 @@ C
       DIMENSION XYZ(3,1)
       real, pointer :: RMTRX(:,:),RX(:,:),RZ(:,:),XYZN(:,:)
 C
-      RMTRX(1:3,1:3) => cb_ctmp0(0*9+1 : 1*9)
-      RX   (1:3,1:3) => cb_ctmp0(1*9+1 : 2*9)
-      RZ   (1:3,1:3) => cb_ctmp0(2*9+1 : 3*9)
-      XYZN (1:3,1:10) => cb_ctmp0(3*9+1 : 3*9+30)
+      ioff = 1
+      RMTRX(1:3,1:3) => cb_ctmp0(ioff : ioff + 3*3 - 1)
+      ioff = ioff + 3*3
+      RX(1:3,1:3) => cb_ctmp0(ioff : ioff + 3*3 - 1)
+      ioff = ioff + 3*3
+      RZ(1:3,1:3) => cb_ctmp0(ioff : ioff + 3*3 - 1)
+      ioff = ioff + 3*3
+      XYZN(1:3,1:10) => cb_ctmp0(ioff : ioff + 3*10 - 1)
 C
       SINA=SIN(ANGLE)
       COSA=COS(ANGLE)
@@ -639,12 +647,16 @@ C
       DIMENSION XYZL(3,8,LELT)
       real, pointer :: VO(:),XYZI(:,:),CG(:,:),TI(:),WORK(:)
 C
-      VO  (1:lelt)   => cb_ctmp0(0*lelt+1 : 1*lelt)
-      XYZI(1:3,1:lelt) => cb_ctmp0(1*lelt+1 : 1*lelt+3*lelt)
-      CG  (1:3,1:lelt) => cb_ctmp0(1*lelt+3*lelt+1 : 1*lelt+6*lelt)
-      TI  (1:6)      => cb_ctmp0(1*lelt+6*lelt+1 : 1*lelt+6*lelt+6)
-      WORK(1:6)      => cb_ctmp0(1*lelt+6*lelt+6+1
-     $                          : 1*lelt+6*lelt+12)
+      ioff = 1
+      VO(1:lelt) => cb_ctmp0(ioff : ioff + lelt - 1)
+      ioff = ioff + lelt
+      XYZI(1:3,1:lelt) => cb_ctmp0(ioff : ioff + 3*lelt - 1)
+      ioff = ioff + 3*lelt
+      CG(1:3,1:lelt) => cb_ctmp0(ioff : ioff + 3*lelt - 1)
+      ioff = ioff + 3*lelt
+      TI(1:6) => cb_ctmp0(ioff : ioff + 6 - 1)
+      ioff = ioff + 6
+      WORK(1:6) => cb_ctmp0(ioff : ioff + 6 - 1)
 C
 C     Compute volumes -
 C
@@ -822,9 +834,12 @@ C
       INTEGER WORK(2),WRK2(2)
       LOGICAL IFOK
 C
-      XCG(1:lelt) => cb_ctmp0(0*lelt+1 : 1*lelt)
-      YCG(1:lelt) => cb_ctmp0(1*lelt+1 : 2*lelt)
-      ZCG(1:lelt) => cb_ctmp0(2*lelt+1 : 3*lelt)
+      ioff = 1
+      XCG(1:lelt) => cb_ctmp0(ioff : ioff + lelt - 1)
+      ioff = ioff + lelt
+      YCG(1:lelt) => cb_ctmp0(ioff : ioff + lelt - 1)
+      ioff = ioff + lelt
+      ZCG(1:lelt) => cb_ctmp0(ioff : ioff + lelt - 1)
 C
 C     Choose "long" direction:
 C

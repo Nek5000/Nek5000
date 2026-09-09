@@ -51,12 +51,15 @@ c        --- allocate backing arrays ---
 
          allocate(cb_gfldr_r(ltots*(5+ldim)), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_gfldr_r$',ierr)
+         cb_gfldr_r = 0
 
          allocate(cb_gfldr_r4(2*ldim*ltots), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_gfldr_r4$',ierr)
+         cb_gfldr_r4 = 0
 
          allocate(cb_gfldr_i(3*ltots), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_gfldr_i$',ierr)
+         cb_gfldr_i = 0
 
 c        Group 1: real work arrays
          ioff = 1

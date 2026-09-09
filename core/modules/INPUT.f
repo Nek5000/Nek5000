@@ -153,6 +153,7 @@ c
 
          allocate(cb_input5(97*lelt + 30*(ldimt1+1)*lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_input5$',ierr)
+         cb_input5 = 0
 
          ioff = 1
          xc(1:8,1:lelt) => cb_input5(ioff : ioff+8*lelt-1)
@@ -170,14 +171,19 @@ c
 
          allocate(igroup(lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc igroup$',ierr)
+         igroup = 0
          allocate(object(maxobj,maxmbr,2), stat=ierr)
          if (ierr.ne.0) call exitti('alloc object$',ierr)
+         object = 0
          allocate(ccurve(12,lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc ccurve$',ierr)
+         ccurve = ''
          allocate(cdof(6,lelt), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cdof$',ierr)
+         cdof = ''
          allocate(cbc(6,lelt,0:ldimt1), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cbc$',ierr)
+         cbc = ''
 
       end subroutine init
       end module input_mod

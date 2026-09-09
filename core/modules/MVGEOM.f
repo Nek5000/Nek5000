@@ -31,16 +31,20 @@ c        --- allocate backing arrays ---
 
          allocate(cb_wsol(lx1m*ly1m*lz1m*lelt * 3), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_wsol$',ierr)
+         cb_wsol = 0
 
          allocate(cb_wlag(lx1m*ly1m*lz1m*lelt*(lorder-1) * 3),
      $            stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_wlag$',ierr)
+         cb_wlag = 0
 
          allocate(cb_wmsu(lx1m*ly1m*lz1m*lelt * 4), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_wmsu$',ierr)
+         cb_wmsu = 0
 
          allocate(cb_eigvec(lx1m*ly1m*lz1m*lelv * 3), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_eigvec$',ierr)
+         cb_eigvec = 0
 
 c        Group 1: /wsol/
          ioff = 1

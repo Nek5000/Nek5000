@@ -21,6 +21,7 @@
 
          allocate(cb_scrsf(nscrsf), stat=ierr)
          if (ierr.ne.0) call exitti('alloc cb_scrsf$',ierr)
+         cb_scrsf = 0
 
       end subroutine init
       end module scrsf_mod
