@@ -1598,6 +1598,7 @@ c-----------------------------------------------------------------------
       subroutine hpts
       use scrcg_mod
       use outtmp_mod
+      use outtmp_mod, only : outtmp_mem_init => init
 c
 c     evaluate velocity, temperature, pressure and ps-scalars
 c     for list of points and dump results
@@ -1632,6 +1633,8 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       data    npoints /0/
 
       save    inth_hpts
+
+      call outtmp_mem_init() ! lazily allocate/associate outtmp_mod storage
 
       pm1(1:lx1,1:ly1,1:lz1,1:lelv) => cb_scrcg(1 : lx1*ly1*lz1*lelv)
       wrk(1:lx1*ly1*lz1*lelt,1:nfldm) =>

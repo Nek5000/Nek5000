@@ -39,7 +39,31 @@ c
          use size_mod
          implicit none
 
+         integer ierr
+
+c        --- allocate backing arrays ---
+
+         allocate(cb_inbc(1), stat=ierr)                  ! nfld_neknek
+         if (ierr.ne.0) call exitti('alloc cb_inbc$',ierr)
+         cb_inbc = 0
+
+c        Group 1: /inbc/
+         nfld_neknek => cb_inbc(1)
+
+      end subroutine init
+
+      subroutine init_arrays
+         use size_mod
+         implicit none
+
          integer ierr, ioff
+
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
 
 c        --- allocate backing arrays ---
 
@@ -59,10 +83,6 @@ c        --- allocate backing arrays ---
          allocate(cb_cgeom(1), stat=ierr)                 ! igeom
          if (ierr.ne.0) call exitti('alloc cb_cgeom$',ierr)
          cb_cgeom = 0
-
-         allocate(cb_inbc(1), stat=ierr)                  ! nfld_neknek
-         if (ierr.ne.0) call exitti('alloc cb_inbc$',ierr)
-         cb_inbc = 0
 
          allocate(cb_mybd(lx1*ly1*lz1*lelt*nfldmax_nn*3),
      $            stat=ierr)                              ! bdrylg
@@ -100,17 +120,14 @@ c        Group 3: /valmask/
 c        Group 4: /cgeom/
          igeom => cb_cgeom(1)
 
-c        Group 5: /inbc/
-         nfld_neknek => cb_inbc(1)
-
-c        Group 6: /mybd/
+c        Group 5: /mybd/
          bdrylg(1:lx1*ly1*lz1*lelt,1:nfldmax_nn,0:2) =>
      $         cb_mybd(1 : lx1*ly1*lz1*lelt*nfldmax_nn*3)
 
-c        Group 7: /multipts_r/
+c        Group 6: /multipts_r/
          rst(1:nmaxl_nn*ldim) => cb_multipts_r(1 : nmaxl_nn*ldim)
 
-c        Group 8: /multipts_i/
+c        Group 7: /multipts_i/
          ioff = 1
          rcode(1:nmaxl_nn) => cb_multipts_i(ioff : ioff+nmaxl_nn-1)
          ioff = ioff + nmaxl_nn
@@ -123,8 +140,8 @@ c        Group 8: /multipts_i/
          ioff = ioff + 1*nmaxl_nn
          npoints_nn => cb_multipts_i(ioff)
 
-c        Group 9: /intp_h_nn/
+c        Group 8: /intp_h_nn/
          inth_multi2 => cb_intp_h_nn(1)
 
-      end subroutine init
+      end subroutine init_arrays
       end module neknek_mod

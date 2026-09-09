@@ -20,6 +20,7 @@ c     1 - base top-level additive Schwarz on restrictions of A
 c
 c----------------------------------------------------------------------
       subroutine hsmg_setup()
+      use hsmg_mod, only : hsmg_mem_init => init
       include 'SIZE'
       include 'INPUT'
       include 'PARALLEL'
@@ -29,6 +30,8 @@ c----------------------------------------------------------------------
 
       integer nf,nc,nr
       integer nx,ny,nz
+
+      call hsmg_mem_init() ! lazily allocate/associate hsmg_mod storage
 
       mg_fld = 1
       if (ifield.gt.1) mg_fld = 2
@@ -1410,6 +1413,7 @@ c----------------------------------------------------------------------
       subroutine hsmg_solve(e,r)
       use scrvh_mod
       use scrhi_mod
+      use hsmg_mod, only : hsmg_mem_init => init
       include 'SIZE'
       include 'HSMG'
       include 'GEOM'
@@ -1446,6 +1450,8 @@ c    $             , ecrs2 (lx2*ly2*lz2*lelv)  ! quick work array
       integer*8 ntotg,nxyz2
 
       logical if_hybrid
+
+      call hsmg_mem_init() ! lazily allocate/associate hsmg_mod storage
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
@@ -1904,6 +1910,7 @@ c-----------------------------------------------------------------------
       use scrvh_mod
       use scrmg_mod
       use scrhi_mod
+      use hsmg_mod, only : hsmg_mem_init => init
       include 'SIZE'
       include 'HSMG'       ! Same array space as HSMG
       include 'GEOM'
@@ -1929,6 +1936,8 @@ c     Assumes that preprocessing has been completed via h1mg_setup()
 
 c     if_hybrid = .true.    ! Control this from gmres, according
 c     if_hybrid = .false.   ! to convergence efficiency
+
+      call hsmg_mem_init() ! lazily allocate/associate hsmg_mod storage
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
@@ -2311,6 +2320,7 @@ c----------------------------------------------------------------------
       subroutine h1mg_setup()
       use scrvh_mod
       use scrhi_mod
+      use hsmg_mod, only : hsmg_mem_init => init
       include 'SIZE'
       include 'TOTAL'
       include 'HSMG'
@@ -2319,6 +2329,8 @@ c----------------------------------------------------------------------
       real, pointer :: h1(:,:,:,:), h2(:,:,:,:)
 
       integer p_h1,p_h2,p_g,p_b,p_msk
+
+      call hsmg_mem_init() ! lazily allocate/associate hsmg_mod storage
 
       h2inv(1:lx1,1:ly1,1:lz1,1:lelt) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelt)

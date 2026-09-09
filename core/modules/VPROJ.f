@@ -20,6 +20,13 @@ c
 
          integer ierr, ioff, ktop
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          ktop = lelv*lx1*ly1*lz1
 
 c        --- allocate backing arrays ---

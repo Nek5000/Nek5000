@@ -60,12 +60,13 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine cv_init
+      use cvode_mod, only : cvwrk_init => init_wrk
 
       include 'SIZE'
       include 'TOTAL'
       include 'CVODE'
 
-      common /CVWRK1/  y0(cv_lysize) 
+      real, pointer :: y0(:)
 
       ! cvode will not allocate these arrays
       common /cv_rout/ rout(6),rpar(1)
@@ -84,6 +85,8 @@ c----------------------------------------------------------------------
 
       real atol_t(ldimt)
 
+      call cvwrk_init() ! lazily allocate/associate cvode_mod wrk storage
+      y0(1:cv_lysize) => cb_cvwrk1(1 : cv_lysize)
 
       nxyz = lx1*ly1*lz1
       ifcvodeinit   = .false.
@@ -202,9 +205,10 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine cdscal_cvode
+      use cvode_mod, only : cvwrk_init => init_wrk
 c
 c     Top level driver for CVODE
-c     webpage: https://computation.llnl.gov/casc/sundials 
+c     webpage: https://computation.llnl.gov/casc/sundials
 c
 c     Integrate the IVP d/dt[y] = f(y(t),t); y(t=t0) := f0
 c     using BDF(stiff) or AM(non-stiff).
@@ -214,21 +218,14 @@ c
       include 'TOTAL'
       include 'CVODE'
 
-      common /CVWRK1/  y(cv_lysize) 
-
-      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
-     &                ,vy_ (lx1,ly1,lz1,lelv)
-     &                ,vz_ (lx1,ly1,lz1,lelv)
-     &                ,xm1_(lx1,ly1,lz1,lelv)
-     &                ,ym1_(lx1,ly1,lz1,lelv)
-     &                ,zm1_(lx1,ly1,lz1,lelv)
-     &                ,wx_ (lx1,ly1,lz1,lelv)
-     &                ,wy_ (lx1,ly1,lz1,lelv)
-     &                ,wz_ (lx1,ly1,lz1,lelv)
+      real, pointer :: y(:)
 
       integer*8 iout,ipar
       integer cvcomm
       common /cv_iout/ iout(21),ipar(1),cvcomm
+
+      call cvwrk_init() ! lazily allocate/associate cvode_mod wrk storage
+      y(1:cv_lysize) => cb_cvwrk1(1 : cv_lysize)
 
       nxyz = lx1*ly1*lz1
       ntot = nxyz * nelv
@@ -329,6 +326,7 @@ c      call fcvsetiin('MAX_ORD' ,3       ,ier)
       end
 c----------------------------------------------------------------------
       subroutine cv_upd_v
+      use cvode_mod, only : cvwrk_init => init_wrk
 c
       include 'SIZE'
       include 'TSTEP'
@@ -337,15 +335,7 @@ c
       include 'INPUT'
       include 'CVODE'
 
-      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
-     &                ,vy_ (lx1,ly1,lz1,lelv)
-     &                ,vz_ (lx1,ly1,lz1,lelv)
-     &                ,xm1_(lx1,ly1,lz1,lelv)
-     &                ,ym1_(lx1,ly1,lz1,lelv)
-     &                ,zm1_(lx1,ly1,lz1,lelv)
-     &                ,wx_ (lx1,ly1,lz1,lelv)
-     &                ,wy_ (lx1,ly1,lz1,lelv)
-     &                ,wz_ (lx1,ly1,lz1,lelv)
+      call cvwrk_init() ! lazily allocate/associate cvode_mod wrk storage
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -357,6 +347,8 @@ c
       end
 c----------------------------------------------------------------------
       subroutine cv_upd_w
+      use mvgeom_mod, only : mvgeom_mem_init => init
+      use cvode_mod, only : cvwrk_init => init_wrk
 c
       include 'SIZE'
       include 'TSTEP'
@@ -364,15 +356,9 @@ c
       include 'INPUT'
       include 'CVODE'
 
-      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
-     &                ,vy_ (lx1,ly1,lz1,lelv)
-     &                ,vz_ (lx1,ly1,lz1,lelv)
-     &                ,xm1_(lx1,ly1,lz1,lelv)
-     &                ,ym1_(lx1,ly1,lz1,lelv)
-     &                ,zm1_(lx1,ly1,lz1,lelv)
-     &                ,wx_ (lx1,ly1,lz1,lelv)
-     &                ,wy_ (lx1,ly1,lz1,lelv)
-     &                ,wz_ (lx1,ly1,lz1,lelv)
+      call mvgeom_mem_init() ! lazily allocate/associate mvgeom_mod storage
+                              ! (this subroutine only runs when ifmvbd)
+      call cvwrk_init() ! lazily allocate/associate cvode_mod wrk storage
 
       ntot = lx1*ly1*lz1*nelv
 
@@ -385,6 +371,7 @@ c
 c----------------------------------------------------------------------
       subroutine cv_upd_coor
       use scrsf_mod
+      use cvode_mod, only : cvwrk_init => init_wrk
 c
       include 'SIZE'
       include 'TSTEP'
@@ -393,18 +380,9 @@ c
       include 'INPUT'
       include 'CVODE'
 
-      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
-     &                ,vy_ (lx1,ly1,lz1,lelv)
-     &                ,vz_ (lx1,ly1,lz1,lelv)
-     &                ,xm1_(lx1,ly1,lz1,lelv)
-     &                ,ym1_(lx1,ly1,lz1,lelv)
-     &                ,zm1_(lx1,ly1,lz1,lelv)
-     &                ,wx_ (lx1,ly1,lz1,lelv)
-     &                ,wy_ (lx1,ly1,lz1,lelv)
-     &                ,wz_ (lx1,ly1,lz1,lelv)
-
       real, pointer :: dtmp(:)
 
+      call cvwrk_init() ! lazily allocate/associate cvode_mod wrk storage
       dtmp(1:lx1*ly1*lz1*lelv) => cb_scrsf(1 : lx1*ly1*lz1*lelv)
 
       ntot = lx1*ly1*lz1*nelv

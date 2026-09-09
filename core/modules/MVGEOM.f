@@ -27,6 +27,13 @@ c
 
          integer ierr, ioff
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
 c        --- allocate backing arrays ---
 
          allocate(cb_wsol(lx1m*ly1m*lz1m*lelt * 3), stat=ierr)

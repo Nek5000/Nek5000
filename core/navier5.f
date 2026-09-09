@@ -934,6 +934,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine avg_all
+      use avg_mod, only : avg_mem_init => init
 c
 c     This routine computes running averages E(X),E(X^2),E(X*Y)
 c     and outputs to avg*.fld*, rms*.fld*, and rm2*.fld* for all
@@ -944,21 +945,23 @@ c     real valued random variables.
 c
 c     variances and covariances can be computed in a post-processing step:
 c
-c        var(X)   := E(X^X) - E(X)*E(X) 
-c        cov(X,Y) := E(X*Y) - E(X)*E(Y)  
+c        var(X)   := E(X^X) - E(X)*E(X)
+c        cov(X,Y) := E(X*Y) - E(X)*E(Y)
 c
 c     Note: The E-operator is linear, in the sense that the expected
 c           value is given by E(X) = 1/N * sum[ E(X)_i ], where E(X)_i
 c           is the expected value of the sub-ensemble i (i=1...N).
 c
-      include 'SIZE'  
-      include 'TOTAL' 
+      include 'SIZE'
+      include 'TOTAL'
       include 'AVG'
 
       logical ifverbose
       integer icalld
       save    icalld
       data    icalld  /0/
+
+      call avg_mem_init() ! lazily allocate/associate avg_mod storage
 
       if (ax1.ne.lx1 .or. ay1.ne.ly1 .or. az1.ne.lz1) then
          if(nid.eq.0) write(6,*)

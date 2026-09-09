@@ -27,6 +27,13 @@ c
 
          integer ierr, ioff
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
 c        --- allocate backing arrays ---
 
          allocate(cb_avgcmnr(2), stat=ierr)          ! atime, timel

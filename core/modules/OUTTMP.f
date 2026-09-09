@@ -17,6 +17,13 @@ c        prepost.f (outpost2: w1,w2,w3(ltot1),wp(ltot2),wt(ltot1,ldimt))
          integer sz_outpost2
          integer ltot1, ltot2
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          ltot1 = lx1*ly1*lz1*lelt
          ltot2 = lx2*ly2*lz2*lelv
 

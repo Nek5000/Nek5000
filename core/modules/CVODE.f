@@ -20,6 +20,14 @@ c
       real,      allocatable, target :: cb_cvrstat(:)
       integer*8, allocatable, target :: cb_cvistat(:)
 
+c     formerly COMMON /CVWRK1/, /CVWRK2/ in cvode_driver.f
+      real, allocatable, target :: cb_cvwrk1(:)
+      real, allocatable, target :: cb_cvwrk2(:)
+
+      real, pointer :: vx_(:), vy_(:), vz_(:)
+      real, pointer :: xm1_(:), ym1_(:), zm1_(:)
+      real, pointer :: wx_(:), wy_(:), wz_(:)
+
       integer, pointer :: cv_nfld, cv_iatol
       integer, pointer :: cv_maxl, cv_itask, cv_ipretype
 
@@ -149,4 +157,48 @@ c        Group 6: /cvistat/
          iout_save(1:21) => cb_cvistat(ioff : ioff + 21 - 1)
 
       end subroutine init
+
+      subroutine init_wrk
+         implicit none
+
+         integer ierr, ioff, ltotv
+
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
+         ltotv = lx1*ly1*lz1*lelv
+
+         allocate(cb_cvwrk1(cv_lysize), stat=ierr)   ! y / y0
+         if (ierr.ne.0) call exitti('alloc cb_cvwrk1$',ierr)
+         cb_cvwrk1 = 0
+
+         allocate(cb_cvwrk2(9*ltotv), stat=ierr)
+         if (ierr.ne.0) call exitti('alloc cb_cvwrk2$',ierr)
+         cb_cvwrk2 = 0
+                          ! vx_,vy_,vz_,xm1_,ym1_,zm1_,wx_,wy_,wz_
+
+         ioff = 1
+         vx_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         vy_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         vz_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         xm1_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         ym1_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         zm1_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         wx_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         wy_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+         ioff = ioff + ltotv
+         wz_(1:ltotv) => cb_cvwrk2(ioff : ioff + ltotv - 1)
+
+      end subroutine init_wrk
       end module cvode_mod

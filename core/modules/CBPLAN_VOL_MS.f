@@ -16,6 +16,13 @@ c        vxcp,dvxc,vycp,dvyc,vzcp,dvzc(lx1*ly1*lz1*lelv) x6,
 c        resbc(lx1*ly1*lz1*lelv,ldim+1))
          integer sz
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          sz = (7+ldim)*lx1*ly1*lz1*lelv
 
          n = sz

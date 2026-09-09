@@ -3,6 +3,7 @@ c-----------------------------------------------------------------------
       use scruz_mod
       use c_is1_mod
       use ivrtx_mod
+      use mvgeom_mod, only : mvgeom_mem_init => init
 C
 C     Parallel compatible routine to find 
 C     connectivity of element structure.
@@ -151,7 +152,10 @@ C========================================================================
          call invcol1 (tmult,ntott)
       endif
       if (.not.ifflow) call copy(vmult,tmult,ntott)
-      if (ifmvbd)  call copy (wmult,vmult,ntott)
+      if (ifmvbd) then
+         call mvgeom_mem_init() ! lazily allocate/associate mvgeom_mod storage
+         call copy (wmult,vmult,ntott)
+      endif
       do ifield=3,nfield                  ! Additional pass. scalrs.
          if (nelg(ifield).eq.nelgv) then
             gsh_fld(ifield) = gsh_fld(1)

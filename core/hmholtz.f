@@ -2257,6 +2257,7 @@ c-----------------------------------------------------------------------
       use ctmp0_mod
       use scrcg_mod
       use scrmg_mod
+      use gmres_mod, only : gmres_mem_init => init
 
 c     Solve the Helmholtz equation by right-preconditioned
 c     GMRES iteration.
@@ -2305,6 +2306,8 @@ c     data    iflag,if_hyb  /.false. , .true. /
       ioff = ioff + lt
       w(1:lt) => cb_scrcg(ioff : ioff + lt - 1)
       r1(1:lt) => cb_scrmg(1 : lt)
+
+      call gmres_mem_init() ! lazily allocate/associate gmres_mod storage
 
       n = lx1*ly1*lz1*nelv
 

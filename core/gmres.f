@@ -2,6 +2,7 @@ c-----------------------------------------------------------------------
       subroutine uzawa_gmres(res,h1,h2,h2inv,intype,iter)
       use ctmp0_mod
       use scrmg_mod
+      use gmres_mod, only : gmres_mem_init => init
 
 c     Solve the pressure equation by right-preconditioned
 c     GMRES iteration.
@@ -36,6 +37,8 @@ c
 c
       real*8 etime1,etime2,dnekclock
 c
+      call gmres_mem_init() ! lazily allocate/associate gmres_mod storage
+
       ioff = 1
       wk1(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)
       ioff = ioff + lgmres
@@ -312,6 +315,7 @@ c-----------------------------------------------------------------------
       subroutine hmh_gmres(res,h1,h2,wt,iter)
       use ctmp0_mod
       use scrcg_mod
+      use gmres_mod, only : gmres_mem_init => init
 
 c     Solve the Helmholtz equation by right-preconditioned
 c     GMRES iteration.
@@ -344,6 +348,8 @@ c     data    iflag,if_hyb  /.false. , .true. /
       save    norm_fac
 
       real*8 etime1,etime2,dnekclock
+
+      call gmres_mem_init() ! lazily allocate/associate gmres_mod storage
 
       ioff = 1
       wk1(1:lgmres) => cb_ctmp0(ioff : ioff + lgmres - 1)

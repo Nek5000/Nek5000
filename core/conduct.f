@@ -2,6 +2,7 @@ c-----------------------------------------------------------------------
       subroutine cdscal (igeom)
       use scrns_mod
       use scrvh_mod
+      use orthot_mod, only : orthot_mem_init => init
 C
 C     Solve the convection-diffusion equation for passive scalar IPSCAL
 C
@@ -36,6 +37,8 @@ C
          return
       endif
 
+
+      call orthot_mem_init() ! lazily allocate/associate orthot_mod storage
 
       ifld1 = ifield-1
       napproxt(1,ifld1) = laxtt

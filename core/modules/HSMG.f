@@ -89,6 +89,13 @@ c     Specific to h1 multigrid:
          integer ierr, ioff
          integer, pointer :: p_imask(:)
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
 c        --- set mg sizing parameters (depend on SIZE) ---
 
          lmg_mhd   = 1-(lx1-lbx1)/(lx1-1) !1 if MHD is true, 0 otherwise

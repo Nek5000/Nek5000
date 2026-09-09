@@ -21,6 +21,13 @@
 
          integer ierr, ioff, ktott
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          laxtt = mxprev
          ktott = lx1*ly1*lz1*lelt
 

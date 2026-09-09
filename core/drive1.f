@@ -12,10 +12,6 @@ c
       use ctmp0_mod, only : ctmp0_init => init
       use ctmp1_mod, only : ctmp1_init => init
       use soln_mod, only : soln_init => init
-      use hsmg_mod, only : hsmg_init => init
-      use mvgeom_mod, only : mvgeom_init => init
-      use vproj_mod, only : vproj_init => init
-      use orthot_mod, only : orthot_init => init
       use orthov_mod, only : orthov_init => init
       use screv_mod, only : screv_init => init
       use scrcg_mod, only : scrcg_init => init
@@ -24,23 +20,15 @@ c
       use scrsf_mod, only : scrsf_init => init
       use scruz_mod, only : scruz_init => init
       use scrvh_mod, only : scrvh_init => init
-      use orthostrs_mod, only : orthostrs_init => init
-      use orthop_mod, only : orthop_init => init
       use noncon_mod, only : noncon_init => init
       use neknek_mod, only : neknek_init => init
       use mass_mod, only : mass_init => init
-      use gmres_mod, only : gmres_init => init
       use geom_mod, only : geom_init => init
       use dealias_mod, only : dealias_init => init
       use cvode_mod, only : cvode_init => init
-      use avg_mod, only : avg_init => init
       use adjoint_mod, only : adjoint_init => init
-      use cbplan_vol_ms_mod, only : cbplan_vol_ms_init => init
       use cvflow_a_mod, only : cvflow_a_init => init
       use scrdg_mod, only : scrdg_init => init
-      use outtmp_mod, only : outtmp_init => init
-      use orthox_mod, only : orthox_init => init
-      use cvflow_nn_mod, only : cvflow_nn_init => init
       use c_is1_mod, only : c_is1_init => init
       use fastd_mod, only : fastd_init => init
       use scrxxti_mod, only : scrxxti_init => init
@@ -71,10 +59,10 @@ c
       call ctmp0_init()
       call ctmp1_init()
       call soln_init()
-      call hsmg_init()
-      call mvgeom_init()
-      call vproj_init()
-      call orthot_init()
+c     hsmg_mod: lazy in hsmg.f
+c     mvgeom_mod: lazy in bdry.f/connect1.f/plan5.f/cvode_driver.f
+c     vproj_mod: lazy in induct.f's ophinv
+c     orthot_mod: lazy in conduct.f/perturb.f
       call orthov_init()
       call screv_init()
       call scrcg_init()
@@ -83,23 +71,24 @@ c
       call scrsf_init()
       call scruz_init()
       call scrvh_init()
-      call orthostrs_init()
-      call orthop_init()
+c     orthostrs_mod: lazy in subs1.f's hmhzsf
+c     orthop_mod: lazy in plan4.f
       call noncon_init()
-      call neknek_init()
+      call neknek_init() ! tiny -- just nfld_neknek, touched every run
+c     the rest of neknek_mod: lazy in multimesh.f's neknek_setup
       call mass_init()
-      call gmres_init()
+c     gmres_mod: lazy in gmres.f/hmholtz.f
       call geom_init()
       call dealias_init()
       call cvode_init()
-      call avg_init()
+c     avg_mod: lazy in navier5.f's avg_all
       call adjoint_init()
-      call cbplan_vol_ms_init()
+c     cbplan_vol_ms_mod: lazy in multimesh.f's plan3_vol_ms/plan4_vol_ms
       call cvflow_a_init()
       call scrdg_init()
-      call outtmp_init()
-      call orthox_init()
-      call cvflow_nn_init()
+c     outtmp_mod: lazy in prepost.f/postpro.f
+c     orthox_mod: lazy in induct.f's setrhsp/gensolnp
+c     cvflow_nn_mod: lazy in multimesh.f's plan3_vol_ms/plan4_vol_ms
       call c_is1_init()
       call fastd_init()
       call scrxxti_init()

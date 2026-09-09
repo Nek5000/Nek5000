@@ -26,6 +26,7 @@ c     Initialize unity partition function to 1
       end
 c-------------------------------------------------------------
       subroutine neknek_setup
+      use neknek_mod, only : neknek_init_arrays => init_arrays
 
       include 'SIZE'
       include 'TOTAL'
@@ -35,6 +36,9 @@ c-------------------------------------------------------------
       integer icalld
       save    icalld
       data    icalld  /0/
+
+      call neknek_init_arrays() ! lazily allocate/associate the rest
+                                 ! of neknek_mod storage (idempotent)
 
       if (icalld.eq.0.and.nid.eq.0) write(6,*) 'setup neknek'
 
@@ -863,7 +867,9 @@ c-----------------------------------------------------------------------
       use scrns_mod
       use scrvh_mod
       use cbplan_vol_ms_mod
+      use cbplan_vol_ms_mod, only : cbplan_vol_ms_mem_init => init
       use cvflow_nn_mod
+      use cvflow_nn_mod, only : cvflow_nn_mem_init => init
       use scrhi_mod
 c
 c     Compute pressure and velocity using fractional step method.
@@ -891,6 +897,9 @@ C
 
       real, pointer :: vxcbc(:,:,:,:), vycbc(:,:,:,:), vzcbc(:,:,:,:)
 c
+      call cbplan_vol_ms_mem_init() ! lazily allocate cbplan_vol_ms_mod storage
+      call cvflow_nn_mem_init() ! lazily allocate cvflow_nn_mod storage
+
       H2INV(1:lx1,1:ly1,1:lz1,1:lelv) =>
      $   cb_scrhi(1 : lx1*ly1*lz1*lelv)
       ioff = 1
@@ -1051,7 +1060,9 @@ c-----------------------------------------------------------------------
       use scrvh_mod
       use scrmg_mod
       use cbplan_vol_ms_mod
+      use cbplan_vol_ms_mod, only : cbplan_vol_ms_mem_init => init
       use cvflow_nn_mod
+      use cvflow_nn_mod, only : cvflow_nn_mem_init => init
 
 c     Compute pressure and velocity using fractional step method.
 c     (Tombo splitting scheme).
@@ -1079,6 +1090,9 @@ c     (Tombo splitting scheme).
       real, pointer :: vxcbc(:,:,:,:), vycbc(:,:,:,:), vzcbc(:,:,:,:)
 
       CHARACTER CB*3
+
+      call cbplan_vol_ms_mem_init() ! lazily allocate cbplan_vol_ms_mod storage
+      call cvflow_nn_mem_init() ! lazily allocate cvflow_nn_mod storage
 
       ioff = 1
       ltotv = lx1*ly1*lz1*lelv

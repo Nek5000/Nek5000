@@ -652,6 +652,7 @@ C-----------------------------------------------------------------------
       subroutine cdscalp (igeom)
       use scrns_mod
       use scrvh_mod
+      use orthot_mod, only : orthot_mem_init => init
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'GEOM'
@@ -682,6 +683,8 @@ c
       TA(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
       ioff = ioff + ltot
       TB(1:lx1,1:ly1,1:lz1,1:lelt) => cb_scrns(ioff : ioff + ltot - 1)
+
+      call orthot_mem_init() ! lazily allocate/associate orthot_mod storage
 
       ifld1 = ifield-1
       napproxt(1,ifld1) = laxtt

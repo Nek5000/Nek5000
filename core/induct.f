@@ -1097,6 +1097,7 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ophinv(o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
+      use vproj_mod, only : vproj_mem_init => init
 C
 C     Ok = (H1*A+H2*B)-1 * Ik  (implicit)
 C
@@ -1123,7 +1124,9 @@ c         if (ifield.eq.ifldmhd) call ophinv
 c     $      (o1,o2,o3,i1,i2,i3,h1,h2,tolh,nmxhi)
 c         return
 c      endif
- 
+
+      call vproj_mem_init() ! lazily allocate/associate vproj_mod storage
+
       mtmp = param(93)
       do i=1,2*ldim
          ivproj(1,i) = min(mxprev,mtmp) - 1
@@ -1228,6 +1231,7 @@ c      end
 c--------------------------------------------------------------------
       subroutine setrhsp(p,h1,h2,h2inv,pset,niprev)
       use orthox_mod
+      use orthox_mod, only : orthox_mem_init => init
 C
 C     Project soln onto best fit in the "E" norm.
 C
@@ -1247,6 +1251,8 @@ C
       real, pointer :: pbar(:), pnew(:)
       common /orthos/ alpha(mxprev),work(mxprev)
       common /orthoi/ nprev,mprev
+
+      call orthox_mem_init() ! lazily allocate/associate orthox_mod storage
 
       pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
       pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)
@@ -1302,6 +1308,7 @@ c    ................................................................
 c-----------------------------------------------------------------------
       subroutine gensolnp(p,h1,h2,h2inv,pset,nprev)
       use orthox_mod
+      use orthox_mod, only : orthox_mem_init => init
 C
 C     Reconstruct the solution to the original problem by adding back
 C     the previous solutions
@@ -1318,6 +1325,8 @@ C
       parameter (ltot2=lx2*ly2*lz2*lelv)
       real, pointer :: pbar(:), pnew(:)
       common /orthos/ alpha(mxprev),work(mxprev)
+
+      call orthox_mem_init() ! lazily allocate/associate orthox_mod storage
 
       pbar(1:ltot2) => cb_orthox(0*ltot2+1 : 1*ltot2)
       pnew(1:ltot2) => cb_orthox(1*ltot2+1 : 2*ltot2)

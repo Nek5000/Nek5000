@@ -15,6 +15,13 @@ c        multimesh.f (plan3_vol_ms/plan4_vol_ms:
 c        vxcbc,vycbc,vzcbc(lx1*ly1*lz1*lelv))
          integer sz
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          sz = 3*lx1*ly1*lz1*lelv
 
          n = sz

@@ -2,6 +2,7 @@ c-----------------------------------------------------------------------
       subroutine plan4 (igeom)
       use scrns_mod
       use scrvh_mod
+      use orthop_mod, only : orthop_mem_init => init
 
 C     Splitting scheme A.G. Tomboulides et al.
 c     Journal of Sci.Comp.,Vol. 12, No. 2, 1998
@@ -91,6 +92,7 @@ c
          call invers2  (h1,vtrans,ntot1)
          call rzero    (h2,ntot1)
          call ctolspl  (tolspl,respr)
+         call orthop_mem_init() ! lazily allocate/associate orthop_mod storage
          napproxp(1) = laxtp
          call hsolve   ('PRES',dpr,respr,h1,h2 
      $                        ,pmask,vmult

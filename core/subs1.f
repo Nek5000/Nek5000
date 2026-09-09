@@ -1191,6 +1191,7 @@ c-----------------------------------------------------------------------
       subroutine hmhzsf (name,u1,u2,u3,r1,r2,r3,h1,h2,
      $                   rmask1,rmask2,rmask3,rmult,
      $                   tol,maxit,matmod)
+      use orthostrs_mod, only : orthostrs_mem_init => init
 
 c     Solve coupled Helmholtz equations (stress formulation)
 
@@ -1215,6 +1216,8 @@ c     Solve coupled Helmholtz equations (stress formulation)
       nel = nelfld(ifield)
       vol = volfld(ifield)
       n   = lx1*ly1*lz1*nel
+
+      call orthostrs_mem_init() ! lazily allocate/associate orthostrs_mod storage
 
       napproxstrs(1) = 0
       iproj = 0

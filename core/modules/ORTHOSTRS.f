@@ -20,6 +20,13 @@
 
          integer ierr, ioff, ktotstrs
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          ktotstrs = lx1m*ly1m*lz1m*lelt
 
 c        --- allocate backing arrays ---

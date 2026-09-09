@@ -315,6 +315,7 @@ C     Laplacian formulation only
       END
 c-----------------------------------------------------------------------
       SUBROUTINE BCMASK
+      use mvgeom_mod, only : mvgeom_mem_init => init
 C
 C     Zero out masks corresponding to Dirichlet boundary points.
 C
@@ -340,6 +341,7 @@ C
 C     Masks for moving mesh
 C
       IF (IFMVBD) THEN
+         call mvgeom_mem_init() ! lazily allocate/associate mvgeom_mod storage
          IFIELD = 0
          CALL STSMASK (W1MASK,W2MASK,W3MASK)
          do e=1,nelv

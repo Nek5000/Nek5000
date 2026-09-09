@@ -1,6 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine plan5(igeom)
       use scrns_mod
+      use mvgeom_mod, only : mvgeom_mem_init => init
 
 c     Two-step Richardson Extrapolation.
 c     Operator splitting technique.
@@ -20,8 +21,11 @@ c     Operator splitting technique.
 
       if (igeom.eq.2) then
 
-      if (ifmvbd) call opcopy
+      if (ifmvbd) then
+         call mvgeom_mem_init() ! lazily allocate/associate mvgeom_mod storage
+         call opcopy
      $  (wxlag(1,1,1,1,2),wylag(1,1,1,1,2),wzlag(1,1,1,1,2),xm1,ym1,zm1)
+      endif
 
       do i=1,n
          s = bm1(i,1,1,1)*vtrans(i,1,1,1,1)*dti  ! Add  density*mass/dt,

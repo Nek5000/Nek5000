@@ -1518,6 +1518,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine outpost2(v1,v2,v3,vp,vt,nfldt,name3)
       use outtmp_mod
+      use outtmp_mod, only : outtmp_mem_init => init
 
       include 'SIZE'
       include 'SOLN'
@@ -1531,6 +1532,8 @@ c
       character*3 name3
       logical if_save(ldimt)
 c
+      call outtmp_mem_init() ! lazily allocate/associate outtmp_mod storage
+
       ioff = 1
       w1(1:ltot1) => cb_outtmp(ioff : ioff + ltot1 - 1)
       ioff = ioff + ltot1

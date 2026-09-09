@@ -16,6 +16,13 @@ c        every other ORTHOX site (setrhs/gensoln/updtset/updrhse,
 c        induct.f's setrhsp/gensolnp/econjp: only pbar,pnew)
          integer sz
 
+         logical icalld
+         save    icalld
+         data    icalld /.false./
+
+         if (icalld) return
+         icalld = .true.
+
          sz = 3*lx2*ly2*lz2*lelv
 
          n = sz
