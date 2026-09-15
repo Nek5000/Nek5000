@@ -103,6 +103,21 @@ c        --- allocate backing arrays ---
 
          allocate(cb_session_info(1), stat=ierr) ! nsessions
 
+c        the backing arrays replace static common blocks, which the
+c        loader zeroed. set_proc_map builds gllnid/gllel with a global
+c        sum and hence requires the not-owned entries to be zero
+         cb_cube1          = 0
+         cb_hcglb_i8       = 0
+         cb_hcglb          = 0
+         cb_diagl          = .false.
+         cb_precsn         = 0
+         cb_comm_handles   = 0
+         cb_lcomm_handles  = .false.
+         cb_xcdg_arrays    = 0
+         cb_xcdg_ints      = 0
+         cb_nekmpi_global  = 0
+         cb_session_info   = 0
+
 c        Group 1: /cube1/
          ioff = 1
          node => cb_cube1(ioff)
