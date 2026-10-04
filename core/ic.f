@@ -2311,7 +2311,7 @@ c-----------------------------------------------------------------------
          if (np.gt.1) then
             ei = e
          else if(np.eq.1) then
-            ei = ie_map_r2o(er(e),nhrefblkrs)
+            ei = er(e)
          endif
 
          if (if_byte_sw) then
