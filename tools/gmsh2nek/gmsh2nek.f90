@@ -1965,7 +1965,7 @@
 
       use SIZE
 
-      real     xx(8), yy(8), zz(8)
+      real*8   xx(8), yy(8), zz(8)
       real*8   rgroup, buf2(30)
 
       integer isym2pre(8)   ! Symmetric-to-prenek vertex ordering
