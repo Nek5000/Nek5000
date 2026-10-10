@@ -290,6 +290,18 @@ c              read(string,*) IFSPLIT
          call exitt
       ENDIF
 
+      IF (LBELT.NE.LELT .AND. IFMHD) THEN
+         if(nid.eq.0) then
+           WRITE(6,23) LBELT,LELT
+   23      FORMAT(/s,2X,'Error: This NEKTON Solver has been compiled'
+     $      /,2X,'       with LBELT != LELT. A MHD run'
+     $      /,2X,'       requires that LBELT = LELT.'
+     $      /,2X,'       LBELT = ',I8
+     $      /,2X,'       LELT  = ',I8)
+         endif
+         call exitt
+      ENDIF
+
       if (ifmvbd) then
          if (lx1.ne.lx1m.or.ly1.ne.ly1m.or.lz1.ne.lz1m) 
      $      call exitti('Need lx1m=lx1 etc. in SIZE . $',lx1m)
