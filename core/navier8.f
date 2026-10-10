@@ -47,7 +47,7 @@ c
       include 'INPUT'
       include 'TSTEP'
       real uf(1),vf(1)
-      common /scrpre/ uc(lcr*lelt),w(2*lx1*ly1*lz1)
+      common /scrpre_navier8/ uc(lcr*lelt),w(2*lx1*ly1*lz1)
 
       call map_f_to_c_l2_bilin(uf,vf,w)
       call crs_solve(xxth(ifield),uc,uf)
@@ -97,21 +97,21 @@ c
       integer null_space,e
 
       character*3 cb
-      common /scrxxt/ cmlt(lcr,lelv),mask(lcr,lelv)
-      common /scrxxti/ ia(lcr,lcr,lelv), ja(lcr,lcr,lelv)
+      common /scrxxt_navier8/ cmlt(lcr,lelv),mask(lcr,lelv)
+      common /scrxxti_navier8/ ia(lcr,lcr,lelv), ja(lcr,lcr,lelv)
       real mask
       integer ia,ja
       real z
 
-      common /scrch/ iwork(2,lx1*ly1*lz1*lelv)
-      common /scrns/ w(7*lx1*ly1*lz1*lelv)
+      common /scrch_navier8/ iwork(2,lx1*ly1*lz1*lelv)
+      common /scrns_navier8/ w(7*lx1*ly1*lz1*lelv)
       common /vptsol/ a(27*lx1*ly1*lz1*lelv)
       integer w
       real wr(1)
       equivalence (wr,w)
 
-      common /scrvhx/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
-      common /scrmgx/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
+      common /scrvhx_navier8/ h1(lx1*ly1*lz1*lelv),h2(lx1*ly1*lz1*lelv)
+      common /scrmgx_navier8/ w1(lx1*ly1*lz1*lelv),w2(lx1*ly1*lz1*lelv)
 
       integer*8 ngv
       character*132 amgfile_c
@@ -621,7 +621,7 @@ c
       real   a(1),h1(1),h2(1),w(ldw)
 c
       parameter (lcrd=lx1**ldim)
-      common /ctmp1/ x(lcrd),y(lcrd),z(lcrd)
+      common /ctmp1_navier8/ x(lcrd),y(lcrd),z(lcrd)
 c
 c
       ncrs_loc = nxc**ldim
@@ -1501,9 +1501,9 @@ c
       include 'TSTEP'
 
       real uf(1),vf(1)
-      common /scrpre/ uc(lcr*lelt)
-      common /scrpr2/ vc(lcr*lelt)
-      common /scrxxt/ cmlt(lcr,lelv),mask(lcr,lelv)
+      common /scrpre_navier8/ uc(lcr*lelt)
+      common /scrpr2_navier8/ vc(lcr*lelt)
+      common /scrxxt_navier8/ cmlt(lcr,lelv),mask(lcr,lelv)
 
       integer icalld1
       save    icalld1
@@ -1564,7 +1564,7 @@ c
       parameter (lxyz = lx1*ly1*lz1)
       real uc(2,2,ldim-1,lelt),uf(lxyz,lelt)
       parameter (l2 = ldim-1)
-      common /ctmp0/ w(lx1,lx1,2),v(lx1,2,l2,lelt)
+      common /ctmp0_navier8/ w(lx1,lx1,2),v(lx1,2,l2,lelt)
 c
       integer icalld
       save    icalld
@@ -1613,7 +1613,7 @@ c
 c
       parameter (lxyz = lx1*ly1*lz1)
       real uc(lcr,lelt),uf(lx1,ly1,lz1,lelt)
-      common /ctmp0/ w(2,2,lx1),v(2,ly1,lz1,lelt)
+      common /ctmp0_navier8/ w(2,2,lx1),v(2,ly1,lz1,lelt)
 c
       integer icalld
       save    icalld
@@ -2021,12 +2021,12 @@ c
       logical ifcenter
 
       integer*8 edge(0:1,0:1,0:1,3,lelt),enum(12,lelt),fnum(6,lelt)
-      common  /scrmg/ edge,enum,fnum
+      common  /scrmg_navier8/ edge,enum,fnum
 
       parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
       integer*8 etuple(4,12*lelt*nsafe),ftuple(5,6,lelt*nsafe)
       integer ind(12*lelt*nsafe)
-      common  /scrns/ etuple,ind
+      common  /scrns_navier8/ etuple,ind
       equivalence  (etuple,ftuple)
 
       logical ifij
@@ -2375,12 +2375,12 @@ c
       logical ifcenter
 
       integer*8  edge(0:1,0:1,2,lelt),enum(4,lelt)
-      common  /scrmg/ edge,enum
+      common  /scrmg_navier8/ edge,enum
 
       parameter (nsafe=8)  ! OFTEN, nsafe=2 suffices
       integer*8 etuple(4,4*lelt*nsafe)
       integer   ind(4*lelt*nsafe)
-      common  /scrns/ etuple,ind
+      common  /scrns_navier8/ etuple,ind
 
       integer e,eg
       logical ifij

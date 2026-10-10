@@ -36,13 +36,13 @@ c
       include 'TSTEP'
       include 'MASS'
 C
-      COMMON /SCRNS/  RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_perturb/  RESV1 (LX1,LY1,LZ1,LELV)
      $ ,              RESV2 (LX1,LY1,LZ1,LELV)
      $ ,              RESV3 (LX1,LY1,LZ1,LELV)
      $ ,              DV1   (LX1,LY1,LZ1,LELV)
      $ ,              DV2   (LX1,LY1,LZ1,LELV)
      $ ,              DV3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_perturb/  H1    (LX1,LY1,LZ1,LELV)
      $ ,              H2    (LX1,LY1,LZ1,LELV)
 c
       ifield = 1
@@ -140,7 +140,7 @@ C
       include 'MASS'
       include 'TSTEP'
 C
-      COMMON /SCRNS/ TA1 (LX1*LY1*LZ1*LELV)
+      COMMON /scrns_perturb/ TA1 (LX1*LY1*LZ1*LELV)
      $ ,             TA2 (LX1*LY1*LZ1*LELV)
      $ ,             TA3 (LX1*LY1*LZ1*LELV)
      $ ,             TB1 (LX1*LY1*LZ1*LELV)
@@ -219,7 +219,7 @@ C
       include 'GEOM'
       include 'ADJOINT'
 C
-      COMMON /SCRNS/ TA1 (LX1*LY1*LZ1*LELV)
+      COMMON /scrns_perturb/ TA1 (LX1*LY1*LZ1*LELV)
      $ ,             TA2 (LX1*LY1*LZ1*LELV)
      $ ,             TA3 (LX1*LY1*LZ1*LELV)
      $ ,             TB1 (LX1*LY1*LZ1*LELV)
@@ -320,7 +320,7 @@ c--------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
+      common /scrcv_perturb/ fx(ltd),fy(ltd),fz(ltd)
      $     , uf1(ltd),uf2(ltd),uf3(ltd),uf4(ltd),uf5(ltd),uf6(ltd)
       real urx(ltd),usx(ltd),utx(ltd)
       real ury(ltd),usy(ltd),uty(ltd)
@@ -437,7 +437,7 @@ c
       include 'MASS'
       include 'TSTEP'
 C
-      common /scrns/ ta1 (lx1,ly1,lz1,lelv)
+      common /scrns_perturb/ ta1 (lx1,ly1,lz1,lelv)
      $ ,             ta2 (lx1,ly1,lz1,lelv)
      $ ,             ta3 (lx1,ly1,lz1,lelv)
 c
@@ -475,7 +475,7 @@ C
       include 'INPUT'
       include 'TSTEP'
 C
-      COMMON /SCRNS/ TA1(LX1,LY1,LZ1,LELV)
+      COMMON /scrns_perturb/ TA1(LX1,LY1,LZ1,LELV)
      $ ,             TA2(LX1,LY1,LZ1,LELV)
      $ ,             TA3(LX1,LY1,LZ1,LELV)
      $ ,             TB1(LX1,LY1,LZ1,LELV)
@@ -524,7 +524,7 @@ c
       real           resv3 (lx1,ly1,lz1,1)
       real           h1    (lx1,ly1,lz1,1)
       real           h2    (lx1,ly1,lz1,1)
-      common /scruz/ w1    (lx1,ly1,lz1,lelv)
+      common /scruz_perturb/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
      $ ,             prextr(lx2,ly2,lz2,lelv)
@@ -599,9 +599,9 @@ C-----------------------------------------------------------------------
       LOGICAL          IFPRINT
       LOGICAL          IFCONV
 C
-      COMMON /SCRNS/ TA(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_perturb/ TA(LX1,LY1,LZ1,LELT)
      $              ,TB(LX1,LY1,LZ1,LELT)
-      COMMON /SCRVH/ H1(LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_perturb/ H1(LX1,LY1,LZ1,LELT)
      $              ,H2(LX1,LY1,LZ1,LELT)
 c
       include 'ORTHOT'
@@ -722,7 +722,7 @@ C---------------------------------------------------------------
       include 'MASS'
       include 'TSTEP'
 c
-      common /scruz/ ta (lx1,ly1,lz1,lelt)
+      common /scruz_perturb/ ta (lx1,ly1,lz1,lelt)
      $             , ua (lx1,ly1,lz1,lelt)
      $             , ub (lx1,ly1,lz1,lelt)
      $             , uc (lx1,ly1,lz1,lelt)
@@ -765,7 +765,7 @@ C-----------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
 C
-      COMMON /SCRUZ/ TA (LX1,LY1,LZ1,LELT)
+      COMMON /scruz_perturb/ TA (LX1,LY1,LZ1,LELT)
 C
       AB0   = AB(1)
       AB1   = AB(2)
@@ -797,7 +797,7 @@ C-----------------------------------------------------------------------
       INCLUDE 'INPUT'
       INCLUDE 'TSTEP'
 C
-      COMMON /SCRNS/ TA (LX1,LY1,LZ1,LELT)
+      COMMON /scrns_perturb/ TA (LX1,LY1,LZ1,LELT)
      $ ,             TB (LX1,LY1,LZ1,LELT)
      $ ,             H2 (LX1,LY1,LZ1,LELT)
 C
@@ -867,17 +867,17 @@ c
       include 'TOTAL'
       include 'CTIMER'
 c
-      common /scrns/ w1    (lx1,ly1,lz1,lelv)
+      common /scrns_perturb/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
      $ ,             dv1   (lx1,ly1,lz1,lelv)
      $ ,             dv2   (lx1,ly1,lz1,lelv)
      $ ,             dv3   (lx1,ly1,lz1,lelv)
      $ ,             dp    (lx2,ly2,lz2,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_perturb/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
-      COMMON /SCRCH/ PREXTR(LX2,LY2,LZ2,LELV)
+      common /scrhi_perturb/ h2inv (lx1,ly1,lz1,lelv)
+      COMMON /scrch_perturb/ PREXTR(LX2,LY2,LZ2,LELV)
       logical ifprjp
 
 c
@@ -938,7 +938,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-      COMMON /CTMP0/ DPR (LX2,LY2,LZ2,LELV)
+      COMMON /ctmp0_perturb/ DPR (LX2,LY2,LZ2,LELV)
       REAL        PREXTR (LX2,LY2,LZ2,LELV)
 C
       ntot2 = lx2*ly2*lz2*nelv

@@ -93,7 +93,7 @@ C
      $ ,             U     (LX1,LY1,LZ1,1)
      $ ,             HELM1 (LX1,LY1,LZ1,1)
      $ ,             HELM2 (LX1,LY1,LZ1,1)
-      COMMON /CTMP1/ DUDR  (LX1,LY1,LZ1)
+      COMMON /ctmp1_hmholtz/ DUDR  (LX1,LY1,LZ1)
      $ ,             DUDS  (LX1,LY1,LZ1)
      $ ,             DUDT  (LX1,LY1,LZ1)
      $ ,             TMP1  (LX1,LY1,LZ1)
@@ -538,7 +538,7 @@ C-------------------------------------------------------------------
       include 'EIGEN'
       COMMON  /CPRINT/ IFPRINT
       LOGICAL          IFPRINT
-      COMMON /CTMP0/ W1   (LX1,LY1,LZ1,LELT)
+      COMMON /ctmp0_hmholtz/ W1   (LX1,LY1,LZ1,LELT)
      $ ,             W2   (LX1,LY1,LZ1,LELT)
       REAL RES  (LX1,LY1,LZ1,1)
       REAL H1   (LX1,LY1,LZ1,1)
@@ -630,8 +630,8 @@ C------------------------------------------------------------------------
  
       real x(1),f(1),h1(1),h2(1),mask(1),mult(1),binv(1)
       parameter        (lg=lx1*ly1*lz1*lelt)
-      COMMON /SCRCG/ d (lg) , scalar(2)
-      common /SCRMG/ r (lg) , w (lg) , p (lg) , z (lg)
+      COMMON /scrcg_hmholtz/ d (lg) , scalar(2)
+      common /scrmg_hmholtz/ r (lg) , w (lg) , p (lg) , z (lg)
 c
       parameter (maxcg=900)
       common /tdarray/ diagt(maxcg),upper(maxcg)
@@ -938,7 +938,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 c
-      common /ctmp0/ w(lx1,ly1,lz1)
+      common /ctmp0_hmholtz/ w(lx1,ly1,lz1)
 c
       include 'FDMH1'
 c
@@ -1035,7 +1035,7 @@ c
 c
       include 'FDMH1'
 c
-      COMMON /CTMP0/ W(LX1,LX1),aa(lx1,lx1),bb(lx1,lx1)
+      COMMON /ctmp0_hmholtz/ W(LX1,LX1),aa(lx1,lx1),bb(lx1,lx1)
 c
       integer left,right
 c
@@ -1128,7 +1128,7 @@ c
       include 'TOPOL'
       include 'WZ'
 c
-      COMMON /CTMP0/ W(LX1,LX1),aa(lx1,lx1),bb(lx1,lx1)
+      COMMON /ctmp0_hmholtz/ W(LX1,LX1),aa(lx1,lx1),bb(lx1,lx1)
      $             , mask(lx1,ly1,lz1,lelt)
       real mask
       character*3 cb
@@ -1505,8 +1505,8 @@ C------------------------------------------------------------------------
 
       real x(1),f(1),h1(1),h2(1),binv(1),mask(1)
       parameter        (lg=lx1*ly1*lz1*lelt)
-      common /scrcg/ d (lg) , scalar(2)
-      common /scrmg/ r (lg) , w (lg) , p (lg) , z (lg)
+      common /scrcg_hmholtz/ d (lg) , scalar(2)
+      common /scrmg_hmholtz/ r (lg) , w (lg) , p (lg) , z (lg)
 
       parameter (maxcg=900)
       common /tdarray/ diagt(maxcg),upper(maxcg)
@@ -2064,8 +2064,8 @@ c     Helmholtz matrix-vector product: Au = h1*[A]u + h2*[B]u
       parameter(lxyz=lx1*ly1*lz1)
       real au(lx1,ly1,lz1,1),u(lx1,ly1,lz1,1),h1(lx1,ly1,lz1,1),h2(1)
 
-      common /ctmp0/ w(2*lx1*lz1*2*ldim*lelt)
-      common /ctmp1/ ur(lx1,ly1,lz1,lelt),us(lx1,ly1,lz1,lelt)
+      common /ctmp0_hmholtz/ w(2*lx1*lz1*2*ldim*lelt)
+      common /ctmp1_hmholtz/ ur(lx1,ly1,lz1,lelt),us(lx1,ly1,lz1,lelt)
      $                                   ,ut(lx1,ly1,lz1,lelt)
       common /ytmp9/ qr(lx1,ly1,lz1),qs(lx1,ly1,lz1),qt(lx1,ly1,lz1)
       common /ytmp0/ uf(lx1*lz1,2*ldim,lelt,2)
@@ -2180,11 +2180,11 @@ c     GMRES iteration.
       real             wt   (lx1,ly1,lz1,lelv)
 
       parameter (lt=lx1*ly1*lz1*lelt)
-      common /scrcg/ r(lt),z(lt),p(lt),w(lt)
-      common /scrmg/ r1(lt)
+      common /scrcg_hmholtz/ r(lt),z(lt),p(lt),w(lt)
+      common /scrmg_hmholtz/ r1(lt)
 
       common /cgmres1/ y(lgmres)
-      common /ctmp0/   wk1(lgmres),wk2(lgmres)
+      common /ctmp0_hmholtz/   wk1(lgmres),wk2(lgmres)
       real alpha, l, temp
       integer outer
 

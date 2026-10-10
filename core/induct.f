@@ -21,13 +21,13 @@ c
       include 'TSTEP'
       include 'MASS'
 
-      common /scrns/  resv1 (lx1,ly1,lz1,lelv)
+      common /scrns_induct/  resv1 (lx1,ly1,lz1,lelv)
      $ ,              resv2 (lx1,ly1,lz1,lelv)
      $ ,              resv3 (lx1,ly1,lz1,lelv)
      $ ,              dv1   (lx1,ly1,lz1,lelv)
      $ ,              dv2   (lx1,ly1,lz1,lelv)
      $ ,              dv3   (lx1,ly1,lz1,lelv)
-      common /scrvh/  h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_induct/  h1    (lx1,ly1,lz1,lelv)
      $ ,              h2    (lx1,ly1,lz1,lelv)
 
       ifield = ifldmhd
@@ -148,7 +148,7 @@ c
       include 'MASS'
       include 'TSTEP'
 C
-      common /scrns/ ta1 (lx1,ly1,lz1,lelv)
+      common /scrns_induct/ ta1 (lx1,ly1,lz1,lelv)
      $ ,             ta2 (lx1,ly1,lz1,lelv)
      $ ,             ta3 (lx1,ly1,lz1,lelv)
 c
@@ -186,7 +186,7 @@ C
       include 'INPUT'
       include 'TSTEP'
 C
-      COMMON /SCRNS/ TA1(LX1,LY1,LZ1,LELV)
+      COMMON /scrns_induct/ TA1(LX1,LY1,LZ1,LELV)
      $ ,             TA2(LX1,LY1,LZ1,LELV)
      $ ,             TA3(LX1,LY1,LZ1,LELV)
      $ ,             TB1(LX1,LY1,LZ1,LELV)
@@ -232,7 +232,7 @@ c
       real           resv3 (lx1,ly1,lz1,1)
       real           h1    (lx1,ly1,lz1,1)
       real           h2    (lx1,ly1,lz1,1)
-      common /scruz/ w1    (lx1,ly1,lz1,lelv)
+      common /scruz_induct/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
 c
@@ -262,7 +262,7 @@ c
       real           resv3 (lx1,ly1,lz1,1)
       real           h1    (lx1,ly1,lz1,1)
       real           h2    (lx1,ly1,lz1,1)
-      common /scruz/ w1    (lx1,ly1,lz1,lelv)
+      common /scruz_induct/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
 c
@@ -301,16 +301,16 @@ c
       include 'TOTAL'
       include 'CTIMER'
 c
-      common /scrns/ w1    (lx1,ly1,lz1,lelv)
+      common /scrns_induct/ w1    (lx1,ly1,lz1,lelv)
      $ ,             w2    (lx1,ly1,lz1,lelv)
      $ ,             w3    (lx1,ly1,lz1,lelv)
      $ ,             dv1   (lx1,ly1,lz1,lelv)
      $ ,             dv2   (lx1,ly1,lz1,lelv)
      $ ,             dv3   (lx1,ly1,lz1,lelv)
      $ ,             dp    (lx2,ly2,lz2,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_induct/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
-      common /scrhi/ h2inv (lx1,ly1,lz1,lelv)
+      common /scrhi_induct/ h2inv (lx1,ly1,lz1,lelv)
 
       parameter(nset = 1 + lbelv/lelv)
       common /orthov/ pset(lx2*ly2*lz2*lelv*mxprev,nset)
@@ -862,16 +862,16 @@ c
       include 'MASS'
       include 'GEOM'
 C
-      common /scrnt/  besv1 (lbx1,lby1,lbz1,lbelv)
+      common /scrnt_induct/  besv1 (lbx1,lby1,lbz1,lbelv)
      $ ,              besv2 (lbx1,lby1,lbz1,lbelv)
      $ ,              besv3 (lbx1,lby1,lbz1,lbelv)
-      COMMON /SCRNS/  RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_induct/  RESV1 (LX1,LY1,LZ1,LELV)
      $ ,              RESV2 (LX1,LY1,LZ1,LELV)
      $ ,              RESV3 (LX1,LY1,LZ1,LELV)
      $ ,              DV1   (LX1,LY1,LZ1,LELV)
      $ ,              DV2   (LX1,LY1,LZ1,LELV)
      $ ,              DV3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRVH/  H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_induct/  H1    (LX1,LY1,LZ1,LELV)
      $ ,              H2    (LX1,LY1,LZ1,LELV)
 c
       n  = lx1*ly1*lz1*nelv
@@ -1336,7 +1336,7 @@ C
       include 'TSTEP'
 c
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrns/ wk(2*ltd)
+      common /scrns_induct/ wk(2*ltd)
      $             , fx(lxy),fy(lxy),fz(lxy)
      $             , gx(lxy),gy(lxy),gz(lxy)
      $             , zr(ltd),zs(ltd),zt(ltd)
@@ -1534,7 +1534,7 @@ c
       include 'MASS'
       include 'TSTEP'
 c
-      common /scrns/ ta1 (lx1,ly1,lz1,lelv)
+      common /scrns_induct/ ta1 (lx1,ly1,lz1,lelv)
      $ ,             ta2 (lx1,ly1,lz1,lelv)
      $ ,             ta3 (lx1,ly1,lz1,lelv)
      $ ,             tb1 (lx1,ly1,lz1,lelv)

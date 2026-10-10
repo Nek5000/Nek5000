@@ -45,7 +45,7 @@ c     Check for io request in file 'ioinfo'
 
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
-      common /ctmp1/ tdump(lxyz,lpsc9)
+      common /ctmp1_prepost/ tdump(lxyz,lpsc9)
       real*4         tdump
       real           tdmp(4)
       equivalence   (tdump,tdmp)
@@ -101,7 +101,7 @@ c
       include 'TOTAL'
       include 'CTIMER'
 
-      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
+      common /scrcg_prepost/ pm1 (lx1,ly1,lz1,lelv)
 
       character*3    prefin,prefix
 
@@ -141,12 +141,12 @@ c     Store results for later postprocessing
 C
 C     Work arrays and temporary arrays
 C
-      common /scruz/ vxax   (lx1,ly1,lelv)
+      common /scruz_prepost/ vxax   (lx1,ly1,lelv)
      $             , vyax   (lx1,ly1,lelv)
      $             , prax   (lx2,ly2,lelv)
      $             , yax    (lx1,ly1,lelt)
-      common /scrmg/ tax    (lx1,ly1,lelt,ldimt)
-      common /scrcg/ pm1    (lx1,ly1,lz1,lelv)
+      common /scrmg_prepost/ tax    (lx1,ly1,lelt,ldimt)
+      common /scrcg_prepost/ pm1    (lx1,ly1,lz1,lelv)
 C
 c
       common /prepst/ pa(lx1,ly2,lz2),pb(lx1,ly1,lz2)
@@ -258,12 +258,12 @@ c     output .fld file
 C
 C     Work arrays and temporary arrays
 C
-      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
+      common /scrcg_prepost/ pm1 (lx1,ly1,lz1,lelv)
 c
 c     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 3.
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
-      common /ctmp1/ tdump(lxyz,lpsc9)
+      common /ctmp1_prepost/ tdump(lxyz,lpsc9)
       real*4         tdump
       real           tdmp(4)
       equivalence   (tdump,tdmp)
@@ -705,7 +705,7 @@ C
       include 'SIZE'
       include 'TOTAL'
 c
-      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)
+      common /scrcg_prepost/ pm1 (lx1,ly1,lz1,lelv)
 C
 C     Fill work array
 C
@@ -815,7 +815,7 @@ c-----------------------------------------------------------------------
       parameter (lxyz=lx1*ly1*lz1)
       parameter (lpsc9=ldimt1+9)
 
-      common /ctmp1/ tdump(lxyz,lpsc9)
+      common /ctmp1_prepost/ tdump(lxyz,lpsc9)
       real*4         tdump
 
       character*11 frmat
@@ -852,7 +852,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'RESTART'
-      common /scrcg/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
+      common /scrcg_prepost/ pm1 (lx1,ly1,lz1,lelv)  ! mapped pressure
 
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzo8
       character prefix*(*)
@@ -860,7 +860,7 @@ c-----------------------------------------------------------------------
 
       integer cnt, cntg
  
-      common /SCRUZ/  ur1(lxo*lxo*lxo*lelt)
+      common /scruz_prepost/  ur1(lxo*lxo*lxo*lelt)
      &              , ur2(lxo*lxo*lxo*lelt)
      &              , ur3(lxo*lxo*lxo*lelt)
 
@@ -1799,7 +1799,7 @@ c-----------------------------------------------------------------------
 
       real u(mx*my*mz,1)
 
-      common /SCRNS/ u4(2+lxo*lxo*lxo*2*lelt)
+      common /scrns_prepost/ u4(2+lxo*lxo*lxo*2*lelt)
       real*4         u4
       real*8         u8(1+lxo*lxo*lxo*1*lelt)
       equivalence    (u4,u8)
@@ -1910,7 +1910,7 @@ c-----------------------------------------------------------------------
 
       real u(mx*my*mz,1),v(mx*my*mz,1),w(mx*my*mz,1)
 
-      common /SCRNS/ u4(2+lxo*lxo*lxo*6*lelt)
+      common /scrns_prepost/ u4(2+lxo*lxo*lxo*6*lelt)
       real*4         u4
       real*8         u8(1+lxo*lxo*lxo*3*lelt)
       equivalence    (u4,u8)
@@ -2049,7 +2049,7 @@ c-----------------------------------------------------------------------
       character*4 chrefcuts
 
       real*4 test_pattern
-      common /ctmp0/ lglist(0:lelt)
+      common /ctmp0_prepost/ lglist(0:lelt)
 
       character*132 hdr
       integer*8 ioff

@@ -36,13 +36,13 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-      common /screv/ ei2(lx1,ly1,lz1,lelt)
+      common /screv_subs2/ ei2(lx1,ly1,lz1,lelt)
      $             , ei3(lx1,ly1,lz1,lelt)
-      common /ctmp1/ exx(lx1,ly1,lz1,lelt)
+      common /ctmp1_subs2/ exx(lx1,ly1,lz1,lelt)
      $             , exy(lx1,ly1,lz1,lelt)
      $             , eyy(lx1,ly1,lz1,lelt)
      $             , ezz(lx1,ly1,lz1,lelt)
-      common /ctmp0/ exz(lx1,ly1,lz1,lelt)
+      common /ctmp0_subs2/ exz(lx1,ly1,lz1,lelt)
      $             , eyz(lx1,ly1,lz1,lelt)
 c
       NTOT1  = lx1*ly1*lz1*NELV
@@ -266,10 +266,10 @@ C-----------------------------------------------------------------------
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
       INCLUDE 'WZ'
-      common /scrmg/ ae1(lx1,ly1,lz1,lelv)
+      common /scrmg_subs2/ ae1(lx1,ly1,lz1,lelv)
      $             , ae2(lx1,ly1,lz1,lelv)
      $             , ae3(lx1,ly1,lz1,lelv)
-      common /scruz/ e1(lx1,ly1,lz1,lelv)
+      common /scruz_subs2/ e1(lx1,ly1,lz1,lelv)
      $             , e2(lx1,ly1,lz1,lelv)
      $             , e3(lx1,ly1,lz1,lelv)
 C
@@ -445,10 +445,10 @@ C------------------------------------------------------------------
       INCLUDE 'SIZE'
       INCLUDE 'MASS'
       INCLUDE 'SOLN'
-      common /scrmg/ ae1(lx1,ly1,lz1,lelv)
+      common /scrmg_subs2/ ae1(lx1,ly1,lz1,lelv)
      $             , ae2(lx1,ly1,lz1,lelv)
      $             , ae3(lx1,ly1,lz1,lelv)
-      common /scruz/ e1(lx1,ly1,lz1,lelv)
+      common /scruz_subs2/ e1(lx1,ly1,lz1,lelv)
      $             , e2(lx1,ly1,lz1,lelv)
      $             , e3(lx1,ly1,lz1,lelv)
 C
@@ -678,7 +678,7 @@ C
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
       include 'INPUT'
-      common /screv/ hfmask(lx1,lz1,6,lelt)
+      common /screv_subs2/ hfmask(lx1,lz1,6,lelt)
      $             , hvmask(lx1,ly1,lz1,lelt)
 C
       DIMENSION C1MASK(LX1,LY1,LZ1,1)
@@ -713,7 +713,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      common /screv/ hfmask(lx1,lz1,6,lelt)
+      common /screv_subs2/ hfmask(lx1,lz1,6,lelt)
      $             , hvmask(lx1,ly1,lz1,lelt)
 C
       IF (.NOT.IFLMSF(IFLD)) RETURN
@@ -1105,7 +1105,7 @@ C-----------------------------------------------------------------------
 C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
-      common /scrcg/  vnmag(lx1,ly1,lz1,lelt)
+      common /scrcg_subs2/  vnmag(lx1,ly1,lz1,lelt)
       common /indxfc/ mcrfc(4,6)
      $              , MFCCR(3,8)
      $              , MEGCR(3,8)
@@ -1760,10 +1760,10 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'SOLN'
       INCLUDE 'TSTEP'
-      common /scrsf/ a1mask(lx1,ly1,lz1,lelt)
+      common /scrsf_subs2/ a1mask(lx1,ly1,lz1,lelt)
      $             , a2mask(lx1,ly1,lz1,lelt)
      $             , a3mask(lx1,ly1,lz1,lelt)
-      common /ctmp0/ wa(lx1,ly1,lz1,lelt)
+      common /ctmp0_subs2/ wa(lx1,ly1,lz1,lelt)
 C
       DIMENSION VB1(LX1,LY1,LZ1,1)
      $        , VB2(LX1,LY1,LZ1,1)
@@ -1837,7 +1837,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'TSTEP'
-      common /ctmp1/ s1(lx1,ly1,lz1,lelt)
+      common /ctmp1_subs2/ s1(lx1,ly1,lz1,lelt)
      $             , s2(lx1,ly1,lz1,lelt)
      $             , s3(lx1,ly1,lz1,lelt)
 C
@@ -2171,7 +2171,7 @@ c     fixes masks for A/SYM face corners
      $      ,c2mask(lx1,ly1,lz1,1)
      $      ,c3mask(lx1,ly1,lz1,1)
 
-      common /ctmp0/ im1(lx1,ly1,lz1),im2(lx1,ly1,lz1)
+      common /ctmp0_subs2/ im1(lx1,ly1,lz1),im2(lx1,ly1,lz1)
       integer e,f,val,im1,im2
 
       character*3 cb

@@ -325,7 +325,7 @@ c-----------------------------------------------------------------------
       real scalar(lxyz,1)
       real fh(nx*nx),fht(nx*nx),tf(nx)
 
-      common /screv/ w1
+      common /screv_postpro/ w1
       real w1(lxyz,lelt)
 
 c     Build 1D-filter based on the transfer function (tf)
@@ -352,9 +352,9 @@ c-----------------------------------------------------------------------
       real intdv(l1),intuv(l1),intdp(l1),intup(l1),intv(l1),intp(l1)
       save intdv    ,intuv    ,intdp    ,intup    ,intv    ,intp
 
-      common /ctmp0/ intt
-      common /screv/ wk1,wk2
-      common /scrvh/ zgmv,wgtv,zgmp,wgtp,tmax(100)
+      common /ctmp0_postpro/ intt
+      common /screv_postpro/ wk1,wk2
+      common /scrvh_postpro/ zgmv,wgtv,zgmp,wgtp,tmax(100)
 
       real intt (lx1,lx1)
       real wk1  (lx1,lx1,lx1,lelt)
@@ -722,8 +722,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lv=2**ldim,lblock=1000)
-      common /scrns/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
-      common /scruz/ igr(lblock)
+      common /scrns_postpro/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
+      common /scruz_postpro/ igr(lblock)
 
       integer e,eb,eg,ierr,wdsiz2
 
@@ -918,8 +918,8 @@ c     A two pass strategy is used:  first count, then write
       equivalence (buf,buf2)
 
       parameter (lblock=500)
-      common /scrns/ vcurve(5,12,lblock),wk(5*12*lblock)
-      common /scruz/ icurve(12,lblock)
+      common /scrns_postpro/ vcurve(5,12,lblock),wk(5*12*lblock)
+      common /scruz_postpro/ icurve(12,lblock)
 
       wdsiz2=4
       if(wdsize.eq.8) wdsiz2=8
@@ -1029,8 +1029,8 @@ c-----------------------------------------------------------------------
       integer e,eb,eg,wdsiz2
 
       parameter (lblock=500)
-      common /scrns/ vbc(5,6,lblock),wk(5*6*lblock)
-      common /scruz/ ibc(6,lblock)
+      common /scrns_postpro/ vbc(5,6,lblock),wk(5*6*lblock)
+      common /scruz_postpro/ ibc(6,lblock)
 
       character*1 s4(4)
       character*3 s3
@@ -1170,8 +1170,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 
       parameter (lv=2**ldim,lblock=1000)
-      common /scrns/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
-      common /scruz/ igr(lblock)
+      common /scrns_postpro/ xyz(lv,ldim,lblock),wk(lv*ldim*lblock)
+      common /scruz_postpro/ igr(lblock)
 
       integer e,eb,eg
       character*1 letapt
@@ -1275,8 +1275,8 @@ c     A two pass strategy is used:  first count, then write
       character*1 cc
 
       parameter (lblock=500)
-      common /scrns/ vcurve(5,12,lblock),wk(5*12*lblock)
-      common /scruz/ icurve(12,lblock)
+      common /scrns_postpro/ vcurve(5,12,lblock),wk(5*12*lblock)
+      common /scruz_postpro/ icurve(12,lblock)
 
       if (imid.gt.0) then
 
@@ -1371,8 +1371,8 @@ c-----------------------------------------------------------------------
       integer e,eb,eg
 
       parameter (lblock=500)
-      common /scrns/ vbc(5,6,lblock),wk(5*6*lblock)
-      common /scruz/ ibc(6,lblock)
+      common /scrns_postpro/ vbc(5,6,lblock),wk(5*6*lblock)
+      common /scruz_postpro/ ibc(6,lblock)
 
       character*1 s4(4)
       character*3 s3
@@ -1457,7 +1457,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      common /scrns/ x3(27),y3(27),z3(27),xyz(3,3)
+      common /scrns_postpro/ x3(27),y3(27),z3(27),xyz(3,3)
       character*1 ccrve(12)
       integer e,edge
 
@@ -1534,7 +1534,7 @@ c     ASSUMING LHIS IS MAX NUMBER OF POINTS TO READ IN ON ONE PROCESSOR
       integer rcode, elid, proc
       common /c_hptsi/ rcode(lhis),elid(lhis),proc(lhis)
 
-      common /scrcg/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
+      common /scrcg_postpro/  pm1 (lx1,ly1,lz1,lelv) ! mapped pressure
       common /outtmp/ wrk (lx1*ly1*lz1*lelt,nfldm)
 
 
@@ -1716,8 +1716,8 @@ c                        npts=local count; npoints=total count
       include 'PARALLEL'
 
       parameter (lt2=2*lx1*ly1*lz1*lelt)
-      common /scrns/ xyz(ldim,lt2)
-      common /scruz/ mid(lt2)  ! Target proc id
+      common /scrns_postpro/ xyz(ldim,lt2)
+      common /scruz_postpro/ mid(lt2)  ! Target proc id
       real    pts(ldim,npts)
 
       if (lt2.gt.npts) then

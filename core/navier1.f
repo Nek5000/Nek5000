@@ -10,15 +10,15 @@ C-------------------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
-      COMMON /SCRNS/ RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrhi_navier1/ H2INV (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ RESV1 (LX1,LY1,LZ1,LELV)
      $ ,             RESV2 (LX1,LY1,LZ1,LELV)
      $ ,             RESV3 (LX1,LY1,LZ1,LELV)
      $ ,             DV1   (LX1,LY1,LZ1,LELV)
      $ ,             DV2   (LX1,LY1,LZ1,LELV)
      $ ,             DV3   (LX1,LY1,LZ1,LELV)
      $ ,             WP    (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_navier1/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
       REAL           G1    (LX1,LY1,LZ1,LELV)
       REAL           G2    (LX1,LY1,LZ1,LELV)
@@ -89,10 +89,10 @@ c     Compute start-residual/right-hand-side in the pressure equation
       REAL           H1     (LX1,LY1,LZ1,LELV)
       REAL           H2     (LX1,LY1,LZ1,LELV)
       REAL           H2INV  (LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/ TA1    (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_navier1/ TA1    (LX1,LY1,LZ1,LELV)
      $ ,             TA2    (LX1,LY1,LZ1,LELV)
      $ ,             TA3    (LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ VBDRY1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ VBDRY1 (LX1,LY1,LZ1,LELV)
      $ ,             VBDRY2 (LX1,LY1,LZ1,LELV)
      $ ,             VBDRY3 (LX1,LY1,LZ1,LELV)
 
@@ -119,10 +119,10 @@ c     Compute the residual for the velocity - UZAWA SCHEME.
       REAL           RESV1 (LX1,LY1,LZ1,1)
       REAL           RESV2 (LX1,LY1,LZ1,1)
       REAL           RESV3 (LX1,LY1,LZ1,1)
-      COMMON /SCRMG/ TA1   (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ TA1   (LX1,LY1,LZ1,LELV)
      $ ,             TA2   (LX1,LY1,LZ1,LELV)
      $ ,             TA3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCREV/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /screv_navier1/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 C
       INLOC   = -1
@@ -153,10 +153,10 @@ C-----------------------------------------------------------------------
       REAL           OUT3  (LX1,LY1,LZ1,LELV)
       REAL           H1    (LX1,LY1,LZ1,LELV)
       REAL           H2    (LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ TA1   (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ TA1   (LX1,LY1,LZ1,LELV)
      $              ,TA2   (LX1,LY1,LZ1,LELV)
      $              ,TA3   (LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/ TB1   (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_navier1/ TB1   (LX1,LY1,LZ1,LELV)
      $              ,TB2   (LX1,LY1,LZ1,LELV)
      $              ,TB3   (LX1,LY1,LZ1,LELV)
      $              ,HZERO (LX1,LY1,LZ1,LELV)
@@ -198,7 +198,7 @@ C
       include 'MASS'
       include 'TSTEP'
       REAL           RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRMG/ WORK  (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ WORK  (LX1,LY1,LZ1,LELV)
 C
       NTOT1 = lx1*ly1*lz1*NELV
       CALL INVCOL3 (WORK,RESPR,BM1,NTOT1)
@@ -269,7 +269,7 @@ C     INTYPE=-1  Compute the matrix-vector product    D(A+B/DT)(-1)DT*p
       REAL           H2    (LX1,LY1,LZ1,1)
       REAL           H2INV (LX1,LY1,LZ1,1)
 C
-      COMMON /SCRNS/ TA1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ TA1 (LX1,LY1,LZ1,LELV)
      $ ,             TA2 (LX1,LY1,LZ1,LELV)
      $ ,             TA3 (LX1,LY1,LZ1,LELV)
      $ ,             TB1 (LX1,LY1,LZ1,LELV)
@@ -348,7 +348,7 @@ C
       real sm2  (lx2*ly2*lz2,lelv)
       real tm2  (lx2*ly2*lz2,lelv)
 C
-      common /ctmp1/ wx  (lx1*ly1*lz1)
+      common /ctmp1_navier1/ wx  (lx1*ly1*lz1)
      $ ,             ta1 (lx1*ly1*lz1)
      $ ,             ta2 (lx1*ly1*lz1)
      $ ,             ta3 (lx1*ly1,lz1)
@@ -563,7 +563,7 @@ C---------------------------------------------------------------------
       real           sm2  (lx2*ly2*lz2,lelv)
       real           tm2  (lx2*ly2*lz2,lelv)
 
-      common /ctmp1/ ta1 (lx1*ly1*lz1)
+      common /ctmp1_navier1/ ta1 (lx1*ly1*lz1)
      $ ,             ta2 (lx1*ly1*lz1)
      $ ,             ta3 (lx1*ly1*lz1)
 
@@ -913,7 +913,7 @@ c
       REAL           WP   (LX2,LY2,LZ2,LELV)
       REAL           H1M1 (LX1,LY1,LZ1,LELV)
       REAL           H2M1 (LX1,LY1,LZ1,LELV)
-      COMMON /SCRCH/ H1M2 (LX2,LY2,LZ2,LELV)
+      COMMON /scrch_navier1/ H1M2 (LX2,LY2,LZ2,LELV)
      $ ,             H2M2 (LX2,LY2,LZ2,LELV)
 C
       integer kstep
@@ -977,7 +977,7 @@ C----------------------------------------------------------------
       include 'TSTEP'
       REAL           Z2   (LX2,LY2,LZ2,LELV)
       REAL           R2   (LX2,LY2,LZ2,LELV)
-      COMMON /SCRNS/ MASK (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ MASK (LX1,LY1,LZ1,LELV)
      $              ,R1   (LX1,LY1,LZ1,LELV)
      $              ,X1   (LX1,LY1,LZ1,LELV)
      $              ,W2   (LX2,LY2,LZ2,LELV)
@@ -1072,7 +1072,7 @@ C-----------------------------------------------------------------
       include 'SIZE'
       include 'MASS'
       REAL           RES  (LX2,LY2,LZ2,LELV)
-      COMMON /SCRMG/ TA   (LX2,LY2,LZ2,LELV)
+      COMMON /scrmg_navier1/ TA   (LX2,LY2,LZ2,LELV)
      $ ,             TB   (LX2,LY2,LZ2,LELV)
 C
       RBNORM = 0.
@@ -1100,7 +1100,7 @@ C-------------------------------------------------------------------
       include 'MASS'
       include 'TSTEP'
       REAL           RES (LX2,LY2,LZ2,LELV)
-      COMMON /CTMP0/ TA  (LX2,LY2,LZ2,LELV)
+      COMMON /ctmp0_navier1/ TA  (LX2,LY2,LZ2,LELV)
      $ ,             TB  (LX2,LY2,LZ2,LELV)
       COMMON /CPRINT/ IFPRINT
       LOGICAL         IFPRINT
@@ -1238,9 +1238,9 @@ C--------------------------------------------------------------------
 C
 C     Use the common blocks CTMP0 and CTMP1 as work space.
 C
-      COMMON /SCRCH/  CMASK1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrch_navier1/  CMASK1 (LX1,LY1,LZ1,LELV)
      $ ,              CMASK2 (LX1,LY1,LZ1,LELV)
-      COMMON /CTMP1/  MFI    (LX1,LY1,LZ1,LELV)
+      COMMON /ctmp1_navier1/  MFI    (LX1,LY1,LZ1,LELV)
      $ ,              DMFI   (LX1,LY1,LZ1,LELV)
      $ ,              MDMFI  (LX1,LY1,LZ1,LELV)
       REAL   MFI,DMFI,MDMFI
@@ -1305,7 +1305,7 @@ C--------------------------------------------------------------------
       include 'TOTAL'
       REAL           DTFI (LX1,LY1,LZ1,1) 
       REAL           FI   (LX1,LY1,LZ1,1)
-      COMMON /SCRNS/ TA1  (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ TA1  (LX1,LY1,LZ1,LELV)
      $ ,             TA2  (LX1,LY1,LZ1,LELV)
      $ ,             TA3  (LX1,LY1,LZ1,LELV)
      $ ,             TB1  (LX1,LY1,LZ1,LELV)
@@ -1525,7 +1525,7 @@ C---------------------------------------------------------------
       include 'MASS'
       include 'TSTEP'
 C
-      COMMON /SCRUZ/ TA1 (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_navier1/ TA1 (LX1,LY1,LZ1,LELV)
      $ ,             TA2 (LX1,LY1,LZ1,LELV)
      $ ,             TA3 (LX1,LY1,LZ1,LELV)
 C
@@ -1556,7 +1556,7 @@ C
       include 'INPUT'
       include 'TSTEP'
 C
-      COMMON /SCRNS/ TA1(LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ TA1(LX1,LY1,LZ1,LELV)
      $ ,             TA2(LX1,LY1,LZ1,LELV)
      $ ,             TA3(LX1,LY1,LZ1,LELV)
      $ ,             TB1(LX1,LY1,LZ1,LELV)
@@ -1605,7 +1605,7 @@ C-----------------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRUZ/ TA1 (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_navier1/ TA1 (LX1,LY1,LZ1,LELV)
      $ ,             TA2 (LX1,LY1,LZ1,LELV)
      $ ,             TA3 (LX1,LY1,LZ1,LELV)
 C
@@ -1968,7 +1968,7 @@ C---------------------------------------------------------------------
       REAL           HV3MSK (LX1,LY1,LZ1,1)
       CHARACTER      CB*3
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
-      COMMON /CTMP1/ WORK   (LXYZ1,LELT)
+      COMMON /ctmp1_navier1/ WORK   (LXYZ1,LELT)
 C
       NFACES= 2*ldim
       NTOT1 = lx1*ly1*lz1*NELV
@@ -2035,7 +2035,7 @@ C---------------------------------------------------------------
       include 'MASS'
 C
       REAL           X  (LX1,LY1,LZ1,1)
-      COMMON /SCRNRM/ Y  (LX1,LY1,LZ1,LELT)
+      COMMON /scrnrm_navier1/ Y  (LX1,LY1,LZ1,LELT)
      $               ,TA1(LX1,LY1,LZ1,LELT)
      $               ,TA2(LX1,LY1,LZ1,LELT)
       REAL H1,SEMI,L2,LINF
@@ -2094,11 +2094,11 @@ C
       REAL           X1 (LX1,LY1,LZ1,1)
       REAL           X2 (LX1,LY1,LZ1,1)
       REAL           X3 (LX1,LY1,LZ1,1)
-      COMMON /SCRMG/ Y1 (LX1,LY1,LZ1,LELT)
+      COMMON /scrmg_navier1/ Y1 (LX1,LY1,LZ1,LELT)
      $              ,Y2 (LX1,LY1,LZ1,LELT)
      $              ,Y3 (LX1,LY1,LZ1,LELT)
      $              ,TA1(LX1,LY1,LZ1,LELT)
-      COMMON /SCRCH/ TA2(LX1,LY1,LZ1,LELT)
+      COMMON /scrch_navier1/ TA2(LX1,LY1,LZ1,LELT)
       REAL H1,SEMI,L2,LINF
       REAL LENGTH
 C
@@ -2186,18 +2186,18 @@ C--------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       LOGICAL        IFSTUZ
-      COMMON /SCRNS/ RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ RESV1 (LX1,LY1,LZ1,LELV)
      $ ,             RESV2 (LX1,LY1,LZ1,LELV)
      $ ,             RESV3 (LX1,LY1,LZ1,LELV)
      $ ,             RESP  (LX2,LY2,LZ2,LELV)
      $ ,             TA1   (LX1,LY1,LZ1,LELV)
      $ ,             TA2   (LX1,LY1,LZ1,LELV)
      $ ,             TA3   (LX1,LY1,LZ1,LELV) 
-      COMMON /SCRMG/ TB1   (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ TB1   (LX1,LY1,LZ1,LELV)
      $ ,             TB2   (LX1,LY1,LZ1,LELV)
      $ ,             TB3   (LX1,LY1,LZ1,LELV)
      $ ,             WP    (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_navier1/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 C
       IFSTUZ = .TRUE.
@@ -2842,7 +2842,7 @@ C-----------------------------------------------------------------------
       REAL             H1   (LX1,LY1,LZ1,LELV)
       REAL             H2   (LX1,LY1,LZ1,LELV)
       REAL             H2INV(LX1,LY1,LZ1,LELV)
-      COMMON /SCRUZ/   WP   (LX2,LY2,LZ2,LELV)
+      COMMON /scruz_navier1/   WP   (LX2,LY2,LZ2,LELV)
      $ ,               XCG  (LX2,LY2,LZ2,LELV)
      $ ,               PCG  (LX2,LY2,LZ2,LELV) 
      $ ,               RPCG (LX2,LY2,LZ2,LELV)
@@ -3154,9 +3154,9 @@ C
 C
 C     Use the common blocks CTMP0 and CTMP1 as work space.
 C
-      COMMON /SCRCH/  CMASK1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrch_navier1/  CMASK1 (LX1,LY1,LZ1,LELV)
      $ ,              CMASK2 (LX1,LY1,LZ1,LELV)
-      COMMON /CTMP1/  MFI    (LX1,LY1,LZ1,LELV)
+      COMMON /ctmp1_navier1/  MFI    (LX1,LY1,LZ1,LELV)
      $ ,              DMFI   (LX1,LY1,LZ1,LELV)
      $ ,              MDMFI  (LX1,LY1,LZ1,LELV)
       REAL   MFI,DMFI,MDMFI
@@ -3230,7 +3230,7 @@ C--------------------------------------------------------------------
       REAL           DFI (LX1,LY1,LZ1,1) 
       REAL           FI  (LX1,LY1,LZ1,1) 
 c
-      COMMON /CTMP0/ TA1  (LX1,LY1,LZ1,LELV)
+      COMMON /ctmp0_navier1/ TA1  (LX1,LY1,LZ1,LELV)
      $             , DFID (LXD,LYD,LZD,LELV) 
      $             , TA1D (LXD,LYD,LZD,lelv) 
 C
@@ -3290,7 +3290,7 @@ c
 C
 C     Store the inverse jacobian to speed this operation up
 C
-      common /ctmp0/ dudr(lx1,ly1,lz1)
+      common /ctmp0_navier1/ dudr(lx1,ly1,lz1)
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
 
@@ -3368,7 +3368,7 @@ C
 C     Store the inverse jacobian to speed this operation up
 C
 C
-      common /ctmp0/ dudr(lx1,ly1,lz1)
+      common /ctmp0_navier1/ dudr(lx1,ly1,lz1)
      $             , duds(lx1,ly1,lz1)
      $             , dudt(lx1,ly1,lz1)
 C
@@ -3443,7 +3443,7 @@ c
       common /fastmd/ ifdfrm(lelt), iffast(lelt), ifh2, ifsolv
       logical ifdfrm, iffast, ifh2, ifsolv
 C
-      common /ctmp0/ duds(lx1,ly1,lz1)
+      common /ctmp0_navier1/ duds(lx1,ly1,lz1)
      $             , dvds(lx1,ly1,lz1)
      $             , dwds(lx1,ly1,lz1)
 C
@@ -3678,7 +3678,7 @@ c
       real  cu(lx1,ly1,lz1,1),cv(lx1,ly1,lz1,1),cw(lx1,ly1,lz1,1)
       real  wk(lx1,ly1,lz1,3)
 c
-      common /ctmp0/ duds(lx1,ly1,lz1)
+      common /ctmp0_navier1/ duds(lx1,ly1,lz1)
      $             , dvds(lx1,ly1,lz1)
      $             , dwds(lx1,ly1,lz1)
 C
@@ -3878,7 +3878,7 @@ C---------------------------------------------------------------------
       integer msk(0:1)
       CHARACTER      CB*3
       PARAMETER (LXYZ1=LX1*LY1*LZ1)
-      COMMON /CTMP1/ WORK(LXYZ1,LELT)
+      COMMON /ctmp1_navier1/ WORK(LXYZ1,LELT)
       real mask(lxyz1,lelt)
 C
       NFACES= 2*ldim
@@ -3932,24 +3932,24 @@ C
       REAL           VEL1  (LX1,LY1,LZ1,1)
       REAL           VEL2  (LX1,LY1,LZ1,1)
       REAL           VEL3  (LX1,LY1,LZ1,1)
-      COMMON /SCRNS/ VXN   (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_navier1/ VXN   (LX1,LY1,LZ1,LELV)
      $ ,             VYN   (LX1,LY1,LZ1,LELV)
      $ ,             VZN   (LX1,LY1,LZ1,LELV)
      $ ,             HV1MSK(LX1,LY1,LZ1,LELV)
      $ ,             HV2MSK(LX1,LY1,LZ1,LELV)
      $ ,             HV3MSK(LX1,LY1,LZ1,LELV)
      $ ,             WORK  (LX1,LY1,LZ1,LELV)
-      COMMON /CTMP1/ RKX1  (LX1,LY1,LZ1,LELV)
+      COMMON /ctmp1_navier1/ RKX1  (LX1,LY1,LZ1,LELV)
      $ ,             RKX2  (LX1,LY1,LZ1,LELV)
      $ ,             RKX3  (LX1,LY1,LZ1,LELV)
      $ ,             RKX4  (LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ RKY1  (LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_navier1/ RKY1  (LX1,LY1,LZ1,LELV)
      $ ,             RKY2  (LX1,LY1,LZ1,LELV)
      $ ,             RKY3  (LX1,LY1,LZ1,LELV)
      $ ,             RKY4  (LX1,LY1,LZ1,LELV)
-      COMMON /SCREV/ RKZ1  (LX1,LY1,LZ1,LELV)
+      COMMON /screv_navier1/ RKZ1  (LX1,LY1,LZ1,LELV)
      $ ,             RKZ2  (LX1,LY1,LZ1,LELV)
-      COMMON /SCRCH/ RKZ3  (LX1,LY1,LZ1,LELV)
+      COMMON /scrch_navier1/ RKZ3  (LX1,LY1,LZ1,LELV)
      $ ,             RKZ4  (LX1,LY1,LZ1,LELV)
 C
       NTOT1 = lx1*ly1*lz1*NELV
@@ -4074,7 +4074,7 @@ C---------------------------------------------------------------------
       real inpx   (lx1,ly1,lz1,1)
       real inpy   (lx1,ly1,lz1,1)
       real inpz   (lx1,ly1,lz1,1)
-      common /ctmp0/ work (lx2,ly2,lz2,lelv)
+      common /ctmp0_navier1/ work (lx2,ly2,lz2,lelv)
 C
       iflg = 1
 
@@ -4181,7 +4181,7 @@ c
       parameter (lxyz=lx1*ly1*lz1)
       real ux(lxyz,1),uy(lxyz,1),uz(lxyz,1),u(lxyz,1)
 c
-      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp1_navier1/ ur(lxyz),us(lxyz),ut(lxyz)
 
       integer e
 
@@ -4249,11 +4249,11 @@ C----------------------------------------------------------------------
       INCLUDE 'MASS'
       INCLUDE 'TSTEP'
 C
-      COMMON /SCRUZ/ W1 (LX1,LY1,LZ1,LELV)
+      COMMON /scruz_navier1/ W1 (LX1,LY1,LZ1,LELV)
      $ ,             W2 (LX1,LY1,LZ1,LELV)
      $ ,             W3 (LX1,LY1,LZ1,LELV)
 C
-      COMMON /SCRNS/ SXZ(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_navier1/ SXZ(LX1,LY1,LZ1,LELT)
      $             , SYZ(LX1,LY1,LZ1,LELT)
      $             , SXX(LX1,LY1,LZ1,LELT)
      $             , SXY(LX1,LY1,LZ1,LELT)
@@ -4323,7 +4323,7 @@ C
       INCLUDE 'INPUT'
       INCLUDE 'GEOM'
 
-      COMMON /SCRNS/ EXZ(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_navier1/ EXZ(LX1,LY1,LZ1,LELT)
      $             , EYZ(LX1,LY1,LZ1,LELT)
      $             , EXX(LX1,LY1,LZ1,LELT)
      $             , EXY(LX1,LY1,LZ1,LELT)
@@ -4402,7 +4402,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      common /scruz/ u(lx1*ly1*lz1),v(lx1*ly1*lz1),w(lx1*ly1*lz1)
+      common /scruz_navier1/ u(lx1*ly1*lz1),v(lx1*ly1*lz1),
+     $ w(lx1*ly1*lz1)
 
       integer e
 
@@ -4491,7 +4492,7 @@ c     \dxj/   \     dxj       dxi /
       real nu
 
       parameter (lxyz=lx1*ly1*lz1)
-      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp1_navier1/ ur(lxyz),us(lxyz),ut(lxyz)
      $             , vr(lxyz),vs(lxyz),vt(lxyz)
      $             , wr(lxyz),ws(lxyz),wt(lxyz)
 
@@ -4572,7 +4573,7 @@ c
       real nu
 
       parameter (lxyz=lx1*ly1*lz1)
-      common /ctmp1/ ur(lxyz),us(lxyz),ut(lxyz)
+      common /ctmp1_navier1/ ur(lxyz),us(lxyz),ut(lxyz)
      $             , vr(lxyz),vs(lxyz),vt(lxyz)
      $             , wr(lxyz),ws(lxyz),wt(lxyz)
 

@@ -12,7 +12,7 @@ C
       REAL H1    (LX1,LY1,LZ1,LELV)
       REAL H2    (LX1,LY1,LZ1,LELV)
       REAL H2INV (LX1,LY1,LZ1,LELV)
-      common /scruz/ wk1(lx2*ly2*lz2*lelv)
+      common /scruz_navier0/ wk1(lx2*ly2*lz2*lelv)
      $             , wk2(lx2*ly2*lz2*lelv)
      $             , wk3(lx2*ly2*lz2*lelv)
 
@@ -51,7 +51,7 @@ c
       include 'TOTAL'
 
       common /ivrtx/ vertex ((2**ldim)*lelt)
-      common /scruz/ xbar(ldim,lelt),ibar(lelt)
+      common /scruz_navier0/ xbar(ldim,lelt),ibar(lelt)
       integer*8 vertex
       integer imap(nelgt)
 

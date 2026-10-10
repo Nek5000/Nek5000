@@ -84,7 +84,7 @@ C
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRUZ/ FM1(LX1,LY1,LZ1,LELT)
+      COMMON /scruz_mvmesh/ FM1(LX1,LY1,LZ1,LELT)
      $             , FM2(LX1,LY1,LZ1,LELT)
      $             , FM3(LX1,LY1,LZ1,LELT)
      $             , PHI(LX1,LY1,LZ1,LELT)
@@ -113,7 +113,7 @@ C
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRUZ/ FMT(LX1,LY1,LZ1,LELT)
+      COMMON /scruz_mvmesh/ FMT(LX1,LY1,LZ1,LELT)
      $             , PHI(LX1,LY1,LZ1,LELT)
 C
       IFLD = 0
@@ -137,7 +137,7 @@ C
       include 'WZ'
       include 'INPUT'
 C
-      COMMON /SCRSF/ PHR(LX1,LY1,LZ1,LELT)
+      COMMON /scrsf_mvmesh/ PHR(LX1,LY1,LZ1,LELT)
      $             , PHS(LX1,LY1,LZ1,LELT)
      $             , PHT(LX1,LY1,LZ1,LELT)
 
@@ -185,7 +185,7 @@ C
       include 'MASS'
       include 'MVGEOM'
       include 'WZ'
-      COMMON /SCRSF/ PHR(LX1,LY1,LZ1,LELT)
+      COMMON /scrsf_mvmesh/ PHR(LX1,LY1,LZ1,LELT)
      $             , PHS(LX1,LY1,LZ1,LELT)
      $             , PHT(LX1,LY1,LZ1,LELT)
 C
@@ -257,16 +257,16 @@ c     Evaluate mesh velocities at all moving boundaries
       include 'SOLN'
       include 'TSTEP'
 
-      common /scrsf/ wvx(lx1*ly1*lz1,lelt)
+      common /scrsf_mvmesh/ wvx(lx1*ly1*lz1,lelt)
      $             , wvy(lx1*ly1*lz1,lelt)
      $             , wvz(lx1*ly1*lz1,lelt)
-      common /scrch/ wtx(lx1*ly1*lz1,lelt)
+      common /scrch_mvmesh/ wtx(lx1*ly1*lz1,lelt)
      $             , wty(lx1*ly1*lz1,lelt)
-      common /scrmg/ wtz(lx1*ly1*lz1,lelt)
+      common /scrmg_mvmesh/ wtz(lx1*ly1*lz1,lelt)
      $             , rnx(lx1*ly1*lz1,lelt)
      $             , rny(lx1*ly1*lz1,lelt)
      $             , rnz(lx1*ly1*lz1,lelt)
-      common /scruz/ dsa(lx1*ly1*lz1,lelt)
+      common /scruz_mvmesh/ dsa(lx1*ly1*lz1,lelt)
      $             , qni(lx1*ly1*lz1,lelt)
      $             , smt(lx1*ly1*lz1,lelt)
      $             , ta (lx1*ly1*lz1,lelt)
@@ -505,7 +505,8 @@ c-----------------------------------------------------------------------
 
       integer e,f
 
-      common /scruz/ r1(lx1,ly1,lz1),r2(lx1,ly1,lz1),r3(lx1,ly1,lz1)
+      common /scruz_mvmesh/ r1(lx1,ly1,lz1),r2(lx1,ly1,lz1),r3(lx1,ly1,
+     $ lz1)
 
       call facind(i0,i1,j0,j1,k0,k1,lx1,ly1,lz1,f)
 
@@ -533,7 +534,8 @@ c-----------------------------------------------------------------------
       subroutine norcmp (wt1,wt2,wt3,rnx,rny,rnz,ifc)
 C
       include 'SIZE'
-      COMMON /SCRUZ/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,LZ1)
+      COMMON /scruz_mvmesh/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,
+     $ LZ1)
 C
       DIMENSION WT1(LX1,LY1,LZ1),WT2(LX1,LY1,LZ1),WT3(LX1,LY1,LZ1)
      $        , RNX(LX1,LY1,LZ1),RNY(LX1,LY1,LZ1),RNZ(LX1,LY1,LZ1)
@@ -571,7 +573,8 @@ c-----------------------------------------------------------------------
       subroutine facemv (wt1,wt2,wt3,rnx,rny,rnz,smt,ifc)
 C
       include 'SIZE'
-      COMMON /SCRUZ/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,LZ1)
+      COMMON /scruz_mvmesh/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,
+     $ LZ1)
 C
       DIMENSION WT1(LX1,LY1,LZ1),WT2(LX1,LY1,LZ1),WT3(LX1,LY1,LZ1)
      $        , RNX(LX1,LY1,LZ1),RNY(LX1,LY1,LZ1),RNZ(LX1,LY1,LZ1)
@@ -612,7 +615,8 @@ C
       include 'SIZE'
       include 'GEOM'
       include 'TOPOL'
-      COMMON /SCRUZ/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,LZ1)
+      COMMON /scruz_mvmesh/ R1(LX1,LY1,LZ1),R2(LX1,LY1,LZ1),R3(LX1,LY1,
+     $ LZ1)
 C
       DIMENSION WT1(LX1,LY1,LZ1),WT2(LX1,LY1,LZ1),WT3(LX1,LY1,LZ1)
 C
@@ -670,7 +674,7 @@ C
       include 'INPUT'
       include 'SOLN'
       include 'TSTEP'
-      COMMON /SCRVH/ H1(LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_mvmesh/ H1(LX1,LY1,LZ1,LELT)
      $             , H2(LX1,LY1,LZ1,LELT)
 C
       DIMENSION QNI(LX1,LY1,LZ1,1)
@@ -736,15 +740,15 @@ C
       include 'SOLN'
       include 'TSTEP'
 C
-      COMMON /SCRNS/ DW1  (LX1,LY1,LZ1,LELT)
+      COMMON /scrns_mvmesh/ DW1  (LX1,LY1,LZ1,LELT)
      $             , DW2  (LX1,LY1,LZ1,LELT)
      $             , DW3  (LX1,LY1,LZ1,LELT)
      $             , AW1  (LX1,LY1,LZ1,LELT)
      $             , AW2  (LX1,LY1,LZ1,LELT)
      $             , AW3  (LX1,LY1,LZ1,LELT)
-      COMMON /SCRVH/ H1   (LX1,LY1,LZ1,LELT)
+      COMMON /scrvh_mvmesh/ H1   (LX1,LY1,LZ1,LELT)
      $             , H2   (LX1,LY1,LZ1,LELT)
-      common /scruz/ prt  (lx1,ly1,lz1,lelt)
+      common /scruz_mvmesh/ prt  (lx1,ly1,lz1,lelt)
       COMMON /FASTMD/ IFDFRM(LELT), IFFAST(LELT), IFH2, IFSOLV
       LOGICAL IFDFRM, IFFAST, IFH2, IFSOLV
 
@@ -855,7 +859,7 @@ C
       include 'MVGEOM'
       include 'GEOM'
       include 'INPUT'
-      COMMON /SCRSF/ UX(LX1,LY1,LZ1,LELT)
+      COMMON /scrsf_mvmesh/ UX(LX1,LY1,LZ1,LELT)
      $             , UY(LX1,LY1,LZ1,LELT)
      $             , UZ(LX1,LY1,LZ1,LELT)
       DIMENSION ABM(3)
@@ -959,7 +963,7 @@ C-----------------------------------------------------------------------
       include 'SOLN'
       include 'TSTEP'
       include 'INPUT'
-      COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
+      COMMON /scruz_mvmesh/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C

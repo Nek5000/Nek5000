@@ -78,10 +78,10 @@ c-----------------------------------------------------------------------
       parameter(li    = 2*lrs+2)
 
       integer         bufr(li-2,nrmax)
-      common /scrns/  bufr
+      common /scrns_reader_re2/  bufr
 
       integer         vi  (li  ,nrmax)
-      common /ctmp1/  vi
+      common /ctmp1_reader_re2/  vi
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg
@@ -171,10 +171,10 @@ c-----------------------------------------------------------------------
       parameter(li    = 2*lrs+1)
 
       integer         bufr(li-1,nrmax)
-      common /scrns/  bufr
+      common /scrns_reader_re2/  bufr
 
       integer         vi  (li  ,nrmax)
-      common /ctmp1/  vi
+      common /ctmp1_reader_re2/  vi
 
       integer*8       lre2off_b,dtmp8
       integer*8       nrg,nr
@@ -300,10 +300,10 @@ c-----------------------------------------------------------------------
       parameter(li    = 2*lrs+1)
 
       integer         bufr(li-1,nrmax)
-      common /scrns/  bufr
+      common /scrns_reader_re2/  bufr
 
       integer         vi  (li  ,nrmax)
-      common /ctmp1/  vi
+      common /ctmp1_reader_re2/  vi
 
       integer*8       lre2off_b,dtmp8,nbcs
       integer*8       nrg, nr

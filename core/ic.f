@@ -22,7 +22,7 @@ C-----------------------------------------------------------------------
  
       LOGICAL  IFANYP
       common /inelr/ nelrr
-      common /ctmp1/ work(lx1,ly1,lz1,lelv)
+      common /ctmp1_ic/ work(lx1,ly1,lz1,lelv)
      $ ,             ta1 (lx2,ly1,lz1)
      $ ,             ta2 (lx2,ly2,lz1)
       integer*8 ntotg,nn
@@ -442,12 +442,12 @@ C----------------------------------------------------------------------
       PARAMETER (LXYZT=LX1*LY1*LZ1*LELT)
       PARAMETER (LPSC9=LDIMT+9)
 
-      common /scrcg/ pm1(lx1*ly1*lz1,lelv)
-      COMMON /SCRNS/ SDUMP(LXYZT,7)
+      common /scrcg_ic/ pm1(lx1*ly1*lz1,lelv)
+      COMMON /scrns_ic/ SDUMP(LXYZT,7)
       integer mesg(40)
 
 C     note, this usage of CTMP1 will be less than elsewhere if NELT ~> 9.
-      COMMON /CTMP1/ TDUMP(LXYZR,LPSC9)
+      COMMON /ctmp1_ic/ TDUMP(LXYZR,LPSC9)
       real*4         tdump
 c
       REAL SDMP2(LXYZT,LDIMT)
@@ -1222,7 +1222,7 @@ C
       DIMENSION X(lx1,ly1,lz1,NEL)
       DIMENSION Y(NXR,NXR,NXR,NEL)
 
-      common /ctmp0/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
+      common /ctmp0_ic/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
      $              , zgmr(lxr)      ,wgtr(lxr)
       common /ctmpab/ ires(lxr,lxr)  ,itres(lxr,lxr)
       real ires,itres
@@ -1294,7 +1294,7 @@ C
       REAL*4 X(lx1,ly1,lz1,NEL)
       REAL   Y(NXR,NXR,NXR,NEL)
 
-      common /ctmp0/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
+      common /ctmp0_ic/  xa(lxyzr)      ,xb(lx1,ly1,lzr) ,xc(lxyzr)
      $              , zgmr(lxr)      ,wgtr(lxr)
       common /ctmpa4/ ires(lxr,lxr)  ,itres(lxr,lxr)
       real ires,itres
@@ -1832,7 +1832,7 @@ C
       INCLUDE 'TSTEP'
       include 'WZ'
 c
-      COMMON /scruz/ XM3 (LX1,LY1,LZ1,LELT)
+      COMMON /scruz_ic/ XM3 (LX1,LY1,LZ1,LELT)
      $ ,             YM3 (LX1,LY1,LZ1,LELT)
      $ ,             ZM3 (LX1,LY1,LZ1,LELT)
 C
@@ -2553,8 +2553,8 @@ c
       character*1    frontc
 
       parameter (lwk = 7*lx1*ly1*lz1*lelt)
-      common /scrns/ wk(lwk)
-      common /scrcg/ pm1(lx1*ly1*lz1,lelv)
+      common /scrns_ic/ wk(lwk)
+      common /scrcg_ic/ pm1(lx1*ly1*lz1,lelv)
       integer e
 
       integer*8 offs0,offs,nbyte,stride,strideB,nxyzr8
@@ -2916,7 +2916,7 @@ c-----------------------------------------------------------------------
 
       real pm1(lx1,ly1,lz1,lelv)
 
-      common /ctmp0/ axism1 (lx1,ly1)
+      common /ctmp0_ic/ axism1 (lx1,ly1)
       integer e
 
       if (.not.ifaxis) return

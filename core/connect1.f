@@ -25,7 +25,7 @@ C
 c
       common /nekmpi/ nidd,npp,nekcomm,nekgroup,nekreal
 c      
-      COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
+      COMMON /scruz_connect1/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
@@ -307,7 +307,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'TOPOL'
 C
-      COMMON /CTMP0/ ITMP(3,3,3)
+      COMMON /ctmp0_connect1/ ITMP(3,3,3)
       INTEGER ORDER
 C
       NXL=3
@@ -713,7 +713,8 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       INCLUDE 'SCRCT'
-      COMMON /CTMP0/ XCB(2,2,2),YCB(2,2,2),ZCB(2,2,2),H(3,3,2),INDX(8)
+      COMMON /ctmp0_connect1/ XCB(2,2,2),YCB(2,2,2),ZCB(2,2,2),H(3,3,2),
+     $ INDX(8)
 C
       NXL=3
       NYL=3
@@ -1604,11 +1605,12 @@ c-----------------------------------------------------------------------
       integer*8 vertex
 
       parameter(lxyz=lx1*ly1*lz1)
-      common /scrns/ enum(lxyz,lelt)
+      common /scrns_connect1/ enum(lxyz,lelt)
      $             ,  rnx(lxyz,lelt) , rny(lxyz,lelt) , rnz(lxyz,lelt)
      $             ,  tnx(lxyz,lelt) , tny(lxyz,lelt) , tnz(lxyz,lelt)
-      common /scruz/  snx(lxz) , sny(lxz) , snz(lxz) ,  efc(lxz)
-      common /scrsf/  jvrtex((2**ldim),lelt)
+      common /scruz_connect1/  snx(lxz) , sny(lxz) , snz(lxz) ,
+     $   efc(lxz)
+      common /scrsf_connect1/  jvrtex((2**ldim),lelt)
       integer*8 jvrtex,mvertx,i8glmax
 
       integer e,f,eg

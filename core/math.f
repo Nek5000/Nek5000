@@ -832,7 +832,7 @@ c-----------------------------------------------------------------------
 
       real a(1)
 
-      common /scrsf/ w1 (lx1,ly1,lz1,lelt)
+      common /scrsf_math/ w1 (lx1,ly1,lz1,lelt)
 
       call col3 (w1,a,a,n)
       call col2 (w1,bm1,n)
@@ -848,7 +848,7 @@ c-----------------------------------------------------------------------
 
       real a(n)
 
-      common /scrsf/ w1 (lx2*ly2*lz2*lelt)
+      common /scrsf_math/ w1 (lx2*ly2*lz2*lelt)
 
       call col3 (w1,a,a,n)
       call col2 (w1,bm2,n)

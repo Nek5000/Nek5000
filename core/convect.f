@@ -13,14 +13,14 @@ c
       real    p0(1),u(1),ulag(1),bm(1),bmlag(1),msk(1),c(1),cs(0:1)
       integer gsl
 
-      common /scrns/ ct  (lxd*lyd*lzd*lelv*ldim)
+      common /scrns_convect/ ct  (lxd*lyd*lzd*lelv*ldim)
 
-      common /scrvh/ bmsk(lx1*ly1*lz1*lelv)
+      common /scrvh_convect/ bmsk(lx1*ly1*lz1*lelv)
      $             , bdwt(lx1*ly1*lz1*lelv)
      $             , bmst(lx1*ly1*lz1*lelv)
      $             , u1  (lx1*ly1*lz1*lelv)
 
-      common /scrmg/ r1  (lx1*ly1*lz1*lelv)
+      common /scrmg_convect/ r1  (lx1*ly1*lz1*lelv)
      $             , r2  (lx1*ly1*lz1*lelv)
      $             , r3  (lx1*ly1*lz1*lelv)
      $             , r4  (lx1*ly1*lz1*lelv)
@@ -243,7 +243,7 @@ c
       real  u(mx*mx*mx,nel)
       real  c(md*md*md,nel,3)
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ud(ldd)
+      common /ctmp1_convect/ ur(ldd),us(ldd),ut(ldd),ud(ldd)
 c
       logical if3d,ifd
       integer e
@@ -285,7 +285,7 @@ c
       real  u(mx*mx,nel)
       real  c(md*md,nel,2)
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ud(ldd)
+      common /ctmp1_convect/ ur(ldd),us(ldd),ut(ldd),ud(ldd)
 c
       logical if3d,ifd
       integer e
@@ -360,7 +360,7 @@ c     If idir ^= 0, then apply transpose operator  (md to mx)
       real jgl,jgt
 
       parameter (ld=2*lxd)
-      common /ctmp0/ w(ld**ldim,2)
+      common /ctmp0_convect/ w(ld**ldim,2)
 
       call lim_chk(md,ld,'md   ','ld   ','grad_rstd ')
       call lim_chk(mx,ld,'mx   ','ld   ','grad_rstd ')
@@ -647,7 +647,7 @@ C
       logical ifuf,ifcf            ! u and/or c already on fine mesh?
 
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
+      common /scrcv_convect/ fx(ltd),fy(ltd),fz(ltd)
      $             , ur(ltd),us(ltd),ut(ltd)
      $             , tr(ltd,3),uf(ltd)
 
@@ -747,7 +747,7 @@ c     conservative form
       logical ifuf,ifcf            ! u and/or c already on fine mesh?
 
       parameter (lxy=lx1*ly1*lz1,ltd=lxd*lyd*lzd)
-      common /scrcv/ uf(ltd),cf(ltd),cu(ltd)
+      common /scrcv_convect/ uf(ltd),cf(ltd),cu(ltd)
      $             , cr(ltd),cs(ltd),ct(ltd)
 
 
@@ -860,7 +860,7 @@ C
       real cr(ltd,1),cs(ltd,1),ct(ltd,1)
       real ux(lxy,1),uy(lxy,1),uz(lxy,1)
 
-      common /scrcv/ fx(ltd),fy(ltd),fz(ltd)
+      common /scrcv_convect/ fx(ltd),fy(ltd),fz(ltd)
      $             , ur(ltd),us(ltd),ut(ltd)
      $             , tr(ltd,3),uf(ltd)
 
@@ -924,7 +924,7 @@ c
 
       common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
 
-      common /scruz/ phx  (lx1*ly1*lz1*lelt)
+      common /scruz_convect/ phx  (lx1*ly1*lz1*lelt)
      $ ,             phy  (lx1*ly1*lz1*lelt)
      $ ,             phz  (lx1*ly1*lz1*lelt)
      $ ,             hmsk (lx1*ly1*lz1*lelt)
@@ -984,7 +984,7 @@ c     operator-integrator-factor method (characteristics).
 
       common /cchar/ ct_vx(0:lorder) ! time for each slice in c_vx()
 
-      common /scruz/ phi  (lx1*ly1*lz1*lelt)
+      common /scruz_convect/ phi  (lx1*ly1*lz1*lelt)
      $ ,             hmsk (lx1*ly1*lz1*lelt)
 
       if (icalld.eq.0) tadvc=0.0
@@ -1023,7 +1023,8 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       real  u(mx*mx*mx,nel)
       real  c(md*md*md,nel,3)
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      common /ctmp1_convect/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),
+     $ tu(ldd)
       real ju
 
       logical if3d,ifd
@@ -1079,7 +1080,8 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       real  u(mx*mx,nel)
       real  c(md*md,nel,2)
       parameter (ldd=lxd*lyd*lzd)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      common /ctmp1_convect/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),
+     $ tu(ldd)
       real ju
 
       logical if3d,ifd
@@ -1209,7 +1211,7 @@ c-----------------------------------------------------------------------
       include 'MASS'
       include 'INPUT'
       include 'MVGEOM'
-      common /scruz/ cx  (lx1*ly1*lz1*lelt)
+      common /scruz_convect/ cx  (lx1*ly1*lz1*lelt)
      $ ,             cy  (lx1*ly1*lz1*lelt)
      $ ,             cz  (lx1*ly1*lz1*lelt)
 
@@ -1392,7 +1394,8 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
       real du(1),u(1),c(1)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
-      common /scrdg/ uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf)
+      common /scrdg_convect/ uf(lf),uxf(lf),uyf(lf),uzf(lf),
+     $ upwind_wgt(lf)
 
       integer e,f
 
@@ -1471,7 +1474,7 @@ c     If idir ^= 0, then apply transpose operator  (md to mx)
       real jgl,jgt
 
       parameter (ld=2*lxd)
-      common /ctmp0/ w(ld**ldim,2)
+      common /ctmp0_convect/ w(ld**ldim,2)
 
       call lim_chk(md,ld,'md   ','ld   ','map_faced ')
       call lim_chk(mx,ld,'mx   ','ld   ','map_faced ')
@@ -1596,7 +1599,8 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
       real du(1),u(1),c(ldd*lelv,3)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
-      common /scrdg/ uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf)
+      common /scrdg_convect/ uf(lf),uxf(lf),uyf(lf),uzf(lf),
+     $ upwind_wgt(lf)
      $             , beta_c(lx1*lz1),jaco_c(lx1*lz1)
      $             , beta_f(lxd*lzd),jaco_f(lxd*lzd)
      $             , ufine (lxd*lzd)
@@ -1696,7 +1700,8 @@ c     Assumes that current convecting field is on dealias mesh, in c()
       real du(lxx,nel)
       real  u(lxx,nel)
       real  cr(ldd,nel),cs(ldd,nel),ct(ldd,nel)
-      common /ctmp1/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),tu(ldd)
+      common /ctmp1_convect/ ur(ldd),us(ldd),ut(ldd),ju(ldd),ud(ldd),
+     $ tu(ldd)
       real ju
 
       integer e
@@ -1746,7 +1751,8 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
       real du(1),u(1)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
-      common /scrdg/uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf),us(lf)
+      common /scrdg_convect/uf(lf),uxf(lf),uyf(lf),uzf(lf),
+     $ upwind_wgt(lf),us(lf)
      $             ,beta_c(lx1*lz1),jaco_c(lx1*lz1)
      $             ,beta_f(lxd*lzd),jaco_f(lxd*lzd)
      $             ,ufine (lxd*lzd)
@@ -1833,7 +1839,8 @@ c     Apply convecting field c(1,ldim) to scalar field u(1).
       real du(1),u(1),cr(1),cs(1),ct(1)
 
       parameter(lf=lx1*lz1*2*ldim*lelt)
-      common /scrdg/uf(lf),uxf(lf),uyf(lf),uzf(lf),upwind_wgt(lf),us(lf)
+      common /scrdg_convect/uf(lf),uxf(lf),uyf(lf),uzf(lf),
+     $ upwind_wgt(lf),us(lf)
      $             ,beta_c(lx1*lz1),jaco_c(lx1*lz1)
      $             ,beta_f(lxd*lzd),jaco_f(lxd*lzd)
      $             ,ufine (lxd*lzd)

@@ -7,7 +7,7 @@ c     Operator splitting technique.
       include 'SIZE'
       include 'TOTAL'
 
-      common /scrns/  resv  (lx1*ly1*lz1*lelv,3)
+      common /scrns_plan5/  resv  (lx1*ly1*lz1*lelv,3)
 
       n   = lx1*ly1*lz1*nelv
       n2  = lx2*ly2*lz2*nelv
@@ -75,11 +75,11 @@ c-----------------------------------------------------------------------
 
       common /p5var/ rhs2   (lx1*ly1*lz1*lelv,3)
 
-      common /scrns/  resv  (lx1*ly1*lz1*lelv,3)
+      common /scrns_plan5/  resv  (lx1*ly1*lz1*lelv,3)
      $ ,              dv1   (lx1*ly1*lz1*lelv)
      $ ,              dv2   (lx1*ly1*lz1*lelv)
      $ ,              dv3   (lx1*ly1*lz1*lelv)
-      common /scrvh/  h1    (lx1*ly1*lz1*lelv)
+      common /scrvh_plan5/  h1    (lx1*ly1*lz1*lelv)
      $ ,              h2    (lx1*ly1*lz1*lelv)
 
 

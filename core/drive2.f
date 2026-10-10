@@ -385,7 +385,7 @@ C----------------------------------------------------------------------
       include 'GEOM'
       include 'WZ'
 C
-      COMMON /SCRUZ/ XM3 (LX3,LY3,LZ3,LELT)
+      COMMON /scruz_drive2/ XM3 (LX3,LY3,LZ3,LELT)
      $ ,             YM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZM3 (LX3,LY3,LZ3,LELT)
 C
@@ -1291,7 +1291,7 @@ c-----------------------------------------------------------------------
       subroutine dofcnt
       include 'SIZE'
       include 'TOTAL'
-      COMMON /SCRNS/ WORK(LCTMP1)
+      COMMON /scrns_drive2/ WORK(LCTMP1)
 
       integer*8 ntot,ntotp,ntotv
 
@@ -1514,11 +1514,11 @@ c
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx2,ly2,lz2,lelv)
 C
-      COMMON /SCRNS/ RESV1 (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_drive2/ RESV1 (LX1,LY1,LZ1,LELV)
      $ ,             RESV2 (LX1,LY1,LZ1,LELV)
      $ ,             RESV3 (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_drive2/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
 c
       common /cvflow_i/ icvflow,iavflow
@@ -1573,16 +1573,16 @@ c
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx2,ly2,lz2,lelv)
 C
-      COMMON /SCRNS/ rw1   (LX1,LY1,LZ1,LELV)
+      COMMON /scrns_drive2/ rw1   (LX1,LY1,LZ1,LELV)
      $ ,             rw2   (LX1,LY1,LZ1,LELV)
      $ ,             rw3   (LX1,LY1,LZ1,LELV)
      $ ,             dv1   (LX1,LY1,LZ1,LELV)
      $ ,             dv2   (LX1,LY1,LZ1,LELV)
      $ ,             dv3   (LX1,LY1,LZ1,LELV)
      $ ,             RESPR (LX2,LY2,LZ2,LELV)
-      COMMON /SCRVH/ H1    (LX1,LY1,LZ1,LELV)
+      COMMON /scrvh_drive2/ H1    (LX1,LY1,LZ1,LELV)
      $ ,             H2    (LX1,LY1,LZ1,LELV)
-      COMMON /SCRHI/ H2INV (LX1,LY1,LZ1,LELV)
+      COMMON /scrhi_drive2/ H2INV (LX1,LY1,LZ1,LELV)
       common /cvflow_i/ icvflow,iavflow
 c
 c
@@ -1654,11 +1654,11 @@ c     (Tombo splitting scheme).
      $   , vzc(lx1,ly1,lz1,lelv)
      $   , prc(lx1,ly1,lz1,lelv)
 
-      common /scrns/ resv1 (lx1,ly1,lz1,lelv)
+      common /scrns_drive2/ resv1 (lx1,ly1,lz1,lelv)
      $ ,             resv2 (lx1,ly1,lz1,lelv)
      $ ,             resv3 (lx1,ly1,lz1,lelv)
      $ ,             respr (lx1,ly1,lz1,lelv)
-      common /scrvh/ h1    (lx1,ly1,lz1,lelv)
+      common /scrvh_drive2/ h1    (lx1,ly1,lz1,lelv)
      $ ,             h2    (lx1,ly1,lz1,lelv)
 
       common /cvflow_i/ icvflow,iavflow
@@ -1705,8 +1705,8 @@ c-----------------------------------------------------------------------
 c
       include 'SIZE'
       include 'TOTAL'
-      COMMON /SCRNS/ w(LX1,LY1,LZ1,LELT)
-      COMMON /SCRUZ/ v (LX1,LY1,LZ1,LELT)
+      COMMON /scrns_drive2/ w(LX1,LY1,LZ1,LELT)
+      COMMON /scruz_drive2/ v (LX1,LY1,LZ1,LELT)
      $             , h1(LX1,LY1,LZ1,LELT)
      $             , h2(LX1,LY1,LZ1,LELT)
 c
@@ -1750,9 +1750,9 @@ C
 C     Caution: 2nd and 3rd strainrate invariants residing in scratch
 C              common /SCREV/ are used in STNRINV and NEKASGN
 C
-      COMMON /SCREV/ SII (LX1,LY1,LZ1,LELT)
+      COMMON /screv_drive2/ SII (LX1,LY1,LZ1,LELT)
      $             , SIII(LX1,LY1,LZ1,LELT)
-      COMMON /SCRUZ/ TA(LX1,LY1,LZ1,LELT)
+      COMMON /scruz_drive2/ TA(LX1,LY1,LZ1,LELT)
 C
       real    rstart
       save    rstart

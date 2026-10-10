@@ -148,7 +148,7 @@ C=====================================================================
 C
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
-      COMMON /SCRNS/ TA(LX1,LY1,LZ1,LELT),TB(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_connect2/ TA(LX1,LY1,LZ1,LELT),TB(LX1,LY1,LZ1,LELT)
      $           ,QMASK(LX1,LY1,LZ1,LELT),tmp(2)
       CHARACTER*3 CB
 
@@ -378,7 +378,7 @@ C=====================================================================
 C
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
-      common /scrns/ tc(lx1,ly1,lz1,lelt),td(lx1,ly1,lz1,lelt)
+      common /scrns_connect2/ tc(lx1,ly1,lz1,lelt),td(lx1,ly1,lz1,lelt)
      $             , ta(lx1,ly1,lz1,lelt),tb(lx1,ly1,lz1,lelt)
      $             , qmask(lx1,ly1,lz1,lelt)
       CHARACTER*3 CB
@@ -561,7 +561,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       DIMENSION XYZ(3,1)
-      COMMON /CTMP0/ RMTRX(3,3),RX(3,3),RZ(3,3),XYZN(3,10)
+      COMMON /ctmp0_connect2/ RMTRX(3,3),RX(3,3),RZ(3,3),XYZN(3,10)
 C
       SINA=SIN(ANGLE)
       COSA=COS(ANGLE)
@@ -608,7 +608,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'INPUT'
       DIMENSION XYZL(3,8,LELT)
-      COMMON /CTMP0/ VO(LELT),XYZI(3,LELT),CG(3,LELT)
+      COMMON /ctmp0_connect2/ VO(LELT),XYZI(3,LELT),CG(3,LELT)
      $              ,TI(6),WORK(6)
 C
 C     Compute volumes -
@@ -781,7 +781,7 @@ C
 C
       DIMENSION LIST(LELT),LIST1(LELT),LIST2(LELT)
       DIMENSION XYZI(3),CG(3,LELT),wgt(1)
-      COMMON /CTMP0/ XCG(LELT),YCG(LELT),ZCG(LELT)
+      COMMON /ctmp0_connect2/ XCG(LELT),YCG(LELT),ZCG(LELT)
       REAL IXX,IYY,IZZ
       INTEGER WORK(2),WRK2(2)
       LOGICAL IFOK

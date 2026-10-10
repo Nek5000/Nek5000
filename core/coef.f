@@ -408,24 +408,24 @@ C
 C     Note : work arrays for mesh 3 in scratch commons will be 
 C            changed after exit of routine.
 C
-      COMMON /SCRNS/ XRM3 (LX3,LY3,LZ3,LELT)
+      COMMON /scrns_coef/ XRM3 (LX3,LY3,LZ3,LELT)
      $ ,             XSM3 (LX3,LY3,LZ3,LELT)
      $ ,             XTM3 (LX3,LY3,LZ3,LELT)
      $ ,             YRM3 (LX3,LY3,LZ3,LELT)
      $ ,             YSM3 (LX3,LY3,LZ3,LELT)
      $ ,             YTM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZRM3 (LX3,LY3,LZ3,LELT)
-      COMMON /CTMP0/ ZSM3 (LX3,LY3,LZ3,LELT)
+      COMMON /ctmp0_coef/ ZSM3 (LX3,LY3,LZ3,LELT)
      $ ,             ZTM3 (LX3,LY3,LZ3,LELT)
-      COMMON /CTMP1/ RXM3 (LX3,LY3,LZ3,LELT)
+      COMMON /ctmp1_coef/ RXM3 (LX3,LY3,LZ3,LELT)
      $ ,             RYM3 (LX3,LY3,LZ3,LELT)
      $ ,             RZM3 (LX3,LY3,LZ3,LELT)
      $ ,             SXM3 (LX3,LY3,LZ3,LELT)
-      COMMON /SCRMG/ SYM3 (LX3,LY3,LZ3,LELT)
+      COMMON /scrmg_coef/ SYM3 (LX3,LY3,LZ3,LELT)
      $ ,             SZM3 (LX3,LY3,LZ3,LELT)
      $ ,             TXM3 (LX3,LY3,LZ3,LELT)
      $ ,             TYM3 (LX3,LY3,LZ3,LELT)
-      COMMON /SCREV/ TZM3 (LX3,LY3,LZ3,LELT)
+      COMMON /screv_coef/ TZM3 (LX3,LY3,LZ3,LELT)
      $ ,             JACM3(LX3,LY3,LZ3,LELT)
       REAL           JACM3
       DIMENSION XM3(LX3,LY3,LZ3,1)
@@ -575,14 +575,14 @@ C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
 C
-      COMMON /SCRNS/ XRM1(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_coef/ XRM1(LX1,LY1,LZ1,LELT)
      $ ,             YRM1(LX1,LY1,LZ1,LELT)
      $ ,             XSM1(LX1,LY1,LZ1,LELT)
      $ ,             YSM1(LX1,LY1,LZ1,LELT)
      $ ,             XTM1(LX1,LY1,LZ1,LELT)
      $ ,             YTM1(LX1,LY1,LZ1,LELT)
      $ ,             ZRM1(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP1/ ZSM1(LX1,LY1,LZ1,LELT)
+      COMMON /ctmp1_coef/ ZSM1(LX1,LY1,LZ1,LELT)
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
 C
       NXY1  = lx1*ly1
@@ -647,14 +647,14 @@ C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
 C
-      COMMON /SCRNS/ XRM1(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_coef/ XRM1(LX1,LY1,LZ1,LELT)
      $ ,             YRM1(LX1,LY1,LZ1,LELT)
      $ ,             XSM1(LX1,LY1,LZ1,LELT)
      $ ,             YSM1(LX1,LY1,LZ1,LELT)
      $ ,             XTM1(LX1,LY1,LZ1,LELT)
      $ ,             YTM1(LX1,LY1,LZ1,LELT)
      $ ,             ZRM1(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP1/ ZSM1(LX1,LY1,LZ1,LELT)
+      COMMON /ctmp1_coef/ ZSM1(LX1,LY1,LZ1,LELT)
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
      $ ,             WJ   (LX1,LY1,LZ1,LELT)
 C
@@ -1241,11 +1241,11 @@ C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
 C
-      COMMON /SCRNS/ XRM1(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_coef/ XRM1(LX1,LY1,LZ1,LELT)
      $ ,             YRM1(LX1,LY1,LZ1,LELT)
      $ ,             XSM1(LX1,LY1,LZ1,LELT)
      $ ,             YSM1(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ WGTR1(LX1,LELT)
+      COMMON /ctmp0_coef/ WGTR1(LX1,LELT)
      $ ,             WGTR2(LY1,LELT)
      $ ,             WGTR3(LX1,LELT)
      $ ,             WGTR4(LY1,LELT)
@@ -1308,7 +1308,7 @@ C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
 C
-      COMMON /SCRNS/ XRM1(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_coef/ XRM1(LX1,LY1,LZ1,LELT)
      $ ,             YRM1(LX1,LY1,LZ1,LELT)
      $ ,             XSM1(LX1,LY1,LZ1,LELT)
      $ ,             YSM1(LX1,LY1,LZ1,LELT)
@@ -1364,18 +1364,18 @@ C
 C     Note: Subroutines GLMAPM1, GEODAT1, AREA2, SETWGTR and AREA3 
 C           share the same array structure in Scratch Common /SCRNS/.
 C
-      COMMON /SCRNS/ XRM1(LX1,LY1,LZ1,LELT)
+      COMMON /scrns_coef/ XRM1(LX1,LY1,LZ1,LELT)
      $ ,             YRM1(LX1,LY1,LZ1,LELT)
      $ ,             XSM1(LX1,LY1,LZ1,LELT)
      $ ,             YSM1(LX1,LY1,LZ1,LELT)
      $ ,             XTM1(LX1,LY1,LZ1,LELT)
      $ ,             YTM1(LX1,LY1,LZ1,LELT)
      $ ,             ZRM1(LX1,LY1,LZ1,LELT)
-      COMMON /CTMP1/ ZSM1(LX1,LY1,LZ1,LELT)
+      COMMON /ctmp1_coef/ ZSM1(LX1,LY1,LZ1,LELT)
      $ ,             ZTM1(LX1,LY1,LZ1,LELT)
      $ ,             A  (LX1,LY1,LZ1,LELT)
      $ ,             B  (LX1,LY1,LZ1,LELT)
-      COMMON /CTMP0/ C  (LX1,LY1,LZ1,LELT)
+      COMMON /ctmp0_coef/ C  (LX1,LY1,LZ1,LELT)
      $ ,             DOT(LX1,LY1,LZ1,LELT)
 C
       NXY1  = lx1*ly1
@@ -1561,7 +1561,7 @@ C
       REAL Y(LX1,LY1,LZ1)
 C
       REAL XA(lx1,NREST,NREST)
-      COMMON /CTMP0/ XB(LX1,LY1,LZ1)
+      COMMON /ctmp0_coef/ XB(LX1,LY1,LZ1)
 C
       REAL IXRES(LX1,LX1),IXTRES(LX1,LX1)
       REAL IYRES(LY1,LY1),IYTRES(LY1,LY1)
@@ -1628,7 +1628,7 @@ C
       REAL X(LX3,LY3,LZ3)
       REAL Y(LX1,LY1,LZ1)
 C
-      COMMON /CTMP0/ XA(LX1,LY3,LZ3), XB(LX1,LY1,LZ3)
+      COMMON /ctmp0_coef/ XA(LX1,LY3,LZ3), XB(LX1,LY1,LZ3)
 C
       NYZ3 = ly3*lz3
       NXY1 = lx1*ly1
@@ -1671,7 +1671,7 @@ C
       REAL X(LX1,LY1,LZ1)
       REAL Y(LX3,LY3,LZ3)
 C
-      COMMON /CTMP0/ XA(LX3,LY1,LZ1),  XB(LX3,LY3,LZ1)
+      COMMON /ctmp0_coef/ XA(LX3,LY1,LZ1),  XB(LX3,LY3,LZ1)
 C
       NYZ1 = ly1*lz1
       NXY3 = lx3*ly3
@@ -1746,7 +1746,7 @@ C
       REAL X(LX2,LY2,LZ2)
       REAL Y(LX1,LY1,LZ1)
 C
-      COMMON /CTMP0/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
+      COMMON /ctmp0_coef/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
 C
       NYZ2 = ly2*lz2
       NXY1 = lx1*ly1
@@ -1787,7 +1787,7 @@ C
       REAL X(LX2,LY2,LZ2)
       REAL Y(LX1,LY1,LZ1)
 C
-      COMMON /CTMP0/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
+      COMMON /ctmp0_coef/ XA(LX1,LY2,LZ2), XB(LX1,LY1,LZ2)
 C
       NYZ2 = ly2*lz2
       NXY1 = lx1*ly1

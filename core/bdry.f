@@ -584,10 +584,10 @@ C
       INCLUDE 'SOLN'
       INCLUDE 'TOPOL'
       INCLUDE 'CTIMER'
-      COMMON /SCRUZ/ TMP1(LX1,LY1,LZ1,LELV)
+      COMMON /scruz_bdry/ TMP1(LX1,LY1,LZ1,LELV)
      $             , TMP2(LX1,LY1,LZ1,LELV)
      $             , TMP3(LX1,LY1,LZ1,LELV)
-      COMMON /SCRMG/ TMQ1(LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_bdry/ TMQ1(LX1,LY1,LZ1,LELV)
      $             , TMQ2(LX1,LY1,LZ1,LELV)
      $             , TMQ3(LX1,LY1,LZ1,LELV)
 C
@@ -721,7 +721,7 @@ C
       INCLUDE 'CTIMER'
 C
       DIMENSION S(LX1,LY1,LZ1,LELT)
-      COMMON /SCRSF/ TMP(LX1,LY1,LZ1,LELT)
+      COMMON /scrsf_bdry/ TMP(LX1,LY1,LZ1,LELT)
      $             , TMA(LX1,LY1,LZ1,LELT)
      $             , SMU(LX1,LY1,LZ1,LELT)
       common  /nekcb/ cb
@@ -1204,10 +1204,10 @@ C
       INCLUDE 'SOLN'
       INCLUDE 'GEOM'
       INCLUDE 'INPUT'
-      COMMON /SCRSF/ TRX(LX1,LY1,LZ1)
+      COMMON /scrsf_bdry/ TRX(LX1,LY1,LZ1)
      $             , TRY(LX1,LY1,LZ1)
      $             , TRZ(LX1,LY1,LZ1)
-      COMMON /CTMP0/ STC(LX1,LY1,LZ1)
+      COMMON /ctmp0_bdry/ STC(LX1,LY1,LZ1)
       REAL SIGST(LX1,LY1)
 C
       LOGICAL IFALGN,IFNORX,IFNORY,IFNORZ
@@ -1351,7 +1351,7 @@ C
       INCLUDE 'DXYZ'
       INCLUDE 'TOPOL'
       INCLUDE 'WZ'
-      COMMON /CTMP1/ A1X(LX1),A1Y(LX1),STX(LX1),STY(LX1)
+      COMMON /ctmp1_bdry/ A1X(LX1),A1Y(LX1),STX(LX1),STY(LX1)
 C
       DIMENSION TRX(LX1,LY1,LZ1),TRY(LX1,LY1,LZ1),SIGST(LX1,1)
       DIMENSION CANG(2),SANG(2)
@@ -1416,9 +1416,9 @@ C
       INCLUDE 'DXYZ'
       INCLUDE 'TOPOL'
       INCLUDE 'WZ'
-      COMMON /CTMP1/ A1X(LX1),A1Y(LX1),A2X(LX1),A2Y(LX1)
+      COMMON /ctmp1_bdry/ A1X(LX1),A1Y(LX1),A2X(LX1),A2Y(LX1)
      $             , STX(LX1),STY(LX1),XJM1(LX1)
-      COMMON /CTMP0/ XFM1(LX1),YFM1(LX1),T1XF(LX1),T1YF(LX1)
+      COMMON /ctmp0_bdry/ XFM1(LX1),YFM1(LX1),T1XF(LX1),T1YF(LX1)
 C
       DIMENSION TRX(LX1,LY1,LZ1),TRY(LX1,LY1,LZ1),SIGST(LX1,LY1)
       DIMENSION CANG(2),SANG(2)
@@ -1596,15 +1596,15 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'WZ'
-      COMMON /CTMP0/  XFM1(LX1,LY1),YFM1(LX1,LY1),ZFM1(LX1,LY1)
-      COMMON /CTMP1/  DRM1(LX1,LX1),DRTM1(LX1,LY1)
+      COMMON /ctmp0_bdry/  XFM1(LX1,LY1),YFM1(LX1,LY1),ZFM1(LX1,LY1)
+      COMMON /ctmp1_bdry/  DRM1(LX1,LX1),DRTM1(LX1,LY1)
      $             ,  DSM1(LX1,LX1),DSTM1(LX1,LY1)
      $             ,  WGS(LX1,LY1)
-      COMMON /SCRMG/  XRM1(LX1,LY1),YRM1(LX1,LY1),ZRM1(LX1,LY1)
+      COMMON /scrmg_bdry/  XRM1(LX1,LY1),YRM1(LX1,LY1),ZRM1(LX1,LY1)
      $             ,  XSM1(LX1,LY1),YSM1(LX1,LY1),ZSM1(LX1,LY1)
-      COMMON /SCRUZ/  S1X(LX1,LY1),S1Y(LX1,LY1),S1Z(LX1,LY1)
+      COMMON /scruz_bdry/  S1X(LX1,LY1),S1Y(LX1,LY1),S1Z(LX1,LY1)
      $             ,  S2X(LX1,LY1),S2Y(LX1,LY1),S2Z(LX1,LY1)
-      COMMON /SCRNS/  G1X(LX1,LY1),G1Y(LX1,LY1),G1Z(LX1,LY1)
+      COMMON /scrns_bdry/  G1X(LX1,LY1),G1Y(LX1,LY1),G1Z(LX1,LY1)
      $             ,  G2X(LX1,LY1),G2Y(LX1,LY1),G2Z(LX1,LY1)
      $             ,  GBS(LX1,LY1),GB1L(LX1,LY1),GB2L(LX1,LY1)
 C
@@ -1847,7 +1847,7 @@ C
       INCLUDE 'SIZE'
       INCLUDE 'GEOM'
       INCLUDE 'SOLN'
-      COMMON /SCRMG/ V1(LX1,LY1,LZ1,LELV)
+      COMMON /scrmg_bdry/ V1(LX1,LY1,LZ1,LELV)
      $             , V2(LX1,LY1,LZ1,LELV)
      $             , V3(LX1,LY1,LZ1,LELV)
      $             , VV(LX1,LY1,LZ1,LELV)
@@ -1941,7 +1941,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      common /scrmg/ v1(lx1,ly1,lz1,lelt)
+      common /scrmg_bdry/ v1(lx1,ly1,lz1,lelt)
      $             , v2(lx1,ly1,lz1,lelt)
      $             , v3(lx1,ly1,lz1,lelt)
 
