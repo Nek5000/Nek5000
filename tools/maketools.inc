@@ -210,13 +210,13 @@ if ! which make >/dev/null; then
 fi
 function chk_cmake() {
    if ! which cmake >/dev/null; then
-     echo "FATEL ERROR: Cannot find cmake, which is required by "$1
+     echo "FATAL ERROR: Cannot find cmake, which is required by "$1
      exit 11
    fi
 }
 function chk_x11() {
    if ! which X >/dev/null; then
-     echo "FATEL ERROR: Cannot find X11, which is required by "$1
+     echo "FATAL ERROR: Cannot find X11, which is required by "$1
      exit 11
    fi
 }

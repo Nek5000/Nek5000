@@ -1,0 +1,83 @@
+name: CI (macOS)
+
+on:
+  # allows us to run workflows manually
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  main:
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        test_case: [ 
+            "Tools",
+            "Ethier::test_PnPn2_Parallel",
+            "Ethier::test_PnPn_Parallel"
+        ]
+        include:
+          - test_case: "Tools"
+            mpi: no
+      fail-fast: false
+
+    name: "${{ matrix.test_case }}"
+
+    env:
+      TEST_CASE: ${{ matrix.test_case }}
+      MPI: "${{ matrix.mpi == 'no' && '0' || '1' }}"
+      FC: "${{ matrix.mpi == 'no' && 'gfortran' || 'mpif77' }}"
+      CC: "${{ matrix.mpi == 'no' && 'gcc' || 'mpicc' }}"
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5" # HYPRE dep #873
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: brew dependencies
+        shell: bash
+        run: |
+          # silence already install warnings
+          for pkg in gcc mpich cmake pytest; do
+            brew list "$pkg" >/dev/null 2>&1 || brew install "$pkg"
+          done
+
+          # create gfortran soft link rather than gfortran-15
+          GFORTRAN_BIN="$(find "$(brew --prefix gcc)/bin" -name 'gfortran-[0-9]*' | sort -V | tail -n 1)"
+          echo $GFORTRAN_BIN
+
+          mkdir -p "$RUNNER_TEMP/bin"
+          ln -sf "$GFORTRAN_BIN" "$RUNNER_TEMP/bin/gfortran"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Check compilers
+        shell: bash
+        run: |
+          set -x
+          which gcc || true
+          which gfortran || true
+          which mpicc || true
+          which mpif77 || true
+          which cmake || true
+
+          gcc --version || true
+          gfortran --version || true
+          mpicc --version || true
+          mpif77 --version || true
+          cmake --version || true
+
+          which pytest
+          pytest --version
+
+      - name: test
+        shell: bash
+        run: |
+          pytest -s -v short_tests/NekTests.py::$TEST_CASE
