@@ -620,7 +620,7 @@ fi
 
 # tweak leagacy SIZE.usr file
 if ! cat SIZE.usr | grep -q 'SIZE.inc' ; then
-  NEK_WARN+="WARNING: Deprecated SIZE.usr will be removed in a future release!\n"
+  NEK_WARN+="WARNING: Not include SIZE.inc in SIZE.usr is deprecated and may be unsupported later.\n"
   if ! cat SIZE.usr | grep -qi 'optlevel' ; then
      echo >>SIZE.usr
      echo 'c automatically added by makenek' >>SIZE.usr
