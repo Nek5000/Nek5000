@@ -184,7 +184,7 @@ c
       MFIELD = 1
       IF (IFMVBD) MFIELD = 0
 C
-      DO 100 IFIELD=MFIELD,nfldt+(LDIMT-1 - NPSCAL)
+      DO 100 IFIELD=MFIELD,LDIMT+1
          IF (IFTMSH(IFIELD)) THEN
              NELFLD(IFIELD) = NELT
          ELSE
